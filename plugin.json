@@ -2,5 +2,5 @@
   "name": "devflow",
   "version": "0.1.0",
   "description": "Skills for guided software development, verification, and delivery.",
-  "skills": ["skills/workflow", "skills/project-context", "skills/specify"]
+  "skills": ["skills/workflow", "skills/project-context", "skills/specify", "skills/plan-work"]
 }

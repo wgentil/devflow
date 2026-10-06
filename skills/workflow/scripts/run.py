@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import argparse
+import hashlib
 import sys
 from pathlib import Path
 
@@ -13,7 +14,8 @@ sys.path.insert(0, str(SCRIPT_DIR))
 
 from workflow_lib import STATE_SCHEMA_VERSION  # noqa: E402
 from workflow_lib.context import register_repo, resolve_context  # noqa: E402
-from workflow_lib.specs import approval_record, find_gaps, render_spec, validate_spec  # noqa: E402
+from workflow_lib.specs import approval_record, content_hash, find_gaps, render_spec, validate_spec  # noqa: E402
+from workflow_lib.plans import ready_items, validate_plan  # noqa: E402
 from workflow_lib.store import WorkflowError, read_state, transact  # noqa: E402
 
 
@@ -49,6 +51,14 @@ def main(argv: list[str] | None = None) -> int:
     approve_spec = spec_commands.add_parser("approve")
     approve_spec.add_argument("--root", required=True)
     approve_spec.add_argument("--confirm-hash", required=True)
+    plan_parser = commands.add_parser("plan")
+    plan_commands = plan_parser.add_subparsers(dest="plan_command")
+    validate_work = plan_commands.add_parser("validate")
+    validate_work.add_argument("--root", required=True)
+    validate_work.add_argument("--file", required=True)
+    ready_work = plan_commands.add_parser("ready")
+    ready_work.add_argument("--root", required=True)
+    ready_work.add_argument("--completed", default="[]")
     try:
         parsed = parser.parse_args(argv)
         if parsed.command == "version":
@@ -90,6 +100,35 @@ def main(argv: list[str] | None = None) -> int:
             approval = approval_record(specification, parsed.confirm_hash)
             result = transact(root, state["version"], f"spec-approve:{approval['content_hash']}",
                               {"kind": "spec.approved", "payload": {"approval": approval}})
+        elif parsed.command == "plan" and parsed.plan_command == "validate":
+            root = Path(parsed.root).expanduser().resolve()
+            state = read_state(root)
+            specification = state["data"].get("spec")
+            if specification is None:
+                raise WorkflowError("SPEC_NOT_FOUND", "store and approve a specification before planning")
+            specification = {**specification, "approval": state["data"].get("approval")}
+            work_plan = _json_file(parsed.file)
+            validation = validate_plan(specification, work_plan)
+            plan_digest = hashlib.sha256(json.dumps(work_plan, sort_keys=True, ensure_ascii=False,
+                                                    separators=(",", ":")).encode("utf-8")).hexdigest()
+            result = transact(root, state["version"], f"plan:{validation['spec_hash']}:{plan_digest}",
+                              {"kind": "plan.validated", "payload": {"plan": work_plan, "plan_validation": validation}})
+        elif parsed.command == "plan" and parsed.plan_command == "ready":
+            root = Path(parsed.root).expanduser().resolve()
+            state = read_state(root)
+            work_plan = state["data"].get("plan")
+            if work_plan is None:
+                raise WorkflowError("PLAN_NOT_FOUND", "validate and store a plan before requesting eligible items")
+            specification = state["data"].get("spec")
+            approval = state["data"].get("approval")
+            if specification is None or not approval or approval.get("content_hash") != content_hash(specification):
+                raise WorkflowError("PLAN_STALE", "the approved specification changed since plan validation")
+            if state["data"].get("plan_validation", {}).get("spec_hash") != content_hash(specification):
+                raise WorkflowError("PLAN_STALE", "the plan no longer matches the current specification")
+            completed = json.loads(parsed.completed)
+            if not isinstance(completed, list) or any(not isinstance(item, str) for item in completed):
+                raise WorkflowError("INVALID_COMPLETED_IDS", "completed must be a JSON array of work-item IDs")
+            result = {"ready": ready_items(work_plan, set(completed))}
         else:
             parser.error("select a supported command")
     except WorkflowError as exc:
