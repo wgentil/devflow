@@ -7,6 +7,8 @@ import json
 import argparse
 import hashlib
 import sys
+import time
+from uuid import uuid4
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -14,26 +16,95 @@ sys.path.insert(0, str(SCRIPT_DIR))
 
 from workflow_lib import STATE_SCHEMA_VERSION  # noqa: E402
 from workflow_lib.context import register_repo, resolve_context  # noqa: E402
+from workflow_lib.context import resolve_context_cached  # noqa: E402
+from workflow_lib.briefs import assemble_brief  # noqa: E402
 from workflow_lib.specs import approval_record, content_hash, find_gaps, render_spec, validate_spec  # noqa: E402
 from workflow_lib.plans import ready_items, validate_plan  # noqa: E402
 from workflow_lib.runs import (abandon_attempt, issue_attempt, record_result, run_summary,
                                start_run)  # noqa: E402
 from workflow_lib.store import WorkflowError, read_state, transact  # noqa: E402
+from workflow_lib.telemetry import record_offload  # noqa: E402
 
 
 def _json_file(path: str | None) -> dict:
     return json.loads(Path(path).read_text(encoding="utf-8")) if path else {}
 
 
-def _attempt_package(run: dict, token: str) -> dict:
-    item_id = run["active_attempt"]["item_id"]
-    item = next(item for item in run["plan"]["work_items"] if item["id"] == item_id)
-    return {"run_id": run["id"], "attempt_id": token, "item": item,
-            "context": run["context"], "acceptance_criteria": item["acceptance_criteria"],
-            "artifacts": run["artifacts"], "unavailable_gates": run["unavailable_gates"]}
+def _commit(root: Path, version: int, operation_id: str, event: dict) -> dict:
+    response = transact(root, version, operation_id, event)
+    return {"state_version": response["state"]["version"], "event_sequence": response["event"]["sequence"],
+            "operation_id": operation_id, "replayed": response["replayed"]}
+
+
+def _operation_id(parsed, fallback: str) -> str:
+    return getattr(parsed, "operation_id", None) or fallback
+
+
+def _run_brief(run: dict, item_ids: list[str], max_bytes: int) -> dict:
+    stage = run["plan"].get("stage", {"name": "implementation", "required_slices": []})
+    return assemble_brief(run, run.get("context", {}), stage, item_ids, max_bytes)
+
+
+def _measure_cli(parsed, result: dict, result_code: str, started: float, stdout_bytes: int, input_bytes: int) -> None:
+    root_value = getattr(parsed, "root", None) if parsed else None
+    if not root_value:
+        return
+    command_parts = [parsed.command]
+    for key in ("context_command", "repo_command", "spec_command", "plan_command", "run_command"):
+        value = getattr(parsed, key, None)
+        if value:
+            command_parts.append(value)
+    operation = ".".join(command_parts)
+    attempt_id = getattr(parsed, "attempt_id", None) or result.get("attempt_id")
+    work_item = getattr(parsed, "item", None)
+    if not work_item and result.get("work_items") and len(result["work_items"]) == 1:
+        work_item = result["work_items"][0].get("id")
+    measurement = {
+        "operation_id": f"cli:{operation}:{attempt_id or uuid4().hex}:" +
+                         (hashlib.sha256(str(getattr(parsed, "result", "")).encode("utf-8")).hexdigest()
+                          if parsed and getattr(parsed, "run_command", None) == "result" else ""),
+        "operation": operation,
+        "run_id": getattr(parsed, "run_id", None) or result.get("run_id"),
+        "attempt_id": attempt_id,
+        "work_item": work_item,
+        "duration_ms": max(0, int((time.monotonic() - started) * 1000)),
+        "result": result_code,
+        "input_bytes": input_bytes,
+        "output_bytes": stdout_bytes,
+    }
+    record_offload(Path(root_value), measurement)
+
+
+def _input_bytes(parsed) -> int:
+    if parsed is None:
+        return 0
+    total = 0
+    for key in ("file", "org", "project", "overrides", "budgets"):
+        value = getattr(parsed, key, None)
+        if value:
+            try:
+                total += len(Path(value).read_bytes())
+            except OSError:
+                pass
+    for key in ("result", "completed"):
+        value = getattr(parsed, key, None)
+        if value is not None:
+            total += len(value.encode("utf-8"))
+    root = getattr(parsed, "root", None)
+    if root:
+        try:
+            total += sum(path.stat().st_size for path in (Path(root) / "events").glob("[0-9]*.json"))
+        except OSError:
+            pass
+    return total
 
 
 def main(argv: list[str] | None = None) -> int:
+    started = time.monotonic()
+    parsed = None
+    result = {}
+    code = "ok"
+    input_bytes = 0
     parser = argparse.ArgumentParser(prog="devflow")
     commands = parser.add_subparsers(dest="command")
     commands.add_parser("version")
@@ -49,12 +120,14 @@ def main(argv: list[str] | None = None) -> int:
     set_context.add_argument("--root", required=True)
     set_context.add_argument("--layer", choices=("org", "project"), required=True)
     set_context.add_argument("--file", required=True)
+    set_context.add_argument("--operation-id")
     repo = commands.add_parser("repo")
     repo_commands = repo.add_subparsers(dest="repo_command")
     register = repo_commands.add_parser("register")
     register.add_argument("--root", required=True)
     register.add_argument("--repo-id", required=True)
     register.add_argument("--location", required=True)
+    register.add_argument("--operation-id")
     spec_parser = commands.add_parser("spec")
     spec_commands = spec_parser.add_subparsers(dest="spec_command")
     for name in ("validate", "gaps", "render"):
@@ -63,14 +136,17 @@ def main(argv: list[str] | None = None) -> int:
     store_spec = spec_commands.add_parser("store")
     store_spec.add_argument("--root", required=True)
     store_spec.add_argument("--file", required=True)
+    store_spec.add_argument("--operation-id")
     approve_spec = spec_commands.add_parser("approve")
     approve_spec.add_argument("--root", required=True)
     approve_spec.add_argument("--confirm-hash", required=True)
+    approve_spec.add_argument("--operation-id")
     plan_parser = commands.add_parser("plan")
     plan_commands = plan_parser.add_subparsers(dest="plan_command")
     validate_work = plan_commands.add_parser("validate")
     validate_work.add_argument("--root", required=True)
     validate_work.add_argument("--file", required=True)
+    validate_work.add_argument("--operation-id")
     ready_work = plan_commands.add_parser("ready")
     ready_work.add_argument("--root", required=True)
     ready_work.add_argument("--completed", default="[]")
@@ -79,26 +155,39 @@ def main(argv: list[str] | None = None) -> int:
     start = run_commands.add_parser("start")
     start.add_argument("--root", required=True)
     start.add_argument("--run-id", required=True)
+    start.add_argument("--operation-id")
     for name in ("next", "retry"):
         command = run_commands.add_parser(name)
         command.add_argument("--root", required=True)
         command.add_argument("--run-id", required=True)
         command.add_argument("--item")
+        command.add_argument("--max-bytes", type=int, default=20000)
+        command.add_argument("--operation-id")
     for name in ("status", "summary"):
         command = run_commands.add_parser(name)
         command.add_argument("--root", required=True)
+        command.add_argument("--run-id", required=True)
+    for name in ("brief", "inspect"):
+        command = run_commands.add_parser(name)
+        command.add_argument("--root", required=True)
+        if name == "brief":
+            command.add_argument("--item")
+            command.add_argument("--max-bytes", type=int, default=20000)
         command.add_argument("--run-id", required=True)
     abandon = run_commands.add_parser("abandon")
     abandon.add_argument("--root", required=True)
     abandon.add_argument("--run-id", required=True)
     abandon.add_argument("--attempt-id", required=True)
+    abandon.add_argument("--operation-id")
     result_command = run_commands.add_parser("result")
     result_command.add_argument("--root", required=True)
     result_command.add_argument("--run-id", required=True)
     result_command.add_argument("--attempt-id", required=True)
     result_command.add_argument("--result", required=True)
+    result_command.add_argument("--operation-id")
     try:
         parsed = parser.parse_args(argv)
+        input_bytes = _input_bytes(parsed)
         if parsed.command == "version":
             result = {
                 "plugin": "devflow", "plugin_version": "0.1.0",
@@ -109,13 +198,19 @@ def main(argv: list[str] | None = None) -> int:
                 root = Path(parsed.root).expanduser().resolve()
                 state = read_state(root)
                 layers = state["data"].get("context", {})
-                resolved = resolve_context(layers.get("org", {}), layers.get("project", {}),
-                                           _json_file(parsed.overrides), _json_file(parsed.budgets))
-                digest = hashlib.sha256(json.dumps(resolved, sort_keys=True, ensure_ascii=False,
-                                                   separators=(",", ":")).encode("utf-8")).hexdigest()
-                transact(root, state["version"], f"context-resolve:{digest}",
-                         {"kind": "context.resolved", "payload": {"resolved_context": resolved}})
-                result = resolved
+                override_values, budget_values = _json_file(parsed.overrides), _json_file(parsed.budgets)
+                source_hashes = {key: hashlib.sha256(json.dumps(value, sort_keys=True, ensure_ascii=False,
+                    separators=(",", ":")).encode("utf-8")).hexdigest() for key, value in layers.items()}
+                cache = dict(state["data"].get("context_projections", {}))
+                projection = resolve_context_cached(layers.get("org", {}), layers.get("project", {}),
+                    override_values, budget_values, cache, source_hashes)
+                resolved = projection["resolved"]
+                if (not projection["cache_hit"] or state["data"].get("resolved_context") != resolved
+                        or state["data"].get("context_projections") != cache):
+                    _commit(root, state["version"], _operation_id(parsed, f"context-resolve:{projection['key']}"),
+                        {"kind": "context.resolved", "payload": {"resolved_context": resolved,
+                         "context_projections": cache}})
+                result = {**resolved, "projection_cache_hit": projection["cache_hit"]}
             else:
                 result = resolve_context(_json_file(parsed.org), _json_file(parsed.project),
                                          _json_file(parsed.overrides), _json_file(parsed.budgets))
@@ -126,15 +221,24 @@ def main(argv: list[str] | None = None) -> int:
             digest = hashlib.sha256(json.dumps(layer, sort_keys=True, ensure_ascii=False,
                                                separators=(",", ":")).encode("utf-8")).hexdigest()
             context_layers = {**state["data"].get("context", {}), parsed.layer: layer}
-            result = transact(root, state["version"], f"context-set:{parsed.layer}:{digest}",
-                              {"kind": "context.layer.set", "payload": {"context": context_layers}})
+            if state["data"].get("context", {}).get(parsed.layer) == layer:
+                result = {"stored_layer": parsed.layer, "unchanged": True, "state_version": state["version"]}
+            else:
+                receipt = _commit(root, state["version"], _operation_id(parsed, uuid4().hex),
+                                  {"kind": "context.layer.set", "payload": {"context": context_layers}})
+                result = {"stored_layer": parsed.layer, **receipt}
         elif parsed.command == "repo" and parsed.repo_command == "register":
             root = Path(parsed.root).expanduser().resolve()
             state = read_state(root)
             updated = register_repo(state["data"], parsed.repo_id, parsed.location)
-            op_id = f"repo-register:{parsed.repo_id}:{Path(parsed.location).expanduser().resolve()}"
-            result = transact(root, state["version"], op_id,
-                              {"kind": "repo.registered", "payload": {"repositories": updated["repositories"]}})
+            location = updated["repositories"][parsed.repo_id]["location"]
+            if state["data"].get("repositories", {}).get(parsed.repo_id, {}).get("location") == location:
+                result = {"repo_id": parsed.repo_id, "location": location, "unchanged": True,
+                          "state_version": state["version"]}
+            else:
+                receipt = _commit(root, state["version"], _operation_id(parsed, uuid4().hex),
+                                  {"kind": "repo.registered", "payload": {"repositories": updated["repositories"]}})
+                result = {"repo_id": parsed.repo_id, "location": location, **receipt}
         elif parsed.command == "spec" and parsed.spec_command in {"validate", "gaps", "render"}:
             specification = _json_file(parsed.file)
             if parsed.spec_command == "validate":
@@ -148,8 +252,13 @@ def main(argv: list[str] | None = None) -> int:
             specification = _json_file(parsed.file)
             validation = validate_spec(specification)
             state = read_state(root)
-            result = transact(root, state["version"], f"spec-store:{validation['content_hash']}",
-                              {"kind": "spec.stored", "payload": {"spec": specification}})
+            if state["data"].get("spec") == specification:
+                result = {"stored": True, "unchanged": True, "content_hash": validation["content_hash"],
+                          "state_version": state["version"]}
+            else:
+                receipt = _commit(root, state["version"], _operation_id(parsed, uuid4().hex),
+                                  {"kind": "spec.stored", "payload": {"spec": specification}})
+                result = {"stored": True, "content_hash": validation["content_hash"], **receipt}
         elif parsed.command == "spec" and parsed.spec_command == "approve":
             root = Path(parsed.root).expanduser().resolve()
             state = read_state(root)
@@ -157,8 +266,12 @@ def main(argv: list[str] | None = None) -> int:
             if specification is None:
                 raise WorkflowError("SPEC_NOT_FOUND", "store a specification before approving it")
             approval = approval_record(specification, parsed.confirm_hash)
-            result = transact(root, state["version"], f"spec-approve:{approval['content_hash']}",
-                              {"kind": "spec.approved", "payload": {"approval": approval}})
+            if state["data"].get("approval") == approval:
+                result = {"approval": approval, "unchanged": True, "state_version": state["version"]}
+            else:
+                receipt = _commit(root, state["version"], _operation_id(parsed, uuid4().hex),
+                                  {"kind": "spec.approved", "payload": {"approval": approval}})
+                result = {"approval": approval, **receipt}
         elif parsed.command == "plan" and parsed.plan_command == "validate":
             root = Path(parsed.root).expanduser().resolve()
             state = read_state(root)
@@ -168,10 +281,12 @@ def main(argv: list[str] | None = None) -> int:
             specification = {**specification, "approval": state["data"].get("approval")}
             work_plan = _json_file(parsed.file)
             validation = validate_plan(specification, work_plan)
-            plan_digest = hashlib.sha256(json.dumps(work_plan, sort_keys=True, ensure_ascii=False,
-                                                    separators=(",", ":")).encode("utf-8")).hexdigest()
-            result = transact(root, state["version"], f"plan:{validation['spec_hash']}:{plan_digest}",
-                              {"kind": "plan.validated", "payload": {"plan": work_plan, "plan_validation": validation}})
+            if state["data"].get("plan") == work_plan and state["data"].get("plan_validation") == validation:
+                result = {"validation": validation, "unchanged": True, "state_version": state["version"]}
+            else:
+                receipt = _commit(root, state["version"], _operation_id(parsed, uuid4().hex),
+                                  {"kind": "plan.validated", "payload": {"plan": work_plan, "plan_validation": validation}})
+                result = {"validation": validation, **receipt}
         elif parsed.command == "plan" and parsed.plan_command == "ready":
             root = Path(parsed.root).expanduser().resolve()
             state = read_state(root)
@@ -196,10 +311,10 @@ def main(argv: list[str] | None = None) -> int:
             if existing:
                 result = run_summary(existing)
             else:
-                started = start_run(data, parsed.run_id, data.get("plan", {}))
-                runs = {**data.get("runs", {}), parsed.run_id: started}
-                result = transact(root, state["version"], f"run-start:{parsed.run_id}",
-                                  {"kind": "run.started", "payload": {"runs": runs}})
+                run_state = start_run(data, parsed.run_id, data.get("plan", {}))
+                receipt = _commit(root, state["version"], _operation_id(parsed, f"run-start:{parsed.run_id}"),
+                                  {"kind": "run.started", "payload": {"run": run_state}})
+                result = {**run_summary(run_state), **receipt}
         elif parsed.command == "run" and parsed.run_command in {"next", "retry"}:
             root = Path(parsed.root).expanduser().resolve()
             state = read_state(root)
@@ -217,10 +332,11 @@ def main(argv: list[str] | None = None) -> int:
                 if run.get("active_attempt"):
                     raise WorkflowError("ATTEMPT_ACTIVE", "finish or abandon the active attempt first")
             elif run.get("active_attempt"):
-                result = _attempt_package(run, run["active_attempt"]["token"])
-                parsed = None
+                result = _run_brief(run, [run["active_attempt"]["item_id"]], parsed.max_bytes)
             if parsed is not None:
-                if parsed.item:
+                if run.get("active_attempt"):
+                    pass
+                elif parsed.item:
                     item_id = parsed.item
                 else:
                     completed = {key for key, value in run["items"].items() if value["status"] == "complete"}
@@ -228,12 +344,14 @@ def main(argv: list[str] | None = None) -> int:
                     if not candidates:
                         raise WorkflowError("NO_ELIGIBLE_WORK", "no work items are currently eligible")
                     item_id = candidates[0]["id"]
-                updated = issue_attempt(run, item_id)
-                token = updated["active_attempt"]["token"]
-                runs = {**data["runs"], parsed.run_id: updated}
-                transact(root, state["version"], f"run-attempt:{parsed.run_id}:{token}",
-                         {"kind": "run.attempt.issued", "payload": {"runs": runs}})
-                result = _attempt_package(updated, token)
+                if not run.get("active_attempt"):
+                    updated = issue_attempt(run, item_id)
+                    token = updated["active_attempt"]["token"]
+                    brief_result = _run_brief(updated, [item_id], parsed.max_bytes)
+                    _commit(root, state["version"], _operation_id(parsed, f"run-attempt:{parsed.run_id}:{token}"),
+                            {"kind": "run.attempt.issued", "payload": {"run_id": parsed.run_id,
+                                                                           "attempt": updated["active_attempt"]}})
+                    result = brief_result
         elif parsed.command == "run" and parsed.run_command in {"status", "summary"}:
             root = Path(parsed.root).expanduser().resolve()
             state = read_state(root)
@@ -241,6 +359,30 @@ def main(argv: list[str] | None = None) -> int:
             if run is None:
                 raise WorkflowError("RUN_NOT_FOUND", f"unknown run {parsed.run_id}")
             result = run_summary(run)
+        elif parsed.command == "run" and parsed.run_command == "brief":
+            root = Path(parsed.root).expanduser().resolve()
+            state = read_state(root)
+            run = state["data"].get("runs", {}).get(parsed.run_id)
+            if run is None:
+                raise WorkflowError("RUN_NOT_FOUND", f"unknown run {parsed.run_id}")
+            if run.get("active_attempt"):
+                active_item = run["active_attempt"]["item_id"]
+                if parsed.item and parsed.item != active_item:
+                    raise WorkflowError("ITEM_INELIGIBLE", "another work item has the active attempt")
+                selected = [active_item]
+            elif parsed.item:
+                selected = [parsed.item]
+            else:
+                completed = {key for key, value in run["items"].items() if value["status"] == "complete"}
+                candidates = ready_items(run["plan"], completed)
+                selected = [candidates[0]["id"]] if candidates else []
+            result = _run_brief(run, selected, parsed.max_bytes)
+        elif parsed.command == "run" and parsed.run_command == "inspect":
+            root = Path(parsed.root).expanduser().resolve()
+            run = read_state(root)["data"].get("runs", {}).get(parsed.run_id)
+            if run is None:
+                raise WorkflowError("RUN_NOT_FOUND", f"unknown run {parsed.run_id}")
+            result = {"run": run}
         elif parsed.command == "run" and parsed.run_command == "abandon":
             root = Path(parsed.root).expanduser().resolve()
             state = read_state(root)
@@ -249,9 +391,10 @@ def main(argv: list[str] | None = None) -> int:
             if run is None:
                 raise WorkflowError("RUN_NOT_FOUND", f"unknown run {parsed.run_id}")
             updated = abandon_attempt(run, parsed.attempt_id)
-            runs = {**data["runs"], parsed.run_id: updated}
-            result = transact(root, state["version"], f"run-abandon:{parsed.run_id}:{parsed.attempt_id}",
-                              {"kind": "run.attempt.abandoned", "payload": {"runs": runs}})
+            _commit(root, state["version"], _operation_id(parsed, f"run-abandon:{parsed.run_id}:{parsed.attempt_id}"),
+                    {"kind": "run.attempt.abandoned", "payload": {"run_id": parsed.run_id,
+                                                                      "token": parsed.attempt_id}})
+            result = run_summary(updated)
         elif parsed.command == "run" and parsed.run_command == "result":
             root = Path(parsed.root).expanduser().resolve()
             state = read_state(root)
@@ -260,20 +403,33 @@ def main(argv: list[str] | None = None) -> int:
             if run is None:
                 raise WorkflowError("RUN_NOT_FOUND", f"unknown run {parsed.run_id}")
             submission = json.loads(parsed.result)
+            item_id = (run.get("active_attempt") or {}).get("item_id")
             updated = record_result(run, parsed.attempt_id, submission)
-            runs = {**data["runs"], parsed.run_id: updated}
-            transact(root, state["version"], f"run-result:{parsed.run_id}:{parsed.attempt_id}",
-                     {"kind": "run.result.recorded", "payload": {"runs": runs}})
+            _commit(root, state["version"], _operation_id(parsed, f"run-result:{parsed.run_id}:{parsed.attempt_id}"),
+                    {"kind": "run.result.recorded", "payload": {"run_id": parsed.run_id,
+                        "token": parsed.attempt_id, "result": submission,
+                        "verified": updated["items"][item_id]["status"] == "complete",
+                        "verifier_proof_id": submission.get("verifier_proof_id")}})
             result = run_summary(updated)
         else:
             parser.error("select a supported command")
     except WorkflowError as exc:
-        print(json.dumps({"error": exc.code, "message": exc.message}, separators=(",", ":")))
+        code = "error"
+        result = {"error": exc.code, "message": exc.message, **exc.details}
+        serialized = json.dumps(result, separators=(",", ":"), ensure_ascii=False)
+        _measure_cli(parsed, result, code, started, len((serialized + "\n").encode("utf-8")), input_bytes)
+        print(serialized)
         return 2
     except (OSError, json.JSONDecodeError) as exc:
-        print(json.dumps({"error": "INVALID_INPUT", "message": str(exc)}, separators=(",", ":")))
+        code = "error"
+        result = {"error": "INVALID_INPUT", "message": str(exc)}
+        serialized = json.dumps(result, separators=(",", ":"), ensure_ascii=False)
+        _measure_cli(parsed, result, code, started, len((serialized + "\n").encode("utf-8")), input_bytes)
+        print(serialized)
         return 2
-    print(json.dumps(result, separators=(",", ":"), ensure_ascii=False))
+    serialized = json.dumps(result, separators=(",", ":"), ensure_ascii=False)
+    _measure_cli(parsed, result, code, started, len((serialized + "\n").encode("utf-8")), input_bytes)
+    print(serialized)
     return 0
 
 

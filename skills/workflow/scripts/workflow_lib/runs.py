@@ -37,6 +37,8 @@ def start_run(state: dict, run_id: str, plan: dict) -> dict:
         "verifier_proofs": {},
         "context": deepcopy(state.get("resolved_context", {})),
         "artifacts": deepcopy(state.get("artifacts", plan.get("artifacts", {}))),
+        "authorization_scope": deepcopy(state.get("authorization_scope", {})),
+        "unresolved_findings": deepcopy(state.get("unresolved_findings", [])),
         "available_gates": ["context", "specification", "planning"],
         "unavailable_gates": list(UNAVAILABLE_GATES),
     }

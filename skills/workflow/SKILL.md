@@ -25,6 +25,8 @@ python3 <skill-directory>/scripts/run.py run start --root <control-root> --run-i
 python3 <skill-directory>/scripts/run.py run next --root <control-root> --run-id <run-id>
 ```
 
-Resume by run ID with `run status`; the active attempt token remains bound to the saved state version. Submit a result with `run result`, abandon with `run abandon`, or retry a prior attempt with `run retry`. Read the exact acceptance criteria and unavailable gates returned by `run next`. A result without registered verifier proof does not complete a work item.
+Resume by run ID with `run status`; the active attempt token remains bound to the saved state version. `run brief` reassembles the scoped context without issuing a token; `run inspect` retrieves the full run record on request. Submit a result with `run result`, abandon with `run abandon`, or retry a prior attempt with `run retry`. Read the exact acceptance criteria and unavailable gates returned by `run next`. A result without registered verifier proof does not complete a work item. Brief byte limits never truncate mandatory criteria; overflow reports the required size and references.
+
+Deterministic operations record best-effort byte and duration measurements under the chosen root. Read `offload.jsonl` to inspect the measures; these bytes do not establish actual tokens saved. Reuse context projections only when source and resolver fingerprints match.
 
 Use the focused Devflow skills for project context, specification, and planning. Treat event journal state and evidence as authoritative. The dispatcher requires Python 3.11+ and `fcntl` on macOS/Linux; no daemon or dependencies are required.

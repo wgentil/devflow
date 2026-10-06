@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import fcntl
+from copy import deepcopy
 import json
 import os
 import tempfile
@@ -14,14 +15,94 @@ from . import STATE_SCHEMA_VERSION
 
 
 class WorkflowError(Exception):
-    def __init__(self, code: str, message: str):
+    def __init__(self, code: str, message: str, details: dict | None = None):
         super().__init__(message)
         self.code = code
         self.message = message
+        self.details = details or {}
 
 
 def _empty() -> dict:
     return {"schema_version": STATE_SCHEMA_VERSION, "version": 0, "data": {}, "operations": {}}
+
+
+def _apply_event(state: dict, event: dict) -> None:
+    """Materialize generic patches and compact run deltas from journal events."""
+    kind, payload = event["kind"], event["payload"]
+    data = state["data"]
+    if kind == "run.started":
+        run = payload.get("run")
+        if not isinstance(run, dict) or not run.get("id") or run["id"] in data.setdefault("runs", {}):
+            raise WorkflowError("INVALID_EVENT", "invalid or duplicate run.started event")
+        data["runs"][run["id"]] = run
+    elif kind == "run.attempt.issued":
+        run = data.setdefault("runs", {}).get(payload.get("run_id"))
+        attempt = payload.get("attempt")
+        if (not run or not isinstance(attempt, dict) or run.get("active_attempt") is not None
+                or not isinstance(attempt.get("token"), str) or not attempt.get("token")
+                or attempt.get("state_version") != run.get("state_version", 0) + 1):
+            raise WorkflowError("INVALID_EVENT", "invalid run.attempt.issued event")
+        item_id = attempt.get("item_id")
+        if item_id not in run.get("items", {}):
+            raise WorkflowError("INVALID_EVENT", "attempt references unknown work item")
+        run["items"][item_id]["attempts"].append(attempt)
+        run["active_attempt"] = attempt
+        run["state_version"] = attempt.get("state_version")
+    elif kind == "run.attempt.abandoned":
+        run = data.setdefault("runs", {}).get(payload.get("run_id"))
+        active = run.get("active_attempt") if run else None
+        if not active or active.get("token") != payload.get("token"):
+            raise WorkflowError("INVALID_EVENT", "abandon event does not match active attempt")
+        item = run["items"][active["item_id"]]
+        if not item.get("attempts") or item["attempts"][-1].get("token") != active["token"]:
+            raise WorkflowError("INVALID_EVENT", "abandon event has no matching attempt history")
+        active["status"] = "abandoned"
+        item["attempts"][-1]["status"] = "abandoned"
+        run["active_attempt"] = None
+        run["state_version"] += 1
+    elif kind == "run.result.recorded":
+        run = data.setdefault("runs", {}).get(payload.get("run_id"))
+        active = run.get("active_attempt") if run else None
+        if not active or active.get("token") != payload.get("token") or not isinstance(payload.get("result"), dict):
+            raise WorkflowError("INVALID_EVENT", "result event does not match active attempt")
+        item = run["items"][active["item_id"]]
+        if not item.get("attempts") or item["attempts"][-1].get("token") != active["token"]:
+            raise WorkflowError("INVALID_EVENT", "result event has no matching attempt history")
+        verified = payload.get("verified") is True
+        if verified:
+            proof_id = payload.get("verifier_proof_id")
+            proof = run.get("verifier_proofs", {}).get(proof_id) if proof_id else None
+            result = payload["result"]
+            if (not proof or proof.get("passed") is not True or proof.get("item_id") != active["item_id"]
+                    or proof.get("token") != active["token"] or result.get("outcome") != "passed"):
+                raise WorkflowError("INVALID_EVENT", "verified result lacks a matching registered proof")
+        status = "verified" if verified else "result_recorded"
+        active["status"] = status
+        active["result"] = payload["result"]
+        item["attempts"][-1]["status"] = status
+        item["attempts"][-1]["result"] = payload["result"]
+        item["status"] = "complete" if status == "verified" else "pending"
+        run["active_attempt"] = None
+        run["state_version"] += 1
+    else:
+        data.update(payload)
+
+
+def _validate_event_shape(event: dict) -> None:
+    kind, payload = event["kind"], event["payload"]
+    requirements = {
+        "run.started": isinstance(payload.get("run"), dict) and bool(payload["run"].get("id")),
+        "run.attempt.issued": (isinstance(payload.get("run_id"), str)
+                               and isinstance(payload.get("attempt"), dict)),
+        "run.attempt.abandoned": (isinstance(payload.get("run_id"), str)
+                                   and isinstance(payload.get("token"), str)),
+        "run.result.recorded": (isinstance(payload.get("run_id"), str)
+                                and isinstance(payload.get("token"), str)
+                                and isinstance(payload.get("result"), dict)
+                                and isinstance(payload.get("verified"), bool)),
+    }
+    if kind in requirements and not requirements[kind]:
+        raise WorkflowError("INVALID_EVENT", f"invalid payload shape for {kind}")
 
 
 def _read_journal(root: Path) -> tuple[dict, list[str]]:
@@ -49,7 +130,10 @@ def _read_journal(root: Path) -> tuple[dict, list[str]]:
             raise WorkflowError("CORRUPT_STATE", f"event {path.name} has invalid required fields")
         if operation_id in state["operations"]:
             raise WorkflowError("CORRUPT_STATE", f"duplicate operation ID {operation_id}")
-        state["data"].update(payload)
+        try:
+            _apply_event(state, event)
+        except WorkflowError as exc:
+            raise WorkflowError("CORRUPT_STATE", f"event {path.name} is invalid: {exc.message}") from exc
         state["version"] = expected
         state["operations"][operation_id] = event
     return state, ignored
@@ -101,6 +185,7 @@ def transact(root: Path, expected_version: int, operation_id: str, event: dict) 
         raise WorkflowError("INVALID_OPERATION_ID", "operation_id must be non-empty")
     if not isinstance(event, dict) or not isinstance(event.get("kind"), str) or not event.get("kind") or not isinstance(event.get("payload"), dict):
         raise WorkflowError("INVALID_EVENT", "event requires a non-empty kind and object payload")
+    _validate_event_shape(event)
     with _exclusive(root):
         state, _ = _read_journal(root)
         previous = state["operations"].get(operation_id)
@@ -120,10 +205,12 @@ def transact(root: Path, expected_version: int, operation_id: str, event: dict) 
         event_path = journal / f"{committed['sequence']:08d}.json"
         if event_path.exists():
             raise WorkflowError("CORRUPT_STATE", f"unexpected existing event {event_path.name}")
+        projected = deepcopy(state)
+        _apply_event(projected, committed)
         _atomic_json(event_path, committed)
-        state["data"].update(committed["payload"])
+        state["data"] = projected["data"]
         state["version"] = committed["sequence"]
         state["operations"][operation_id] = committed
         state["recovery"] = {"ignored_temporary_files": []}
-        _atomic_json(root / "state.json", {k: v for k, v in state.items() if k != "recovery"})
+        _atomic_json(root / "state.json", {k: v for k, v in state.items() if k not in {"recovery", "operations"}})
         return {"state": state, "event": committed, "replayed": False}

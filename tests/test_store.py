@@ -30,6 +30,28 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(caught.exception.code, "STALE_STATE")
         self.assertEqual(tree_bytes(self.root), before)
 
+    def test_invalid_run_transition_is_rejected_before_event_commit(self):
+        before = tree_bytes(self.root)
+        with self.assertRaises(WorkflowError) as caught:
+            transact(self.root, 0, "bad-run-event", {"kind": "run.attempt.issued", "payload": {}})
+        self.assertEqual(caught.exception.code, "INVALID_EVENT")
+        self.assertEqual(tree_bytes(self.root), before)
+
+    def test_run_result_event_cannot_claim_verification_without_registered_proof(self):
+        started = transact(self.root, 0, "start", {"kind": "run.started", "payload": {"run": {
+            "id": "r", "items": {"w": {"status": "pending", "attempts": []}},
+            "state_version": 0, "active_attempt": None, "verifier_proofs": {},
+        }}})
+        issued = transact(self.root, started["state"]["version"], "issue", {"kind": "run.attempt.issued",
+            "payload": {"run_id": "r", "attempt": {"token": "t", "item_id": "w",
+            "state_version": 1, "status": "active", "result": None}}})
+        before = tree_bytes(self.root)
+        with self.assertRaises(WorkflowError) as caught:
+            transact(self.root, issued["state"]["version"], "fake-proof", {"kind": "run.result.recorded",
+                "payload": {"run_id": "r", "token": "t", "result": {"outcome": "passed"}, "verified": True}})
+        self.assertEqual(caught.exception.code, "INVALID_EVENT")
+        self.assertEqual(tree_bytes(self.root), before)
+
     def test_duplicate_operation_returns_original_event(self):
         first = transact(self.root, 0, "same", {"kind": "note", "payload": {"x": 1}})
         again = transact(self.root, 0, "same", {"kind": "different", "payload": {"x": 2}})

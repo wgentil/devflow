@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
+import hashlib
+import json
 from pathlib import Path
 
 from .store import WorkflowError
@@ -9,6 +12,13 @@ from .store import WorkflowError
 ORG_SLICES = (
     "platform", "coding-standards", "architecture", "test-strategy", "release-process", "design-system"
 )
+RESOLVER_VERSION = "1"
+
+
+def projection_key(source_hashes: dict, resolver_version: str) -> str:
+    canonical = json.dumps({"source_hashes": source_hashes, "resolver_version": resolver_version},
+                           sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
 def _slice_map(layer: dict | None) -> dict:
@@ -77,3 +87,17 @@ def resolve_context(org: dict, project: dict, user_overrides: dict, budgets: dic
         "missing_org_slices": org_slices_to_interview(org),
         "budget": budget,
     }
+
+
+def resolve_context_cached(org: dict, project: dict, user_overrides: dict, budgets: dict,
+                           cache: dict, source_hashes: dict, resolver_version: str = RESOLVER_VERSION) -> dict:
+    """Reuse a projection only when source, inputs, budget, and resolver match."""
+    inputs = {"org": org, "project": project, "user_overrides": user_overrides, "budgets": budgets}
+    input_hash = hashlib.sha256(json.dumps(inputs, sort_keys=True, ensure_ascii=False,
+                                           separators=(",", ":")).encode("utf-8")).hexdigest()
+    key = projection_key({"declared": source_hashes, "inputs": input_hash}, resolver_version)
+    if key in cache:
+        return {"key": key, "cache_hit": True, "resolved": deepcopy(cache[key])}
+    resolved = resolve_context(org, project, user_overrides, budgets)
+    cache[key] = deepcopy(resolved)
+    return {"key": key, "cache_hit": False, "resolved": resolved}

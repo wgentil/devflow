@@ -4,7 +4,8 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "skills/workflow/scripts"))
-from workflow_lib.context import ORG_SLICES, org_slices_to_interview, register_repo, resolve_context
+from workflow_lib.context import (ORG_SLICES, org_slices_to_interview, register_repo,
+                                  resolve_context, resolve_context_cached)
 from workflow_lib.store import WorkflowError
 
 
@@ -49,6 +50,27 @@ class ContextTests(unittest.TestCase):
                 register_repo(result, "new", str(Path(folder) / "missing"))
             self.assertEqual(caught.exception.code, "REPO_LOCATION_NOT_FOUND")
             self.assertEqual(result["repositories"]["backend"]["location"], str(Path(folder).resolve()))
+
+    def test_projection_reuse_and_invalidation_keep_context_provenance(self):
+        org = {"slices": {"platform": {"status": "answered", "value": "linux", "sealed": True},
+                          "release-process": {"status": "declined", "reason": "TBD"}}}
+        project = {"slices": {"architecture": {"status": "answered", "value": "layered"}}}
+        overrides = {"platform": "macOS"}
+        cache = {}
+        first = resolve_context_cached(org, project, overrides, {"max_tokens": 50}, cache,
+                                       {"org": "h1", "project": "h2"}, "resolver-1")
+        self.assertFalse(first["cache_hit"])
+        second = resolve_context_cached(org, project, overrides, {"max_tokens": 50}, cache,
+                                        {"org": "h1", "project": "h2"}, "resolver-1")
+        self.assertTrue(second["cache_hit"])
+        self.assertEqual(second["resolved"]["values"]["platform"], "macOS")
+        self.assertEqual(second["resolved"]["provenance"]["platform"], "user")
+        self.assertEqual(second["resolved"]["declined"][0]["reason"], "TBD")
+        self.assertEqual(second["resolved"]["conflicts"][0]["sealed_value"], "linux")
+        self.assertFalse(resolve_context_cached(org, project, overrides, {"max_tokens": 50}, cache,
+                          {"org": "changed", "project": "h2"}, "resolver-1")["cache_hit"])
+        self.assertFalse(resolve_context_cached(org, project, overrides, {"max_tokens": 50}, cache,
+                          {"org": "h1", "project": "h2"}, "resolver-2")["cache_hit"])
 
 
 if __name__ == "__main__":
