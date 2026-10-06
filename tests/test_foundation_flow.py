@@ -1,0 +1,92 @@
+import json
+import os
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+ENTRY = ROOT / "skills/workflow/scripts/run.py"
+sys.path.insert(0, str(ROOT / "skills/workflow/scripts"))
+from workflow_lib.store import read_state
+
+
+class FoundationFlowTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(prefix="devflow flow ")
+        self.base = Path(self.temp.name)
+        self.control = self.base / "control root"
+        self.control.mkdir()
+        self.repo = self.base / "fixture repo"
+        self.repo.mkdir()
+        self.env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
+
+    def tearDown(self):
+        self.temp.cleanup()
+
+    def cli(self, *args, ok=True):
+        result = subprocess.run([sys.executable, str(ENTRY), *map(str, args)], cwd="/tmp",
+                                env=self.env, text=True, capture_output=True)
+        if ok:
+            self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+            return json.loads(result.stdout)
+        self.assertNotEqual(result.returncode, 0)
+        return result
+
+    def put_json(self, name, value):
+        path = self.control / name
+        path.write_text(json.dumps(value))
+        return path
+
+    def test_next_brief_resume_atomic_result_retry_and_state_location(self):
+        self.cli("repo", "register", "--root", self.control, "--repo-id", "backend", "--location", self.repo)
+        self.put_json("org.json", {"slices": {"architecture": {"status": "answered", "value": "hexagonal"}}})
+        self.cli("context", "set", "--root", self.control, "--layer", "org", "--file", self.control / "org.json")
+        self.cli("context", "resolve", "--root", self.control)
+        specification = {"mode": "new", "requirements": [{"id": "R1", "text": "Persist a setting",
+            "acceptance_criteria": ["setting survives restart"], "provenance": {"kind": "authored"}}]}
+        spec_path = self.put_json("spec.json", specification)
+        self.cli("spec", "store", "--root", self.control, "--file", spec_path)
+        digest = self.cli("spec", "validate", "--file", spec_path)["content_hash"]
+        self.cli("spec", "approve", "--root", self.control, "--confirm-hash", digest)
+        work_plan = {"spec_hash": digest, "artifacts": {"requirements": f"sha256:{digest}"}, "work_items": [{"id": "W1", "kind": "code", "requirement_ids": ["R1"],
+            "acceptance_criteria": [{"kind": "code-test", "text": "setting persistence test"}], "dependencies": []}]}
+        plan_path = self.put_json("plan.json", work_plan)
+        self.cli("plan", "validate", "--root", self.control, "--file", plan_path)
+        self.cli("run", "start", "--root", self.control, "--run-id", "flow-1")
+
+        first = self.cli("run", "next", "--root", self.control, "--run-id", "flow-1")
+        self.assertEqual(first["context"]["values"]["architecture"], "hexagonal")
+        self.assertEqual(first["acceptance_criteria"], work_plan["work_items"][0]["acceptance_criteria"])
+        self.assertEqual(first["artifacts"], {"requirements": f"sha256:{digest}"})
+        token = first["attempt_id"]
+        after_restart = self.cli("run", "status", "--root", self.control, "--run-id", "flow-1")
+        self.assertEqual(after_restart["active_attempt"]["token"], token)
+        before_invalid = {p.relative_to(self.control): p.read_bytes() for p in self.control.rglob("*") if p.is_file()}
+        self.cli("run", "result", "--root", self.control, "--run-id", "flow-1", "--attempt-id", token,
+                 "--result", '{"detail":"missing outcome"}', ok=False)
+        after_invalid = {p.relative_to(self.control): p.read_bytes() for p in self.control.rglob("*") if p.is_file()}
+        self.assertEqual(after_invalid, before_invalid)
+        self.cli("run", "abandon", "--root", self.control, "--run-id", "flow-1", "--attempt-id", token)
+        retry = self.cli("run", "retry", "--root", self.control, "--run-id", "flow-1", "--item", "W1")
+        self.assertNotEqual(retry["attempt_id"], token)
+        version_before = len(list((self.control / "events").glob("[0-9]*.json")))
+        summary = self.cli("run", "result", "--root", self.control, "--run-id", "flow-1",
+                           "--attempt-id", retry["attempt_id"], "--result", '{"outcome":"passed"}')
+        version_after = len(list((self.control / "events").glob("[0-9]*.json")))
+        self.assertEqual(version_after, version_before + 1)
+        self.assertEqual(summary["pending_items"], ["W1"])
+        self.assertIn("build", summary["unavailable_gates"])
+        persisted = read_state(self.control)["data"]["runs"]["flow-1"]
+        self.assertEqual(persisted["items"]["W1"]["attempts"][-1]["status"], "result_recorded")
+
+        allowed = [self.control.resolve(), self.repo.resolve()]
+        for path in self.base.rglob("*"):
+            if path.is_file():
+                self.assertTrue(any(path.resolve().is_relative_to(root) for root in allowed), str(path))
+
+
+if __name__ == "__main__":
+    unittest.main()

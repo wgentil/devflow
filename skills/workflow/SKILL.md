@@ -5,10 +5,26 @@ description: Guide a software project through scoped context, requirements, plan
 
 # Devflow workflow
 
-Use the bundled helper to inspect or advance a workflow. Supply an explicit control root for all stateful commands; loading this skill does not create files.
+Use the bundled helper to inspect or advance a workflow. Supply an explicit control root for stateful commands; loading this skill does not create files. The current foundation supports context, repository registration, requirements, plan validation, and resumable attempts. Build verification, reviews, acceptance, and delivery are reported unavailable; a recorded implementation result remains provisional.
 
 ```sh
 python3 <skill-directory>/scripts/run.py version
 ```
 
-Use the focused Devflow skills for project context, specification, planning, implementation, review, issue handling, migration, and reporting as they become available. Treat helper state and evidence as authoritative; do not claim a gate passed without registered verifier evidence.
+Store state only under the chosen root:
+
+```sh
+python3 <skill-directory>/scripts/run.py context set --root <control-root> --layer org --file org.json
+python3 <skill-directory>/scripts/run.py context resolve --root <control-root>
+python3 <skill-directory>/scripts/run.py repo register --root <control-root> --repo-id <stable-id> --location <checkout>
+python3 <skill-directory>/scripts/run.py spec store --root <control-root> --file spec.json
+python3 <skill-directory>/scripts/run.py spec validate --file spec.json
+python3 <skill-directory>/scripts/run.py spec approve --root <control-root> --confirm-hash <current-content-hash>
+python3 <skill-directory>/scripts/run.py plan validate --root <control-root> --file plan.json
+python3 <skill-directory>/scripts/run.py run start --root <control-root> --run-id <run-id>
+python3 <skill-directory>/scripts/run.py run next --root <control-root> --run-id <run-id>
+```
+
+Resume by run ID with `run status`; the active attempt token remains bound to the saved state version. Submit a result with `run result`, abandon with `run abandon`, or retry a prior attempt with `run retry`. Read the exact acceptance criteria and unavailable gates returned by `run next`. A result without registered verifier proof does not complete a work item.
+
+Use the focused Devflow skills for project context, specification, and planning. Treat event journal state and evidence as authoritative. The dispatcher requires Python 3.11+ and `fcntl` on macOS/Linux; no daemon or dependencies are required.

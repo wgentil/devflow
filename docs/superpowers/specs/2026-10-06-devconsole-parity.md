@@ -54,6 +54,21 @@ Status: design inventory, not verified implementation parity. Baseline: locally 
 
 ## Definition of parity completion
 
-Token-efficiency acceptance spans P05 (scoped context and brief budgets), P06 (versioned digest reuse), P09–P10 (compact routing and fresh-session resume), and P28–P30 (usage and offload measurement). The foundation supplies scoped briefs, projection reuse, compact inspection, and byte telemetry; digest caching and actual token comparisons remain deferred. Input/output byte counts alone cannot establish tokens saved. See the design's token-efficiency contract and the foundation plan's Task 7.
+### Foundation implementation evidence (increment 1)
+
+The current implementation demonstrates only this initial coverage; broader parity rows remain open.
+
+| Rows | Implemented component | Acceptance evidence | Remaining scope |
+| --- | --- | --- | --- |
+| P02, P05 | `context.py`; `context set/resolve` | `tests/test_context.py`; end-to-end state reuse in `tests/test_foundation_flow.py` | Organization interview recording workflow, full six-slice authoring, rich projection synchronization, and enforced context budgets |
+| P03, P32 (partial) | Stable repository registration in `context.py` | Relocation and spaced-path cases in `tests/test_context.py` | Repository graph orchestration and multi-repository proofs/delivery |
+| P07 (partial) | `specs.py`; `spec store/validate/gaps/render/approve` | `tests/test_specs.py` | Gap interview loop, contradiction/completeness review, richer extend/migrate grounding |
+| P08 | `plans.py`; `plan validate/ready` | `tests/test_plans.py` | More specialized requirement-to-verifier mapping |
+| P09 | Event journal and compact `run next` routing | Store and end-to-end flow tests | Full stage catalog and final evidence publication |
+| P10 (partial) | Resumable `runs.py` attempts and one-shot tokens | `tests/test_runs.py`; fresh-process retry in `tests/test_foundation_flow.py` | Build-stage RED/GREEN proofs, amendments, parked findings, and full retry adjudication |
+
+P01 and the remaining portions of these rows are not complete. Build, review, acceptance, and delivery gates remain unavailable in this increment. No broad parity row is marked complete based only on foundation tests.
+
+Token-efficiency acceptance spans P05 (scoped context and brief budgets), P06 (versioned digest reuse), P09–P10 (compact routing and fresh-session resume), and P28–P30 (usage and offload measurement). Task 7 of the foundation plan is intended to supply scoped briefs, projection reuse, compact inspection, and byte telemetry; these are planned and not implemented yet. Digest caching and actual token comparisons remain deferred. Input/output byte counts alone cannot establish tokens saved. See the design's token-efficiency contract and the foundation plan's Task 7.
 
 Each row receives a linked implementation component, automated or reproducible acceptance scenario, result artifact, and remaining limitations. The final report lists achieved, conditional, and excluded capabilities separately. No percentage is reported until a documented weighting and verified evidence exist. Additional baseline capabilities discovered during implementation extend this matrix rather than disappearing from scope.
