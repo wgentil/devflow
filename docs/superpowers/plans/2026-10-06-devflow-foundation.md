@@ -18,6 +18,7 @@
 - Every mutation validates state and prerequisites; unavailable proof cannot satisfy a gate.
 - Use only explicit authorization for external writes and delivery; no remote publication in this increment.
 - Helpers govern their own operations, not all agent behavior.
+- Compact output preserves mandatory criteria, failure status, authorization constraints, and unresolved mandatory findings. Byte measurements are exact; token counts remain unavailable unless supported runtime records provide them.
 
 ## Review Focus
 
@@ -32,6 +33,8 @@
 `plugin.json` defines identity; `skills/*/SKILL.md` define invocation guidance. `skills/workflow/scripts/run.py` dispatches commands. Shared modules live in `skills/workflow/scripts/workflow_lib/`: `store.py` owns persistence, `context.py` owns organization/project/repository records, `specs.py` owns requirements, `plans.py` owns dependency validation, `runs.py` owns attempts and transitions. `tests/` mirrors those responsibilities. `docs/usage.md` documents supported operations and limitations.
 
 All public helper functions consume and return JSON-compatible dictionaries. `WorkflowError` carries a stable error code. The CLI prints one JSON result, exits 0 on success and 2 on validation failure, and supports `--root PATH`. State lives under that explicitly selected root; no default filesystem writes occur just by loading a skill.
+
+Task 7 adds `briefs.py` for scoped assembly, `telemetry.py` for best-effort operation measurements, `tests/test_briefs.py`, and `tests/test_telemetry.py`. Context projection reuse remains owned by `context.py`. Full-record inspection reads authoritative records rather than relying on telemetry.
 
 ### Task 1: Installable package and entry command
 
@@ -107,12 +110,30 @@ All public helper functions consume and return JSON-compatible dictionaries. `Wo
 - [ ] Document runnable commands, supported platforms, recovery behavior, and unavailable gates. Update parity rows with evidence and partial coverage; never mark broad rows complete from foundation tests alone.
 - [ ] Commit as `feat: add resumable foundation workflow`.
 
+### Task 7: Scoped briefs, reuse, and offload measurement
+
+**Files:** `workflow_lib/briefs.py`, `workflow_lib/telemetry.py`, `tests/test_briefs.py`, `tests/test_telemetry.py`; update `workflow_lib/context.py`, `tests/test_context.py`, `workflow_lib/runs.py`, `run.py`, entry skill, `docs/usage.md`, and parity inventory.
+
+**Interfaces:** `assemble_brief(run: dict, context: dict, stage: dict, selected_ids: list[str], max_bytes: int) -> dict`; `projection_key(source_hashes: dict, resolver_version: str) -> str`; `record_offload(root: Path, measurement: dict) -> dict`. Stage declarations supply required slice names and kind instructions. Canonical JSON uses sorted keys, compact separators, and UTF-8 with `ensure_ascii=False`; the budget measures the entire returned brief, including its size field. Measurements contain operation ID/name, optional run/attempt/item IDs, duration, result, input bytes, and output bytes. Telemetry returns collection status and does not raise into workflow operations.
+
+- [ ] Write `test_brief_omits_unrelated_slices`: a selected code item includes its required slices and criteria, excludes unrelated slices and IaC/agent-config instructions, and includes code instructions once across two selected code items. Assert blocked items contain IDs/reasons only and selecting a blocked item raises `ITEM_INELIGIBLE`.
+- [ ] Write `test_mandatory_content_overflow`: a Unicode fixture measures actual serialized UTF-8 bytes; an exact-size budget succeeds, a smaller budget raises `BRIEF_BUDGET_EXCEEDED` with required size and artifact references, and required criteria remain intact. Optional omission names appear in the result. Token estimates identify their method and are never labeled exact usage.
+- [ ] Write `test_projection_reuse_and_invalidation`: identical source hashes and resolver version reuse the projection; changed hashes or resolver version invalidate it. Assert declines, conflicts, provenance, and current user overrides survive reuse.
+- [ ] Write `test_compact_result_and_inspection`: command output references full records without embedding journals or raw logs; `run inspect --run-id ID` retrieves the authoritative record. Failure and unavailable-gate status remain visible in compact output. Inspection honors the selected root and rejects traversal outside it.
+- [ ] Write `test_fresh_process_resume_brief`: create a run with an abandoned attempt and authorization/finding records, then invoke `run brief --run-id ID --item ID --max-bytes N` in a fresh process without transcript input. Assert current attempt status, recorded scope, hashes, and unresolved findings remain available; no build/review/delivery gate becomes available.
+- [ ] Write telemetry tests for successful and failed operations, run attribution, UTF-8 byte counts, retry deduplication by operation ID, and collection failure. Assert telemetry failure preserves the operation's original output, exit code, and journal while exposing a collection gap. Unbound operations cannot acquire invented run attribution.
+- [ ] Run `python3 -m unittest discover -s tests -p 'test_briefs.py' -v`, the context tests, and the telemetry tests; observe intended failures before implementation.
+- [ ] Implement scoped assembly and reuse using authoritative Task 2–6 records. Add explicit `run brief` and `run inspect` commands; full inspection is opt-in. Instrument deterministic operations with best-effort telemetry under the selected root and collection warnings on stderr. Keep stdout as one JSON result.
+- [ ] Repeat targeted tests, then run `python3 -m unittest discover -s tests -v` and `python3 -m compileall -q skills/workflow/scripts`.
+- [ ] Document brief budgets, fresh-session resume, compact inspection, cache invalidation, telemetry gaps, and the distinction between byte reduction and actual token savings. Record fixture input/output sizes without asserting a savings percentage. Update parity rows as partial coverage.
+- [ ] Commit as `feat: add scoped briefs and offload measurement`.
+
 ## Subsequent increments
 
 The foundation deliberately leaves these planned contracts unavailable. Each receives a separate detailed plan before implementation:
 
 1. **Verification, review, and delivery:** actual RED/GREEN locking; controlled test changes; IaC and evaluation evidence; independent reviews; acceptance; exact-head delivery manifests and authorized cleanup. Covers P10–P18 and P21–P22 beyond foundation state support.
-2. **Ingestion, issues, migration, and hardening:** source digests and domain profiles; snapshots/grouping/outbox/reconciliation; legacy parity and cross-run increments; configured gates; generated stage documentation. Completes P01, P06, P19–P20, P23–P27, and cross-repo P32.
+2. **Ingestion, issues, migration, and hardening:** source digests and domain profiles; digest reuse keyed by source content, scope, profile, and ingestion version with invalidation fixtures; snapshots/grouping/outbox/reconciliation; legacy parity and cross-run increments; configured gates; generated stage documentation. Completes P01, P06, P19–P20, P23–P27, and cross-repo P32.
 3. **Usage and productivity:** accessible Codex usage adapters, deduplication, pricing, 90% floor, 30-day outcome window, standalone/grouped eligibility, ratios-of-sums exports, and optional read-only legacy import. Covers P28–P31 and P33. P34–P35 remain intentional exclusions.
 
 P02–P05 and P07–P09 receive their initial implementation here; any remaining rendering, synchronization, indexing, or richer stage-routing behavior stays tracked in the matrix. Full parity is evaluated only after all increments and reference-fixture comparisons.

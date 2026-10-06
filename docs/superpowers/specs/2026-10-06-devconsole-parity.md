@@ -52,4 +52,6 @@ Status: design inventory, not verified implementation parity. Baseline: locally 
 
 ## Definition of parity completion
 
+Token-efficiency acceptance spans P05 (scoped context and brief budgets), P06 (versioned digest reuse), P09–P10 (compact routing and fresh-session resume), and P28–P30 (usage and offload measurement). The foundation supplies scoped briefs, projection reuse, compact inspection, and byte telemetry; digest caching and actual token comparisons remain deferred. Input/output byte counts alone cannot establish tokens saved. See the design's token-efficiency contract and the foundation plan's Task 7.
+
 Each row receives a linked implementation component, automated or reproducible acceptance scenario, result artifact, and remaining limitations. The final report lists achieved, conditional, and excluded capabilities separately. No percentage is reported until a documented weighting and verified evidence exist. Additional baseline capabilities discovered during implementation extend this matrix rather than disappearing from scope.

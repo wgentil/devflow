@@ -55,6 +55,20 @@ Support new projects, extensions scoped to affected code, and migrations grounde
 
 Requirements have stable IDs, acceptance criteria, and authored/derived/assumed provenance. Derived facts cite source paths, commits, and line ranges. Gap interviews ask only unresolved questions. Written specifications undergo contradiction, completeness, and scope review before approval. Plans map every requirement to work items and verification, with explicit dependencies and work-item kinds.
 
+## Token efficiency
+
+Preserve DevConsole's scoped briefs and deterministic offloading. The model performs reasoning, implementation, and review; helpers perform state reconstruction, dependency selection, validation, hashing, rendering, and calculations. Default command output is compact JSON with decisions, actionable errors, and references to full records; raw journals, full logs, and unrelated records stay on disk. Explicit inspection can retrieve details. Compact output must retain failure status, prerequisites, authorization constraints, and unresolved mandatory findings.
+
+Briefs include only the declared context slices and selected eligible work items. Include instructions once per kind present in that selection; omit unused code/IaC/agent-config variants. Blocked items receive IDs and blocking reasons rather than full implementation packages. A requested item outside the eligible set fails explicitly. Never omit acceptance criteria or required verification to meet a budget.
+
+Use a caller-selected byte budget for serialized briefs and report the actual UTF-8 size. Token estimates use a named estimation method and remain estimates. If mandatory content exceeds the budget, return an explicit overflow with required size and artifact references rather than a truncated executable brief. Optional content omitted to fit is identified. Budgeting controls helper output, not Codex's total conversation context.
+
+Reuse answered context slices and persisted projections when their source hashes and resolver version match. In the ingestion increment, digest reuse additionally requires matching source content, scope, profile, and ingestion version; changed inputs invalidate affected entries. A cache hit never substitutes for fresh execution evidence or independent review.
+
+Support fresh-session resume through an explicit run ID, durable state, and a newly assembled scoped brief. The handoff carries artifact hashes, active attempt status, recorded authorization scope, and unresolved findings; it does not copy the transcript. Unsupported gates remain unavailable after resume. Helpers cannot clear a conversation, prove authority absent a trustworthy record, or force the harness to open a new session.
+
+Record deterministic operation name, run/attempt/item attribution where available, duration, result, input bytes, and emitted output bytes. Telemetry is separate from authoritative state: collection failures expose a gap without changing an operation's outcome. Input/output bytes describe processing and output reduction, not proven avoided tokens. Actual token usage is imported only from supported runtime records in the reporting increment. Compare equivalent fixtures and outcomes before claiming savings; no fixed percentage is promised.
+
 ## Build and review contracts
 
 For code, capture a real failing RED proof before implementation, lock the relevant tests, then require fresh GREEN evidence. Bind proofs to attempts, commands, exit status, repository state, and test hashes. Capture stdout and stderr; prefer structured test results where available. Never reconstruct an earlier RED proof from a later implementation.
@@ -90,6 +104,8 @@ Include standalone and issue-group runs uniformly. Rollups use ratios of sums an
 Implement in four reviewable increments: (1) context/state/specification/planning; (2) verification/review/delivery; (3) issues/migration/hardening; (4) reporting and compatibility fixtures. All matrix rows remain tracked until demonstrated; earlier increments must not be advertised as full parity. Each increment receives a detailed implementation plan and its own validation.
 
 Acceptance tests must demonstrate stale-attempt rejection without mutation, crash recovery, relocation, locked-test enforcement, valid and invalid evidence for all three kinds, review independence, authorization reuse, exact delivery summaries, partial-snapshot protection, idempotent issue retries, migration dependencies, and unavailable metrics without fabricated values. Reporting fixtures cover duplicate usage, missing prices, the coverage floor, standalone deliveries, and ratios of sums.
+
+Token-efficiency fixtures demonstrate irrelevant-slice and unused-kind omission, mandatory-content overflow without truncation, compact output with inspectable full records, projection reuse and invalidation, fresh-process resume without transcript input, and telemetry gaps without altered workflow outcomes. Digest reuse belongs to the ingestion increment; actual usage comparisons belong to reporting.
 
 Compare selected DevConsole fixtures and outcomes against the replacement. Document intentional differences rather than changing expected results merely to pass. Validate skill metadata and script behavior separately. Read-only legacy import is optional and must preserve original ledgers.
 
