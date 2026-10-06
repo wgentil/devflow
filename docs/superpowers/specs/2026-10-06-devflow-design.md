@@ -57,6 +57,18 @@ Requirements have stable IDs, acceptance criteria, and authored/derived/assumed 
 
 ## Token efficiency
 
+### Shared computation and incremental processing
+
+Retain all functionality and parity targets. Optimize internal execution around one authoritative fact with generated views, shared computation with independent judgments, and incremental processing with fresh verification. Command-for-command compatibility is not required when a smaller interface preserves the same observable outcomes and evidence.
+
+Committed journal events are authoritative for mutable workflow facts; snapshots are rebuildable projections. Source artifacts remain authoritative for their content and are referenced by hash. Markdown, briefs, summaries, and reports are generated views, not separately editable copies of the same facts. All consumers use one context resolver; a stage supplies slice and artifact requirements rather than implementing its own inheritance rules.
+
+The normal `next` operation selects eligible work and returns its attempt token, scoped context, criteria, artifact references, and next actions together. It remains a mutation when issuing a token. Read-only brief inspection and resume do not issue, consume, or revive tokens. Submission validates related results against one expected version and commits them as one event; invalid submissions commit nothing. It must not batch across human decisions or external side effects. Reuse existing authorization within its recorded scope and binding; changed scope or manifests require reevaluation.
+
+Share input preparation for independent reviews, never reviewer conclusions. Item packages address item correctness; branch packages include integration changes and unattributed changes; acceptance packages trace every requirement to evidence. Corrections identify affected findings, artifacts, and dependent requirements. Reuse prior judgments only while their bound inputs remain unchanged. Unknown impact requires broader review, and acceptance always accounts for every requirement; delta review cannot silently excuse regressions. Preserve all review roles and correction limits.
+
+Cache deterministic source analysis by complete content/configuration fingerprints. Invalidate transitive dependents when inputs change. Cached analysis does not establish current repository execution, delivery heads, or reviewer independence. Derived metrics use authoritative events, with runtime usage and offload telemetry as separately identified inputs; do not reconstruct workflow outcomes from transcripts. Measure model-visible bytes, helper calls, repeated reads, and actual usage where available against equivalent outcomes before introducing further optimization.
+
 Preserve DevConsole's scoped briefs and deterministic offloading. The model performs reasoning, implementation, and review; helpers perform state reconstruction, dependency selection, validation, hashing, rendering, and calculations. Default command output is compact JSON with decisions, actionable errors, and references to full records; raw journals, full logs, and unrelated records stay on disk. Explicit inspection can retrieve details. Compact output must retain failure status, prerequisites, authorization constraints, and unresolved mandatory findings.
 
 Briefs include only the declared context slices and selected eligible work items. Include instructions once per kind present in that selection; omit unused code/IaC/agent-config variants. Blocked items receive IDs and blocking reasons rather than full implementation packages. A requested item outside the eligible set fails explicitly. Never omit acceptance criteria or required verification to meet a budget.

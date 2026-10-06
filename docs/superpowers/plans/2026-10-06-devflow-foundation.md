@@ -19,6 +19,7 @@
 - Use only explicit authorization for external writes and delivery; no remote publication in this increment.
 - Helpers govern their own operations, not all agent behavior.
 - Compact output preserves mandatory criteria, failure status, authorization constraints, and unresolved mandatory findings. Byte measurements are exact; token counts remain unavailable unless supported runtime records provide them.
+- Preserve all parity targets. Share context resolution and generated views; reuse computation without substituting for fresh evidence or independent judgment.
 
 ## Review Focus
 
@@ -57,6 +58,7 @@ Task 7 adds `briefs.py` for scoped assembly, `telemetry.py` for best-effort oper
 - [ ] Write tests asserting stale versions leave bytes unchanged, duplicate operation IDs return the first result, corrupt/future schemas raise stable errors, process interruption recovers committed events, and concurrent writers preserve sequence uniqueness.
 - [ ] Run `python3 -m unittest discover -s tests -p 'test_store.py' -v`; require the intended failures.
 - [ ] Implement locked transactions with immutable per-sequence event files written by atomic replace, journal replay, and a rebuildable state snapshot. Use `fcntl` on macOS/Linux; declare those supported platforms for this increment. Detect incomplete temporary writes without treating them as committed events.
+- [ ] Add a replay fixture proving deleted snapshots rebuild the same acknowledged workflow facts from committed events. Treat rendered views as disposable and source artifacts as hash-bound inputs; do not introduce another editable workflow ledger.
 - [ ] Repeat the command and the package tests; require all passing.
 - [ ] Commit as `feat: persist workflow events atomically`.
 
@@ -103,6 +105,7 @@ Task 7 adds `briefs.py` for scoped assembly, `telemetry.py` for best-effort oper
 **Interfaces:** `start_run(state: dict, run_id: str, plan: dict) -> dict`; `issue_attempt(run: dict, item_id: str) -> dict`; `record_result(run: dict, token: str, result: dict) -> dict`; `run_summary(run: dict) -> dict`. Tokens are single-use and tied to state version and item ID.
 
 - [ ] Write tests proving stale/single-use tokens reject mutation, abandoned attempts preserve history, retries receive new tokens, resume survives process restart, blocked dependencies remain ineligible, and results without registered verifier proof cannot complete implementation items.
+- [ ] Add `test_next_returns_complete_attempt_package`: one `run next` response supplies the issued token, eligible item, resolved context, criteria, artifact references, and unavailable-gate status. Assert read-only status/resume leaves tokens unchanged. Add `test_related_result_submission_is_atomic`: an invalid related result rejects the entire submission without changing journal bytes, while a valid submission records one event under one expected version and operation ID.
 - [ ] Run `python3 -m unittest discover -s tests -p 'test_runs.py' -v`; confirm failures.
 - [ ] Implement run start/status/next/abandon/retry commands and brief generation. Only administrative stages can complete in this increment; build/review/delivery gates stay explicitly unavailable until later increments.
 - [ ] Write and run a temporary-directory end-to-end scenario: context registration → approved spec → validated plan → run start → attempt → restart → retry → summary. Assert no files appear outside the selected control directory and fixture repositories.
@@ -124,8 +127,10 @@ Task 7 adds `briefs.py` for scoped assembly, `telemetry.py` for best-effort oper
 - [ ] Write telemetry tests for successful and failed operations, run attribution, UTF-8 byte counts, retry deduplication by operation ID, and collection failure. Assert telemetry failure preserves the operation's original output, exit code, and journal while exposing a collection gap. Unbound operations cannot acquire invented run attribution.
 - [ ] Run `python3 -m unittest discover -s tests -p 'test_briefs.py' -v`, the context tests, and the telemetry tests; observe intended failures before implementation.
 - [ ] Implement scoped assembly and reuse using authoritative Task 2–6 records. Add explicit `run brief` and `run inspect` commands; full inspection is opt-in. Instrument deterministic operations with best-effort telemetry under the selected root and collection warnings on stderr. Keep stdout as one JSON result.
+- [ ] Use the same assembler and context resolver for `run next`, `run brief`, and resume. Add a fixture comparing their criteria/context for the same state and selection; read-only assembly cannot issue a token. Keep shared instructions once per selected kind and keep full records accessible through inspection.
 - [ ] Repeat targeted tests, then run `python3 -m unittest discover -s tests -v` and `python3 -m compileall -q skills/workflow/scripts`.
 - [ ] Document brief budgets, fresh-session resume, compact inspection, cache invalidation, telemetry gaps, and the distinction between byte reduction and actual token savings. Record fixture input/output sizes without asserting a savings percentage. Update parity rows as partial coverage.
+- [ ] Compare the complete `next` response with an equivalent sequence of separate eligibility/context/artifact reads. Record helper-call count and aggregate output bytes with identical required facts; report results even if the combined response is larger. Measurements cannot mark deferred verification or review capabilities complete.
 - [ ] Commit as `feat: add scoped briefs and offload measurement`.
 
 ## Subsequent increments
@@ -135,6 +140,8 @@ The foundation deliberately leaves these planned contracts unavailable. Each rec
 1. **Verification, review, and delivery:** actual RED/GREEN locking; controlled test changes; IaC and evaluation evidence; independent reviews; acceptance; exact-head delivery manifests and authorized cleanup. Covers P10–P18 and P21–P22 beyond foundation state support.
 2. **Ingestion, issues, migration, and hardening:** source digests and domain profiles; digest reuse keyed by source content, scope, profile, and ingestion version with invalidation fixtures; snapshots/grouping/outbox/reconciliation; legacy parity and cross-run increments; configured gates; generated stage documentation. Completes P01, P06, P19–P20, P23–P27, and cross-repo P32.
 3. **Usage and productivity:** accessible Codex usage adapters, deduplication, pricing, 90% floor, 30-day outcome window, standalone/grouped eligibility, ratios-of-sums exports, and optional read-only legacy import. Covers P28–P31 and P33. P34–P35 remain intentional exclusions.
+
+Later detailed plans must test shared review input preparation with distinct item/branch/acceptance judgments, correction impact propagation and conservative fallback, content/configuration cache invalidation, and event-derived reporting. Independent reviews and fresh execution/delivery evidence remain required. These are acceptance contracts for the relevant increments, not foundation completion claims.
 
 P02–P05 and P07–P09 receive their initial implementation here; any remaining rendering, synchronization, indexing, or richer stage-routing behavior stays tracked in the matrix. Full parity is evaluated only after all increments and reference-fixture comparisons.
 

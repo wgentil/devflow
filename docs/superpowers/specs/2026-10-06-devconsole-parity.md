@@ -44,6 +44,8 @@ Status: design inventory, not verified implementation parity. Baseline: locally 
 
 ## Deliberate adaptations
 
+- Preserve capability outcomes and evidence rather than every DevConsole command or internal layer. Shared resolution, complete next-step responses, generated views, and incremental invalidation reduce repetition without removing any target or independent gate.
+
 - Existing DevConsole and Autowork remain unchanged; shared concepts guide an independently maintained skill bundle.
 - User authorization controls external writes, deployment, and delivery. Conversational issue reports do not automatically authorize messages or issue creation.
 - Standalone runs receive delivery events and reporting eligibility, addressing the issue-group-only eligibility encountered in Song Capture reporting.
