@@ -11,6 +11,8 @@ ROOT = Path(__file__).resolve().parents[1]
 ENTRY = ROOT / "skills/workflow/scripts/run.py"
 sys.path.insert(0, str(ROOT / "skills/workflow/scripts"))
 from workflow_lib.store import read_state, transact
+from workflow_lib.specs import approval_record, content_hash
+from workflow_lib.plans import validate_plan
 
 
 class FoundationFlowTests(unittest.TestCase):
@@ -123,6 +125,50 @@ class FoundationFlowTests(unittest.TestCase):
         for path in self.base.rglob("*"):
             if path.is_file():
                 self.assertTrue(any(path.resolve().is_relative_to(root) for root in allowed), str(path))
+
+    def test_context_projection_can_return_to_a_previously_resolved_value(self):
+        self.put_json("layer.json", {"slices": {"architecture": {"status": "answered", "value": "A"}}})
+        self.cli("context", "set", "--root", self.control, "--layer", "org", "--file", self.control / "layer.json")
+        self.cli("context", "resolve", "--root", self.control)
+        self.put_json("layer.json", {"slices": {"architecture": {"status": "answered", "value": "B"}}})
+        self.cli("context", "set", "--root", self.control, "--layer", "org", "--file", self.control / "layer.json")
+        self.cli("context", "resolve", "--root", self.control)
+        self.put_json("layer.json", {"slices": {"architecture": {"status": "answered", "value": "A"}}})
+        self.cli("context", "set", "--root", self.control, "--layer", "org", "--file", self.control / "layer.json")
+
+        resolved = self.cli("context", "resolve", "--root", self.control)
+
+        self.assertEqual(resolved["values"]["architecture"], "A")
+        persisted = read_state(self.control)["data"]["resolved_context"]
+        self.assertEqual(persisted["values"]["architecture"], "A")
+
+    def test_replayed_run_operation_never_returns_an_uncommitted_attempt_token(self):
+        specification = {"mode": "new", "requirements": [{"id": "R1", "text": "One",
+            "acceptance_criteria": ["one"], "provenance": {"kind": "authored"}}]}
+        digest = content_hash(specification)
+        approval = approval_record(specification, digest)
+        work_plan = {"spec_hash": digest, "work_items": [{"id": "W1", "kind": "code",
+            "requirement_ids": ["R1"], "dependencies": [], "acceptance_criteria": [{"kind": "code-test", "text": "test"}]}]}
+        validation = validate_plan({**specification, "approval": approval}, work_plan)
+        current = read_state(self.control)
+        transact(self.control, current["version"], "seed-spec", {"kind": "spec.stored", "payload": {"spec": specification}})
+        current = read_state(self.control)
+        transact(self.control, current["version"], "seed-approval", {"kind": "spec.approved", "payload": {"approval": approval}})
+        current = read_state(self.control)
+        transact(self.control, current["version"], "seed-plan", {"kind": "plan.validated", "payload": {
+            "plan": work_plan, "plan_validation": validation}})
+        self.cli("run", "start", "--root", self.control, "--run-id", "replay")
+        first = self.cli("run", "next", "--root", self.control, "--run-id", "replay", "--operation-id", "same-op")
+        self.cli("run", "abandon", "--root", self.control, "--run-id", "replay", "--attempt-id", first["attempt_id"])
+
+        repeated = self.cli("run", "retry", "--root", self.control, "--run-id", "replay", "--item", "W1",
+                            "--operation-id", "same-op")
+
+        active = read_state(self.control)["data"]["runs"]["replay"].get("active_attempt")
+        self.assertTrue(repeated["replayed"])
+        self.assertFalse(repeated["attempt_issued"])
+        self.assertNotIn("attempt_id", repeated)
+        self.assertIsNone(active)
 
 
 if __name__ == "__main__":

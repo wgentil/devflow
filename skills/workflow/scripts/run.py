@@ -207,7 +207,7 @@ def main(argv: list[str] | None = None) -> int:
                 resolved = projection["resolved"]
                 if (not projection["cache_hit"] or state["data"].get("resolved_context") != resolved
                         or state["data"].get("context_projections") != cache):
-                    _commit(root, state["version"], _operation_id(parsed, f"context-resolve:{projection['key']}"),
+                    _commit(root, state["version"], _operation_id(parsed, uuid4().hex),
                         {"kind": "context.resolved", "payload": {"resolved_context": resolved,
                          "context_projections": cache}})
                 result = {**resolved, "projection_cache_hit": projection["cache_hit"]}
@@ -322,36 +322,62 @@ def main(argv: list[str] | None = None) -> int:
             run = data.get("runs", {}).get(parsed.run_id)
             if run is None:
                 raise WorkflowError("RUN_NOT_FOUND", f"unknown run {parsed.run_id}")
-            if parsed.run_command == "retry":
-                item_id = parsed.item or (run.get("active_attempt") or {}).get("item_id")
-                if not item_id or not run["items"].get(item_id, {}).get("attempts"):
-                    raise WorkflowError("NO_PREVIOUS_ATTEMPT", "retry requires a prior attempt for the item")
-                last = run["items"][item_id]["attempts"][-1]
-                if last["status"] == "active":
-                    raise WorkflowError("ATTEMPT_ACTIVE", "abandon the active attempt before retrying")
-                if run.get("active_attempt"):
-                    raise WorkflowError("ATTEMPT_ACTIVE", "finish or abandon the active attempt first")
-            elif run.get("active_attempt"):
-                result = _run_brief(run, [run["active_attempt"]["item_id"]], parsed.max_bytes)
-            if parsed is not None:
-                if run.get("active_attempt"):
-                    pass
-                elif parsed.item:
-                    item_id = parsed.item
+            operation_id = _operation_id(parsed, uuid4().hex)
+            previous = state["operations"].get(operation_id)
+            if previous is not None:
+                prior_attempt = previous.get("payload", {}).get("attempt", {})
+                if (previous.get("kind") == "run.attempt.issued"
+                        and previous.get("payload", {}).get("run_id") == parsed.run_id
+                        and run.get("active_attempt")
+                        and run["active_attempt"].get("token") == prior_attempt.get("token")):
+                    result = _run_brief(run, [run["active_attempt"]["item_id"]], parsed.max_bytes)
                 else:
-                    completed = {key for key, value in run["items"].items() if value["status"] == "complete"}
-                    candidates = ready_items(run["plan"], completed)
-                    if not candidates:
-                        raise WorkflowError("NO_ELIGIBLE_WORK", "no work items are currently eligible")
-                    item_id = candidates[0]["id"]
+                    result = {**run_summary(run), "replayed": True,
+                              "operation_id": operation_id, "event_sequence": previous["sequence"],
+                              "attempt_issued": False}
+            else:
+                if parsed.run_command == "retry":
+                    item_id = parsed.item or (run.get("active_attempt") or {}).get("item_id")
+                    if not item_id or not run["items"].get(item_id, {}).get("attempts"):
+                        raise WorkflowError("NO_PREVIOUS_ATTEMPT", "retry requires a prior attempt for the item")
+                    last = run["items"][item_id]["attempts"][-1]
+                    if last["status"] == "active":
+                        raise WorkflowError("ATTEMPT_ACTIVE", "abandon the active attempt before retrying")
+                    if run.get("active_attempt"):
+                        raise WorkflowError("ATTEMPT_ACTIVE", "finish or abandon the active attempt first")
+                elif run.get("active_attempt"):
+                    result = _run_brief(run, [run["active_attempt"]["item_id"]], parsed.max_bytes)
+                if not run.get("active_attempt"):
+                    if parsed.run_command != "retry" and parsed.item:
+                        item_id = parsed.item
+                    elif parsed.run_command != "retry":
+                        completed = {key for key, value in run["items"].items() if value["status"] == "complete"}
+                        candidates = ready_items(run["plan"], completed)
+                        if not candidates:
+                            raise WorkflowError("NO_ELIGIBLE_WORK", "no work items are currently eligible")
+                        item_id = candidates[0]["id"]
                 if not run.get("active_attempt"):
                     updated = issue_attempt(run, item_id)
                     token = updated["active_attempt"]["token"]
                     brief_result = _run_brief(updated, [item_id], parsed.max_bytes)
-                    _commit(root, state["version"], _operation_id(parsed, f"run-attempt:{parsed.run_id}:{token}"),
-                            {"kind": "run.attempt.issued", "payload": {"run_id": parsed.run_id,
-                                                                           "attempt": updated["active_attempt"]}})
-                    result = brief_result
+                    response = transact(root, state["version"], operation_id,
+                        {"kind": "run.attempt.issued", "payload": {"run_id": parsed.run_id,
+                                                                       "attempt": updated["active_attempt"]}})
+                    if not response["replayed"]:
+                        result = brief_result
+                    else:
+                        committed_run = response["state"]["data"]["runs"][parsed.run_id]
+                        committed_attempt = response["event"].get("payload", {}).get("attempt", {})
+                        if (response["event"].get("kind") == "run.attempt.issued"
+                                and response["event"].get("payload", {}).get("run_id") == parsed.run_id
+                                and committed_run.get("active_attempt")
+                                and committed_run["active_attempt"].get("token") == committed_attempt.get("token")):
+                            result = _run_brief(committed_run, [committed_run["active_attempt"]["item_id"]],
+                                                parsed.max_bytes)
+                        else:
+                            result = {**run_summary(committed_run), "replayed": True,
+                                      "operation_id": operation_id, "event_sequence": response["event"]["sequence"],
+                                      "attempt_issued": False}
         elif parsed.command == "run" and parsed.run_command in {"status", "summary"}:
             root = Path(parsed.root).expanduser().resolve()
             state = read_state(root)
