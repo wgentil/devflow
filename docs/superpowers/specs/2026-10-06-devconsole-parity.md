@@ -70,6 +70,15 @@ The current implementation demonstrates only this initial coverage; broader pari
 
 P01 and the remaining portions of these rows are not complete. Build, review, acceptance, and delivery gates remain unavailable in this increment. No broad parity row is marked complete based only on foundation tests.
 
+### Verification and review/delivery increment (in progress)
+
+| Rows | Implemented component | Acceptance evidence | Remaining scope |
+| --- | --- | --- | --- |
+| P12 (partial), P13 (partial) | `workflow_lib/evidence.py`, `workflow_lib/test_changes.py`, and `build verify` / `build test-change` | `tests/test_evidence.py`, `tests/test_test_changes.py`; attempt-bound RED/GREEN and explicit approved patch hashes; GREEN invalidation replays across referencing runs | Structured-review integration, CLI end-to-end test-change scenario, and full revalidation routing |
+| P14 (partial), P15 (partial) | `workflow_lib/verifiers.py`; `verify-iac-plan`, `verify-iac-apply`, and `verify-eval-set` | `tests/test_verifiers.py`; plan/policy and exact apply authorization; same-case baseline/post threshold; typed proof binding | External toolchain availability and end-to-end run fixtures |
+
+These are initial conditional verifier paths, not completion of P12–P15. Independent review, acceptance, and delivery remain unavailable until their later tasks land.
+
 Token-efficiency acceptance spans P05 (scoped context and brief budgets), P06 (versioned digest reuse), P09–P10 (compact routing and fresh-session resume), and P28–P30 (usage and offload measurement). Task 7 implements scoped briefs, context projection reuse, compact output/inspection, and best-effort byte telemetry. In the deterministic brief fixture, one complete `run next` response measured 967 bytes and one helper call; four separate responses carrying the same required facts measured 979 bytes and four calls. The combined response is 12 bytes smaller in this fixture and uses three fewer calls. This is a small fixture result, not a token-savings claim. Digest caching and actual usage comparisons remain deferred. Input/output byte counts alone cannot establish tokens saved. See the design's token-efficiency contract and the foundation plan's Task 7.
 
 Each row receives a linked implementation component, automated or reproducible acceptance scenario, result artifact, and remaining limitations. The final report lists achieved, conditional, and excluded capabilities separately. No percentage is reported until a documented weighting and verified evidence exist. Additional baseline capabilities discovered during implementation extend this matrix rather than disappearing from scope.

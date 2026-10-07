@@ -65,16 +65,16 @@ All new records include schema version 1 and stable IDs. Mutations use `transact
 
 **Contract:** Proposal records include patch digest, exact test paths, preimage hashes, reason and pending/approved/applied status. Approval confirms the exact proposal digest; only content changes to locked paths are allowed, and changed tests invalidate affected GREEN proofs in every referencing run. Applying a proposal is a separate explicitly authorized mutation. IaC plan/policy and apply/policy proofs have distinct phases; apply requires recorded exact command/repository scope authorization. Agent-config records baseline/post evaluation-set hash, case identities, results and configured threshold in [0,1]. Code proofs never satisfy IaC/evaluation criteria. Generic gates run declared tools with fresh bound evidence.
 
-- [ ] Add the following regression/acceptance tests with these assertions:
+- [x] Add regression tests for locked test changes, cross-run GREEN invalidation, IaC plan/apply authorization, evaluation baselines, and typed proof binding.
 
   - test_proposal_without_approval: propose a patch; assert no test file change and GREEN remains locked.
   - test_approved_patch_invalidates_all_dependents: approve exact digest and apply a content-only fixture patch; assert all affected GREEN records stale and original rulings retained.
   - test_iac_and_eval_evidence: run harmless fixture plan/policy/evaluation commands; assert cross-kind proof rejection, unavailable tool state and unauthorized apply rejection.
 
-- [ ] Run `python3 -m unittest tests.test_test_changes tests.test_verifiers -v`; require the intended missing behavior failures before implementation.
-- [ ] Implement the listed interfaces and event/CLI boundaries without changing unrelated records or installing the plugin.
-- [ ] Run `python3 -m unittest tests.test_test_changes tests.test_verifiers -v`; require all tests passing. Run impacted earlier tests when shared contracts change.
-- [ ] Update interface documentation and parity evidence for the task; commit the implementation and tests with the appropriate `Work-Item:` trailer.
+- [x] Ran the focused regression suite before implementation; missing modules failed as expected.
+- [x] Implemented the test-change event/CLI boundaries and typed IaC/evaluation proof paths.
+- [x] `python3 -m unittest tests.test_test_changes tests.test_verifiers tests.test_evidence tests.test_store -v` — 22 tests passed; `python3 -m compileall -q skills/workflow/scripts` passed.
+- [x] Updated usage and build-work instructions; parity evidence is recorded with the implementation commit.
 
 ### Task 3: Review input packages and independent role records
 

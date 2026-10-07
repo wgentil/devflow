@@ -99,6 +99,71 @@ def _apply_event(state: dict, event: dict) -> None:
                 "passed": True, "item_id": proof["item_id"], "token": proof["token"],
                 "evidence_id": proof["id"],
             }
+    elif kind == "test.change.proposed":
+        run = data.setdefault("runs", {}).get(payload.get("run_id"))
+        proposal = payload.get("proposal")
+        if (not run or not isinstance(proposal, dict) or proposal.get("run_id") != run.get("id")
+                or proposal.get("id") in run.setdefault("test_change_proposals", {})):
+            raise WorkflowError("INVALID_EVENT", "invalid or duplicate test-change proposal")
+        run["test_change_proposals"][proposal["id"]] = proposal
+    elif kind == "test.change.approved":
+        run = data.setdefault("runs", {}).get(payload.get("run_id"))
+        proposal = run.get("test_change_proposals", {}).get(payload.get("proposal_id")) if run else None
+        approval = payload.get("approval")
+        if not proposal or not isinstance(approval, dict) or approval.get("proposal_hash") != proposal.get("proposal_hash"):
+            raise WorkflowError("INVALID_EVENT", "approval does not bind the current proposal")
+        proposal["approval"] = approval
+        proposal["status"] = "approved"
+    elif kind == "test.change.applied":
+        run = data.setdefault("runs", {}).get(payload.get("run_id"))
+        proposal = run.get("test_change_proposals", {}).get(payload.get("proposal_id")) if run else None
+        hashes = payload.get("after_hashes")
+        if (not proposal or not proposal.get("approval") or proposal.get("status") != "approved"
+                or not isinstance(hashes, dict) or set(hashes) != set(proposal.get("changed_paths", []))
+                or any(not isinstance(value, str) or len(value) != 64 for value in hashes.values())):
+            raise WorkflowError("INVALID_EVENT", "test-change patch is not approved or already applied")
+        proposal["status"] = "applied"
+        proposal["after_hashes"] = deepcopy(hashes)
+        changed = set(proposal.get("changed_paths", []))
+        for affected_run in data.get("runs", {}).values():
+            for proof_id, proof in affected_run.get("verification_proofs", {}).items():
+                if proof.get("phase") == "GREEN" and changed.intersection(proof.get("test_hashes", {})):
+                    proof["fresh"] = False
+                    if proof_id in affected_run.get("verifier_proofs", {}):
+                        affected_run["verifier_proofs"][proof_id]["passed"] = False
+    elif kind == "verification.typed.recorded":
+        run = data.setdefault("runs", {}).get(payload.get("run_id"))
+        proof = payload.get("proof")
+        active = run.get("active_attempt") if run else None
+        if (not run or not isinstance(proof, dict) or proof.get("passed") is not True or not active
+                or proof.get("run_id") != payload.get("run_id") or proof.get("token") != active.get("token")
+                or proof.get("item_id") != active.get("item_id") or proof.get("id") in run.setdefault("verification_proofs", {})):
+            raise WorkflowError("INVALID_EVENT", "typed proof does not match the active attempt")
+        item = next((item for item in run["plan"]["work_items"] if item["id"] == active["item_id"]), None)
+        if not item or (item.get("kind") == "code"):
+            raise WorkflowError("INVALID_EVENT", "typed evidence cannot verify this work-item kind")
+        if proof.get("kind") == "iac-apply":
+            if item.get("kind") != "iac" or not any(previous.get("kind") == "iac-plan"
+                    and previous.get("passed") is True and previous.get("token") == active["token"]
+                    and previous.get("repo_id") == proof.get("repo_id")
+                    for previous in run["verification_proofs"].values()):
+                raise WorkflowError("INVALID_EVENT", "IaC apply proof requires a matching plan proof")
+        elif proof.get("kind") == "iac-plan" and item.get("kind") != "iac":
+            raise WorkflowError("INVALID_EVENT", "IaC plan proof is for an incompatible item")
+        elif proof.get("kind") == "agent-evaluation":
+            if item.get("kind") != "agent-config":
+                raise WorkflowError("INVALID_EVENT", "evaluation proof is for an incompatible item")
+            if proof.get("phase") == "post":
+                baseline = run["verification_proofs"].get(proof.get("baseline_id"))
+                if (not baseline or baseline.get("phase") != "baseline" or baseline.get("token") != active["token"]
+                        or baseline.get("case_set_hash") != proof.get("case_set_hash")):
+                    raise WorkflowError("INVALID_EVENT", "post evaluation requires the matching baseline")
+        run["verification_proofs"][proof["id"]] = proof
+        final_phase = (proof.get("kind") == "iac-apply" or
+                       proof.get("kind") == "agent-evaluation" and proof.get("phase") == "post")
+        if final_phase:
+            run.setdefault("verifier_proofs", {})[proof["id"]] = {
+                "passed": True, "item_id": proof["item_id"], "token": proof["token"], "evidence_id": proof["id"]}
     else:
         data.update(payload)
 
@@ -116,6 +181,16 @@ def _validate_event_shape(event: dict) -> None:
                                 and isinstance(payload.get("result"), dict)
                                 and isinstance(payload.get("verified"), bool)),
         "verification.recorded": _valid_verification_event(payload),
+        "test.change.proposed": isinstance(payload.get("run_id"), str) and isinstance(payload.get("proposal"), dict),
+        "test.change.approved": (isinstance(payload.get("run_id"), str)
+                                  and isinstance(payload.get("proposal_id"), str)
+                                  and isinstance(payload.get("approval"), dict)),
+        "test.change.applied": (isinstance(payload.get("run_id"), str)
+                                 and isinstance(payload.get("proposal_id"), str)
+                                 and isinstance(payload.get("after_hashes"), dict)),
+        "verification.typed.recorded": (isinstance(payload.get("run_id"), str)
+                                         and isinstance(payload.get("proof"), dict)
+                                         and payload["proof"].get("passed") is True),
     }
     if kind in requirements and not requirements[kind]:
         raise WorkflowError("INVALID_EVENT", f"invalid payload shape for {kind}")

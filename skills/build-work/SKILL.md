@@ -15,3 +15,7 @@ python3 <skill-directory>/scripts/run.py build verify \
 ```
 
 Repeat with `--phase green` after implementation. The proof binds the run, item, token, registered repository, command, repository fingerprint, test hashes, exit status and captured logs. Unsupported reports, timeouts, stale tokens, changed tests and unrelated failures remain unverified. This helper cannot prevent an agent from running commands outside the recorded attempt.
+
+For IaC, run `build verify-iac-plan` with separate plan and policy argv JSON arrays. A passing policy command must emit JSON containing an empty `violations` list. Apply uses `build verify-iac-apply` and an authorization file that exactly names the action, registered repository path, and argv arrays; a same-attempt plan proof is required first. For agent-configuration evaluation, record `verify-eval-set --phase baseline`, then run `--phase post --baseline-id ID` with the same case IDs and the configured pass-rate threshold.
+
+If a RED-locked test needs a correction, propose a content-only patch with `build test-change propose`, review its returned patch and hash, then separately approve and apply that exact hash. The event journal records before/after hashes and invalidates every dependent GREEN proof. Re-run verification after applying it.

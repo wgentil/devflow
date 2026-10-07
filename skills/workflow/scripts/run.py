@@ -499,7 +499,7 @@ def main(argv: list[str] | None = None) -> int:
         _measure_cli(parsed, result, code, started, len((serialized + "\n").encode("utf-8")), input_bytes)
         print(serialized)
         return 2
-    except (OSError, json.JSONDecodeError) as exc:
+    except (OSError, json.JSONDecodeError, ValueError) as exc:
         code = "error"
         result = {"error": "INVALID_INPUT", "message": str(exc)}
         serialized = json.dumps(result, separators=(",", ":"), ensure_ascii=False)
