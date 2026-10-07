@@ -35,6 +35,7 @@ def _identity(req):
 
 def apply_host_event(state: dict, kind: str, request: dict) -> dict:
     req = deepcopy(request)
+    if kind in {'native-start','native-finish'}:return apply_native_event(state,kind,req)
     if kind == 'legacy-adopt':
         require(req.get('adopt_legacy') is True and not any(b['run_id']==req.get('run_id') for b in state.get('host_bindings',{}).values()), 'Legacy adoption is explicit and only for pre-binding runs.')
         run=state.get('runs',{}).get(req.get('run_id'),{})
@@ -47,8 +48,16 @@ def apply_host_event(state: dict, kind: str, request: dict) -> dict:
         if kind == 'model-override':require(binding['role'] == 'implementer', 'Model policy changes belong to current implementer.')
         if kind == 'model-override':
             require(req.get('mode','advisory') in {'strict','advisory'}, 'Supported routing mode required.')
+            require(req.get('target_host') in {None,*HOSTS}, 'Model preference target host must be supported.')
             from .model_policy import PREFERENCE_KEYS
             require(isinstance(req.get('clear',[]),list) and all(k in PREFERENCE_KEYS for k in req.get('clear',[])), 'Clear must explicitly name model preference fields.')
+            import math
+            for key in ('profile','pin','effort','price_version','stage'):
+                require(key not in req or isinstance(req[key],str) and bool(req[key].strip()), 'Preference strings must be nonempty; use clear for removal.')
+            require('allow_unvalidated' not in req or type(req['allow_unvalidated']) is bool, 'Unvalidated permission must be boolean.')
+            require('allowed_models' not in req or isinstance(req['allowed_models'],list) and all(isinstance(m,str) and m for m in req['allowed_models']), 'Model allowlist must be a list; use clear for removal.')
+            require('max_cost' not in req or type(req['max_cost']) in (int,float) and math.isfinite(req['max_cost']) and req['max_cost']>=0, 'Cost cap must be finite and nonnegative; use clear for removal.')
+            require('estimated_tokens' not in req or isinstance(req['estimated_tokens'],dict) and all(type(req['estimated_tokens'].get(k)) in (int,float) and math.isfinite(req['estimated_tokens'][k]) and req['estimated_tokens'][k]>=0 for k in ('input','output')), 'Token estimate needs finite nonnegative input/output values.')
             record = {**req, 'policy_revision':len(run.get('model_overrides', []))+1}
             run.setdefault('model_overrides', []).append(record)
         elif kind == 'model-receipt':
@@ -87,6 +96,7 @@ def apply_host_event(state: dict, kind: str, request: dict) -> dict:
         if original and original not in history: history.append(original)
         require(existing is None or req.get('refresh') is True and existing['binding_id'] == req['binding_id'], 'Session already attached; detach or explicitly refresh.')
         prior = bindings.get(req['binding_id'])
+        if prior and (req.get('resume') or req.get('refresh')):require_no_native_work(run,prior['binding_id'])
         if req.get('resume'):
             require(not req.get('refresh') and prior and prior['status']=='detached' and prior['revision']==req.get('revision'), 'Resume needs exact detached binding revision.', 'STALE_BINDING')
             require(all(prior.get(k)==req.get(k) for k in ('host','session_id','actor_id','role','run_id','project_dir','package_hash','item_id')), 'Resume cannot change attachment identity or work scope.')
@@ -120,6 +130,7 @@ def apply_host_event(state: dict, kind: str, request: dict) -> dict:
     binding = validate_binding(state,req.get('binding_id'),req.get('revision'))
     run = state['runs'][binding['run_id']]
     if kind == 'detach':
+        require_no_native_work(run,binding['binding_id'])
         binding['status'] = 'detached'; binding['revision'] += 1
         return deepcopy(binding)
     if kind == 'task-bind':
@@ -134,7 +145,7 @@ def apply_host_event(state: dict, kind: str, request: dict) -> dict:
             require(req.get('scope') == 'review' and req.get('package_hash') == binding.get('package_hash'), 'Review task must bind attached package.')
             if binding['role'] == 'item-reviewer': require(req.get('item_id') == binding.get('item_id'), 'Review task item differs from attachment.')
         if req.get('invocation_id'):
-            receipt=run.get('model_receipts',{}).get(req['invocation_id'],{})
+            receipt=run.get('model_receipts',{}).get(req['invocation_id']) or run.get('native_invocations',{}).get(req['invocation_id'],{})
             require(receipt_matches_task(receipt,binding,req), 'Invocation receipt does not match task binding, stage, role and work scope.', 'INVOCATION_SCOPE_MISMATCH')
         key = binding['host'] + ':' + binding['session_id'] + ':' + req['task_id']
         tasks = state.setdefault('host_tasks', {})
@@ -154,6 +165,7 @@ def prepare_handoff(state: dict, request: dict) -> dict:
     req = deepcopy(request)
     source = validate_binding(state,req.get('binding_id'),req.get('revision'))
     require(source['role'] == 'implementer', 'Only implementer ownership can be transferred.')
+    require_no_native_work(state['runs'][source['run_id']],source['binding_id'])
     require(req.get('target_host') in HOSTS and isinstance(req.get('handoff_id'),str) and req['handoff_id'], 'Handoff ID and target host required.')
     require(all(isinstance(req.get(k),str) and req[k] for k in ('target_actor_id',)), 'Target actor required.')
     envelope = {**req,'source_release':deepcopy(source['release']),'run_id':source['run_id']}
@@ -168,10 +180,12 @@ def accept_handoff(state: dict, envelope: dict, source_release: dict, destinatio
     prepared = state.get('host_handoffs', {}).get(envelope.get('handoff_id'))
     require(prepared and not prepared.get('accepted'), 'Prepared unaccepted handoff required.')
     source = validate_binding(state,prepared['binding_id'],prepared['revision'])
+    require_no_native_work(state['runs'][source['run_id']],source['binding_id'])
     for left,right in ((prepared['source_release'],source['release']), (source['release'],source_release), (source_release,destination_release)):
         decision = check_release(left,right,1)
         if decision['status'] != 'allow':
             raise WorkflowError('RELEASE_MISMATCH',decision['message'],{'parity':decision,'unchanged_owner':source['binding_id']})
+    require(destination_decision.get('policy_revision',len(state['runs'][source['run_id']].get('model_overrides',[]))) == len(state['runs'][source['run_id']].get('model_overrides',[])), 'Destination policy changed during preflight; source owner unchanged.', 'STALE_STATE')
     require(destination_decision.get('status') == 'allow', 'Destination model profile is ineligible; source owner unchanged.', 'MODEL_POLICY_BLOCKED')
     target = deepcopy(envelope.get('destination', {}))
     _identity(target)
@@ -211,3 +225,61 @@ def receipt_matches_task(receipt, binding, task):
     if scope.get('stage') != task_stage(binding,task):return False
     fields=('item_id','token') if task['scope']=='item' else ('package_hash','item_id') if task['scope']=='review' else ()
     return all(scope.get(key)==task.get(key) for key in fields) and isinstance(receipt.get('policy_revision'),int)
+
+
+def require_no_native_work(run, binding_id):
+    require(not any(record.get('status')=='running' and record.get('scope',{}).get('binding_id')==binding_id for record in run.get('native_invocations',{}).values()), 'Native worker is active; wait for its result or reconcile a stopped invocation.', 'NATIVE_INVOCATION_ACTIVE')
+
+def apply_native_event(state,kind,req):
+    binding=validate_binding(state,req.get('binding_id'),req.get('revision'))
+    run=state['runs'][binding['run_id']]
+    records=run.setdefault('native_invocations',{})
+    identifier=req.get('invocation_id')
+    require(isinstance(identifier,str) and identifier, 'Native invocation ID required.')
+    if kind=='native-start':
+        require(identifier not in records and identifier not in run.get('model_receipts',{}), 'Invocation ID is immutable.')
+        require_no_native_work(run,binding['binding_id'])
+        require(req.get('policy_revision')==len(run.get('model_overrides',[])), 'Model policy changed before native dispatch.', 'STALE_STATE')
+        decision=req.get('decision',{})
+        require(decision.get('status') in {'allow','pending-access'} and decision.get('resolved'), 'Eligible selected native model required.')
+        require(decision.get('status')!='pending-access' or decision.get('mode')=='advisory', 'Pending access cannot satisfy strict dispatch.')
+        scope=invocation_scope(binding,run,req['stage'],{})
+        require(req.get('expected_scope',scope)==scope, 'Attempt or review scope changed during discovery.', 'STALE_STATE')
+        prior=next((r for r in reversed(list(records.values())) if r.get('scope')==scope),None)
+        retry_count=0
+        if prior and prior.get('status')=='interrupted':
+            require(req.get('replacement_of')==prior['invocation_id'], 'Replacement must name the interrupted invocation.')
+            retry_count=prior.get('retry_count',0)+1
+            auth=req.get('replacement_authorization') or {}
+            require(isinstance(auth,dict), 'Replacement authorization must be an object.')
+            explicit=auth.get('approved') is True and isinstance(auth.get('actor_id'),str) and bool(auth['actor_id'])
+            require(explicit or prior.get('retry_allowed') is True and retry_count<=2, 'Replacement needs an explicit user decision; automatic retry allowance exhausted.', 'MODEL_REPLACEMENT_REQUIRED')
+        record={**req,'scope':scope,'status':'running','retry_count':retry_count}
+        records[identifier]=record
+        return deepcopy(record)
+    record=records.get(identifier,{})
+    require(record.get('status')=='running' and all(record.get('scope',{}).get(k)==binding.get(k) for k in ('binding_id','revision','actor_id','role','run_id')), 'Native finish requires this binding running invocation.')
+    result=deepcopy(req.get('result',{}));require(result.get('status') in {'completed','interrupted'}, 'Native result status required.')
+    receipt={**deepcopy(record['decision']),'invocation_id':identifier,'stage':record['stage'],'scope':deepcopy(record['scope']),'policy_revision':record['policy_revision'],'account_key':record.get('account_key'),
+             'observed':result.get('observed'),'observation_source':result.get('observation_source'),
+             'invocation_ref':result.get('invocation_ref'),'output_ref':result.get('output_ref'),'usage':result.get('usage')}
+    if result['status']=='completed':
+        from .model_policy import check_model_receipt
+        receipt['status']='allow'
+        receipt['dispatch']=True
+        observed=receipt.get('observed') or {}
+        resolved=receipt.get('resolved') or {}
+        strict=check_model_receipt(receipt,receipt.get('mode','advisory'))
+        if not observed.get('model') or observed['model']!=resolved.get('model') or observed.get('provider') and observed['provider']!=resolved.get('provider'):
+            result.update(status='interrupted',error_kind='unavailable',reason_code='MODEL_SUBSTITUTED')
+        elif strict['status']=='block':result.update(status='interrupted',error_kind='unavailable',reason_code=strict['reason_code'])
+    if result['status']=='interrupted':
+        from .model_policy import interruption
+        receipt.update(status='block',reason_code=result.get('reason_code','INVOCATION_INTERRUPTED'))
+        stopped=interruption(receipt,result.get('error_kind','unavailable'),record.get('retry_count',0))
+        run.setdefault('model_interruptions',[]).append(stopped)
+        record.update(retry_allowed=stopped['retry_allowed'],error_kind=stopped['error_kind'])
+    else:receipt['reason_code']=receipt.get('eligible_reason_code',receipt.get('reason_code','NATIVE_INVOCATION_COMPLETED'))
+    run.setdefault('model_receipts',{})[identifier]=receipt
+    record.update(status=result['status'],result=result)
+    return deepcopy(receipt)

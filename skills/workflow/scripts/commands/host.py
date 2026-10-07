@@ -15,6 +15,18 @@ def register_commands(parser):
         add_journal_options(action)
         action.add_argument('--file', required=True)
         if name in {'attach','handoff-accept','legacy-adopt'}: action.add_argument('--loaded-release', required=True)
+    for name in ('model-discover','model-probe'):
+        action=commands.add_parser(name)
+        action.add_argument('--root',required=True)
+        action.add_argument('--binding-id',required=True)
+        action.add_argument('--revision',type=int,required=True)
+        action.add_argument('--stage',default='implementation')
+        action.add_argument('--refresh',action='store_true')
+    for name in ('model-run','model-reconcile'):
+        native=commands.add_parser(name)
+        native.add_argument('--root',required=True)
+        native.add_argument('--operation-id',required=True)
+        native.add_argument('--file',required=True)
     resolve = commands.add_parser('profile-resolve')
     resolve.add_argument('--root', required=True)
     resolve.add_argument('--binding-id', required=True)
@@ -45,13 +57,28 @@ def dispatch(parsed):
                                   parsed.operation_id if parsed.operation_id_explicit else '', parsed.expected_version)
     from workflow_lib.store import read_state, WorkflowError
     from workflow_lib.hosts import binding_for_session
+    if parsed.host_command in {'model-run','model-reconcile'}:
+        if not parsed.root or not parsed.operation_id_explicit:raise WorkflowError('OPERATION_ID_REQUIRED','Native invocation needs control root and explicit operation ID.')
+        from workflow_lib.native_runtime import invoke, reconcile
+        request=json.loads(Path(parsed.file).read_text())
+        if not isinstance(request,dict):raise WorkflowError('NATIVE_INPUT_REQUIRED','Native request must be an object.')
+        return (invoke if parsed.host_command=='model-run' else reconcile)(Path(parsed.root),request,parsed.operation_id)
+    if parsed.host_command in {'model-discover','model-probe'}:
+        from workflow_lib.hosts import validate_binding
+        from workflow_lib.releases import check_release, release_descriptor
+        state=read_state(Path(parsed.root));binding=validate_binding(state['data'],parsed.binding_id,parsed.revision)
+        parity=check_release(binding['release'],release_descriptor(),1)
+        if parity['status']!='allow':raise WorkflowError('RELEASE_MISMATCH',parity['message'])
+        from workflow_lib.native_runtime import discover, probe
+        if parsed.host_command=='model-probe':return probe(Path(parsed.root),binding,parsed.stage,parsed.refresh)
+        return discover(Path(parsed.root),binding,parsed.refresh)
     if parsed.host_command == 'check':
         from workflow_lib.host_completion import check_completion
         state=read_state(Path(parsed.root))
         binding=state['data'].get('host_bindings',{}).get(parsed.binding_id)
         if not binding: raise WorkflowError('BINDING_REQUIRED','Known binding required.')
         from workflow_lib.releases import release_descriptor
-        return check_completion(state['data'],binding,parsed.task_id,installed_release=release_descriptor())
+        return check_completion(state['data'],binding,parsed.task_id,installed_release=release_descriptor(),control_root=Path(parsed.root))
     if parsed.host_command == 'status':
         state = read_state(Path(parsed.root))
         binding = binding_for_session(state['data'],parsed.host,parsed.session_id)
@@ -64,7 +91,7 @@ def dispatch(parsed):
         from workflow_lib.hosts import validate_binding
         state=read_state(Path(parsed.root))
         binding=validate_binding(state['data'],parsed.binding_id,parsed.revision)
-        return _resolve_model(state['data'],binding,parsed.stage)
+        return _resolve_model(state['data'],binding,parsed.stage,parsed.root)
     request = json.loads(Path(parsed.file).read_text())
     if not isinstance(request,dict):raise ValueError('host request must be an object')
     from workflow_lib.journal_domains import digest
@@ -111,7 +138,11 @@ def dispatch(parsed):
             source_release = release_descriptor(source_root)
             request['source_release'] = source_release
             request['destination_release'] = installed
-            request['destination_decision'] = _resolve_model(state['data'],target,'implementation')
+            from workflow_lib.hosts import _identity, require
+            _identity(target)
+            require(target['host']==prepared.get('target_host') and target['actor_id']==prepared.get('target_actor_id') and target['run_id']==source.get('run_id') and target['project_dir']==source.get('project_dir') and target['role']=='implementer' and (not prepared.get('target_session_id') or target['session_id']==prepared['target_session_id']), 'Destination differs from prepared target.')
+            from workflow_lib.native_runtime import handoff_preflight
+            request['destination_decision'] = handoff_preflight(Path(parsed.root),state['data'],target)
             # Repeat reads immediately before committing; no cached source identity is sufficient.
             if release_descriptor(source_root) != source_release or release_descriptor() != installed:
                 raise WorkflowError('RELEASE_CHANGED','Package changed during transfer; source owner unchanged.')
@@ -130,7 +161,7 @@ def dispatch(parsed):
         invocation_id=request['receipt'].get('invocation_id')
         stage=request['receipt'].get('stage','implementation')
         request['resolution_policy_revision']=len(state['data']['runs'][binding['run_id']].get('model_overrides',[]))
-        request['receipt']={**_resolve_model(state['data'],binding,stage),'invocation_id':invocation_id,'stage':stage}
+        request['receipt']={**_resolve_model(state['data'],binding,stage,parsed.root),'invocation_id':invocation_id,'stage':stage}
     from .journal import commit
     from workflow_lib.store import LIVE_TRANSFER, HOST_CONTEXT
     binding_token=None
@@ -154,9 +185,9 @@ def dispatch(parsed):
     return result
 
 
-def _resolve_model(data, binding, stage):
+def _resolve_model(data, binding, stage, root=None):
     from workflow_lib.model_policy import resolve_host_profile
-    return resolve_host_profile(data,binding,stage)
+    return resolve_host_profile(data,binding,stage,root)
 
 
 def _repair_task_index(data, result, root):

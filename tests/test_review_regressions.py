@@ -182,12 +182,16 @@ class ReviewRegressions(unittest.TestCase):
 
     def test_tilde_root_uses_one_directory_for_state_and_telemetry(self):
         path = self.put_json('org.json', {'slices': {}})
-        with tempfile.TemporaryDirectory(prefix='devflow-review-', dir=Path.home()) as home_temp:
-            root = Path(home_temp)
-            literal_root = '~/' + str(root.relative_to(Path.home()))
-            result = subprocess.run([sys.executable, str(ENTRY), 'context', 'set', '--root', literal_root,
-                                     '--layer', 'org', '--file', str(path)], cwd=self.repo, env=self.env,
-                                    text=True, capture_output=True)
-            self.assertEqual(result.returncode, 0, result.stderr)
+        with tempfile.TemporaryDirectory(prefix='devflow-review-') as home_temp:
+            root = Path(home_temp) / 'control'
+            stdout = io.StringIO()
+            # Isolate home expansion without writing to or changing the real home.
+            original = Path.expanduser
+            def expand(value):
+                return root if str(value) == '~/control' else original(value)
+            with patch.object(Path, 'expanduser', expand), redirect_stdout(stdout):
+                code = dispatcher.main(['context', 'set', '--root', '~/control',
+                                        '--layer', 'org', '--file', str(path)])
+            self.assertEqual(code, 0, stdout.getvalue())
             self.assertTrue((root / 'offload.jsonl').is_file())
             self.assertFalse((self.repo / '~').exists())

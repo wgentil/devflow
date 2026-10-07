@@ -11,7 +11,8 @@ description: Record fresh, attempt-bound verification evidence for Devflow work 
 flowchart TD
     Attempt["Active item and attempt token"] --> Kind{"Work-item kind"}
     Kind -->|Code| Red["Record target RED failure with locked test hashes"]
-    Red --> Code["Implement code"]
+    Red --> Native["Resolve native implementation model and immutable invocation scope"]
+    Native --> Code["Implement code; record actual worker result"]
     Code --> Green["Run declared targets for GREEN"]
     Kind -->|IaC| Plan["Verify plan and policy"]
     Plan --> Auth["Record explicit apply authorization bound to plan"]
@@ -66,5 +67,10 @@ in workflow mutations; transferred/stale bindings require refresh. Map actual
 host task IDs explicitly and check completion using the shared host policy.
 For model work here request `implementation` stage routing; deterministic helper execution
 uses no separate model. Unknown effective settings remain advisory; strict mode
-blocks. Native model launch/access/discovery is not integrated; explicit pins
-pause in the shipped resolver. See [host contracts](../../docs/hosts.md) for handoff and model limits.
+blocks. New scoped workers use bundled native discovery and launch; explicit advisory
+pins require user permission for unvalidated suitability. Claude effort remains unobservable. See [host contracts](../../docs/hosts.md) for handoff and model limits.
+
+Before delegated model work, follow the [native invocation guide](../../docs/native-models.md).
+Keep the actual actor/stage and item token or review package. Hooks never launch
+workers. Preserve blocked policy decisions and classify interrupted work before
+any replacement. Deterministic operations do not need a model invocation.

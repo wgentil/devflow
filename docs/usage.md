@@ -70,12 +70,12 @@ The implementation uses `fcntl` advisory locks and is supported on macOS/Linux. 
 
 Current local helpers cover context, specifications, planning, attempts,
 verification, independent review, requirement acceptance, delivery records,
-ingestion, issues, migration, hardening and reporting. Provider dispatch needs an
-injected adapter; actual runtime usage and prices remain explicit inputs. Semantic
+ingestion, issues, migration, hardening and reporting. Scoped native dispatch uses the installed host CLI and existing login; reported
+worker usage is recorded when available, while prices remain explicit sourced inputs. Semantic
 spec-gap interviews and automatic rework dispatch remain agent responsibilities.
 Claude hooks, explicit attachment and parity-checked sequential handoff are
-implemented. Native Codex installation remains unverified; model launch/account
-validation/discovery remain missing production integration. Never treat unsupported or unavailable gates as passing evidence.
+implemented. Native Codex installation remains unverified; native model discovery,
+selection probes and workers are documented in [native usage](native-models.md). Never treat unsupported or unavailable gates as passing evidence.
 
 The auxiliary commands are now routed and journal-backed. Mutations require a
 control root and explicit operation ID; retry receipts survive fresh sessions and

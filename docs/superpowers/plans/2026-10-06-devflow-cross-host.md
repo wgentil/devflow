@@ -143,11 +143,33 @@ Self-review completed: all 30 requirements mapped; interfaces use JSON-compatibl
 
 ## Execution disposition (2026-10-07)
 
-Tasks 1–4 and 6–7 are implemented; Task 5's policy libraries and durable receipts
-are implemented but native model launch/account validation/discovery are absent.
-Task 8 produced real Claude/local CLI evidence and a fresh independent review.
-Seven important behavioral findings were fixed; native model integration remains
-a delivery blocker. The original unchecked steps remain the original plan, not
-an assertion of completion. See [requirement report](../../cross-host-validation.md)
-and [decisions and review](../../cross-host-execution-review.md). Full-spec completion
-and delivery are pending; no merge/push/install was authorized or performed.
+Tasks 1–8 are implemented and reviewed with the documented native Codex installation
+verification limit. The Task 5 native integration gap was completed by Task 9 after
+the user's continuation. The original unchecked steps preserve the original plan;
+current evidence is in [validation](../../cross-host-validation.md) and
+[execution review](../../cross-host-execution-review.md). No merge/push/install was
+authorized or performed.
+
+### Task 9: Complete native model integration (continuation)
+
+The user directed continuation after the independent-review fixes. Complete the
+R24–R27/R29 gap within the approved spec: connect Codex app-server account/model
+and effective thread configuration; connect Claude auth and explicit selected-model
+launch validation, without claiming observable effort. Use bundled Python only,
+existing host login and argv-safe native controls. Add bounded transport, account/
+policy/release cache, scoped invocation start/result and actual native output refs.
+Never probe or dispatch from completion hooks. Keep unknown pricing/strict
+observation blocked, candidates unvalidated, original attempt/ownership intact.
+
+- [x] Reproduce transport, account/cache isolation, candidate eligibility, strict
+  honesty, policy race, worker failure/retry, scope and native invocation cases RED.
+- [x] Implement production discovery/probe and native invocation commands with
+  recorded start before external work; protect ownership while worker is active.
+- [x] Run targeted and full tests, then actual Claude/Codex read-only native smoke
+  using explicitly selected disposable-fixture models and actual host metadata.
+- [x] Update every affected guide/example/diagram and R1–R30 review. No automatic
+  capability promotion and no native installation/global upgrade.
+
+Task 9 validation: 267 tests pass; independent native review findings fixed with RED→GREEN
+regressions, live tiny workers recorded for both hosts. Native Codex plugin installation
+remains unverified. Changes preserved uncommitted because current Git metadata is read-only.

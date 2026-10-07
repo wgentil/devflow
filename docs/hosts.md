@@ -14,8 +14,8 @@ release when reading workflow instructions; after an upgrade, reload/restart and
 explicitly refresh attachment. Unknown loaded release blocks attachment/handoff.
 
 Codex uses explicit completion checks. Claude's completion adapter is implemented
-and has passed a real local-load smoke. Native Codex installation and native model
-launch/discovery integration remain incomplete or unverified; see the validation report.
+and has passed a real local-load smoke. Native Codex installation remains unverified; scoped native model workers
+have passed live CLI smoke tests; see the validation report.
 
 Packaging contracts: [Codex packaging](https://developers.openai.com/plugins/build/plugins)
 and [Claude manifest](https://code.claude.com/docs/en/plugins-reference).
@@ -63,10 +63,10 @@ This release ships profiles but no capability-validated provider defaults. Runti
 availability does not prove suitability. Portable adapters disclose advisory
 recommendations and do not configure an existing parent conversation. The library resolution
 engine supports validated ordered mappings, pins, allowed fallback lists, effort and
-sourced numerical cost caps. Production resolution has no account-access/discovery
-input, so explicit pins are unavailable even if a native host would permit them.
-Native launch, selected-model validation and the discovery cache are not integrated.
-This is missing implementation, not merely missing live test evidence.
+sourced numerical cost caps. Production discovery uses Codex app-server model/list
+or a Claude selected-model native probe. Native workers apply model/effort controls
+and journal actual host model observations; Claude effective effort is unknown.
+See [native usage and recovery](native-models.md).
 Strict mode blocks when mapping, configuration or effective identity is unavailable.
 CLI input cannot manufacture trusted observation receipts.
 
@@ -76,8 +76,8 @@ Unavailable pins pause; fallback requires a validated permitted equivalent mappi
 Auth/network/quota/rate-limit/context failures are distinct from retirement. A model
 interruption preserves attempts/evidence and requires a new recorded invocation.
 Transient retry allowance is bounded at two; no automatic spend escalation.
-The unintegrated library discovery cache is advisory, keyed by host/account/policy with TTL at most one
-hour, invalidated explicitly, on policy revision and on availability failure.
+The production discovery cache is advisory, keyed by host/account/policy/release
+with a fifteen-minute TTL (library maximum one hour), invalidated explicitly, on policy revision and on availability failure.
 Hooks never enumerate models or contact providers.
 
 ## Completion and resume
@@ -138,7 +138,7 @@ Known mapped completion blocks on locator/root/binding inconsistencies, includin
 a wrong existing journal. Repair attachment against the task index's intended
 control root; never edit authoritative history to make a task complete.
 
-Native model integration remains a delivery blocker (R24–R27/R29). Profiles,
-resolution fixtures, receipts and configuration rendering do not constitute
-account validation, actual native launch, retirement handling or runtime discovery.
-No new native model probe is invoked by hooks or the portable resolver.
+Native discovery, selected-model probes and scoped launch are integrated. Hooks
+and portable read-only resolution never launch workers or contact providers.
+No representative capability-validated automatic mappings ship in this release.
+Native Codex plugin installation remains a separately unverified requirement.

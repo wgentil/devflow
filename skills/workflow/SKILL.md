@@ -25,7 +25,7 @@ flowchart TD
     Gaps -->|No| Approval["Human reviews and approves exact spec hash"]
     Approval --> Plan["plan-work: validate coverage and dependencies"]
     Plan --> Next["run next: eligible item and attempt token"]
-    Next --> Model["Resolve stage profile: advisory; native routing incomplete"]
+    Next --> Model["Discover and resolve stage; launch eligible scoped worker"]
     Model --> Build["build-work: implement and verify"]
     Build --> Item["review-work: independent item review"]
     Item --> More{"More work items?"}
@@ -110,13 +110,14 @@ in workflow mutations; transferred/stale bindings require refresh. Map actual
 host task IDs explicitly and check completion using the shared host policy.
 For model work here request `implementation` stage routing; deterministic helper execution
 uses no separate model. Unknown effective settings remain advisory; strict mode
-blocks. Native model launch/access/discovery is not integrated; explicit pins
-pause in the shipped resolver. See [host contracts](../../docs/hosts.md) for handoff and model limits.
+blocks. New scoped workers use bundled native discovery and launch; explicit advisory
+pins require user permission for unvalidated suitability. Claude effort remains unobservable. See [host contracts](../../docs/hosts.md) for handoff and model limits.
 
 Before new model work, resolve the relevant stage with `host profile-resolve` for
-this binding. Native launch, account validation and discovery are not integrated in this
-release; the renderer is a library prototype. Preserve the user's native host
-selection and disclose this limitation. If only an advisory
+this binding. Use `host model-discover` for the native account context, then
+`host model-run` with a unique invocation and operation ID for an eligible scoped
+worker. The bundled helper applies supported native controls and records actual
+host observations. Parent conversation settings stay under user control. If only an advisory
 recommendation is available, disclose it and preserve user/account choices.
 An unavailable pin or strict blocker requires a user decision, not silent fallback.
 Record immutable invocation receipts and interruptions; do not supply caller claims
@@ -130,3 +131,8 @@ explicit `clear` for removal. Known mapped tasks with inconsistent locators bloc
 After a compatible upgrade, refresh an active binding or explicitly resume the
 exact detached revision without changing identity, then remap tasks. See the
 [recovery contracts](../../docs/hosts.md#review-fixes-and-remaining-model-scope).
+
+Before delegated model work, follow the [native invocation guide](../../docs/native-models.md).
+Keep the actual actor/stage and item token or review package. Hooks never launch
+workers. Preserve blocked policy decisions and classify interrupted work before
+any replacement. Deterministic operations do not need a model invocation.

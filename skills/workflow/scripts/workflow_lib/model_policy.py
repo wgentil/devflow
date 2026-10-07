@@ -22,6 +22,7 @@ def resolve_profile(policy: dict, request: dict, capabilities: dict, discovery: 
         entries = entries + [{'provider':'openai' if req.get('host')=='codex' else 'anthropic','model':pin,
                               'efforts':capabilities.get('efforts', []),'status':'candidate','policy_version':policy.get('version')}]
     allowed = req.get('allowed_models')
+    if allowed is not None and not allowed:return {**base,'reason_code':'NO_PERMITTED_MODEL'}
     models = discovery.get('models', {})
     accessible = capabilities.get('models', [])
     for index, entry in enumerate(entries):
@@ -32,6 +33,7 @@ def resolve_profile(policy: dict, request: dict, capabilities: dict, discovery: 
         if not validated and not (pin and req.get('allow_unvalidated') and mode == 'advisory'): continue
         if model not in accessible or models.get(model) != 'available': continue
         if effort not in entry.get('efforts', []): continue
+        if capabilities.get('model_efforts') is not None and effort not in capabilities['model_efforts'].get(model,[]):continue
         if req.get('max_cost') is not None:
             cap=req['max_cost']
             price=(prices or {}).get('rates', {}).get(entry['provider']+'/'+model)
@@ -51,8 +53,9 @@ def resolve_profile(policy: dict, request: dict, capabilities: dict, discovery: 
         if mode == 'strict' and (not configured or not observable or not validated):
             return {**base,'reason_code':'STRICT_UNOBSERVABLE'}
         return {**base,'status':'allow','dispatch':configured,'resolved':{'provider':entry['provider'],'model':model,'effort':effort},
-                'reason_code':'VALIDATED_DEFAULT' if index == 0 else 'VALIDATED_FALLBACK',
-                'validation_ref':entry.get('validation_ref'), 'configuration_supported':configured,
+                'reason_code':('VALIDATED_DEFAULT' if index == 0 else 'VALIDATED_FALLBACK') if validated else 'UNVALIDATED_ADVISORY',
+                'capability_validated':bool(validated),
+                'validation_ref':entry.get('validation_ref') if validated else None, 'configuration_supported':configured,
                 'effective_identity_available':observable,
                 'price_version':(prices or {}).get('version')}
     if pin: return {**base,'reason_code':'PIN_UNAVAILABLE'}
@@ -88,22 +91,19 @@ def interruption(invocation: dict, error_kind: str, retries: int) -> dict:
             'replacement_requires_new_invocation':True}
 
 
-PREFERENCE_KEYS = {'mode','profile','pin','effort','allowed_models','max_cost','estimated_tokens','allow_unvalidated'}
+PREFERENCE_KEYS = {'mode','profile','pin','effort','allowed_models','max_cost','estimated_tokens','allow_unvalidated','price_version'}
 
-def effective_preferences(run: dict, stage: str) -> dict:
+def effective_preferences(run: dict, stage: str, host: str | None = None) -> dict:
     """Apply explicit field changes in journal order; omission never removes a constraint."""
     result = {}
     for entry in run.get('model_overrides', []):
-        if entry.get('stage') not in {None, stage}: continue
+        if entry.get('stage') not in {None, stage} or entry.get('target_host') not in {None,host}:continue
         for key in entry.get('clear', []): result.pop(key, None)
         result.update({key:entry[key] for key in PREFERENCE_KEYS if key in entry})
     return result
 
 
-def resolve_host_profile(data, binding, stage):
-    """Portable adapter disclosure: no authenticated launch/observation surface."""
-    import json
-    from .releases import PACKAGE_ROOT
-    policy=json.loads((PACKAGE_ROOT/'definitions/model-policy.json').read_text())
-    request={**effective_preferences(data['runs'][binding['run_id']],stage),'host':binding['host'],'stage':stage}
-    return resolve_profile(policy,request,{'configure':False,'observe':False,'models':[],'efforts':[]},{},None)
+def resolve_host_profile(data, binding, stage, root=None):
+    """Use cached native context; no host/provider I/O at completion boundaries."""
+    from .native_runtime import resolve, cached_context
+    return resolve(data,binding,stage,cached_context(root,binding))

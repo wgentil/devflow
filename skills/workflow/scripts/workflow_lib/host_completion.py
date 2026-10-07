@@ -26,7 +26,7 @@ def package_current(run, package):
     return bool(package.get('repositories'))
 
 
-def check_completion(state: dict, binding: dict, task_id: str, live: bool = True, installed_release: dict | None = None) -> dict:
+def check_completion(state: dict, binding: dict, task_id: str, live: bool = True, installed_release: dict | None = None, control_root: Path | None = None) -> dict:
     key=binding['host']+':'+binding['session_id']+':'+task_id
     task=state.get('host_tasks',{}).get(key)
     if not task:return _decision('inactive','TASK_UNMAPPED')
@@ -43,14 +43,16 @@ def check_completion(state: dict, binding: dict, task_id: str, live: bool = True
     if not run:return _decision('block','RUN_UNAVAILABLE')
     from .model_policy import effective_preferences
     stage=task_stage(binding,task)
-    mode=effective_preferences(run,stage).get('mode','advisory')
+    mode=effective_preferences(run,stage,binding['host']).get('mode','advisory')
+    native=run.get('native_invocations',{}).get(task.get('invocation_id'),{})
+    if native and native.get('status')=='running':return _decision('block','NATIVE_INVOCATION_ACTIVE')
     receipt=run.get('model_receipts',{}).get(task.get('invocation_id'),{})
     if receipt:
         if not receipt_matches_task(receipt,binding,task):return _decision('block','INVOCATION_SCOPE_MISMATCH')
         mode=receipt.get('mode',mode)
     else:
         from .model_policy import resolve_host_profile
-        eligibility=resolve_host_profile(state,binding,stage)
+        eligibility=resolve_host_profile(state,binding,stage,control_root)
         if eligibility['reason_code']=='DETERMINISTIC':receipt=eligibility
         elif eligibility['status']=='block' and mode != 'strict':return _decision('block',eligibility['reason_code'])
     if any(i.get('invocation_id') == task.get('invocation_id') for i in run.get('model_interruptions',[])):

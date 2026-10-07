@@ -329,8 +329,7 @@ Users choose upgrades. Current helpers enforce explicit host ownership, task sco
 and exact release parity at handoff. Reload instructions and refresh an active
 binding, or explicitly resume a compatible detached binding with its revision.
 No automatic installer/updater is included. Claude hooks are implemented; native
-Codex local installation remains unverified. Native model launch/discovery is
-missing; see [host contracts](hosts.md) and [requirement review](cross-host-validation.md).
+Codex local installation remains unverified. Native model launch/discovery is implemented; see [host contracts](hosts.md) and [requirement review](cross-host-validation.md).
 
 ## Reference and maintenance
 
@@ -420,6 +419,5 @@ from the recorded invocation and rejects another binding's receipt.
 Exact host retries compare the original kind/request/loaded release before rejecting
 a now-stale precondition. They return the original committed response without
 reapplying it. Changed input requires a new operation ID. `host profile-resolve`
-currently supplies no authenticated native model-access/discovery input; pins block.
-`delegated_configuration` and discovery cache are library-only prototypes, not a
-production launch adapter. R24–R27/R29 remain incomplete end to end.
+uses cached native context without provider I/O. Native commands and JSON inputs
+are documented in [native model command reference](native-models.md#developer-command-reference).

@@ -1,0 +1,9 @@
+{
+  "binding_id": "replace-with-active-binding",
+  "revision": 1,
+  "invocation_id": "implementation-001",
+  "worker_stop_confirmation": {
+    "approved": true,
+    "actor_id": "replace-with-human-who-confirmed-worker-and-children-stopped"
+  }
+}

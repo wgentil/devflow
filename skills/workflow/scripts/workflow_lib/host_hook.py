@@ -37,7 +37,7 @@ def evaluate(project_dir, session_id, event, task_id=None):
     if Path(binding['project_dir']).resolve() != project:issue='PROJECT_BINDING_MISMATCH'
     if event == 'TaskCompleted':
         from .releases import release_descriptor
-        decision=check_completion(state,binding,task_id,installed_release=release_descriptor())
+        decision=check_completion(state,binding,task_id,installed_release=release_descriptor(),control_root=root)
         if known_mapped and decision['status'] == 'inactive':
             return {'status':'block','reason_code':'TASK_MAPPING_UNAVAILABLE','message':'Repair the task index/locator against the authoritative journal.'}
         if decision['status'] != 'inactive' and issue:

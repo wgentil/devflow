@@ -1,0 +1,9 @@
+{
+  "binding_id": "replace-with-active-binding",
+  "revision": 1,
+  "invocation_id": "implementation-001",
+  "stage": "implementation",
+  "prompt": "Implement the current bounded work item from the authoritative brief.",
+  "access": "workspace-write",
+  "timeout_seconds": 300
+}

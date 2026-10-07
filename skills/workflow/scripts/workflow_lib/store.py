@@ -39,6 +39,10 @@ def _apply_event(state: dict, event: dict) -> None:
         from .hosts import validate_binding
         guard = event['host_binding']
         validate_binding(data,guard['binding_id'],guard['revision'])
+    if kind in {'run.attempt.issued','run.attempt.abandoned','run.result.recorded','run.item.amended','run.discarded','review.package.prepared'}:
+        run = data.get('runs', {}).get(payload.get('run_id'), {})
+        if any(record.get('status') == 'running' for record in run.get('native_invocations', {}).values()):
+            raise WorkflowError('NATIVE_INVOCATION_ACTIVE', 'Stop or finish native work before changing the attempt.')
     if kind.startswith("domain."):
         from .journal_domains import reduce_event
         result = reduce_event(data, kind, payload, event.get("sequence", 1) - 1)
@@ -596,7 +600,7 @@ def transact(root: Path, expected_version: int, operation_id: str, event: dict) 
                 require(check_release(binding['release'],release_descriptor(),1)['status']=='allow', 'Installed helper differs from attached release; reload and refresh.', 'RELEASE_MISMATCH')
             request = event['payload'].get('request',event['payload'])
             if binding['role'] != 'implementer':
-                require(event['kind'] in {'review.package.prepared','review.recorded','domain.host.detach','domain.host.task-bind','domain.host.model-receipt','domain.host.model-interrupt'}, 'Reviewer binding cannot mutate implementation.')
+                require(event['kind'] in {'review.package.prepared','review.recorded','domain.host.detach','domain.host.task-bind','domain.host.model-receipt','domain.host.model-interrupt','domain.host.native-start','domain.host.native-finish'}, 'Reviewer binding cannot mutate implementation.')
                 if event['kind'] == 'review.recorded':
                     review=request.get('review', {})
                     require(review.get('actor_id') == binding['actor_id'] and review.get('package_hash') == binding.get('package_hash'), 'Assessment must match reviewer attachment.')

@@ -12,11 +12,13 @@ discarded spending/model restrictions, detached upgrade/resume, committed retrie
 and item-review mutation scope. Additional checks cover policy races, interruption
 identity, explicit preference removal, CLI recovery and deterministic delivery.
 
-The eighth finding remains a delivery blocker: native model launch, selected-model
-account validation and discovery are not integrated. The library renderer/cache
-have no production invocation path. R24–R27/R29 are NOT MET end to end. R1/R22
-remain CANNOT VERIFY for native Codex install readiness. No merge, push, publication
-or global installation was performed. See [requirements and verification](cross-host-validation.md).
+The eighth finding was the native launch/access/discovery gap. The user's continuation
+led to Task 9: actual native account discovery, selected-model probes, bounded workers,
+cache integration and journaled observations/results. A fresh independent review of
+this added scope found seven important issues, no critical issues; all were reproduced
+and fixed with native regression tests. No second review of this fix pass was requested.
+R1/R22 remain CANNOT VERIFY for native Codex plugin installation. No merge, push,
+publication, installation or automatic upgrade was performed.
 
 ## Rulings I made
 
@@ -42,7 +44,7 @@ or global installation was performed. See [requirements and verification](cross-
 
 - Fix portable example runner project import path — absolute invocation otherwise reports loader error rather than declared target RED — imports the actual working project, verified RED→GREEN.
 
-- Native model integration is NOT MET and remains a delivery blocker — the plan's model task delivered library contracts without a supported account-validation/launch/discovery path; return the missing scope explicitly rather than infer access or strict evidence — full requested integration is incomplete, and promoting this branch would falsely promise working pins and native routing.
+- Historical ruling, superseded by Task 9 after the user requested continuation: Native model integration was NOT MET and remained a delivery blocker — the plan's model task delivered library contracts without a supported account-validation/launch/discovery path; return the missing scope explicitly rather than infer access or strict evidence — full requested integration is incomplete, and promoting this branch would falsely promise working pins and native routing.
 
 - Documentation contradiction is materially important under the user's always-update-docs instruction — corrected stale claims while fixing the readiness report; no test for low-impact prose per developer guidance — residual inaccurate text would still mislead users.
 
@@ -74,3 +76,36 @@ The task ledger was maintained manually. The workspace helper was used, but
 per-task task-start/task-done scripts were not used; no claim is made that their
 completion contract ran. All tracked verification assertions derive from actual
 command results. The unresolved plan workspace is preserved.
+
+## Task 9 review and decisions
+
+The new scope connects the libraries to native CLI invocations. Real tiny Codex and
+Claude smoke passed using existing authentication, immutable receipts and exact retry
+replay; Claude effective effort remains unknown. The fresh reviewer independently ran
+16 native and 55 host tests and reproduced seven uncovered important cases. Fix pass:
+model/rerouted interrupts with observed substitution; a lease recheck prevents duplicate
+launch; expected scope rejects stale briefs; bounded safe CAS retries preserve successful
+finish; nonblocking RPC writes include the deadline; descendant cleanup runs after leader
+exit and fails closed on denied cleanup; absent retry authorization is normalized and
+invalid authorization rejected. No remaining minor finding was reported for this increment.
+
+- Use installed native host CLI/login rather than provider SDK credentials — meets zero
+  environment setup — requires that CLI and compatible runtime already be available.
+- Installed generated Codex wire schema takes precedence over contradictory web example
+  sandbox spelling — live invocation proved `read-only`/`workspace-write` — incompatible
+  future host protocols require a diagnostic, not guessed observations.
+- Access probes never promote capability suitability — live selection is observed separately
+  from representative evaluation — no capability-validated automatic defaults ship.
+- Claude reports effective effort as unknown — prevents false strict evidence — strict
+  Claude workers remain unavailable with this transport.
+- Orphan recovery uses explicit human stopped-worker attestation plus lease/launcher checks —
+  no supported cross-process native worker query exists here — PID reuse blocks recovery and
+  a human must inspect and stop descendants before reconciliation.
+- Read-only-home test now isolates Path.expanduser — suite remains runnable in workspace
+  sandbox without changing the user's home — fixture expansion is mocked, not system HOME.
+- Fix misleading unvalidated candidate labels instead of carrying the old deferred minor —
+  production candidates now exercise that path — no automatic suitability claim remains.
+
+Current permissions mark Git metadata read-only and disallow escalation. The worktree
+and evidence are preserved; any commit/delivery requiring Git metadata writes depends
+on a session with that access. Documentation and code remain reviewable locally.

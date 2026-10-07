@@ -82,9 +82,9 @@ records. [CLI walkthrough](usage.md) provides additional commands. Use `df GROUP
 The [approved cross-host design](superpowers/specs/2026-10-06-devflow-cross-host-design.md)
 is partly implemented: shared skills, explicit ownership, task completion, Claude
 hooks and parity-checked sequential handoff are current. Native Codex installation
-remains unverified. Stage profiles and model-policy libraries are present, but
-native model launch, selected-model validation and discovery are missing production
-integration. See the [requirement report](cross-host-validation.md) for unmet scope.
+remains unverified. Stage profiles, native account discovery, selected-model probes and scoped worker
+launch are implemented. See [native usage](native-models.md) and the
+[requirement report](cross-host-validation.md) for verification and remaining limits.
 
 ## Shared hosts
 

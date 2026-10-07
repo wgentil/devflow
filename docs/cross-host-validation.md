@@ -6,8 +6,8 @@ execution. No marketplace was published and no global installation was changed.
 ## Evidence
 
 - Baseline: 158 unittest cases passed before changes.
-- Full current suite: 239 unittest cases PASS after the independent-review fix pass. Package/resource,
-  host, hook, model-policy library and integration checks pass.
+- Full current suite: 267 unittest cases PASS after the native integration and independent-review fix passes. Package/resource,
+  host, hook, native transport, recovery, model-policy and integration checks pass.
 - Claude Code 2.1.284 validated the manifest (warnings: optional author metadata;
   source-maintenance CLAUDE.md is not loaded as installed project context).
 - Real Claude local loading of the 0.2.0 package used `--plugin-dir` on a relocated, read-only package
@@ -26,12 +26,12 @@ execution. No marketplace was published and no global installation was changed.
   marketplace did not list that local test package. No global marketplace/trust/
   installation settings were altered to force discovery. Native install-to-workflow
   remains unverified; shared command verification is not equivalent to installation.
-- Provider defaults have not passed representative capability evaluation. Profiles
-  and validated-mapping resolution are implemented, with no shipped automatic model
-  defaults. Delegated control rendering is tested; actual effective model/effort
-  observability is not asserted by the portable CLI. Strict routing stays blocked.
-  Native launch/account validation/discovery is absent production integration,
-  not simply unverified live evidence. This branch is not ready for full-spec delivery.
+- Provider defaults have not passed representative capability evaluation. No automatic
+  mapping ships. Actual native Codex and Claude tiny worker invocations succeeded
+  with existing logins and explicit advisory models; exact retries replayed receipts
+  and preserved attempt tokens. Codex reported effective model/effort; Claude reported
+  model identity with effort unknown. This tests new worker dispatch independently
+  of native plugin installation. Post-smoke hardening is covered by regression tests.
 
 ## Requirement review
 
@@ -63,12 +63,12 @@ fixture-generated host identities or model names were real provider invocations.
 | R21 safe initialization | MET | Local Git/worktree excludes, stable identity, preservation and root ingestion exclusion. `bootstrap.py:48`; `tests/test_host_bootstrap.py:16`. |
 | R22 install readiness | CANNOT VERIFY | Claude local load/protocol verified, Codex native local discovery not established; no published marketplace/runtime provisioning claimed. `docs/setup-and-usage.md:9`; `tests/test_package.py:60`. |
 | R23 profiles | MET | Stage/effort policy and deterministic no-dispatch. `definitions/model-policy.json:1`; `tests/test_model_policy.py:21`. |
-| R24 supported controls/honesty | NOT MET | Library rendering and strict/advisory safeguards exist, but no production caller configures/launches native model work or validates selected account access. Effective-setting live evidence is also unavailable. `host_models.py:5`; `commands/host.py:1`; `docs/hosts.md:64`. |
-| R25 new models | NOT MET | Library fixtures reject automatic candidates and support explicit unvalidated advisory choices; the public resolver has no accessible-model/discovery input, so actual new-model selection is not integrated. `tests/test_model_policy.py:33`; `model_policy.py:1`. |
-| R26 retirement/pins/budget | NOT MET | Fallback/pin/budget library fixtures and public blocking decisions work; native availability/retirement and permitted-pin selection are not integrated. Global caps/allowlists now survive stage preferences. `tests/test_model_policy.py:38`; `tests/test_host_review_regressions.py:47`. |
-| R27 interruption | NOT MET | Journal interruption records are scoped to their actual binding receipt and preserve attempts; automatic provider-failure capture/replacement is missing without native launch integration. `hosts.py:36`; `tests/test_host_review_regressions.py:97`. |
+| R24 supported controls/honesty | MET | Bundled native discovery/probe/run applies supported controls and records host observations. Claude effort stays unknown and strict blocks. `skills/workflow/scripts/workflow_lib/native_models.py:133`; `skills/workflow/scripts/workflow_lib/native_runtime.py:124`; `tests/test_native_models.py:23`. |
+| R25 new models | MET | Account-scoped runtime access, explicit advisory candidate selection and honest unvalidated receipts; no automatic suitability promotion. `skills/workflow/scripts/workflow_lib/native_runtime.py:33`; `skills/workflow/scripts/workflow_lib/native_runtime.py:57`; `tests/test_native_models.py:42`. |
+| R26 retirement/pins/budget | MET | Native failures invalidate discovery; unavailable pins pause; released validated equivalents alone permit fallback. Host/stage preferences retain allowlists and sourced cost caps. Native probe cannot bypass unknown cost. `skills/workflow/scripts/workflow_lib/native_runtime.py:71`; `skills/workflow/scripts/workflow_lib/model_policy.py:7`; `tests/test_native_models.py:225`. |
+| R27 interruption | MET | Start/result and classified interruption are journaled around actual bounded workers. New replacement IDs, two transient allowances, explicit nontransient decision, conservative orphan reconciliation preserve attempt/evidence. `skills/workflow/scripts/workflow_lib/hosts.py:239`; `skills/workflow/scripts/workflow_lib/native_runtime.py:218`; `tests/test_native_models.py:139`. |
 | R28 audit | MET | Requested/resolved/observed separate; CLI cannot claim observations; authoritative binding/actor/stage/item-token/package scope and policy revision are captured; receipts are immutable and replay pure. `model_policy.py:6`; `hosts.py:36`. |
-| R29 overhead | NOT MET | Library TTL/invalidation cache is tested and hooks make no provider calls, but the cache has no production discovery caller. `model_discovery.py:7`; `tests/test_model_policy.py:58`. |
+| R29 overhead | MET | Production fifteen-minute host/account/policy/release cache, explicit refresh and failure invalidation; hooks remain provider-free. `skills/workflow/scripts/workflow_lib/native_models.py:222`; `skills/workflow/scripts/workflow_lib/native_runtime.py:33`; `tests/test_native_models.py:35`. |
 | R30 destination eligibility | MET | Profile decision and exact parity checked before transfer; source retained on block. `hosts.py:166`; `tests/test_host_handoff.py:32`. |
 
 Module shorthand above resolves under `skills/workflow/scripts/workflow_lib/`;
@@ -90,15 +90,23 @@ cover receipt-policy races, interruption scope, explicit preference removal,
 CLI resume and retry after refresh. All are in
 [review regression tests](../tests/test_host_review_regressions.py).
 
-Finding 8 remains missing native model integration and is a delivery blocker.
-R24–R27/R29 are NOT MET end to end; R1/R22 are CANNOT VERIFY for native Codex
-installation. Fixture libraries and configured-request rendering do not substitute
-for supported selected-model access validation, native dispatch or runtime discovery.
-A further implementation increment is required before claiming full integration.
+The user requested continuation of finding 8. Task 9 now supplies production native
+account discovery, selected-model probes, scoped launch and immutable actual result
+receipts. R24–R27/R29 are MET within the documented adapter limits; R1/R22 remain
+CANNOT VERIFY for native Codex plugin installation. The earlier deferred misleading
+candidate label is fixed to `UNVALIDATED_ADVISORY`, false capability validation and
+no validation reference.
 
-The minor documentation contradiction was addressed as required by the repository's
-documentation-maintenance rule while correcting the important readiness claims.
-Deferred minor: an explicitly unvalidated advisory library candidate still reports
-VALIDATED_DEFAULT/VALIDATED_FALLBACK and may retain a stale validation reference.
-It cannot dispatch in strict mode or enter the current public resolver; the label
-remains misleading. See the [execution decisions](cross-host-execution-review.md).
+A fresh independent review of Task 9 found seven important issues, no critical
+issues: ignored Codex reroutes, duplicate exact launch, preflight scope race, finish
+CAS race, unbounded RPC writes, surviving descendants and null retry authorization.
+Each was reproduced RED and fixed GREEN in [native regression tests](../tests/test_native_models.py).
+No second review of those fixes was requested. Native process cleanup denial fails
+closed; it cannot certify a stopped child when the operating system denies inspection.
+
+Live native invocation references: Codex
+`codex://01a11729-75e2-7301-8f99-b329ba6d7feb` used `gpt-6.1-sol`, observed low effort;
+Claude `claude://affa6be0-b9eb-4d9e-89cc-d30ada244fea` used `claude-sonnet-5-5`, effort
+unknown. Both returned the tiny requested marker, preserved attempts and replayed
+exact retries. These models are evidence of access at test time, not recommended
+or capability-validated defaults. No paid failure/retirement probes were run.

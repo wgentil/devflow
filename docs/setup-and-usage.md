@@ -100,10 +100,14 @@ Stage preferences preserve prior constraints unless explicitly removed. Receipts
 are scoped to the actual binding/actor/stage and item attempt or review package;
 an unrelated earlier advisory receipt cannot relax strict completion.
 
-This release ships profiles and a tested library resolution engine. Native launch,
-selected-model/account validation and runtime discovery are missing implementation;
-explicit pins cannot resolve through the shipped workflow. There are no capability-
-validated automatic provider defaults or portable trusted observation integration.
+This release supports scoped workers using the installed Codex or Claude CLI and
+its existing authentication. Ask “Run this stage with my permitted model and show
+the observed settings.” The agent invokes bundled helpers; no environment variables,
+API keys, helper paths or direct Python commands are required from the user.
+Native discovery and selection use bounded account-scoped caches. Explicit model
+probes and workers may incur provider usage. No capability-validated automatic
+provider defaults are shipped. Claude reports model identity but no trusted effective
+effort, so strict Claude workers pause. See [native worker usage](native-models.md).
 Adapters disclose advisory recommendations. Strict dispatch/completion pauses when
 mapping, configuration or actual model/effort cannot be verified. Existing parent
 conversations are not silently switched. See [model limitations](hosts.md).

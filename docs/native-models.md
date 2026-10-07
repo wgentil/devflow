@@ -1,0 +1,113 @@
+# Native model work
+
+Invoke DevFlow from an initialized project with the plugin enabled. The agent uses
+bundled helpers and the host's existing CLI login. Users do not configure shell
+variables, Python commands, installation paths or API keys. Python 3.11+ and the
+selected host CLI must already be available; Claude provider identity is supported
+only for first-party authentication in this adapter; missing executables/authentication
+produce diagnostics. Native workers are new scoped conversations; they do not
+change the current parent conversation.
+
+Say “Use my permitted model for implementation, advisory with unvalidated
+suitability explicitly allowed; preserve the spending cap and show actual settings.”
+Or “Discover models available to this Codex account before choosing.” Claude has
+no enumerated account model catalog here: an explicit selection is tested by a
+native invocation. Probes and workers can incur provider usage. An access probe
+establishes access, never suitability for specification, coding or review.
+
+No capability-validated automatic mappings ship. Default advisory routing therefore
+returns a stage/effort recommendation without launching. Explicit unvalidated
+choices require an advisory pin and `allow_unvalidated: true`. Strict routing
+requires a released validated mapping, supported configuration and trusted observed
+model/effort. Claude returns model identity but no effective effort, and strict
+Claude work blocks. Codex reads the native thread's effective configuration.
+
+```mermaid
+flowchart TD
+    scope[Attached actor and current item or review scope] --> discover[Existing native login and bounded account discovery]
+    discover --> policy[Resolve stage, pin, effort, allowlist and sourced cost estimate]
+    policy --> blocked{Eligible selected worker?}
+    blocked -->|No| pause[Show recommendation or blocker; preserve owner and attempt]
+    blocked -->|Yes| start[Lock lease and journal immutable invocation before model work]
+    start --> native[Apply native controls and launch bounded scoped worker]
+    native --> result{Completed with matching identity?}
+    result -->|Yes| receipt[Journal actual observations, output reference and usage]
+    result -->|No| interrupted[Record classified interruption and invalidate discovery]
+    interrupted --> replacement[New invocation ID; bounded transient allowance or explicit user decision]
+    replacement --> policy
+    receipt --> proof[Run deterministic verification and ordinary proof/review gates]
+    orphan[Launcher vanished] --> inspect[Human inspects and stops worker and children]
+    inspect --> reconcile[Lease free, launcher absent, explicit stop confirmation]
+    reconcile --> interrupted
+```
+
+Discovery is an advisory fifteen-minute cache keyed by host, opaque account hash,
+policy version and release fingerprint. An explicit refresh or availability failure
+invalidates it. Completion uses cached context and immutable receipts; hooks do not
+enumerate models, launch workers or contact providers. Re-authentication is checked
+before new native work. Raw account metadata is not journaled.
+
+Workers capture binding/revision, actor/role, stage, policy revision and item/token
+or attached review package. Start rejects scope or preference changes during
+preflight. Running workers block attempt changes, detach, refresh and handoff.
+Exact terminal worker and reconciliation retries return the original receipt without
+spending again; changed input under the same operation ID is rejected.
+Provider output is a referenced artifact and is not verification evidence.
+
+Model/auth/quota/context/retirement failures preserve attempts and evidence. Network
+and rate-limit failures permit at most two explicitly requested replacements using
+new invocation IDs; no automatic launch loop is included. Other failures require an
+explicit user decision. Pins never silently fall back. Unknown numerical cost
+estimates block; estimated caps are preflight eligibility checks, not a provider
+billing ceiling. Prices must be a versioned sourced record in the shared journal.
+
+A crashed launcher leaves work blocked. Inspect native processes and stop the
+worker and its children before asking DevFlow to reconcile, naming the human actor
+confirming they stopped. Reconciliation checks the invocation lease and recorded
+launcher PID; a live or reused PID fails closed. It never kills an arbitrary PID,
+restarts work or treats a crash as a failed test. Stop confirmation is a human
+attestation because this adapter has no native cross-process worker-status query.
+
+Destination handoff checks its own account and selected-model eligibility before
+changing ownership. Explicit selections require a small native probe; default
+advisory recommendations do not. A policy change during that check rejects transfer.
+Source remains owner on any mismatch or blocked destination decision.
+
+## Developer command reference
+
+These are optional agent/developer calls, not onboarding steps. Resolve the helper
+relative to the loaded skill. All stateful native calls use the existing control
+root and an explicit operation ID.
+
+```sh
+python3 <workflow-skill>/scripts/run.py host model-discover --root <control> --binding-id <binding> --revision 1
+python3 <workflow-skill>/scripts/run.py host model-probe --root <control> --binding-id <binding> --revision 1 --stage implementation
+python3 <workflow-skill>/scripts/run.py host model-run --root <control> --file <request.json> --operation-id <unique-operation>
+python3 <workflow-skill>/scripts/run.py host model-reconcile --root <control> --file <reconcile.json> --operation-id <unique-operation>
+```
+
+See [worker request](examples/native-worker.json) and
+[stopped-worker reconciliation](examples/native-reconcile.json). Replace fixture
+identities with the active binding. `model-run` fields: binding_id, revision,
+invocation_id, stage, prompt; optional access (`read-only`, default, or
+`workspace-write` for implementation owner), timeout_seconds (1–3600), refresh,
+task_id, replace/previous_mapping_hash, replacement_of and replacement_authorization
+(`approved: true`, actor_id). Output includes status/reason, scoped decision,
+observed settings, native invocation reference, output artifact and optional usage.
+Missing usage remains unavailable. `model-reconcile` requires invocation identity
+and worker_stop_confirmation (`approved: true`, actor_id).
+
+Codex uses app-server initialize/account/read/model/list/thread/start/turn/start;
+configured external MCP and app tools are disabled, approval requests denied.
+Claude uses a native `--agents` definition, explicit model/effort, bounded tool
+allowlist, strict empty MCP configuration and no session persistence. Read-only
+Claude workers allow Read/Glob/Grep; writing workers additionally permit project
+Edit/Write, with Bash requests not automatically approved. Native host settings
+and organization policies may deny these controls; DevFlow reports interruption.
+The adapter targets the documented native CLI protocol, and incompatible future
+host versions produce diagnostics rather than fabricated observations.
+
+Live smoke tests used Codex and Claude 2.1.284 existing logins, exact requested
+model identity, tiny no-tool outputs, immutable receipts and exact retry replay.
+This does not establish native Codex plugin installation or representative model
+capability validation. See [validation](cross-host-validation.md).

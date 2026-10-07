@@ -44,3 +44,8 @@ The preference is a field update, preserving global restrictions; explicit `clea
 removes named fields. Record an implementation receipt while its attempt is active
 and map its returned invocation ID to that exact work. Examples are shapes, not
 evidence of native model launch or account access.
+
+Native worker inputs: [native-worker.json](native-worker.json) uses the active
+binding and current policy selection; [native-reconcile.json](native-reconcile.json)
+is only for a stopped orphan after human confirmation. Follow
+[native usage](../native-models.md); fixture identities do not grant ownership.
