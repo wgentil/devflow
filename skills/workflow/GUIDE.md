@@ -109,6 +109,14 @@ scoring-version mismatch blocks comparison. `improve retrospective --input
 TRACES.json` groups cited feedback by owner without editing the plugin.
 Trace output omits prompts, worker output and repository content. Missing
 runtime usage is unknown; byte estimates do not establish token savings.
+For model suitability, approve cases tagged `specification`, `coding`,
+`debugging` and `review`, then supply actual host/model/version-bound results
+to `improve model-evaluate --root "$CONTROL" --input INPUT.json`. The
+[illustrative input](../../docs/examples/model-suitability.json) shows the
+shape but cannot itself authorize a model: its cases are not in the journal
+and its results are invented. A passing report needs human review and a
+new plugin policy release. Runtime host/model revision checks still apply;
+no automatic provider mapping ships.
 
 ## Optional host Goals
 

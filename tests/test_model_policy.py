@@ -86,3 +86,65 @@ class ModelPolicyTests(unittest.TestCase):
         apply_host_event(state,'model-override',{'binding_id':'b1','revision':1,'mode':'strict','stage':'planning'})
         self.assertEqual(_resolve_model(state,binding,'planning')['status'],'block')
         self.assertEqual(_resolve_model(state,binding,'implementation')['mode'],'advisory')
+
+
+class ReleasedMappingTests(unittest.TestCase):
+    def setUp(self):
+        from workflow_lib.model_validation import evaluate_model
+        stages=('specification','coding','debugging','review')
+        cases=[{'case_id':s,'case_hash':'hash-'+s,'scoring_version':1,'stage':s,
+                'approved_by':'human'} for s in stages]
+        results=[{'case_id':s,'case_hash':'hash-'+s,'scoring_version':1,
+                  'passed':True,'model_revision':'rev1','host':'codex',
+                  'model_id':'model','host_version':'1.2.3'} for s in stages]
+        report=evaluate_model('codex','model','1.2.3',cases,results)
+        thresholds={s:{'min_cases':1,'min_pass_rate':1.0} for s in stages}
+        entry={'provider':'openai','model':'model','efforts':['high'],
+               'status':'validated','validation_ref':report['report_hash'],
+               'validation_report_hash':report['report_hash'],
+               'validation_report':report,'model_revision':'rev1',
+               'host_version_range':{'min':'1.2.3','max':'1.2.3'},
+               'policy_version':'2'}
+        self.policy={'schema_version':2,'version':'2',
+                     'stages':{'planning':'deep-reasoning'},
+                     'profiles':{'deep-reasoning':{'effort':'high'}},
+                     'validation_thresholds':thresholds,
+                     'hosts':{'codex':{'deep-reasoning':[entry]}}}
+        self.cap={'configure':True,'observe':True,'models':['model'],'efforts':['high'],
+                  'model_efforts':{'model':['high']}}
+        self.discovery={'models':{'model':'available'},'host_version':'1.2.3',
+                        'model_revisions':{'model':'rev1'}}
+        self.request={'host':'codex','stage':'planning','mode':'strict'}
+
+    def resolve(self):
+        return resolve_profile(self.policy,self.request,self.cap,self.discovery,None)
+
+    def test_valid_observed_mapping_and_stale_revision(self):
+        self.assertEqual(self.resolve()['reason_code'],'VALIDATED_DEFAULT')
+        self.discovery['model_revisions']['model']='rev2'
+        self.assertEqual(self.resolve()['status'],'block')
+
+    def test_unknown_version_effort_or_retirement_blocks(self):
+        self.discovery['host_version']=None
+        self.assertEqual(self.resolve()['status'],'block')
+        self.discovery['host_version']='1.2.3';self.cap['model_efforts']['model']=[]
+        self.assertEqual(self.resolve()['status'],'block')
+        self.cap['model_efforts']['model']=['high'];self.discovery['models']['model']='retired'
+        self.assertEqual(self.resolve()['status'],'block')
+
+    def test_unvalidated_fallback_and_unknown_cost_block(self):
+        fallback={**self.policy['hosts']['codex']['deep-reasoning'][0],
+                  'model':'fallback','validation_report_hash':'wrong'}
+        self.policy['hosts']['codex']['deep-reasoning'].append(fallback)
+        self.discovery['models']['model']='retired'
+        self.discovery['models']['fallback']='available'
+        self.cap['models'].append('fallback')
+        self.assertEqual(self.resolve()['status'],'block')
+        self.discovery['models']['model']='available'
+        self.request['max_cost']=1
+        self.assertEqual(self.resolve()['reason_code'],'COST_UNKNOWN')
+
+    def test_forged_report_hash_cannot_release_mapping(self):
+        entry=self.policy['hosts']['codex']['deep-reasoning'][0]
+        entry['validation_report']['stages']['review']['passed_count']=0
+        self.assertEqual(self.resolve()['status'],'block')

@@ -23,6 +23,11 @@ def propose_case(trace: dict, feedback: dict) -> dict:
             'owner': feedback['owner'], 'expected': expected, 'command': command,
             'scoring_version': feedback['scoring_version'],
             'timeout_seconds': feedback.get('timeout_seconds', 60)}
+    if 'stage' in feedback:
+        from .model_validation import STAGES
+        if feedback['stage'] not in STAGES:
+            raise WorkflowError('INVALID_CASE', 'supported model evaluation stage required')
+        case['stage'] = feedback['stage']
     if type(case['timeout_seconds']) is not int or not 1 <= case['timeout_seconds'] <= 900:
         raise WorkflowError('INVALID_CASE', 'case timeout must be 1 to 900 seconds')
     case_hash = digest(case)

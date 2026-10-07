@@ -23,6 +23,16 @@ class NativeModelTests(unittest.TestCase):
         self.assertNotIn('private@example.test',json.dumps(identity));self.assertEqual(len(identity['account_key']),64)
         self.assertEqual(context['capabilities']['model_efforts']['candidate'],['high']);self.assertEqual(context['discovery']['models']['other'],'available')
         self.assertEqual(rpc.request.call_args_list[-1].args[1]['cursor'],'more')
+    def test_codex_inventory_exposes_version_but_not_inferred_model_revision(self):
+        from unittest.mock import Mock
+        rpc = Mock()
+        rpc.request.return_value = {'data': [{'model': 'alias',
+                                              'supportedReasoningEfforts': [{'reasoningEffort': 'high'}]}],
+                                    'nextCursor': None}
+        with patch('workflow_lib.native_models._cli_version', return_value='1.2.3'):
+            context = self.backend()('/tmp', rpc=rpc).discover()
+        self.assertEqual(context['discovery']['host_version'], '1.2.3')
+        self.assertNotIn('alias', context['discovery']['model_revisions'])
     def test_codex_configuration_uses_effective_host_response(self):
         Backend=self.backend();from unittest.mock import Mock
         rpc=Mock();rpc.request.return_value={'model':'substitute','modelProvider':'openai','reasoningEffort':'low','thread':{'id':'actual-thread','sessionId':'actual-session'}}

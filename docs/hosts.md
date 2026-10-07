@@ -93,6 +93,13 @@ CLI input cannot manufacture trusted observation receipts.
 
 New models remain candidates until representative specification/coding/debug/review
 evaluations establish suitability and a user-installed release promotes them.
+Policy schema 2 requires approved cases across all four stages, versioned
+thresholds and a report hash bound to the released mapping. Native access is
+only availability evidence. Discovery now reports a host CLI version and a
+model revision only if the native catalog exposes it; absent revision metadata
+cannot qualify a released strict mapping. This release still contains no
+provider defaults. The [suitability guide](native-models.md) separates
+illustrative cases, actual evaluated results and installed-host observations.
 Unavailable pins pause; fallback requires a validated permitted equivalent mapping.
 Auth/network/quota/rate-limit/context failures are distinct from retirement. A model
 interruption preserves attempts/evidence and requires a new recorded invocation.

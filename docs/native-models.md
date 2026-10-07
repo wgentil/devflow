@@ -21,11 +21,23 @@ choices require an advisory pin and `allow_unvalidated: true`. Strict routing
 requires a released validated mapping, supported configuration and trusted observed
 model/effort. Claude returns model identity but no effective effort, and strict
 Claude work blocks. Codex reads the native thread's effective configuration.
+Policy schema 2 now defines versioned representative-eval thresholds for
+specification, coding, debugging and review. An approved case set and observed
+results can produce a candidate report with `improve model-evaluate`; this is
+review material, not an installed mapping. A released mapping must embed its
+matching report hash, policy version, host/model revision and tested host
+version. Runtime resolution accepts it only when current discovery exposes the
+same host version and model revision. Missing revision metadata, an alias with
+unknown backing revision, or a changed host release leaves the mapping
+ineligible. No provider mapping has been released in this package.
 
 ```mermaid
 flowchart TD
     scope[Attached actor and current item or review scope] --> discover[Existing native login and bounded account discovery]
     discover --> policy[Resolve stage, pin, effort, allowlist and sourced cost estimate]
+    cases[Reviewed stage cases] --> eval[Run representative model eval]
+    eval --> release[Human-reviewed versioned mapping release]
+    release -.-> policy
     policy --> blocked{Eligible selected worker?}
     blocked -->|No| pause[Show recommendation or blocker; preserve owner and attempt]
     blocked -->|Yes| start[Lock lease and journal immutable invocation before model work]
@@ -96,6 +108,14 @@ task_id, replace/previous_mapping_hash, replacement_of and replacement_authoriza
 observed settings, native invocation reference, output artifact and optional usage.
 Missing usage remains unavailable. `model-reconcile` requires invocation identity
 and worker_stop_confirmation (`approved: true`, actor_id).
+
+The illustrative [model suitability input](examples/model-suitability.json)
+shows four stage cases and result fields. The agent first records genuinely
+approved cases in the selected DevFlow journal, then calls `improve
+model-evaluate --root ROOT --input INPUT.json` with their IDs and actual
+observed results. A reported `eligible` decision does not install a mapping;
+source-controlled policy release and host observation remain separate. The
+example's invented model and results are not validation evidence.
 
 Codex uses app-server initialize/account/read/model/list/thread/start/turn/start;
 configured external MCP and app tools are disabled, approval requests denied.

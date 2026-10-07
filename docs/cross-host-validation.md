@@ -119,3 +119,15 @@ Codex `/goal` and Claude `/goal` are documented host session commands; DevFlow
 does not call a portable lifecycle API. Live Goal activation in either installed
 host was **CANNOT VERIFY** here because no user-authorized host Goal was created
 for this test. A host Goal's own completion never advances a DevFlow gate.
+
+## Representative model suitability validation
+
+The schema 2 eligibility reader and four-stage report evaluator pass fixture
+tests, including stale host/model revision, unknown effort, retired model,
+invalid fallback and unknown cost. The illustrative model example is exercised
+by a unit test; it is **not** a real suitability evaluation. Local CLI version
+reads returned Codex `0.160.1` and Claude Code `2.1.284`; no approved
+four-stage live corpus or released provider mapping was available, so live
+model suitability and a validated strict default are **CANNOT VERIFY**.
+Earlier native worker smoke confirms access at that time only. Claude effective
+effort remains unknown and strict dispatch remains blocked.

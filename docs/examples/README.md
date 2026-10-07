@@ -24,6 +24,7 @@ human approval, independent review, provider receipt or authoritative price.
 | [bounded-repair.json](bounded-repair.json) | workflow | Optional repair limits; adjust attempt/time/spend caps and supply a known per-cycle estimate |
 | [improvement-case.json](improvement-case.json) | workflow, stats | Reviewed feedback and executable case proposal; replace run, trace hash and actor placeholders before approval |
 | [goal-binding.json](goal-binding.json) | workflow, host | Authorized host-specific Goal reference and exact contract hash; never reuse across hosts |
+| [model-suitability.json](model-suitability.json) | workflow, native models | Illustrative four-stage case/result shape only; replace with approved cases and actual observed runs |
 
 Replace every `REPLACE_WITH_...` marker before mutation. Returned IDs/hashes bind
 specific content and must not be guessed. Actor IDs and invocation references

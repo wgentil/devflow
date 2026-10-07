@@ -1,6 +1,39 @@
 """Pure profile resolution. Availability and capability validation are separate."""
 from copy import deepcopy
 import math
+import re
+
+
+def _version_tuple(value):
+    if not isinstance(value, str): return None
+    match = re.search(r'\d+(?:\.\d+)*', value)
+    return tuple(int(part) for part in match.group().split('.')) if match else None
+
+
+def _released_mapping_valid(policy, host, entry, discovery):
+    from .model_validation import promotion_decision, _digest
+    report = entry.get('validation_report')
+    if not isinstance(report, dict): return False
+    body = {key: value for key, value in report.items() if key != 'report_hash'}
+    if report.get('report_hash') != _digest(body) or report['report_hash'] != entry.get('validation_report_hash'):
+        return False
+    if (report.get('host') != host or report.get('model_id') != entry.get('model')
+            or report.get('model_revision') != entry.get('model_revision')
+            or entry.get('validation_ref') != report['report_hash']):
+        return False
+    decision = promotion_decision(report, {'version': policy.get('version'),
+                                           'thresholds': policy.get('validation_thresholds', {})})
+    if decision['status'] != 'eligible': return False
+    actual = _version_tuple(discovery.get('host_version'))
+    limits = entry.get('host_version_range') or {}
+    minimum, maximum = _version_tuple(limits.get('min')), _version_tuple(limits.get('max'))
+    if not actual or not minimum or not maximum or not minimum <= actual <= maximum:
+        return False
+    if actual != _version_tuple(report.get('host_version')):
+        return False
+    if discovery.get('model_revisions', {}).get(entry.get('model')) != entry.get('model_revision'):
+        return False
+    return True
 
 
 def resolve_profile(policy: dict, request: dict, capabilities: dict, discovery: dict, prices: dict | None) -> dict:
@@ -29,6 +62,8 @@ def resolve_profile(policy: dict, request: dict, capabilities: dict, discovery: 
         model = entry['model']
         validated = (entry.get('status') == 'validated' and entry.get('validation_ref')
                      and entry.get('policy_version') == policy.get('version'))
+        if validated and policy.get('schema_version', 1) >= 2:
+            validated = _released_mapping_valid(policy, req.get('host'), entry, discovery)
         if pin and model != pin or allowed is not None and model not in allowed: continue
         if not validated and not (pin and req.get('allow_unvalidated') and mode == 'advisory'): continue
         if model not in accessible or models.get(model) != 'available': continue

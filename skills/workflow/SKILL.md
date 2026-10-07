@@ -43,6 +43,8 @@ flowchart TD
     Feedback --> Case["Different human approves exact eval case hash"]
     Case --> Eval["Run same versioned cases on baseline and candidate"]
     Eval --> Decision["Compare quality, coverage, latency and reported usage"]
+    Case -.-> ModelEval["Representative specification/coding/debug/review model eval"]
+    ModelEval --> Mapping["Reviewed policy release; native host/revision check"]
     Build -->|Verification fails| Fix["Agent fixes implementation and reruns checks"]
     Harden -->|Command fails or report has findings| Repair{"Bounded repair enabled and eligible?"}
     Repair -->|Yes; explicit next command| Lease["Journal one repair claim"]
@@ -76,6 +78,10 @@ binds its exact trace hash; a distinct approving actor promotes a candidate
 to the durable case set. `improve run-cases` executes only approved cases,
 and `improve compare` requires identical case hashes/scoring versions. Missing
 usage remains unknown; comparison never promotes a skill or policy automatically.
+`improve model-evaluate` reads approved stage cases and supplied observed
+results. A representative report is review material; it does not install a
+provider mapping. The released policy reader requires matching report, host
+version and model revision evidence before a default can be strict eligible.
 With explicit user authorization, `host goal-status` supplies a completion
 contract and `host goal-bind` records an opaque host-specific Goal reference.
 The agent activates the host Goal through its supported session command; no

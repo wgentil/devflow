@@ -1,6 +1,6 @@
 {
-  "schema_version": 1,
-  "version": "1",
+  "schema_version": 2,
+  "version": "2",
   "stages": {
     "specification": "deep-reasoning", "architecture": "deep-reasoning",
     "planning": "deep-reasoning", "review": "deep-reasoning",
@@ -14,6 +14,12 @@
     "deep-reasoning": {"effort": "high"},
     "efficient-coding": {"effort": "medium"},
     "fast-analysis": {"effort": "low"}
+  },
+  "validation_thresholds": {
+    "specification": {"min_cases": 1, "min_pass_rate": 1.0},
+    "coding": {"min_cases": 1, "min_pass_rate": 1.0},
+    "debugging": {"min_cases": 1, "min_pass_rate": 1.0},
+    "review": {"min_cases": 1, "min_pass_rate": 1.0}
   },
   "hosts": {"codex": {}, "claude": {}},
   "validation_note": "No provider mapping has completed representative live capability evaluation in this release. Empty mappings disclose advisory recommendations; strict routing pauses. Availability alone is never validation."

@@ -266,6 +266,13 @@ executes approved cases in a specified checkout; `improve compare` requires
 identical case hashes and scoring versions; `improve retrospective` groups
 evidence-cited feedback without editing the plugin. Missing usage remains
 unknown and no policy promotion occurs automatically.
+`improve model-evaluate --root ROOT --input INPUT.json` uses only approved
+stage-tagged cases in that journal and supplied host/model/version-bound
+results. [Illustrative suitability input](examples/model-suitability.json)
+shows the fields; its fabricated results are not capability validation.
+Schema 2 released mappings embed a reviewed report hash and require observed
+matching host/model revision metadata before strict eligibility. No mapping
+is installed by this command or shipped in the current policy.
 
 `host goal-status --root ROOT --binding-id ID` returns a contract/hash derived
 from the current run. After the user authorizes and activates a host Goal,

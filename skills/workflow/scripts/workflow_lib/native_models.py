@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import selectors
 import signal
@@ -14,6 +15,15 @@ from .model_discovery import discovery_key, cached_discovery, store_discovery
 from .host_models import delegated_configuration
 
 MAX_OUTPUT=2*1024*1024
+
+
+def _cli_version(binary, project):
+    try:
+        result = run_bounded([binary, '--version'], project, 5)
+    except NativeError:
+        return None
+    match = re.search(r'\d+(?:\.\d+)+', result.stdout) if result.returncode == 0 else None
+    return match.group() if match else None
 
 class NativeError(WorkflowError):
     def __init__(self, kind, message='Native invocation failed; inspect host authentication or permissions.'):
@@ -140,7 +150,7 @@ class CodexBackend:
         stamp=account if stable else {'account':account,'connection':uuid.uuid4().hex}
         return {'account_key':hashlib.sha256(json.dumps(stamp,sort_keys=True).encode()).hexdigest(),'cacheable':stable}
     def discover(self):
-        models={};efforts={};cursor=None;seen=set()
+        models={};efforts={};revisions={};cursor=None;seen=set()
         for _ in range(32):
             params={'limit':100,'includeHidden':False}
             if cursor:params['cursor']=cursor
@@ -149,12 +159,14 @@ class CodexBackend:
                 model=entry.get('model')
                 if isinstance(model,str) and model:
                     models[model]='available';efforts[model]=[e['reasoningEffort'] for e in entry.get('supportedReasoningEfforts',[]) if isinstance(e,dict) and isinstance(e.get('reasoningEffort'),str)]
+                    if isinstance(entry.get('revision'),str) and entry['revision']:
+                        revisions[model]=entry['revision']
             cursor=result.get('nextCursor')
             if not cursor:break
             if cursor in seen:raise NativeError('unavailable','Native model pagination is inconsistent.')
             seen.add(cursor)
         else:raise NativeError('context','Native model inventory exceeds supported pages.')
-        return {'capabilities':{'configure':True,'observe':True,'models':list(models),'efforts':sorted({e for values in efforts.values() for e in values}),'model_efforts':efforts},'discovery':{'models':models,'source':'codex-app-server-model-list'}}
+        return {'capabilities':{'configure':True,'observe':True,'models':list(models),'efforts':sorted({e for values in efforts.values() for e in values}),'model_efforts':efforts},'discovery':{'models':models,'model_revisions':revisions,'host_version':_cli_version('codex',self.project),'source':'codex-app-server-model-list'}}
     def configure(self,resolved,brief,access='read-only'):
         settings=self.rpc.request('config/read',{'includeLayers':False,'cwd':self.project}).get('config',{})
         servers=settings.get('mcp_servers',{}) if isinstance(settings,dict) else {}
@@ -201,7 +213,7 @@ class ClaudeBackend:
     def discover(self):
         result=run_bounded(['claude','--help'],self.project,15)
         supported=result.returncode==0 and all(flag in result.stdout for flag in ('--agents','--agent','--model','--effort','--tools','--output-format','--strict-mcp-config'))
-        return {'capabilities':{'configure':supported,'observe':False,'models':[],'efforts':['low','medium','high','xhigh','max'] if supported else [],'model_efforts':{}},'discovery':{'models':{},'source':'selected-model-native-launch-required'}}
+        return {'capabilities':{'configure':supported,'observe':False,'models':[],'efforts':['low','medium','high','xhigh','max'] if supported else [],'model_efforts':{}},'discovery':{'models':{},'model_revisions':{},'host_version':_cli_version('claude',self.project),'source':'selected-model-native-launch-required'}}
     def invoke(self,resolved,prompt,actor,access='read-only',timeout=300):
         name='devflow-'+hashlib.sha256(actor.encode()).hexdigest()[:16]
         rendered=delegated_configuration({'status':'allow','resolved':resolved},'claude',name)

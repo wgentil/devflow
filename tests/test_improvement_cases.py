@@ -1,4 +1,6 @@
 import sys
+import json
+import argparse
 import tempfile
 import unittest
 from pathlib import Path
@@ -62,6 +64,16 @@ class ImprovementCaseTests(unittest.TestCase):
         replay = self.event('case-approve', request, 'approve')
         self.assertTrue(replay['replayed'])
         self.assertEqual(len(read_state(self.root)['data']['improvement_cases']), 1)
+
+    def test_model_evaluate_requires_approved_case_ids(self):
+        from commands.improve import dispatch
+        source = self.root / 'model.json'
+        source.write_text(json.dumps({'host': 'codex', 'model_id': 'm',
+                                      'host_version': '1.0', 'case_ids': ['unknown'],
+                                      'results': []}))
+        with self.assertRaises(WorkflowError):
+            dispatch(argparse.Namespace(improve_command='model-evaluate',
+                                        root=str(self.root), input=str(source)))
 
 
 if __name__ == '__main__': unittest.main()

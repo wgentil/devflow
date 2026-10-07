@@ -146,6 +146,12 @@ Ask for preferences conversationally, for example “use strict policy for plann
 or “pin this permitted model for new implementation calls.” Requested, resolved
 and observed settings are separate. New models remain candidates until capability
 validation; unavailable pins pause; fallback needs a validated permitted equivalent.
+Representative suitability evaluation requires approved cases for
+specification, coding, debugging and review with versioned thresholds. The
+agent can generate a report with `improve model-evaluate`, but installing a
+mapping remains a reviewed plugin release. Host/model revision observations
+must match that release; unknown revisions remain ineligible. No validated
+provider default ships yet. See [native model work](native-models.md).
 Unknown pricing under a numerical spending cap blocks rather than counting as zero.
 Stage preferences preserve prior constraints unless explicitly removed. Receipts
 are scoped to the actual binding/actor/stage and item attempt or review package;

@@ -31,6 +31,11 @@ case-approve` requires a distinct human actor and exact candidate case hash.
 case commands. `improve compare` rejects case/scoring-version mismatch and
 marks absent usage unknown. `improve retrospective` groups cited feedback by
 owner. None of these commands promotes a revision automatically.
+`improve model-evaluate --root ROOT --input INPUT.json` evaluates only
+approved stage-tagged case IDs against supplied host/model/version-bound
+results. It reports eligibility but does not install a mapping. A released
+mapping also needs a matching report hash and current native host/model
+revision observations; this package ships none.
 
 `host goal-status --root ROOT --binding-id ID` reads a generated completion
 contract and hash. Once the user authorizes a host Goal in the current

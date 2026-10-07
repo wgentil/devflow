@@ -1,0 +1,18 @@
+{
+  "host": "codex",
+  "model_id": "illustrative-model",
+  "host_version": "1.0.0",
+  "case_ids": ["spec-case", "coding-case", "debug-case", "review-case"],
+  "cases": [
+    {"case_id": "spec-case", "case_hash": "illustrative-spec", "scoring_version": 1, "stage": "specification", "approved_by": "illustrative-human"},
+    {"case_id": "coding-case", "case_hash": "illustrative-coding", "scoring_version": 1, "stage": "coding", "approved_by": "illustrative-human"},
+    {"case_id": "debug-case", "case_hash": "illustrative-debug", "scoring_version": 1, "stage": "debugging", "approved_by": "illustrative-human"},
+    {"case_id": "review-case", "case_hash": "illustrative-review", "scoring_version": 1, "stage": "review", "approved_by": "illustrative-human"}
+  ],
+  "results": [
+    {"case_id": "spec-case", "case_hash": "illustrative-spec", "scoring_version": 1, "passed": true, "model_revision": "illustrative-rev", "host": "codex", "model_id": "illustrative-model", "host_version": "1.0.0"},
+    {"case_id": "coding-case", "case_hash": "illustrative-coding", "scoring_version": 1, "passed": true, "model_revision": "illustrative-rev", "host": "codex", "model_id": "illustrative-model", "host_version": "1.0.0"},
+    {"case_id": "debug-case", "case_hash": "illustrative-debug", "scoring_version": 1, "passed": true, "model_revision": "illustrative-rev", "host": "codex", "model_id": "illustrative-model", "host_version": "1.0.0"},
+    {"case_id": "review-case", "case_hash": "illustrative-review", "scoring_version": 1, "passed": true, "model_revision": "illustrative-rev", "host": "codex", "model_id": "illustrative-model", "host_version": "1.0.0"}
+  ]
+}
