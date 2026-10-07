@@ -1,0 +1,8 @@
+{
+  "slices": {
+    "architecture": {
+      "status": "answered",
+      "value": "Single Python module with CLI"
+    }
+  }
+}

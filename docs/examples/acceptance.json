@@ -1,0 +1,17 @@
+{
+  "package_hash": "REPLACE_WITH_ACCEPTANCE_PACKAGE_HASH",
+  "requirements": [
+    {
+      "id": "R1",
+      "verdict": "MET",
+      "citations": [
+        {
+          "repo_id": "app",
+          "path": "greeting.py",
+          "line": 1
+        }
+      ],
+      "rationale": "Greeting behavior implemented and verified"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "snapshot": {
+    "complete": true,
+    "repo_id": "app",
+    "pages": [
+      1
+    ],
+    "expected_pages": 1,
+    "issues": [
+      {
+        "id": "I1",
+        "title": "Greeting support",
+        "description": "Return a greeting for a name."
+      }
+    ]
+  }
+}

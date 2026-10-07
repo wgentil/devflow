@@ -1,0 +1,18 @@
+{
+  "run_id": "greeting-run",
+  "actor_id": "REPLACE_WITH_CONFIGURING_ACTOR",
+  "gates": {
+    "unit-suite": {
+      "repo_id": "app",
+      "command": [
+        "python3",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests"
+      ]
+    }
+  }
+}

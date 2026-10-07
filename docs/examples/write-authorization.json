@@ -1,0 +1,17 @@
+{
+  "run_id": "REPLACE_WITH_ISSUE_RUN_ID",
+  "issue_id": "I1",
+  "snapshot_hash": "REPLACE_WITH_CURRENT_SNAPSHOT_HASH",
+  "manifest_hash": "REPLACE_WITH_DELIVERY_MANIFEST_HASH",
+  "operation_id": "comment-I1-v1",
+  "actor_id": "REPLACE_WITH_AUTHORIZING_ACTOR",
+  "action": "create-comment",
+  "requirement_ids": [
+    "R1"
+  ],
+  "payload": {
+    "issue_id": "I1",
+    "body": "R1 was accepted and delivered.",
+    "ownership_marker": "devflow:REPLACE_WITH_ISSUE_RUN_ID:I1"
+  }
+}

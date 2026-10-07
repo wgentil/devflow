@@ -68,3 +68,6 @@ control root and explicit operation ID; retry receipts survive fresh sessions an
 snapshot corruption. See [durable workflow interfaces](journal-integration.md) for
 issue snapshots/authorizations, migration binding, persisted ingestion caches,
 hardening attempts, usage backfills, immutable prices, and frozen report exports.
+
+For prerequisites, complete input examples and troubleshooting for every skill,
+see the [skill documentation index](skills.md).

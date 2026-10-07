@@ -1,0 +1,11 @@
+[
+  {
+    "source_id": "demo-session",
+    "event_id": "turn-1",
+    "provider": "example",
+    "model": "demo",
+    "input_tokens": 1000,
+    "cached_tokens": 200,
+    "output_tokens": 100
+  }
+]

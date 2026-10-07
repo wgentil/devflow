@@ -1,0 +1,10 @@
+{
+  "issue_id": "I1",
+  "proposal": {
+    "kind": "escaped-defect",
+    "run_id": "greeting-run",
+    "requirement_ids": [
+      "R1"
+    ]
+  }
+}

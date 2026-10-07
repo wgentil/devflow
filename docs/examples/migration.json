@@ -1,0 +1,21 @@
+{
+  "increments": {
+    "increments": [
+      {
+        "id": "greetings",
+        "depends_on": [],
+        "criteria": [
+          "P1"
+        ]
+      }
+    ]
+  },
+  "parity": [
+    {
+      "id": "P1",
+      "requirement_ids": [
+        "R1"
+      ]
+    }
+  ]
+}

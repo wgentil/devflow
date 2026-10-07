@@ -1,0 +1,15 @@
+{
+  "increment_id": "greetings",
+  "verified": [
+    "P1"
+  ],
+  "evidence": {
+    "P1": {
+      "run_id": "greeting-run",
+      "proof_id": "REPLACE_WITH_CURRENT_GREEN_PROOF_ID",
+      "requirement_ids": [
+        "R1"
+      ]
+    }
+  }
+}

@@ -79,3 +79,9 @@ Resume by run ID with `run status`; the active attempt token remains bound to th
 Deterministic operations record best-effort byte and duration measurements under the chosen root. Read `offload.jsonl` to inspect the measures; these bytes do not establish actual tokens saved. Reuse context projections only when source and resolver fingerprints match.
 
 Use the focused Devflow skills for project context, specification, planning, build verification, and independent review. Prepare and verify delivery manifests, then stop at the human's local-merge / pull-request / retained-branch decision. The helper never performs those external effects automatically. Treat event journal state and evidence as authoritative. The dispatcher requires Python 3.11+ and `fcntl` on macOS/Linux; no daemon or dependencies are required.
+
+## Documentation
+
+See [usage guide and examples](GUIDE.md) for prerequisites, commands, input shapes,
+outputs and recovery. The [documentation index](../../docs/skills.md) covers shared
+setup and all DevFlow skills.

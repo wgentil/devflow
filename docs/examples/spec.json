@@ -1,0 +1,17 @@
+{
+  "mode": "new",
+  "title": "Greeting CLI",
+  "requirements": [
+    {
+      "id": "R1",
+      "text": "Return a greeting for a supplied name",
+      "acceptance_criteria": [
+        "greet(\"Ada\") returns \"Hello, Ada\""
+      ],
+      "provenance": {
+        "kind": "authored"
+      }
+    }
+  ],
+  "gaps": []
+}

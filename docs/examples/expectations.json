@@ -1,0 +1,9 @@
+{
+  "events": [
+    {
+      "source_id": "demo-session",
+      "event_id": "turn-1",
+      "run_id": "greeting-run"
+    }
+  ]
+}

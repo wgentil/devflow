@@ -51,3 +51,9 @@ python3 <plugin-root>/skills/workflow/scripts/run.py review record \
 ```
 
 Use verdicts `pass`, `request-changes`, or `block`. Item review permits four correction waves; a fifth unresolved request requires adjudication. Branch and acceptance reviews permit one correction wave; a subsequent request requires adjudication. After changes, prepare a new package. Unknown correction impact invalidates all dependent judgments. Acceptance must address every requirement and cannot silently waive prior accepted requirements.
+
+## Documentation
+
+See [usage guide and examples](GUIDE.md) for prerequisites, commands, input shapes,
+outputs and recovery. The [documentation index](../../docs/skills.md) covers shared
+setup and all DevFlow skills.

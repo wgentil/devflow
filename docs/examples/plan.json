@@ -1,0 +1,20 @@
+{
+  "spec_hash": "REPLACE_WITH_CURRENT_SPEC_HASH",
+  "work_items": [
+    {
+      "id": "W1",
+      "kind": "code",
+      "repo_id": "app",
+      "requirement_ids": [
+        "R1"
+      ],
+      "dependencies": [],
+      "acceptance_criteria": [
+        {
+          "kind": "code-test",
+          "text": "The declared greeting test passes with unchanged RED test hashes"
+        }
+      ]
+    }
+  ]
+}

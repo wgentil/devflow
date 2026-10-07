@@ -1,0 +1,14 @@
+{
+  "version": "illustrative-v1",
+  "source": {
+    "timestamp": "2026-10-06T00:00:00Z",
+    "label": "Illustrative rates; not provider pricing"
+  },
+  "rates": {
+    "example/demo": {
+      "input": 1,
+      "cached": 0.5,
+      "output": 2
+    }
+  }
+}

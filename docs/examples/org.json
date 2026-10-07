@@ -1,0 +1,16 @@
+{
+  "slices": {
+    "coding-standards": {
+      "status": "answered",
+      "value": "Python 3.11+, descriptive names"
+    },
+    "test-strategy": {
+      "status": "answered",
+      "value": "unittest; verify declared targets"
+    },
+    "design-system": {
+      "status": "declined",
+      "reason": "CLI application"
+    }
+  }
+}

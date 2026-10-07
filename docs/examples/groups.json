@@ -1,0 +1,16 @@
+{
+  "snapshot_hash": "REPLACE_WITH_SNAPSHOT_HASH",
+  "groups": [
+    {
+      "id": "greetings",
+      "issue_ids": [
+        "I1"
+      ],
+      "requirement_ids": {
+        "I1": [
+          "R1"
+        ]
+      }
+    }
+  ]
+}
