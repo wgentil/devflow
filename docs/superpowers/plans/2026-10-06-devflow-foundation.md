@@ -43,11 +43,11 @@ Task 7 adds `briefs.py` for scoped assembly, `telemetry.py` for best-effort oper
 
 **Interfaces:** `main(argv: list[str] | None = None) -> int`; initial `version` command returns plugin and state-schema versions. Manifest name is `devflow`, initial version `0.1.0`.
 
-- [ ] Write `test_version_from_unrelated_cwd`: invoke the absolute script path with `version`; assert exit 0 and plugin name `devflow`. Write `test_manifest_skills_resolve`: all declared skill files exist inside the package.
-- [ ] Run `python3 -m unittest discover -s tests -p 'test_package.py' -v`; observe failure before implementation.
-- [ ] Implement the manifest, entry skill, dispatcher, and explicit module imports using script-relative paths.
-- [ ] Repeat the test command; require all tests passing.
-- [ ] Commit as `feat: add devflow plugin entry point`.
+- [x] Write `test_version_from_unrelated_cwd`: invoke the absolute script path with `version`; assert exit 0 and plugin name `devflow`. Write `test_manifest_skills_resolve`: all declared skill files exist inside the package.
+- [x] Run `python3 -m unittest discover -s tests -p 'test_package.py' -v`; observe failure before implementation.
+- [x] Implement the manifest, entry skill, dispatcher, and explicit module imports using script-relative paths.
+- [x] Repeat the test command; require all tests passing.
+- [x] Commit as `feat: add devflow plugin entry point`.
 
 ### Task 2: Atomic, versioned journal storage
 
@@ -55,12 +55,12 @@ Task 7 adds `briefs.py` for scoped assembly, `telemetry.py` for best-effort oper
 
 **Interfaces:** `read_state(root: Path) -> dict`; `transact(root: Path, expected_version: int, operation_id: str, event: dict) -> dict`; `WorkflowError(code: str, message: str)`. Journal events include schema version, sequence, operation ID, event kind, and payload. Materialized state is rebuildable from committed journal records.
 
-- [ ] Write tests asserting stale versions leave bytes unchanged, duplicate operation IDs return the first result, corrupt/future schemas raise stable errors, process interruption recovers committed events, and concurrent writers preserve sequence uniqueness.
-- [ ] Run `python3 -m unittest discover -s tests -p 'test_store.py' -v`; require the intended failures.
-- [ ] Implement locked transactions with immutable per-sequence event files written by atomic replace, journal replay, and a rebuildable state snapshot. Use `fcntl` on macOS/Linux; declare those supported platforms for this increment. Detect incomplete temporary writes without treating them as committed events.
-- [ ] Add a replay fixture proving deleted snapshots rebuild the same acknowledged workflow facts from committed events. Treat rendered views as disposable and source artifacts as hash-bound inputs; do not introduce another editable workflow ledger.
-- [ ] Repeat the command and the package tests; require all passing.
-- [ ] Commit as `feat: persist workflow events atomically`.
+- [x] Write tests asserting stale versions leave bytes unchanged, duplicate operation IDs return the first result, corrupt/future schemas raise stable errors, process interruption recovers committed events, and concurrent writers preserve sequence uniqueness.
+- [x] Run `python3 -m unittest discover -s tests -p 'test_store.py' -v`; require the intended failures.
+- [x] Implement locked transactions with immutable per-sequence event files written by atomic replace, journal replay, and a rebuildable state snapshot. Use `fcntl` on macOS/Linux; declare those supported platforms for this increment. Detect incomplete temporary writes without treating them as committed events.
+- [x] Add a replay fixture proving deleted snapshots rebuild the same acknowledged workflow facts from committed events. Treat rendered views as disposable and source artifacts as hash-bound inputs; do not introduce another editable workflow ledger.
+- [x] Repeat the command and the package tests; require all passing.
+- [x] Commit as `feat: persist workflow events atomically`.
 
 ### Task 3: Context layers and stable repository registration
 
@@ -68,11 +68,11 @@ Task 7 adds `briefs.py` for scoped assembly, `telemetry.py` for best-effort oper
 
 **Interfaces:** `register_repo(state: dict, repo_id: str, location: str) -> dict`; `resolve_context(org: dict, project: dict, user_overrides: dict, budgets: dict) -> dict`. Results include resolved values, provenance, conflicts, and budget warnings. Mutations use Task 2 transactions.
 
-- [ ] Write tests for the six organization slices, answered-slice reuse, explicit declined slices, project/user precedence with provenance, sealed-default conflict reporting, budget overruns, repository relocation, and paths containing spaces.
-- [ ] Run `python3 -m unittest discover -s tests -p 'test_context.py' -v`; confirm failures.
-- [ ] Implement context operations and `context` / `repo` dispatcher subcommands. Reject nonexistent repository locations; relocation changes locations without changing IDs or artifact references. Report estimated token budgets as estimates.
-- [ ] Repeat the test command; require all passing.
-- [ ] Commit as `feat: add layered project context`.
+- [x] Write tests for the six organization slices, answered-slice reuse, explicit declined slices, project/user precedence with provenance, sealed-default conflict reporting, budget overruns, repository relocation, and paths containing spaces.
+- [x] Run `python3 -m unittest discover -s tests -p 'test_context.py' -v`; confirm failures.
+- [x] Implement context operations and `context` / `repo` dispatcher subcommands. Reject nonexistent repository locations; relocation changes locations without changing IDs or artifact references. Report estimated token budgets as estimates.
+- [x] Repeat the test command; require all passing.
+- [x] Commit as `feat: add layered project context`.
 
 ### Task 4: Requirements, gaps, and approval records
 
@@ -80,11 +80,11 @@ Task 7 adds `briefs.py` for scoped assembly, `telemetry.py` for best-effort oper
 
 **Interfaces:** `validate_spec(spec: dict) -> dict`; `find_gaps(spec: dict) -> list[dict]`; `render_spec(spec: dict) -> str`. Requirements contain ID, text, acceptance criteria, provenance kind, and sources; derived sources require path, commit, start line, and end line. Approval is bound to the exact specification content hash.
 
-- [ ] Write tests rejecting duplicate IDs and missing derived citations, reporting unanswered gaps, preserving assumptions, accepting new/extend/migrate modes, and invalidating approval after content changes.
-- [ ] Run `python3 -m unittest discover -s tests -p 'test_specs.py' -v`; confirm failures.
-- [ ] Implement validators, deterministic Markdown rendering, `spec` dispatcher operations, and skill instructions for interviews/review/approval. Do not manufacture human approval through a command default.
-- [ ] Repeat the test command; require all passing.
-- [ ] Commit as `feat: track requirements and specification approval`.
+- [x] Write tests rejecting duplicate IDs and missing derived citations, reporting unanswered gaps, preserving assumptions, accepting new/extend/migrate modes, and invalidating approval after content changes.
+- [x] Run `python3 -m unittest discover -s tests -p 'test_specs.py' -v`; confirm failures.
+- [x] Implement validators, deterministic Markdown rendering, `spec` dispatcher operations, and skill instructions for interviews/review/approval. Do not manufacture human approval through a command default.
+- [x] Repeat the test command; require all passing.
+- [x] Commit as `feat: track requirements and specification approval`.
 
 ### Task 5: Work-item graph validation
 
@@ -92,11 +92,11 @@ Task 7 adds `briefs.py` for scoped assembly, `telemetry.py` for best-effort oper
 
 **Interfaces:** `validate_plan(spec: dict, plan: dict) -> dict`; `ready_items(plan: dict, completed_ids: set[str]) -> list[dict]`. Work items contain ID, kind (`code`, `iac`, or `agent-config`), requirement IDs, acceptance criteria, and dependency IDs.
 
-- [ ] Write tests rejecting cycles, missing dependencies, duplicate IDs, uncovered requirements, and kind-inappropriate criteria. Assert deterministic eligibility ordering after prerequisites complete.
-- [ ] Run `python3 -m unittest discover -s tests -p 'test_plans.py' -v`; confirm failures.
-- [ ] Implement graph checks and `plan validate` / `plan ready` commands. Validation consumes the approved spec hash; changed specifications make a plan stale.
-- [ ] Repeat the command; require all passing.
-- [ ] Commit as `feat: validate work item dependencies`.
+- [x] Write tests rejecting cycles, missing dependencies, duplicate IDs, uncovered requirements, and kind-inappropriate criteria. Assert deterministic eligibility ordering after prerequisites complete.
+- [x] Run `python3 -m unittest discover -s tests -p 'test_plans.py' -v`; confirm failures.
+- [x] Implement graph checks and `plan validate` / `plan ready` commands. Validation consumes the approved spec hash; changed specifications make a plan stale.
+- [x] Repeat the command; require all passing.
+- [x] Commit as `feat: validate work item dependencies`.
 
 ### Task 6: Resumable attempts and foundation acceptance
 
@@ -104,14 +104,14 @@ Task 7 adds `briefs.py` for scoped assembly, `telemetry.py` for best-effort oper
 
 **Interfaces:** `start_run(state: dict, run_id: str, plan: dict) -> dict`; `issue_attempt(run: dict, item_id: str) -> dict`; `record_result(run: dict, token: str, result: dict) -> dict`; `run_summary(run: dict) -> dict`. Tokens are single-use and tied to state version and item ID.
 
-- [ ] Write tests proving stale/single-use tokens reject mutation, abandoned attempts preserve history, retries receive new tokens, resume survives process restart, blocked dependencies remain ineligible, and results without registered verifier proof cannot complete implementation items.
-- [ ] Add `test_next_returns_complete_attempt_package`: one `run next` response supplies the issued token, eligible item, resolved context, criteria, artifact references, and unavailable-gate status. Assert read-only status/resume leaves tokens unchanged. Add `test_related_result_submission_is_atomic`: an invalid related result rejects the entire submission without changing journal bytes, while a valid submission records one event under one expected version and operation ID.
-- [ ] Run `python3 -m unittest discover -s tests -p 'test_runs.py' -v`; confirm failures.
-- [ ] Implement run start/status/next/abandon/retry commands and brief generation. Only administrative stages can complete in this increment; build/review/delivery gates stay explicitly unavailable until later increments.
-- [ ] Write and run a temporary-directory end-to-end scenario: context registration → approved spec → validated plan → run start → attempt → restart → retry → summary. Assert no files appear outside the selected control directory and fixture repositories.
-- [ ] Run `python3 -m unittest discover -s tests -v` and `python3 -m compileall -q skills/workflow/scripts`; validate skill metadata with the skill-creator validator, then check manifest paths and relocatable execution separately.
-- [ ] Document runnable commands, supported platforms, recovery behavior, and unavailable gates. Update parity rows with evidence and partial coverage; never mark broad rows complete from foundation tests alone.
-- [ ] Commit as `feat: add resumable foundation workflow`.
+- [x] Write tests proving stale/single-use tokens reject mutation, abandoned attempts preserve history, retries receive new tokens, resume survives process restart, blocked dependencies remain ineligible, and results without registered verifier proof cannot complete implementation items.
+- [x] Add `test_next_returns_complete_attempt_package`: one `run next` response supplies the issued token, eligible item, resolved context, criteria, artifact references, and unavailable-gate status. Assert read-only status/resume leaves tokens unchanged. Add `test_related_result_submission_is_atomic`: an invalid related result rejects the entire submission without changing journal bytes, while a valid submission records one event under one expected version and operation ID.
+- [x] Run `python3 -m unittest discover -s tests -p 'test_runs.py' -v`; confirm failures.
+- [x] Implement run start/status/next/abandon/retry commands and brief generation. Only administrative stages can complete in this increment; build/review/delivery gates stay explicitly unavailable until later increments.
+- [x] Write and run a temporary-directory end-to-end scenario: context registration → approved spec → validated plan → run start → attempt → restart → retry → summary. Assert no files appear outside the selected control directory and fixture repositories.
+- [x] Run `python3 -m unittest discover -s tests -v` and `python3 -m compileall -q skills/workflow/scripts`; validate skill metadata with the skill-creator validator, then check manifest paths and relocatable execution separately.
+- [x] Document runnable commands, supported platforms, recovery behavior, and unavailable gates. Update parity rows with evidence and partial coverage; never mark broad rows complete from foundation tests alone.
+- [x] Commit as `feat: add resumable foundation workflow`.
 
 ### Task 7: Scoped briefs, reuse, and offload measurement
 
@@ -119,19 +119,19 @@ Task 7 adds `briefs.py` for scoped assembly, `telemetry.py` for best-effort oper
 
 **Interfaces:** `assemble_brief(run: dict, context: dict, stage: dict, selected_ids: list[str], max_bytes: int) -> dict`; `projection_key(source_hashes: dict, resolver_version: str) -> str`; `record_offload(root: Path, measurement: dict) -> dict`. Stage declarations supply required slice names and kind instructions. Canonical JSON uses sorted keys, compact separators, and UTF-8 with `ensure_ascii=False`; the budget measures the entire returned brief, including its size field. Measurements contain operation ID/name, optional run/attempt/item IDs, duration, result, input bytes, and output bytes. Telemetry returns collection status and does not raise into workflow operations.
 
-- [ ] Write `test_brief_omits_unrelated_slices`: a selected code item includes its required slices and criteria, excludes unrelated slices and IaC/agent-config instructions, and includes code instructions once across two selected code items. Assert blocked items contain IDs/reasons only and selecting a blocked item raises `ITEM_INELIGIBLE`.
-- [ ] Write `test_mandatory_content_overflow`: a Unicode fixture measures actual serialized UTF-8 bytes; an exact-size budget succeeds, a smaller budget raises `BRIEF_BUDGET_EXCEEDED` with required size and artifact references, and required criteria remain intact. Optional omission names appear in the result. Token estimates identify their method and are never labeled exact usage.
-- [ ] Write `test_projection_reuse_and_invalidation`: identical source hashes and resolver version reuse the projection; changed hashes or resolver version invalidate it. Assert declines, conflicts, provenance, and current user overrides survive reuse.
-- [ ] Write `test_compact_result_and_inspection`: command output references full records without embedding journals or raw logs; `run inspect --run-id ID` retrieves the authoritative record. Failure and unavailable-gate status remain visible in compact output. Inspection honors the selected root and rejects traversal outside it.
-- [ ] Write `test_fresh_process_resume_brief`: create a run with an abandoned attempt and authorization/finding records, then invoke `run brief --run-id ID --item ID --max-bytes N` in a fresh process without transcript input. Assert current attempt status, recorded scope, hashes, and unresolved findings remain available; no build/review/delivery gate becomes available.
-- [ ] Write telemetry tests for successful and failed operations, run attribution, UTF-8 byte counts, retry deduplication by operation ID, and collection failure. Assert telemetry failure preserves the operation's original output, exit code, and journal while exposing a collection gap. Unbound operations cannot acquire invented run attribution.
-- [ ] Run `python3 -m unittest discover -s tests -p 'test_briefs.py' -v`, the context tests, and the telemetry tests; observe intended failures before implementation.
-- [ ] Implement scoped assembly and reuse using authoritative Task 2–6 records. Add explicit `run brief` and `run inspect` commands; full inspection is opt-in. Instrument deterministic operations with best-effort telemetry under the selected root and collection warnings on stderr. Keep stdout as one JSON result.
-- [ ] Use the same assembler and context resolver for `run next`, `run brief`, and resume. Add a fixture comparing their criteria/context for the same state and selection; read-only assembly cannot issue a token. Keep shared instructions once per selected kind and keep full records accessible through inspection.
-- [ ] Repeat targeted tests, then run `python3 -m unittest discover -s tests -v` and `python3 -m compileall -q skills/workflow/scripts`.
-- [ ] Document brief budgets, fresh-session resume, compact inspection, cache invalidation, telemetry gaps, and the distinction between byte reduction and actual token savings. Record fixture input/output sizes without asserting a savings percentage. Update parity rows as partial coverage.
-- [ ] Compare the complete `next` response with an equivalent sequence of separate eligibility/context/artifact reads. Record helper-call count and aggregate output bytes with identical required facts; report results even if the combined response is larger. Measurements cannot mark deferred verification or review capabilities complete.
-- [ ] Commit as `feat: add scoped briefs and offload measurement`.
+- [x] Write `test_brief_omits_unrelated_slices`: a selected code item includes its required slices and criteria, excludes unrelated slices and IaC/agent-config instructions, and includes code instructions once across two selected code items. Assert blocked items contain IDs/reasons only and selecting a blocked item raises `ITEM_INELIGIBLE`.
+- [x] Write `test_mandatory_content_overflow`: a Unicode fixture measures actual serialized UTF-8 bytes; an exact-size budget succeeds, a smaller budget raises `BRIEF_BUDGET_EXCEEDED` with required size and artifact references, and required criteria remain intact. Optional omission names appear in the result. Token estimates identify their method and are never labeled exact usage.
+- [x] Write `test_projection_reuse_and_invalidation`: identical source hashes and resolver version reuse the projection; changed hashes or resolver version invalidate it. Assert declines, conflicts, provenance, and current user overrides survive reuse.
+- [x] Write `test_compact_result_and_inspection`: command output references full records without embedding journals or raw logs; `run inspect --run-id ID` retrieves the authoritative record. Failure and unavailable-gate status remain visible in compact output. Inspection honors the selected root and rejects traversal outside it.
+- [x] Write `test_fresh_process_resume_brief`: create a run with an abandoned attempt and authorization/finding records, then invoke `run brief --run-id ID --item ID --max-bytes N` in a fresh process without transcript input. Assert current attempt status, recorded scope, hashes, and unresolved findings remain available; no build/review/delivery gate becomes available.
+- [x] Write telemetry tests for successful and failed operations, run attribution, UTF-8 byte counts, retry deduplication by operation ID, and collection failure. Assert telemetry failure preserves the operation's original output, exit code, and journal while exposing a collection gap. Unbound operations cannot acquire invented run attribution.
+- [x] Run `python3 -m unittest discover -s tests -p 'test_briefs.py' -v`, the context tests, and the telemetry tests; observe intended failures before implementation.
+- [x] Implement scoped assembly and reuse using authoritative Task 2–6 records. Add explicit `run brief` and `run inspect` commands; full inspection is opt-in. Instrument deterministic operations with best-effort telemetry under the selected root and collection warnings on stderr. Keep stdout as one JSON result.
+- [x] Use the same assembler and context resolver for `run next`, `run brief`, and resume. Add a fixture comparing their criteria/context for the same state and selection; read-only assembly cannot issue a token. Keep shared instructions once per selected kind and keep full records accessible through inspection.
+- [x] Repeat targeted tests, then run `python3 -m unittest discover -s tests -v` and `python3 -m compileall -q skills/workflow/scripts`.
+- [x] Document brief budgets, fresh-session resume, compact inspection, cache invalidation, telemetry gaps, and the distinction between byte reduction and actual token savings. Record fixture input/output sizes without asserting a savings percentage. Update parity rows as partial coverage.
+- [x] Compare the complete `next` response with an equivalent sequence of separate eligibility/context/artifact reads. Record helper-call count and aggregate output bytes with identical required facts; report results even if the combined response is larger. Measurements cannot mark deferred verification or review capabilities complete.
+- [x] Commit as `feat: add scoped briefs and offload measurement`.
 
 ## Subsequent increments
 
@@ -147,6 +147,6 @@ P02–P05 and P07–P09 receive their initial implementation here; any remaining
 
 ## Execution handoff
 
-Recommended approach: native execution in this session, followed by independent whole-branch review. These tasks share state and schema interfaces closely; keeping one implementer reduces handoff overhead. Subagent-driven execution is available if the user prefers independent implementation and review per task. Implementation waits for plan review and execution-method selection.
+Recommended approach: native execution in this session, followed by independent whole-branch review. These tasks share state and schema interfaces closely; keeping one implementer reduces handoff overhead. Subagent-driven execution is available if the user prefers independent implementation and review per task. Native execution was approved and completed. The independent whole-branch review and its correction wave are recorded in `docs/foundation-acceptance.md`; implementation is committed through `1c2be5b`.
 
-Self-review: interfaces and storage ownership align across tasks; all five review-focus conditions have named tests; deferred scope is explicit; no code, installation, remote writes, or publication is included in this planning commit.
+Self-review: interfaces and storage ownership align across tasks; all five review-focus conditions have named tests; deferred scope is explicit; the original planning commit included no code, installation, remote writes, or publication. Execution progress and acceptance evidence are now recorded separately.

@@ -1,12 +1,12 @@
 # Devflow Design
 
-Status: proposed design; implementation has not started.
+Status: approved design. The foundation increment is implemented and reviewed; later increments remain planned. See `docs/foundation-acceptance.md` and the parity inventory for achieved scope and open requirements.
 
 ## Purpose and scope
 
 Build a Codex-only workflow delivered as skills with bundled scripts, matching as much of DevConsole as possible. Preserve its requirements, verification, review, delivery, issue-management, and reporting capabilities. Use existing DevConsole, Superpowers, and Autowork guidance as references; leave their installed packages unchanged.
 
-`devflow` is the selected plugin name; `workflow` is its entry skill. Its description is “Skills for guided software development, verification, and delivery.” This directory contains design documents only; it is separate from Song Capture. No global installation or repository initialization is part of this design step.
+`devflow` is the selected plugin name; `workflow` is its entry skill. Its description is “Skills for guided software development, verification, and delivery.” This repository contains the independent Devflow plugin and its design documents; it is separate from Song Capture. No global installation or repository initialization is part of this design step.
 
 The baseline is the locally available DevConsole command reference, stage catalog, orchestrators, schemas, and reporting implementation. The companion parity matrix defines the intended coverage. All capabilities are targets, not claims of working software.
 
@@ -127,4 +127,4 @@ Compare selected DevConsole fixtures and outcomes against the replacement. Docum
 - Existing Autowork: `/Users/wayne/.codex/plugins/cache/personal/autowork/0.1.0/skills/autowork/SKILL.md`.
 - Skill packaging: `/Users/wayne/.codex/skills/.system/skill-creator/SKILL.md`.
 
-Self-review: scope decomposed into four increments; targets distinguished from implemented capabilities; conditional integrations and enforcement limits explicit; no implementation or installation performed.
+Design self-review: scope decomposed into four increments; targets distinguished from implemented capabilities; conditional integrations and enforcement limits explicit. Implementation progress is recorded separately in the foundation acceptance audit and parity inventory; no global installation has been performed.
