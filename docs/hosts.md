@@ -32,3 +32,17 @@ root and binding ID. Journal state grants ownership. Retrying committed attachme
 repairs a missing/corrupt locator; locator edits cannot grant ownership. Mutating
 commands from attached sessions include binding ID/revision, checked again under
 the journal lock. Unattached trusted developer CLI access remains supported.
+
+## Handoff and upgrades
+
+Prepare names the source revision and destination host/actor (session may be
+chosen later). Source ownership remains active until destination acceptance.
+Acceptance uses the destination's installed helper, rereads both package contents
+and atomically transfers ownership under CAS without changing the attempt token.
+Every mismatch leaves the original owner active. Detach/resume checks the last
+owner's release; detaching cannot bypass parity. Matching older releases work.
+
+After intentionally aligning installations, reload instructions and explicitly
+refresh the existing attachment with its revision. Compatible refresh preserves
+attempts and immutable release history. Unsupported journal contracts require a
+separate migration; DevFlow never installs or chooses an upgrade.

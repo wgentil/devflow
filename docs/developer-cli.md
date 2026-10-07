@@ -364,3 +364,11 @@ optional `--expected-version`. Task requests name binding_id/revision/task_id an
 scope item/delivery/review; items require item_id/token, reviews package_hash.
 For other mutations put `--binding-id <id> --binding-revision <revision>` before
 the command group. Stale bindings are rejected inside the commit lock.
+
+`host handoff-prepare --file <request> --root <control> --operation-id <id>` accepts
+binding_id/revision/handoff_id/target_host/target_actor_id and optional
+target_session_id. `host handoff-accept` additionally takes `--loaded-release`;
+its request names handoff_id and destination attachment fields. Source installation
+is read from the recorded attachment package_root. Acceptance blocks until
+shared destination model eligibility is resolved. Refresh uses `host attach`
+with `refresh: true`, unchanged identity and current revision.
