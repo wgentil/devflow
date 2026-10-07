@@ -217,3 +217,11 @@ schemas. Automatic upgrading and silent journal migration are not part of the de
 Every DevFlow change must review and update this guide, affected skill guides,
 diagrams and examples. Keep user instructions free of implementation setup;
 describe actual verified behavior and label remaining design-only steps explicitly.
+
+## Shared host package and release identity
+
+See [host setup and compatibility](hosts.md). The shared package includes both
+host manifests. Python source is bundled; an existing Python 3.11+ interpreter
+is required. User-controlled upgrades require reloading the workflow instructions
+and refreshing the attachment. Host integration readiness is reported separately
+from package/protocol fixture verification.

@@ -18,9 +18,11 @@ class PackageTests(unittest.TestCase):
             cwd=Path("/tmp"), text=True, capture_output=True, check=False,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(json.loads(result.stdout), {
-            "plugin": "devflow", "plugin_version": "0.1.0", "state_schema_version": 1,
-        })
+        descriptor = json.loads(result.stdout)
+        self.assertEqual(descriptor['plugin'], 'devflow')
+        self.assertEqual(descriptor['plugin_version'], '0.1.0')
+        self.assertEqual(descriptor['state_schema_version'], 1)
+        self.assertEqual(len(descriptor['fingerprint']), 64)
 
     def test_manifest_skills_resolve(self):
         manifest = json.loads((ROOT / "plugin.json").read_text())

@@ -290,10 +290,8 @@ def main(argv: list[str] | None = None) -> int:
             if previous is not None:
                 raise _OperationReplay(_replay_result(initial_state, previous))
         if parsed.command == "version":
-            result = {
-                "plugin": "devflow", "plugin_version": "0.1.0",
-                "state_schema_version": STATE_SCHEMA_VERSION,
-            }
+            from workflow_lib.releases import release_descriptor
+            result = release_descriptor()
         elif parsed.command == "context" and parsed.context_command == "resolve":
             if parsed.root:
                 root = Path(parsed.root).expanduser().resolve()
