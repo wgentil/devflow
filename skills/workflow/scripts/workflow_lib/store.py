@@ -7,6 +7,7 @@ from copy import deepcopy
 import hashlib
 import json
 import os
+import subprocess
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
@@ -321,6 +322,64 @@ def _apply_event(state: dict, event: dict) -> None:
                 or authorization.get("finding_id") != payload.get("finding_id") or not authorization.get("scope")):
             raise WorkflowError("INVALID_EVENT", "finding waiver lacks explicit scoped authorization")
         finding.update({"status": "waived", "waiver": authorization})
+    elif kind == "delivery.recorded":
+        run = data.setdefault("runs", {}).get(payload.get("run_id"))
+        delivery = payload.get("delivery")
+        if (not run or run.get("status") != "active" or run.get("delivery") is not None
+                or not isinstance(delivery, dict) or not isinstance(delivery.get("manifest_hash"), str)
+                or not isinstance(delivery.get("actor_id"), str) or not delivery["actor_id"]
+                or delivery.get("outcome") not in {"local-merge", "pull-request", "retained-branch"}
+                or not isinstance(delivery.get("actual_result"), dict)
+                or not delivery.get("verification", {}).get("passed")):
+            raise WorkflowError("INVALID_EVENT", "invalid or duplicate delivery terminal record")
+        authorization = delivery["actual_result"].get("authorization", {})
+        if (authorization.get("approved") is not True or authorization.get("manifest_hash") != delivery.get("manifest_hash")
+                or authorization.get("action") != "delivery." + delivery.get("outcome")
+                or delivery["actual_result"].get("outcome") != delivery.get("outcome")):
+            raise WorkflowError("INVALID_EVENT", "delivery authorization does not bind its terminal outcome")
+        manifest = delivery.get("manifest")
+        if (not isinstance(manifest, dict) or manifest.get("run_id") != run.get("id")
+                or hashlib.sha256(json.dumps(manifest, sort_keys=True, ensure_ascii=False,
+                    separators=(",", ":")).encode()).hexdigest() != delivery.get("manifest_hash")
+                or manifest.get("outcome") != delivery.get("outcome")):
+            raise WorkflowError("INVALID_EVENT", "delivery manifest digest or outcome is invalid")
+        verification = delivery.get("verification", {})
+        if not isinstance(verification, dict):
+            raise WorkflowError("INVALID_EVENT", "delivery verification record is malformed")
+        if (verification.get("manifest_hash") != delivery.get("manifest_hash")
+                or verification.get("repository_fingerprints") != manifest.get("repositories")
+                or verification.get("acceptance_hash") != manifest.get("acceptance_hash")):
+            raise WorkflowError("INVALID_EVENT", "delivery verification is not bound to its manifest")
+        heads = delivery["actual_result"].get("repository_heads", {})
+        repositories = manifest.get("repositories", {})
+        if not isinstance(heads, dict) or set(heads) != set(repositories):
+            raise WorkflowError("INVALID_EVENT", "delivery result does not cover all repositories")
+        if delivery["outcome"] in {"retained-branch", "pull-request"} and any(
+                heads[repo_id] != value.get("head") for repo_id, value in repositories.items()):
+            raise WorkflowError("INVALID_EVENT", "delivery result changed a source branch head")
+        if delivery["outcome"] == "local-merge":
+            merges = delivery["actual_result"].get("merge_commits", {})
+            if (not isinstance(merges, dict) or merges != heads
+                    or any(not isinstance(value, str) or not value for value in heads.values())):
+                raise WorkflowError("INVALID_EVENT", "delivery merge commits do not match resulting heads")
+            for repo_id, value in repositories.items():
+                result = subprocess.run(["git", "merge-base", "--is-ancestor", value["head"], heads[repo_id]],
+                    cwd=value["location"], capture_output=True, text=True, check=False)
+                if result.returncode:
+                    raise WorkflowError("INVALID_EVENT", "local merge does not contain the verified source head")
+        if delivery["outcome"] == "pull-request":
+            request = delivery["actual_result"].get("pull_request")
+            if not isinstance(request, dict) or not isinstance(request.get("id"), str) or not request["id"]:
+                raise WorkflowError("INVALID_EVENT", "pull-request record lacks a provider request ID")
+        acceptance = next((value for value in reversed(run.get("acceptances", []))
+                           if value.get("complete") is True and value.get("fresh", True)), None)
+        if not acceptance or acceptance.get("acceptance_hash") != delivery.get("verification", {}).get("acceptance_hash"):
+            raise WorkflowError("INVALID_EVENT", "delivery does not bind current requirement acceptance")
+        from .gates import gate_status
+        if gate_status(run).get("stage") != "delivery":
+            raise WorkflowError("INVALID_EVENT", "delivery gate is not open")
+        run["status"] = "delivered"
+        run["delivery"] = delivery
     else:
         data.update(payload)
 
@@ -367,6 +426,7 @@ def _validate_event_shape(event: dict) -> None:
                              and isinstance(payload.get("resolution"), dict)),
         "finding.waived": (isinstance(payload.get("run_id"), str) and isinstance(payload.get("finding_id"), str)
                            and isinstance(payload.get("authorization"), dict)),
+        "delivery.recorded": (isinstance(payload.get("run_id"), str) and isinstance(payload.get("delivery"), dict)),
     }
     if kind in requirements and not requirements[kind]:
         raise WorkflowError("INVALID_EVENT", f"invalid payload shape for {kind}")

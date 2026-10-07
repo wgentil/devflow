@@ -61,6 +61,7 @@ def register_commands(parser: argparse.ArgumentParser) -> None:
     approval.add_argument("--run-id", required=True)
     approval.add_argument("--proposal-id", required=True)
     approval.add_argument("--confirm-hash", required=True)
+    approval.add_argument("--actor-id", required=True)
     apply = change_commands.add_parser("apply")
     apply.add_argument("--root", required=True)
     apply.add_argument("--run-id", required=True)
@@ -114,7 +115,12 @@ def dispatch(parsed: argparse.Namespace) -> dict:
                 raise WorkflowError("REPOSITORY_NOT_REGISTERED", "work item has no registered repository")
             proposal = propose_test_change(run, parsed.item, Path(parsed.patch_file).read_text(), parsed.reason,
                                            Path(repository["location"]))
-            response = transact(root, state["version"], parsed.operation_id,
+            operation_id = (parsed.operation_id if getattr(parsed, "operation_id_explicit", False)
+                            else f"test-change:propose:{parsed.run_id}:{proposal['id']}")
+            previous = state["operations"].get(operation_id)
+            if previous is not None:
+                return {"proposal": previous["payload"]["proposal"], "state_version": state["version"], "replayed": True}
+            response = transact(root, state["version"], operation_id,
                 {"kind": "test.change.proposed", "payload": {"run_id": parsed.run_id, "proposal": proposal}})
             return {"proposal": proposal, "state_version": response["state"]["version"],
                     "replayed": response["replayed"]}
@@ -124,11 +130,22 @@ def dispatch(parsed: argparse.Namespace) -> dict:
         if parsed.test_change_command == "list":
             return {"proposals": proposals}
         if parsed.test_change_command == "approve":
-            approval = approve_test_change(proposal, parsed.confirm_hash)
-            response = transact(root, state["version"], parsed.operation_id,
+            approval = approve_test_change(proposal, parsed.confirm_hash, parsed.actor_id)
+            operation_id = (parsed.operation_id if getattr(parsed, "operation_id_explicit", False)
+                            else f"test-change:approve:{parsed.run_id}:{parsed.proposal_id}:{parsed.actor_id}")
+            previous = state["operations"].get(operation_id)
+            if previous is not None:
+                return {**previous["payload"]["approval"], "state_version": state["version"], "replayed": True}
+            response = transact(root, state["version"], operation_id,
                 {"kind": "test.change.approved", "payload": {"run_id": parsed.run_id,
                     "proposal_id": parsed.proposal_id, "approval": approval}})
             return {**approval, "state_version": response["state"]["version"], "replayed": response["replayed"]}
+        operation_id = (parsed.operation_id if getattr(parsed, "operation_id_explicit", False)
+                        else f"test-change:apply:{parsed.run_id}:{parsed.proposal_id}")
+        previous = state["operations"].get(operation_id)
+        if previous is not None:
+            return {"proposal_id": parsed.proposal_id, "after_hashes": previous["payload"]["after_hashes"],
+                    "state_version": state["version"], "replayed": True}
         if parsed.confirm_hash != proposal.get("proposal_hash"):
             raise WorkflowError("EXPLICIT_CONFIRMATION_REQUIRED", "apply requires the approved proposal hash")
         if (proposal.get("status") != "approved"
@@ -137,7 +154,7 @@ def dispatch(parsed: argparse.Namespace) -> dict:
         item = next(item for item in run["plan"]["work_items"] if item["id"] == proposal["item_id"])
         repo = Path(state["data"]["repositories"][item["repo_id"]]["location"])
         applied = apply_approved_patch(repo, proposal, proposal["approval"])
-        response = transact(root, state["version"], parsed.operation_id,
+        response = transact(root, state["version"], operation_id,
             {"kind": "test.change.applied", "payload": {"run_id": parsed.run_id,
                 "proposal_id": parsed.proposal_id, "after_hashes": applied["after_hashes"]}})
         return {**applied, "state_version": response["state"]["version"], "replayed": response["replayed"]}

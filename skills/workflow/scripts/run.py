@@ -29,6 +29,7 @@ from workflow_lib.gates import (accept_requirements, amend_item, discard_run, ga
 from workflow_lib.reviews import record_adjudication  # noqa: E402
 from commands import build as build_commands  # noqa: E402
 from commands import review as review_commands  # noqa: E402
+from commands import delivery as delivery_commands  # noqa: E402
 
 
 def _json_file(path: str | None) -> dict:
@@ -73,7 +74,7 @@ def _measure_cli(parsed, result: dict, result_code: str, started: float, stdout_
     if not root_value:
         return
     command_parts = [parsed.command]
-    for key in ("context_command", "repo_command", "spec_command", "plan_command", "run_command", "review_command"):
+    for key in ("context_command", "repo_command", "spec_command", "plan_command", "run_command", "review_command", "delivery_command"):
         value = getattr(parsed, key, None)
         if value:
             command_parts.append(value)
@@ -262,11 +263,13 @@ def main(argv: list[str] | None = None) -> int:
     resolve_finding_command.add_argument("--operation-id")
     build_commands.register_commands(commands)
     review_commands.register_commands(commands)
+    delivery_commands.register_commands(commands)
     try:
         parsed = parser.parse_args(argv)
         if getattr(parsed, "root", None):
             parsed.root = str(Path(parsed.root).expanduser().resolve())
         default_id = uuid4().hex
+        parsed.operation_id_explicit = bool(getattr(parsed, "operation_id", None))
         run_command = getattr(parsed, "run_command", None)
         if run_command in {"result", "abandon"}:
             default_id = f"run-{run_command}:{parsed.run_id}:{parsed.attempt_id}"
@@ -282,6 +285,7 @@ def main(argv: list[str] | None = None) -> int:
                     or getattr(parsed, "review_command", None) in {"package", "record"}
                     or run_command in {"start", "abandon", "result"})
         mutation = mutation or run_command in {"amend-item", "discard", "accept", "park-finding", "waive-finding", "adjudicate", "resolve-finding"}
+        mutation = mutation or getattr(parsed, "delivery_command", None) == "record"
         if mutation and getattr(parsed, "root", None):
             initial_state = read_state(Path(parsed.root))
             previous = initial_state["operations"].get(parsed.operation_id)
@@ -632,6 +636,8 @@ def main(argv: list[str] | None = None) -> int:
             result = build_commands.dispatch(parsed)
         elif parsed.command == "review":
             result = review_commands.dispatch(parsed)
+        elif parsed.command == "delivery":
+            result = delivery_commands.dispatch(parsed)
         else:
             parser.error("select a supported command")
     except _OperationReplay as exc:

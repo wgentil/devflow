@@ -122,16 +122,16 @@ All new records include schema version 1 and stable IDs. Mutations use `transact
 
 **Contract:** Manifest fields: schema_version, run_id, spec_hash, plan_hash, per-repo base/head/worktree fingerprints, acceptance hash, unresolved findings, rulings, outcome and owned cleanup resources. Canonical JSON digest binds approval. Outcomes are local-merge, pull-request and retained-branch; preparation is read-only. Recheck every exact head, acceptance and worktree immediately before an explicitly authorized executor action. Record actual merge commit/PR identity/retained heads as a terminal event, including standalone runs. Cross-repo delivery rejects any changed member. Cleanup validates ownership and authorizes only workflow-created resources; no blanket git clean or user-file deletion. Fixtures use local bare Git repositories and fake connector results; no network writes.
 
-- [ ] Add the following regression/acceptance tests with these assertions:
+- [x] Add regression tests for stale heads/manifests, retained/local-merge/PR outcomes, standalone terminal records, owned cleanup resources, and cross-repo completeness.
 
   - test_stale_head_authorization_and_manifest: change one head or digest after preparation; assert zero delivery actions.
   - test_local_merge_pr_retention_terminal_events: authorized fixture executors record real/fake outcomes idempotently and include standalone runs.
   - test_cleanup_and_multi_repo_failure: reject unowned paths/branches and preserve resources when any repository prerequisite fails.
 
-- [ ] Run `python3 -m unittest tests.test_delivery -v`; require the intended missing behavior failures before implementation.
-- [ ] Implement the listed interfaces and event/CLI boundaries without changing unrelated records or installing the plugin.
-- [ ] Run `python3 -m unittest tests.test_delivery -v`; require all tests passing. Run impacted earlier tests when shared contracts change.
-- [ ] Update interface documentation and parity evidence for the task; commit the implementation and tests with the appropriate `Work-Item:` trailer.
+- [x] `python3 -m unittest tests.test_delivery -v` failed on the missing delivery module before implementation.
+- [x] Implemented canonical manifests, exact-head verification, terminal record validation, and delivery CLI commands; no merge/push/PR/cleanup executor is invoked.
+- [x] `python3 -m unittest discover -s tests -v` — 87 tests passed; compileall, CLI help, and `git diff --check` passed.
+- [x] Updated usage and parity evidence; commit will contain the task validation result.
 
 ### Task 6: Integrate commands, skills and acceptance fixtures
 

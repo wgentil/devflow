@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 
@@ -44,7 +45,12 @@ def dispatch(parsed: argparse.Namespace) -> dict:
     if parsed.review_command == "package":
         package = prepare_review(run, parsed.role, json.loads(parsed.repositories_json),
                                  json.loads(parsed.prior_findings_json))
-        response = transact(root, state["version"], parsed.operation_id,
+        operation_id = (parsed.operation_id if getattr(parsed, "operation_id_explicit", False)
+                        else f"review-package:{parsed.run_id}:{package['package_hash']}")
+        previous = state["operations"].get(operation_id)
+        if previous is not None:
+            return {"package": previous["payload"]["package"], "state_version": state["version"], "replayed": True}
+        response = transact(root, state["version"], operation_id,
             {"kind": "review.package.prepared", "payload": {"run_id": parsed.run_id, "package": package}})
         return {"package": package, "state_version": response["state"]["version"],
                 "replayed": response["replayed"]}
@@ -53,8 +59,15 @@ def dispatch(parsed: argparse.Namespace) -> dict:
                     "actor_id": parsed.actor_id, "invocation_ref": parsed.invocation_ref,
                     "tool_available": parsed.tool_available}
         report = json.loads(parsed.report_json)
+        operation_id = (parsed.operation_id if getattr(parsed, "operation_id_explicit", False)
+                        else "review-record:" + parsed.package_hash + ":" + parsed.actor_id + ":" +
+                        hashlib.sha256(json.dumps(report, sort_keys=True,
+                            separators=(",", ":")).encode()).hexdigest())
+        previous = state["operations"].get(operation_id)
+        if previous is not None:
+            return {**previous["payload"]["review"], "state_version": state["version"], "replayed": True}
         review = record_review(run, parsed.package_hash, reviewer, report)
-        response = transact(root, state["version"], parsed.operation_id,
+        response = transact(root, state["version"], operation_id,
             {"kind": "review.recorded", "payload": {"run_id": parsed.run_id, "review": review}})
         return {**review, "state_version": response["state"]["version"], "replayed": response["replayed"]}
     return correction_impact(run, json.loads(parsed.changed_inputs_json))
