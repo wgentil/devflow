@@ -349,3 +349,7 @@ When DevFlow changes, update this guide, the affected skill guides/diagrams and
 examples together. Verify documented commands, links, fixture shapes and supported
 behavior before reporting completion. Clearly label design-only features until
 implemented and validated.
+
+Host initialization developer command: invoke the bundled helper with
+`host init --project-dir <working-directory> --operation-id <unique-id>`.
+`--root` optionally selects external control state; omit it for project-local state.

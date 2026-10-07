@@ -86,3 +86,14 @@ Start with [project setup and initialization](../../docs/setup-and-usage.md).
 See [usage guide and examples](GUIDE.md) for prerequisites, commands, input shapes,
 outputs and recovery. The [documentation index](../../docs/skills.md) covers shared
 setup and all DevFlow skills.
+
+## Explicit project initialization
+
+When the user invokes workflow, resolve `scripts/run.py` relative to this loaded
+skill directory. Detect an existing Python 3.11+ interpreter and invoke bundled
+helpers yourself; no user environment variables or direct Python setup are needed.
+Capture `version` while loading these instructions and retain its release descriptor.
+Call `host init --project-dir <actual host working directory> --operation-id <unique ID>`.
+Use the returned control root and stable repo ID. Select a run only when one is
+unambiguous; ask a concise selection question for multiple runs. Initialization
+never approves specs or creates a run without its ordinary prerequisites.

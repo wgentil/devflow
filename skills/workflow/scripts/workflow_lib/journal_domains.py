@@ -52,6 +52,13 @@ def reduce_event(data, kind, payload, version):
 
 
 def _reduce(data, kind, req, version):
+    if kind == 'domain.host.init':
+        require(text(req.get('repo_id')) and text(req.get('location')), 'repository identity required')
+        repositories = data.setdefault('repositories', {})
+        prior = repositories.get(req['repo_id'])
+        require(prior is None or prior.get('location') == req['location'], 'repository identity conflict')
+        repositories[req['repo_id']] = {'location': req['location']}
+        return {'repo_id': req['repo_id']}
     if kind == 'domain.issues.capture':
         from .issues import capture_issue
         updated = capture_issue(data, req['issue'])

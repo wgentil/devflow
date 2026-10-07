@@ -225,3 +225,8 @@ host manifests. Python source is bundled; an existing Python 3.11+ interpreter
 is required. User-controlled upgrades require reloading the workflow instructions
 and refreshing the attachment. Host integration readiness is reported separately
 from package/protocol fixture verification.
+
+Explicit workflow invocation now initializes the current Git project/worktree,
+reuses a stable repository ID and lists resumable runs. Runtime data lives in
+`.devflow/` and is excluded through local Git excludes and source ingestion.
+Initialization does not approve a spec or plan or start implementation.

@@ -632,7 +632,7 @@ def main(argv: list[str] | None = None) -> int:
             result = {"finding_id": parsed.finding_id, "status": "resolved", "state_version": receipt["state"]["version"]}
         elif parsed.command == "build":
             result = dispatch_command_group(parsed)
-        elif parsed.command in {"review", "delivery", "issues", "migrate", "stats", "ingest", "docs", "harden"}:
+        elif parsed.command in {"review", "delivery", "issues", "migrate", "stats", "ingest", "docs", "harden", "host"}:
             result = dispatch_command_group(parsed)
         else:
             parser.error("select a supported command")

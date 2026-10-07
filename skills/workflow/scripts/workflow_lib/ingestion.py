@@ -18,6 +18,7 @@ def ingest_sources(repo: dict, scope: list[str], profile: dict, cache: dict) -> 
         if not path.is_relative_to(root): raise ValueError('scope path leaves registered repository')
         candidates=[path] if path.is_file() else sorted(path.rglob('*')) if path.is_dir() else []
         for candidate in candidates:
+            if '.devflow' in candidate.relative_to(root).parts or '.git' in candidate.relative_to(root).parts: continue
             resolved=candidate.resolve()
             if not resolved.is_relative_to(root): raise ValueError('symlink escapes registered repository')
             if candidate.is_file() and (not extensions or candidate.suffix.lower() in extensions): selected.append(candidate)

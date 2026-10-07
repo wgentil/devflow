@@ -72,3 +72,10 @@ Expect durable run status, attempt tokens, gate stage and bound delivery records
 Fresh sessions resume by root/run ID. Missing verification, mandatory unresolved
 findings or incomplete acceptance prevent delivery. Historical delivered records
 remain readable after later repository edits or relocation.
+
+### Initialization example
+
+Say “start DevFlow in this project.” Workflow discovers the Git/worktree root,
+initializes `.devflow/control` and excludes runtime state locally. Existing records
+are reused. Multiple resumable runs require a selection. Missing compatible Python
+is diagnosed; the plugin does not bundle an interpreter. See [hosts](../../docs/hosts.md).
