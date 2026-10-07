@@ -25,6 +25,7 @@ from workflow_lib.runs import (abandon_attempt, issue_attempt, record_result, ru
 from workflow_lib.store import WorkflowError, read_state, transact  # noqa: E402
 from workflow_lib.telemetry import record_offload  # noqa: E402
 from commands import build as build_commands  # noqa: E402
+from commands import review as review_commands  # noqa: E402
 
 
 def _json_file(path: str | None) -> dict:
@@ -69,7 +70,7 @@ def _measure_cli(parsed, result: dict, result_code: str, started: float, stdout_
     if not root_value:
         return
     command_parts = [parsed.command]
-    for key in ("context_command", "repo_command", "spec_command", "plan_command", "run_command"):
+    for key in ("context_command", "repo_command", "spec_command", "plan_command", "run_command", "review_command"):
         value = getattr(parsed, key, None)
         if value:
             command_parts.append(value)
@@ -204,6 +205,7 @@ def main(argv: list[str] | None = None) -> int:
     result_command.add_argument("--result", required=True)
     result_command.add_argument("--operation-id")
     build_commands.register_commands(commands)
+    review_commands.register_commands(commands)
     try:
         parsed = parser.parse_args(argv)
         if getattr(parsed, "root", None):
@@ -221,6 +223,7 @@ def main(argv: list[str] | None = None) -> int:
                     or getattr(parsed, "spec_command", None) in {"store", "approve"}
                     or getattr(parsed, "plan_command", None) == "validate"
                     or getattr(parsed, "build_command", None) is not None
+                    or getattr(parsed, "review_command", None) in {"package", "record"}
                     or run_command in {"start", "abandon", "result"})
         if mutation and getattr(parsed, "root", None):
             initial_state = read_state(Path(parsed.root))
@@ -488,6 +491,8 @@ def main(argv: list[str] | None = None) -> int:
             result = run_summary(updated)
         elif parsed.command == "build":
             result = build_commands.dispatch(parsed)
+        elif parsed.command == "review":
+            result = review_commands.dispatch(parsed)
         else:
             parser.error("select a supported command")
     except _OperationReplay as exc:

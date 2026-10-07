@@ -76,6 +76,7 @@ P01 and the remaining portions of these rows are not complete. Build, review, ac
 | --- | --- | --- | --- |
 | P12 (partial), P13 (partial) | `workflow_lib/evidence.py`, `workflow_lib/test_changes.py`, and `build verify` / `build test-change` | `tests/test_evidence.py`, `tests/test_test_changes.py`; attempt-bound RED/GREEN and explicit approved patch hashes; GREEN invalidation replays across referencing runs | Structured-review integration, CLI end-to-end test-change scenario, and full revalidation routing |
 | P14 (partial), P15 (partial) | `workflow_lib/verifiers.py`; `verify-iac-plan`, `verify-iac-apply`, and `verify-eval-set` | `tests/test_verifiers.py`; plan/policy and exact apply authorization; same-case baseline/post threshold; typed proof binding | External toolchain availability and end-to-end run fixtures |
+| P16 (partial), P17 (partial) | `workflow_lib/reviews.py`; journaled `review package`, `review record`, and `review impact` commands | `tests/test_reviews.py`; full commit range, trailer attribution, worktree and untracked hashes, package staleness, actor separation, correction limits | Independent reviewer invocation is a workflow obligation; acceptance citations/routing and fresh whole-branch review remain pending |
 
 These are initial conditional verifier paths, not completion of P12–P15. Independent review, acceptance, and delivery remain unavailable until their later tasks land.
 

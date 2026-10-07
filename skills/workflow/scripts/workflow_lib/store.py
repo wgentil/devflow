@@ -164,6 +164,36 @@ def _apply_event(state: dict, event: dict) -> None:
         if final_phase:
             run.setdefault("verifier_proofs", {})[proof["id"]] = {
                 "passed": True, "item_id": proof["item_id"], "token": proof["token"], "evidence_id": proof["id"]}
+    elif kind == "review.package.prepared":
+        run = data.setdefault("runs", {}).get(payload.get("run_id"))
+        package = payload.get("package")
+        if (not run or not isinstance(package, dict) or package.get("run_id") != run.get("id")
+                or not isinstance(package.get("package_hash"), str)
+                or package.get("package_hash") in run.setdefault("review_packages", {})):
+            raise WorkflowError("INVALID_EVENT", "invalid or duplicate review package")
+        unsigned = {key: value for key, value in package.items() if key != "package_hash"}
+        digest = __import__("hashlib").sha256(json.dumps(unsigned, sort_keys=True, ensure_ascii=False,
+            separators=(",", ":")).encode()).hexdigest()
+        if digest != package["package_hash"]:
+            raise WorkflowError("INVALID_EVENT", "review package hash is invalid")
+        run["review_packages"][package["package_hash"]] = package
+    elif kind == "review.recorded":
+        run = data.setdefault("runs", {}).get(payload.get("run_id"))
+        review = payload.get("review")
+        package_hash = review.get("package_hash") if isinstance(review, dict) else None
+        if (not run or package_hash not in run.get("review_packages", {})
+                or not isinstance(review, dict) or review.get("review_id") in run.setdefault("review_ids", [])):
+            raise WorkflowError("INVALID_EVENT", "review does not reference a stored package")
+        package = run["review_packages"][package_hash]
+        if (review.get("role") != package.get("role") or review.get("verdict") not in {"pass", "request-changes", "block"}
+                or not all(isinstance(review.get(key), str) and review[key]
+                           for key in ("review_id", "actor_id", "invocation_ref"))):
+            raise WorkflowError("INVALID_EVENT", "review record has invalid role, verdict, or actor reference")
+        if review.get("actor_id") in run.setdefault("actors", {}).values():
+            raise WorkflowError("INVALID_EVENT", "reviewer actor is not independent")
+        run.setdefault("actors", {})[review["role"] + "_reviewer"] = review["actor_id"]
+        run.setdefault("reviews", {}).setdefault(review["role"], []).append(review)
+        run["review_ids"].append(review["review_id"])
     else:
         data.update(payload)
 
@@ -191,6 +221,9 @@ def _validate_event_shape(event: dict) -> None:
         "verification.typed.recorded": (isinstance(payload.get("run_id"), str)
                                          and isinstance(payload.get("proof"), dict)
                                          and payload["proof"].get("passed") is True),
+        "review.package.prepared": isinstance(payload.get("run_id"), str) and isinstance(payload.get("package"), dict),
+        "review.recorded": (isinstance(payload.get("run_id"), str) and isinstance(payload.get("review"), dict)
+                            and isinstance(payload["review"].get("package_hash"), str)),
     }
     if kind in requirements and not requirements[kind]:
         raise WorkflowError("INVALID_EVENT", f"invalid payload shape for {kind}")

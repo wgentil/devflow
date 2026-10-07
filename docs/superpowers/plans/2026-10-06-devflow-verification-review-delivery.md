@@ -84,16 +84,16 @@ All new records include schema version 1 and stable IDs. Mutations use `transact
 
 **Contract:** Packages bind source/artifact hashes, full commit ranges, Work-Item trailers, unattributed changes, findings and requirement criteria. Roles are item, branch and acceptance; actual separate Codex reviewer invocations are required by skill guidance. Record distinct implementer/item/branch/acceptance actor IDs and invocation references; same actor or missing independent tooling blocks the gate. Reports have verdict, findings with IDs/severity/path/line, bound input hash and role. Share preparation but never conclusions. Item correction limit is five rounds before adjudication; branch and acceptance permit one correction wave each. Unknown correction impact invalidates broad judgments; acceptance must account for every requirement and prior accepted requirements cannot regress silently.
 
-- [ ] Add the following regression/acceptance tests with these assertions:
+- [x] Add regression tests for commit attribution, same-actor/stale-package rejection, correction limits, unknown impact, and journal persistence.
 
   - test_same_actor_and_stale_package: reject implementer-as-reviewer and reports bound to changed inputs.
   - test_commit_attribution_and_unattributed_changes: fixture commits with and without trailers appear in the complete branch package.
   - test_limits_and_unknown_impact: fifth unresolved item correction needs adjudication; second branch/acceptance wave blocks; unknown impact invalidates all dependent judgments.
 
-- [ ] Run `python3 -m unittest tests.test_reviews -v`; require the intended missing behavior failures before implementation.
-- [ ] Implement the listed interfaces and event/CLI boundaries without changing unrelated records or installing the plugin.
-- [ ] Run `python3 -m unittest tests.test_reviews -v`; require all tests passing. Run impacted earlier tests when shared contracts change.
-- [ ] Update interface documentation and parity evidence for the task; commit the implementation and tests with the appropriate `Work-Item:` trailer.
+- [x] `python3 -m unittest tests.test_reviews -v` failed on the missing review package module before implementation.
+- [x] Implemented content-bound review packages, journal records, and package/record/impact commands.
+- [x] `python3 -m unittest tests.test_reviews -v` — 4 tests passed; `python3 -m compileall -q skills/workflow/scripts` passed.
+- [x] Updated review-work and usage instructions; parity evidence is recorded with the implementation commit.
 
 ### Task 4: Verified routing, findings, amendments and requirement acceptance
 
