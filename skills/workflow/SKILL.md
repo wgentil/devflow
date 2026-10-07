@@ -82,6 +82,7 @@ Use the focused Devflow skills for project context, specification, planning, bui
 
 ## Documentation
 
+Start with [project setup and initialization](../../docs/setup-and-usage.md).
 See [usage guide and examples](GUIDE.md) for prerequisites, commands, input shapes,
 outputs and recovery. The [documentation index](../../docs/skills.md) covers shared
 setup and all DevFlow skills.

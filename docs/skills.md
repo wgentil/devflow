@@ -1,5 +1,8 @@
 # Skill usage guides
 
+Start with the [complete setup and usage guide](setup-and-usage.md), including
+project initialization and current host limitations.
+
 Each skill has a `GUIDE.md` next to `SKILL.md`. Skill instructions describe the
 agent's responsibilities; guides provide commands, input examples, outputs and
 recovery notes. Start with [workflow](../skills/workflow/GUIDE.md).

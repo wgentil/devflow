@@ -1,5 +1,7 @@
 # workflow usage guide
 
+Start with the [complete setup and initialization guide](../../docs/setup-and-usage.md).
+
 Read the [shared setup and conventions](../../docs/skills.md#shared-setup) first.
 Commands below use its `df` function and path variables.
 

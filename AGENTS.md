@@ -9,6 +9,9 @@ Documentation is part of completion, not a separate follow-up task.
   diagram wherever the instructions, usage, or process changes.
 - For command, input, output, or workflow changes, update the relevant guides,
   shared references in `docs/`, and example files in `docs/examples/`.
+- Treat `docs/setup-and-usage.md` as the primary setup and usage guide. Review it
+  after every DevFlow change and update initialization, setup, workflow, host,
+  upgrade and troubleshooting instructions whenever affected.
 - Keep `docs/skills.md` current when skills or documentation locations change.
 - Describe actual implemented behavior, including limitations and required human
   or external actions. Do not document intended behavior as already implemented.

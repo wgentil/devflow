@@ -1,4 +1,7 @@
-# Devflow foundation usage
+# DevFlow detailed CLI notes
+
+For complete setup, initialization and everyday usage, start with the
+[primary guide](setup-and-usage.md).
 
 Devflow is a skills-only Codex plugin. Run its helper from any working directory with Python 3.11+ on macOS or Linux. Mutating commands require an explicit `--root`; merely loading a skill does not create state. Repository paths may contain spaces.
 
@@ -47,7 +50,7 @@ Review packages bind a run's criteria and artifacts to exact repository base/hea
 
 Delivery preparation is read-only: `delivery prepare` emits a canonical manifest covering the exact spec/plan and acceptance hashes, repository base/head and worktree fingerprints, unresolved findings, rulings, outcome, and run-owned cleanup resources. Save the manifest and confirm its exact `manifest_hash` with `delivery verify` immediately before any authorized outcome. `delivery record` requires a separately authorized actual-result record bound to the same manifest and every repository. Retained branches must preserve exact heads; local-merge records must identify resulting commits; pull-request records require a provider request ID and remain caller-reported. The helper does not merge, push, create a PR, or delete resources. It only records verified outcomes and validates ownership metadata.
 
-Deterministic operations append best-effort measurements to `offload.jsonl` under the selected control root. Records include operation, duration, result, byte counts, and available run/attempt/item attribution. Supplied operation IDs identify retries and are deduplicated; independent read commands receive distinct measurement IDs. A telemetry write failure emits a warning and leaves the workflow result and event journal unchanged. These byte counts do not prove tokens saved; actual usage requires supported runtime records in a later increment.
+Deterministic operations append best-effort measurements to `offload.jsonl` under the selected control root. Records include operation, duration, result, byte counts, and available run/attempt/item attribution. Supplied operation IDs identify retries and are deduplicated; independent read commands receive distinct measurement IDs. A telemetry write failure emits a warning and leaves the workflow result and event journal unchanged. These byte counts do not prove tokens saved; actual usage requires explicitly imported supported runtime records.
 
 Context projections are reused by source hashes, resolved input values, budget, and resolver version. Changing any of those inputs produces a new projection key; prior cache entries remain historical and do not satisfy execution or review evidence.
 
@@ -59,9 +62,15 @@ The chosen control root stores a versioned append-only event journal and an atom
 
 The implementation uses `fcntl` advisory locks and is supported on macOS/Linux. No package dependencies, daemon, MCP server, or default filesystem location are required.
 
-## Foundation limits
+## Current limits
 
-The foundation and current verification/review work cover context resolution, repository registration, approved specifications, dependency validation, resumable attempts, attempt-bound code/IaC/agent-evaluation proofs, independent review records, and requirement acceptance records. Exact-head delivery, issue management, ingestion, migration, and usage reporting remain unavailable until their follow-on increments are implemented. Never treat an attempt result or unavailable gate as passed evidence. Context token budgets are rough estimates; actual usage is not reported by the foundation.
+Current local helpers cover context, specifications, planning, attempts,
+verification, independent review, requirement acceptance, delivery records,
+ingestion, issues, migration, hardening and reporting. Provider dispatch needs an
+injected adapter; actual runtime usage and prices remain explicit inputs. Semantic
+spec-gap interviews and automatic rework dispatch remain agent responsibilities.
+Claude adapters, attachment, hooks and enforced cross-host handoff are proposed,
+not implemented. Never treat unsupported or unavailable gates as passing evidence.
 
 The auxiliary commands are now routed and journal-backed. Mutations require a
 control root and explicit operation ID; retry receipts survive fresh sessions and
