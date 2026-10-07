@@ -44,7 +44,8 @@ def _required_proof(run: dict, item: dict, live: bool = True) -> dict | None:
                 current = repository_fingerprint(Path(repo["location"])) if repo.get("location") else {}
             except Exception:
                 current = {}
-            if (current.get("head") == evidence.get("repository_head")
+            if (current.get("head") and current.get("worktree_digest")
+                    and current.get("head") == evidence.get("repository_head")
                     and current.get("worktree_digest") == evidence.get("worktree_digest")):
                 return proof
     return None

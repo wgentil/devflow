@@ -35,10 +35,16 @@ def _identity(req):
 
 def apply_host_event(state: dict, kind: str, request: dict) -> dict:
     req = deepcopy(request)
-    if kind in {'model-override','model-receipt','model-interrupt'}:
+    if kind == 'legacy-adopt':
+        require(req.get('adopt_legacy') is True and not any(b['run_id']==req.get('run_id') for b in state.get('host_bindings',{}).values()), 'Legacy adoption is explicit and only for pre-binding runs.')
+        run=state.get('runs',{}).get(req.get('run_id'),{})
+        require(not run.get('host_owner_release'), 'Known owner release cannot be bypassed by adoption.')
+        req['legacy_adoption_actor']=req.get('actor_id')
+        return apply_host_event(state,'attach',req)
+    if kind in {'model-override' ,'model-receipt','model-interrupt'}:
         binding = validate_binding(state,req.get('binding_id'),req.get('revision'))
         run = state['runs'][binding['run_id']]
-        require(binding['role'] == 'implementer', 'Model policy changes belong to current implementer.')
+        if kind == 'model-override':require(binding['role'] == 'implementer', 'Model policy changes belong to current implementer.')
         if kind == 'model-override':
             require(req.get('mode','advisory') in {'strict','advisory'}, 'Supported routing mode required.')
             record = {**req, 'policy_revision':len(run.get('model_overrides', []))+1}
@@ -65,6 +71,7 @@ def apply_host_event(state: dict, kind: str, request: dict) -> dict:
         _identity(req)
         run = state.get('runs', {}).get(req['run_id'])
         require(run and run.get('status') not in {'delivered','discarded'}, 'Active registered run required.')
+        require(run.get('host_protocol_version') == 1 or req.get('adopt_legacy') is True or any(b['run_id']==run['id'] for b in bindings.values()), 'Pre-binding legacy run requires explicit legacy adoption.', 'LEGACY_ADOPTION_REQUIRED')
         require(any(repo.get('location') == req['project_dir'] for repo in run.get('repositories', {}).values()), 'Project does not match run repository.')
         existing = binding_for_session(state,req['host'],req['session_id'])
         history = run.setdefault('implementer_actors', [])
@@ -116,7 +123,12 @@ def apply_host_event(state: dict, kind: str, request: dict) -> dict:
         key = binding['host'] + ':' + binding['session_id'] + ':' + req['task_id']
         tasks = state.setdefault('host_tasks', {})
         record = {**req,'run_id':binding['run_id'],'role':binding['role'],'actor_id':binding['actor_id'], 'host':binding['host'],'session_id':binding['session_id']}
-        require(key not in tasks or tasks[key] == record, 'Task ID already mapped to another scope.')
+        prior=tasks.get(key)
+        if prior and prior != record:
+            from .journal_domains import digest
+            require(req.get('replace') is True and req.get('previous_mapping_hash') == digest(prior), 'Explicit remap must name the exact previous mapping hash.')
+            require(all(prior.get(k) == record.get(k) for k in ('run_id','role','scope','item_id','binding_id')), 'Remap cannot change task ownership or work scope.')
+        record.pop('replace',None);record.pop('previous_mapping_hash',None)
         tasks[key] = record
         return deepcopy(record)
     raise WorkflowError('INVALID_EVENT', f'Unknown host transition: {kind}')

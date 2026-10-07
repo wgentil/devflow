@@ -29,3 +29,20 @@ def read_locator(project_dir: Path, host: str, session_id: str) -> dict | None:
         return value
     except (OSError,ValueError,TypeError) as exc:
         raise WorkflowError('LOCATOR_INVALID', 'Repair attachment locator from the journal; '+str(exc)) from exc
+
+
+def write_task_index(project_dir, host, session_id, control_root, task_ids):
+    path=locator_path(project_dir,host,session_id).with_suffix('.tasks.json')
+    path.parent.mkdir(parents=True,exist_ok=True)
+    _atomic_json(path,{'control_root':str(Path(control_root).resolve()),'task_ids':sorted(set(task_ids))})
+
+
+def read_task_index(project_dir, host, session_id):
+    path=locator_path(project_dir,host,session_id).with_suffix('.tasks.json')
+    if not path.is_file():return None
+    try:
+        if path.stat().st_size>65536:raise ValueError('task index too large')
+        value=json.loads(path.read_text())
+        if not isinstance(value.get('task_ids'),list) or not all(isinstance(t,str) for t in value['task_ids']) or not isinstance(value.get('control_root'),str) or not Path(value['control_root']).is_absolute():raise ValueError('invalid task index')
+        return value
+    except (OSError,ValueError,TypeError):return None

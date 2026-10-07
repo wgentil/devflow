@@ -18,6 +18,9 @@ def resolve_profile(policy: dict, request: dict, capabilities: dict, discovery: 
     effort = req.get('effort') or definition['effort']
     entries = policy.get('hosts', {}).get(req.get('host'), {}).get(profile, [])
     pin = req.get('pin')
+    if pin and req.get('allow_unvalidated') and mode == 'advisory' and not any(e.get('model')==pin for e in entries):
+        entries = entries + [{'provider':'openai' if req.get('host')=='codex' else 'anthropic','model':pin,
+                              'efforts':capabilities.get('efforts', []),'status':'candidate','policy_version':policy.get('version')}]
     allowed = req.get('allowed_models')
     models = discovery.get('models', {})
     accessible = capabilities.get('models', [])

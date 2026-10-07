@@ -129,7 +129,7 @@ def main(argv: list[str] | None = None) -> int:
     input_bytes = 0
     initial_state = None
     parser = argparse.ArgumentParser(prog="devflow")
-    parser.add_argument('--binding-id')
+    parser.add_argument('--binding-id', dest='mutation_binding_id')
     parser.add_argument('--binding-revision', type=int)
     commands = parser.add_subparsers(dest="command")
     commands.add_parser("version")
@@ -269,12 +269,15 @@ def main(argv: list[str] | None = None) -> int:
         parsed = parser.parse_args(argv)
         from workflow_lib.store import HOST_CONTEXT
         HOST_CONTEXT.set(None)
-        if parsed.binding_id or parsed.binding_revision is not None:
-            if not parsed.binding_id or parsed.binding_revision is None or not getattr(parsed,'root',None):
+        if parsed.mutation_binding_id or parsed.binding_revision is not None:
+            if not parsed.mutation_binding_id or parsed.binding_revision is None or not getattr(parsed,'root',None):
                 raise WorkflowError('BINDING_REQUIRED','Binding ID, revision and control root must be supplied together.')
             from workflow_lib.hosts import validate_binding
-            validate_binding(read_state(Path(parsed.root))['data'],parsed.binding_id,parsed.binding_revision)
-            HOST_CONTEXT.set({'binding_id':parsed.binding_id,'revision':parsed.binding_revision})
+            bound=validate_binding(read_state(Path(parsed.root))['data'],parsed.mutation_binding_id,parsed.binding_revision)
+            from workflow_lib.releases import release_descriptor, check_release
+            parity=check_release(bound['release'],release_descriptor(),1)
+            if parity['status'] != 'allow':raise WorkflowError('RELEASE_MISMATCH',parity['message'],parity)
+            HOST_CONTEXT.set({'binding_id':parsed.mutation_binding_id,'revision':parsed.binding_revision,'release':bound['release']})
         if getattr(parsed, "root", None):
             parsed.root = str(Path(parsed.root).expanduser().resolve())
         default_id = uuid4().hex

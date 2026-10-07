@@ -380,3 +380,22 @@ binding_id/revision plus mode/profile/pin/effort/allowed_models/max_cost prefere
 not caller model claims; file receipt names invocation_id and stage.
 `host model-interrupt` records invocation/error_kind/retry_count without modifying
 run attempts. All three mutations require explicit operation IDs.
+
+`host check --root <control> --binding-id <id> --task-id <actual-host-task-id>`
+returns allow/block/inactive with compact reason codes and evidence references.
+It is read-only and does not perform tests or change attempt state. `host status`
+also returns a resume brief with content fingerprint. Optional task invocation_id
+binds the model receipt used for strict completion (caller claims remain untrusted).
+
+Pre-binding legacy runs require `host legacy-adopt` with `adopt_legacy: true` and
+an explicit actor; known release history cannot use adoption to bypass parity.
+A separate task-index cache can deny known mapped tasks when an external control
+locator is corrupt/missing. It cannot grant ownership or completion permission.
+For native delegated controls, `workflow_lib.host_models.delegated_configuration`
+renders supported host configuration from an eligible resolution; it does not launch
+an agent or manufacture observed-model receipts.
+
+To remap after a new attempt/refresh, use `host task-bind` with `replace: true`
+and `previous_mapping_hash` (canonical SHA-256 of the prior mapping, excluding
+command receipt metadata), preserving run/role/item/binding scope. Exact operation
+retry remains idempotent; ordinary conflicting task-ID reuse is rejected.

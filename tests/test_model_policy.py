@@ -63,3 +63,18 @@ class ModelPolicyTests(unittest.TestCase):
         self.assertIsNone(cached_discovery(cache,key,120,refresh=True))
         self.assertIsNone(cached_discovery(cache,discovery_key('codex','account','p2'),120))
         self.assertIsNone(cached_discovery(cache,key,120,availability_failure=True))
+    def test_explicit_new_candidate_is_advisory_only(self):
+        self.cap['models'].append('new-model');self.discovery['models']['new-model']='available'
+        result=self.resolve(pin='new-model',allow_unvalidated=True)
+        self.assertEqual(result['status'],'allow');self.assertEqual(result['resolved']['model'],'new-model')
+        self.assertEqual(self.resolve(pin='new-model',allow_unvalidated=True,mode='strict')['status'],'block')
+    def test_delegated_configuration_uses_supported_host_fields(self):
+        from workflow_lib.host_models import delegated_configuration
+        resolved=self.resolve()
+        codex=delegated_configuration(resolved,'codex','reviewer')
+        self.assertIn('model = "deep"',codex['toml'])
+        self.assertIn('model_reasoning_effort = "high"',codex['toml'])
+        claude=delegated_configuration(resolved,'claude','reviewer')
+        self.assertEqual(claude['agents']['reviewer']['model'],'deep')
+        self.assertEqual(claude['agents']['reviewer']['effort'],'high')
+        self.assertFalse(claude['enforced'])

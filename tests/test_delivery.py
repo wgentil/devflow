@@ -35,6 +35,12 @@ class DeliveryTests(unittest.TestCase):
                 "acceptance_hash": "accept-1"}], "unresolved_findings": [], "amendments": [],
             "adjudications": [], "owned_resources": []}
 
+        from workflow_lib.evidence import repository_fingerprint
+        fingerprint=repository_fingerprint(self.repo)
+        self.run['repositories']={'repo-1':{'location':str(self.repo)}}
+        self.run['verification_proofs']['green'].update(repo_id='repo-1',
+            repository_head=fingerprint['head'],worktree_digest=fingerprint['worktree_digest'])
+
     def git(self, *args):
         return subprocess.run(["git", *args], cwd=self.repo, check=True, capture_output=True,
                               text=True).stdout.strip()

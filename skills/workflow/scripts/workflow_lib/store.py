@@ -6,6 +6,7 @@ import fcntl
 from contextvars import ContextVar
 
 HOST_CONTEXT = ContextVar("devflow_host_context", default=None)
+LIVE_TRANSFER = ContextVar("devflow_transfer_preflight", default=None)
 from copy import deepcopy
 import hashlib
 import json
@@ -590,9 +591,19 @@ def transact(root: Path, expected_version: int, operation_id: str, event: dict) 
         if guard:
             from .hosts import validate_binding, require
             binding = validate_binding(state['data'],guard['binding_id'],guard['revision'])
+            if guard.get('release'):
+                from .releases import release_descriptor, check_release
+                require(check_release(binding['release'],release_descriptor(),1)['status']=='allow', 'Installed helper differs from attached release; reload and refresh.', 'RELEASE_MISMATCH')
             request = event['payload'].get('request',event['payload'])
+            if binding['role'] != 'implementer':
+                require(event['kind'] in {'review.package.prepared','review.recorded','domain.host.detach','domain.host.task-bind','domain.host.model-receipt','domain.host.model-interrupt'}, 'Reviewer binding cannot mutate implementation.')
+                if event['kind'] == 'review.recorded':
+                    review=request.get('review', {})
+                    require(review.get('actor_id') == binding['actor_id'] and review.get('package_hash') == binding.get('package_hash'), 'Assessment must match reviewer attachment.')
             run_id = request.get('run_id')
             require(not run_id or run_id == binding['run_id'], 'Mutation belongs to another attached run.')
+        preflight=LIVE_TRANSFER.get()
+        if preflight:preflight()
         previous = state["operations"].get(operation_id)
         if previous is not None:
             return {"state": state, "event": previous, "replayed": True}
@@ -605,7 +616,7 @@ def transact(root: Path, expected_version: int, operation_id: str, event: dict) 
             "kind": event["kind"],
             "payload": event["payload"],
         }
-        if guard: committed["host_binding"] = guard
+        if guard: committed["host_binding"] = {key:guard[key] for key in ("binding_id","revision")}
         journal = root / "events"
         journal.mkdir(parents=True, exist_ok=True)
         event_path = journal / f"{committed['sequence']:08d}.json"

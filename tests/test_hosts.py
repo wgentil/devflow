@@ -12,7 +12,7 @@ from workflow_lib.store import WorkflowError, transact, read_state
 
 def host_state(project='/tmp/project'):
     return {'repositories':{'repo':{'location':project}}, 'runs':{'run':{
-        'id':'run', 'actors':{'implementer':'original'}, 'repositories':{'repo':{'location':project}},
+        'id':'run', 'host_protocol_version':1, 'actors':{'implementer':'original'}, 'repositories':{'repo':{'location':project}},
         'plan':{'work_items':[{'id':'W1','kind':'code','requirement_ids':['R1']}]},
         'items':{'W1':{'status':'pending','attempts':[{'token':'t'}]}},
         'active_attempt':{'item_id':'W1','token':'t'},'status':'active'}}}
@@ -73,3 +73,11 @@ class HostTests(unittest.TestCase):
             args.operation_id='conflict';args.expected_version=0
             with self.assertRaises(WorkflowError):commit(args,'domain.host.detach',{'binding_id':'b1','revision':1})
             self.assertEqual(read_state(root)['data']['host_bindings']['b1']['status'],'active')
+    def test_explicit_task_remap_after_rework_preserves_scope(self):
+        from workflow_lib.journal_domains import digest
+        apply_host_event(self.state,'attach',attachment())
+        old=apply_host_event(self.state,'task-bind',{'binding_id':'b1','revision':1,'task_id':'task','scope':'item','item_id':'W1','token':'t'})
+        self.state['runs']['run']['items']['W1']['attempts'].append({'token':'new'})
+        new=apply_host_event(self.state,'task-bind',{'binding_id':'b1','revision':1,'task_id':'task','scope':'item','item_id':'W1','token':'new','replace':True,'previous_mapping_hash':digest(old)})
+        self.assertEqual(new['token'],'new')
+        with self.assertRaises(WorkflowError):apply_host_event(self.state,'task-bind',{'binding_id':'b1','revision':1,'task_id':'task','scope':'delivery','replace':True,'previous_mapping_hash':digest(new)})

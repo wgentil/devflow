@@ -1,0 +1,51 @@
+"""Read-only host event evaluation and brief cache (never authoritative)."""
+import json
+from pathlib import Path
+from .bootstrap import discover_project
+from .host_locators import read_locator, locator_path, read_task_index
+from .hosts import binding_for_session
+from .host_completion import check_completion, host_brief
+from .store import read_state, WorkflowError, _atomic_json
+
+
+def evaluate(project_dir, session_id, event, task_id=None):
+    if event == 'Stop':return {'status':'inactive','reason_code':'PAUSE_ALLOWED'}
+    try: project=discover_project(Path(project_dir))
+    except (WorkflowError,OSError):return {'status':'inactive','reason_code':'NO_PROJECT'}
+    issue=None
+    try: locator=read_locator(project,'claude',session_id)
+    except WorkflowError as exc:locator=None;issue=exc.code
+    index=read_task_index(project,'claude',session_id)
+    known_mapped=event == 'TaskCompleted' and index and task_id in index['task_ids']
+    root=Path(locator['control_root']) if locator else Path(index['control_root']) if index else project/'.devflow/control'
+    if not locator and index:issue=issue or 'LOCATOR_MISSING' 
+    if not root.is_dir():
+        return {'status':'block' if known_mapped else 'inactive','reason_code':'CONTROL_ROOT_UNAVAILABLE'}
+    state=read_state(root)['data']
+    binding=binding_for_session(state,'claude',session_id)
+    if locator:
+        pointed=state.get('host_bindings',{}).get(locator['binding_id'])
+        if not pointed or pointed.get('session_id') != session_id or pointed.get('host') != 'claude':
+            issue='LOCATOR_BINDING_MISMATCH'
+        elif pointed['status'] != 'active':return {'status':'inactive','reason_code':'BINDING_DETACHED'}
+    if not binding:return {'status':'inactive','reason_code':issue or 'NOT_ATTACHED'}
+    if event == 'TaskCompleted':
+        from .releases import release_descriptor
+        decision=check_completion(state,binding,task_id,installed_release=release_descriptor())
+        if decision['status'] != 'inactive' and issue:
+            return {'status':'block','reason_code':issue,'message':'Repair locator by retrying explicit attachment.'}
+        return decision
+    if issue:return {'status':'inactive','reason_code':issue,'message':'Repair locator by retrying explicit attachment.'}
+    brief=host_brief(state,binding)
+    path=locator_path(project,'claude',session_id).with_suffix('.brief.json')
+    try:prior=json.loads(path.read_text()) if path.is_file() else {}
+    except (OSError,ValueError):prior={}
+    if prior.get('fingerprint') == brief['fingerprint']:return {'status':'inactive','reason_code':'BRIEF_UNCHANGED'}
+    encoded=json.dumps(brief,separators=(',',':'))
+    if len(encoded.encode()) > 8192:
+        brief={'binding_id':binding['binding_id'],'revision':binding['revision'],'run_id':binding['run_id'],
+               'reason_code':'BRIEF_OVERFLOW','message':'Mandatory state exceeds inline budget; inspect host status before proceeding.',
+               'evidence_refs':[str(root/'state.json')], 'mapped_tasks':'see journal','unmapped_tasks':'unaffected'}
+    path.parent.mkdir(parents=True,exist_ok=True)
+    _atomic_json(path,{'fingerprint':host_brief(state,binding)['fingerprint']})
+    return {'status':'allow','brief':brief}

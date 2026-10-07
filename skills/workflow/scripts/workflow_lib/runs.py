@@ -36,6 +36,7 @@ def start_run(state: dict, run_id: str, plan: dict) -> dict:
         "status": "active",
         "plan": deepcopy(plan),
         "repositories": deepcopy(state.get("repositories", {})),
+        "host_protocol_version": 1,
         "state_version": 0,
         "items": {item["id"]: {"status": "pending", "attempts": []} for item in plan["work_items"]},
         "active_attempt": None,
