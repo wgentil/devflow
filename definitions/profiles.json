@@ -1,0 +1,1 @@
+{"version":1,"profiles":{"generic":{"extensions":[".py",".js",".ts",".go",".rs",".java",".md",".html",".yaml",".yml",".json",".toml",".xml"]},"cobol":{"extensions":[".cob",".cbl",".cpy",".md",".json",".yaml",".yml"]}}}

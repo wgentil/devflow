@@ -1,0 +1,1 @@
+{"version":1,"stages":[{"id":"context","prerequisites":[]},{"id":"specification","prerequisites":["context"]},{"id":"planning","prerequisites":["specification"]},{"id":"implementation","prerequisites":["planning"]},{"id":"review","prerequisites":["implementation"]},{"id":"acceptance","prerequisites":["review"]}]}

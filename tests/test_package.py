@@ -37,7 +37,7 @@ class PackageTests(unittest.TestCase):
             shutil.copytree(ROOT / "skills", relocated / "skills")
             shutil.copy2(ROOT / "plugin.json", relocated / "plugin.json")
             manifest = json.loads((relocated / "plugin.json").read_text())
-            self.assertEqual(len(manifest["skills"]), 6)
+            self.assertEqual(len(manifest["skills"]), 7)
             for skill in manifest["skills"]:
                 self.assertTrue((relocated / skill / "SKILL.md").is_file(), skill)
             control = Path(temp_name) / "control"
