@@ -1,0 +1,21 @@
+# Evidence-loop acceptance review
+
+This review covers the approved [R1–R13 design](superpowers/specs/2026-10-07-devflow-evidence-loops-design.md), branch `feat/devflow-evidence-loops` after the independent review fixes. Local verification ran 339 unittest cases successfully. Fixture tests establish policy and replay behavior; they do not establish installed-host capability or real provider suitability. The independent reviewer found three important issues: a stranded repair claim, overstated migration isolation, and unverified candidate artifact labels. The claim is now terminally aborted for terminal worker/gate-runner failures; migration and candidate-eval trust boundaries are explicit in the guides.
+
+| Requirement | Verdict | Evidence and limit |
+| --- | --- | --- |
+| R1 structured report failure | MET | `skills/workflow/scripts/workflow_lib/gate_reports.py:1`; `tests/test_gate_reports.py:1` cover missing, malformed, placeholder and valid empty findings. |
+| R2 exit-status compatibility | MET | `skills/workflow/scripts/workflow_lib/hardening.py:1`; `tests/test_gate_reports.py:1` retain the exit-status path. |
+| R3 replay and staleness | MET | `skills/workflow/scripts/workflow_lib/journal_domains.py:1`; `tests/test_gate_reports.py:1` retain receipts and invalidate changed input. |
+| R4 bounded repair | MET within configured hardening gates | `skills/workflow/scripts/workflow_lib/repair_runtime.py:1`; `tests/test_repair_runtime.py:1` exercise one native worker, fresh gate run, replay and terminal abort. Review/item failure verification remains a scoped manual action. |
+| R5 stop and deduplication | MET | `skills/workflow/scripts/workflow_lib/repair.py:1`; `journal_domains.py:92`; `tests/test_repair.py:1`; `tests/test_repair_runtime.py:1` cover limits, no progress, leases, abort and remaining failures. |
+| R6 proof/review/handoff guards | MET | `skills/workflow/scripts/workflow_lib/host_completion.py:1`; `tests/test_host_handoff.py:1`; `tests/test_repair_runtime.py:1` preserve independent proof and lease checks. |
+| R7 installed host execution | CANNOT VERIFY | Native worker smoke predates this repair coordinator; local tests exercise both host adapters, but no end-to-end installed Codex/Claude repair run was available. See [cross-host validation](cross-host-validation.md). |
+| R8 reviewed improvement cases | MET with advisory comparison | `skills/workflow/scripts/workflow_lib/improvement_cases.py:1`; `improvement_eval.py:1`; `tests/test_improvement_eval.py:1`. Candidate hashes and comparison JSON are caller supplied; reviewers must verify artifacts and execution. No auto promotion. |
+| R9 trace redaction and unknown usage | MET | `skills/workflow/scripts/workflow_lib/improvement_traces.py:1`; `tests/test_improvement_traces.py:1` cover opt-in projection; comparison reports unknown usage honestly. |
+| R10 host Goal binding | MET for journal contract; live activation CANNOT VERIFY | `skills/workflow/scripts/workflow_lib/goals.py:1`; `tests/test_goal_handoff.py:1`. No user-authorized live Goal was activated in either installed host. |
+| R11 executable migration parity | MET for trusted commands | `skills/workflow/scripts/workflow_lib/parity_runner.py:1`; `tests/test_parity_runner.py:1` cover matching inputs, comparator, stale proof and replay. Temporary working directories do not sandbox the commands. |
+| R12 representative model suitability | MET for release guard; live suitability CANNOT VERIFY | `skills/workflow/scripts/workflow_lib/model_validation.py:1`; `model_policy.py:1`; `tests/test_model_validation.py:1`. No approved live four-stage corpus or validated provider mapping exists. |
+| R13 documentation and examples | MET for implemented scope | `docs/setup-and-usage.md:1`; `skills/workflow/GUIDE.md:1`; `skills/migrate/GUIDE.md:1`; `docs/examples/README.md:1`. Links, JSON examples, skill metadata and runnable paths were checked. |
+
+Native Codex plugin installation remains unverified. Claude effective effort remains unknown, so strict routing can block. The parity pilot executes caller-declared programs with the host's access; only trusted programs should be used unless an external OS sandbox is supplied. The improvement comparison reports observed case outcomes but does not cryptographically bind a supplied artifact hash or result JSON to a checkout.

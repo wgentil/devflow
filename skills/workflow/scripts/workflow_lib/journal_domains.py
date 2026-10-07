@@ -139,6 +139,18 @@ def _reduce(data, kind, req, version):
                          completed_at_ms=req['completed_at_ms'], remaining_failures=deepcopy(remaining),
                          worker_ref=req.get('worker_ref'), proof_refs=deepcopy(req.get('proof_refs', [])))
             return deepcopy(cycle)
+        if action == 'abort':
+            cycle = next((row for row in cycles if row['cycle_id'] == req.get('cycle_id')), None)
+            require(cycle is not None and cycle['status'] == 'claimed', 'claimed repair cycle required')
+            require(text(req.get('reason_code')), 'repair abort reason required')
+            require(not any(row.get('status') == 'running' for row in run.get('native_invocations', {}).values()),
+                    'running native worker needs reconciliation before repair abort')
+            cycle.update(status='aborted', stop_reason_code=req['reason_code'],
+                         completed_at_ms=req.get('completed_at_ms'), worker_ref=req.get('worker_ref'),
+                         remaining_failures=failure_delta(run))
+            run['repair_stop'] = {'reason_code': req['reason_code'],
+                                  'remaining_failures': deepcopy(cycle['remaining_failures'])}
+            return deepcopy(cycle)
         if action == 'stop':
             require(text(req.get('reason_code')), 'stop reason required')
             active = [row for row in cycles if row['status'] == 'claimed']

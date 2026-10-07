@@ -50,6 +50,9 @@ flowchart TD
     Repair -->|Yes; explicit next command| Lease["Journal one repair claim"]
     Lease --> Worker["Current implementer native worker"]
     Worker --> Recheck["Rerun configured hardening gate"]
+    Worker -->|Terminal failure| Abort["Journal abort and remaining failures"]
+    Recheck -->|Runner unavailable| Abort
+    Abort --> Fix
     Recheck -->|Still failing; budget remains| Repair
     Recheck -->|Green; renew affected evidence| Branch
     Repair -->|No; manual decision| Fix
@@ -73,6 +76,9 @@ Claims are journaled before native launch. A claimed/interrupted cycle blocks
 replay and handoff until reconciled. The runner reruns only failed configured
 hardening gates; findings or failed item proofs outside those gates still need
 agent-led verification. Worker prose never counts as proof.
+A terminal worker failure or gate-runner error journals an aborted cycle and
+typed remaining failures, stopping further automatic repair for that run.
+An active native invocation still requires stopped-worker reconciliation.
 Selected runs can opt into a redacted improvement trace. Reviewer feedback
 binds its exact trace hash; a distinct approving actor promotes a candidate
 to the durable case set. `improve run-cases` executes only approved cases,

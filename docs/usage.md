@@ -21,6 +21,8 @@ reruns failed configured hardening gates. A replay does not launch again. A
 missing estimate blocks before claim. `repair stop --reason-code CODE` preserves
 remaining failures; an active claim additionally needs `--confirm-stopped-by
 ACTOR` after native worker stop/reconciliation. See the [workflow guide](../skills/workflow/GUIDE.md#optional-bounded-repair).
+A terminal worker or gate-runner failure after claim journals an abort and
+remaining failures, stopping further automatic repair.
 
 `improve trace-enable --root ROOT --run-id ID --actor-id ACTOR --operation-id ID`
 opts a selected run into redacted trace export. `stats trace --root ROOT
@@ -31,6 +33,9 @@ case-approve` requires a distinct human actor and exact candidate case hash.
 case commands. `improve compare` rejects case/scoring-version mismatch and
 marks absent usage unknown. `improve retrospective` groups cited feedback by
 owner. None of these commands promotes a revision automatically.
+Candidate artifact hashes are caller-supplied labels and result JSON is not
+bound to a checkout; a reviewer must verify the baseline/candidate artifact
+and execution before relying on the advisory comparison.
 `improve model-evaluate --root ROOT --input INPUT.json` evaluates only
 approved stage-tagged case IDs against supplied host/model/version-bound
 results. It reports eligibility but does not install a mapping. A released

@@ -42,7 +42,10 @@ df migrate verify-pilot --root "$CONTROL" --input "$EXAMPLES/migration-pilot.jso
 ```
 
 The proof returns `proof_id`, input/output hashes, differences and a typed
-failure reason. It runs in isolated fixture copies; replay reads the journal
+failure reason. It runs in separate temporary working directories with matching
+fixture bytes. These directories are **not a sandbox**: declared commands inherit
+the host environment and can access other paths, so run only trusted programs
+with an appropriate OS sandbox if isolation is required. Replay reads the journal
 without executing either command. A reserved but interrupted pilot blocks
 same-ID retry. Record a passing `proof_id` in `parity.json` for its matching
 criterion and run. Delivery rechecks the latest item attempt and repository

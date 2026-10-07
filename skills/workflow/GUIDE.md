@@ -83,6 +83,10 @@ the repair cycle with `repair stop --reason-code HUMAN_DECISION
 for automatic repair on that run. Review findings and item proofs still
 require agent-led rework and fresh validation; independent review is renewed
 after repository edits.
+If the worker returns a terminal failure or the gate runner errors after claim,
+DevFlow journals an aborted cycle, its reason and remaining failures. This
+stops automatic repair without leaving a claimed lease. A still-running native
+invocation keeps the claim until it is reconciled.
 
 ## Run-derived improvement cases
 
@@ -107,6 +111,10 @@ must include its artifact hash. Save both baseline and candidate results, then
 pass them together with `improve compare --input COMPARISON.json`. Case and
 scoring-version mismatch blocks comparison. `improve retrospective --input
 TRACES.json` groups cited feedback by owner without editing the plugin.
+The artifact hash is a caller-supplied label: the runner does not select or
+verify that artifact, and comparison accepts supplied result JSON. Prepare
+and review separate baseline/candidate checkouts and attest their results
+before treating a quality delta as evidence for a revision.
 Trace output omits prompts, worker output and repository content. Missing
 runtime usage is unknown; byte estimates do not establish token savings.
 For model suitability, approve cases tagged `specification`, `coding`,

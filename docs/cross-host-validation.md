@@ -6,8 +6,9 @@ execution. No marketplace was published and no global installation was changed.
 ## Evidence
 
 - Baseline: 158 unittest cases passed before changes.
-- Full current suite: 267 unittest cases PASS after the native integration and independent-review fix passes. Package/resource,
-  host, hook, native transport, recovery, model-policy and integration checks pass.
+- Full current suite: 339 unittest cases PASS after the evidence-loop implementation
+  and independent-review fixes. Package/resource, host, hook, native transport,
+  recovery, model-policy, evidence-loop and integration checks pass.
 - Claude Code 2.1.284 validated the manifest (warnings: optional author metadata;
   source-maintenance CLAUDE.md is not loaded as installed project context).
 - Real Claude local loading of the 0.2.0 package used `--plugin-dir` on a relocated, read-only package

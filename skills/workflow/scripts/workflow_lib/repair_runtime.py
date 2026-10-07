@@ -58,6 +58,14 @@ def _run_gate(root: Path, run_id: str, gate_id: str, operation_id: str) -> dict:
         path.unlink(missing_ok=True)
 
 
+def _abort(root: Path, run_id: str, cycle_id: str, reason_code: str, worker_ref: str | None) -> dict:
+    cycle = _event(root, cycle_id + ':abort', 'abort',
+                   {'run_id': run_id, 'cycle_id': cycle_id, 'reason_code': reason_code,
+                    'completed_at_ms': int(time.time() * 1000), 'worker_ref': worker_ref})
+    return {'status': 'blocked', 'reason_code': reason_code, 'cycle': cycle,
+            'remaining_failures': cycle['remaining_failures']}
+
+
 def run_repair(root: Path, run_id: str, operation_id: str, estimated_cost: float | None = None) -> dict:
     """Run one claimed cycle. A replay never launches another worker."""
     root = Path(root)
@@ -103,13 +111,23 @@ def run_repair(root: Path, run_id: str, operation_id: str, estimated_cost: float
     request = {'binding_id': binding['binding_id'], 'revision': binding['revision'],
                'invocation_id': operation_id + ':worker', 'stage': 'implementation',
                'access': 'workspace-write', 'prompt': prompt}
-    worker = invoke(root, request, operation_id + ':native')
+    try:
+        worker = invoke(root, request, operation_id + ':native')
+    except Exception:
+        # A running native invocation must retain its lease until reconciliation.
+        if any(row.get('status') == 'running' for row in
+               read_state(root)['data']['runs'][run_id].get('native_invocations', {}).values()):
+            raise
+        return _abort(root, run_id, operation_id, 'WORKER_UNAVAILABLE', request['invocation_id'])
     if worker.get('status') != 'allow':
-        return {'status': 'blocked', 'reason_code': worker.get('reason_code', 'WORKER_UNAVAILABLE'),
-                'cycle': claim, 'worker': worker}
+        reason = worker.get('reason_code', 'WORKER_UNAVAILABLE')
+        return {**_abort(root, run_id, operation_id, reason, request['invocation_id']), 'worker': worker}
     proofs = []
-    for gate_id in claim['scope']['gate_ids']:
-        proofs.append(_run_gate(root, run_id, gate_id, operation_id + ':gate:' + gate_id))
+    try:
+        for gate_id in claim['scope']['gate_ids']:
+            proofs.append(_run_gate(root, run_id, gate_id, operation_id + ':gate:' + gate_id))
+    except Exception:
+        return _abort(root, run_id, operation_id, 'REPAIR_VERIFICATION_FAILED', request['invocation_id'])
     current = read_state(root)['data']['runs'][run_id]
     delta = failure_delta(current)
     record = _event(root, operation_id + ':record', 'record',

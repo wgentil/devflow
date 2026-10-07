@@ -13,6 +13,8 @@ choose when to upgrade. Both manifests and one skills/helper tree are included;
 no marketplace has been published by this change. Enable a distribution through
 your host's plugin manager. Host-specific verification and remaining limitations
 are recorded in [hosts](hosts.md) and [validation](cross-host-validation.md).
+The [evidence-loop acceptance review](evidence-loops-acceptance.md) separates
+implemented policy from live host behavior and remaining proof limits.
 Local source-package testing is described in the optional [developer guide](developer-cli.md).
 
 ## Initialize a project
@@ -84,6 +86,8 @@ outputs. The passing proof binds the increment, criterion, current item attempt
 and repository fingerprint; delivery rejects stale proof. Existing manual
 final-proof parity and scoped waivers remain available. See the
 [migration guide](../skills/migrate/GUIDE.md#executable-pilot-parity).
+The temporary working directories are not a sandbox; use trusted commands or
+an external OS sandbox when process isolation is required.
 Configured hardening gates use command exit status by default. A version 1
 `json-report` gate also requires valid JSON with a `findings` array; missing or
 malformed output and reported findings fail the gate even on exit zero. The
@@ -100,6 +104,8 @@ launches the attached implementer, reruns failed configured hardening gates and
 records remaining failures. Attempt, elapsed-time, cost and no-progress limits
 stop further dispatch. Missing cost estimates or model eligibility block dispatch.
 Interrupted claims require reconciliation and never replay a second worker.
+Terminal worker failures or gate-runner errors journal an abort and remaining
+failures; an active native worker still needs reconciliation.
 Review findings and item proofs still require agent-led rework. Hooks never launch
 repair, and independent review must be renewed after source changes.
 
@@ -111,6 +117,9 @@ the resulting case hash. Approved cases can run against baseline and candidate
 checkouts with identical scoring versions. The report exposes quality,
 coverage and elapsed time; missing usage stays unknown. No skill or policy
 revision is promoted automatically. See the [workflow guide](../skills/workflow/GUIDE.md#run-derived-improvement-cases).
+The caller prepares each checkout and supplies its artifact hash; DevFlow does
+not verify that hash or bind comparison JSON to a checkout, so comparison
+results are advisory until a reviewer verifies the artifact and execution.
 
 For long-running work, ask DevFlow to show the optional Goal contract for the
 attached host. Review its outcome, verification, limits and blocked condition

@@ -19,7 +19,11 @@ def _relative(value: str) -> Path | None:
 
 
 def verify_pilot(pilot: dict, repository: Path, timeout: int) -> dict:
-    """Run both declared commands over identical immutable fixture copies."""
+    """Run trusted commands in separate directories with matching fixture bytes.
+
+    This is comparison setup, not a process sandbox: commands inherit the host
+    environment and may access paths outside their working directory.
+    """
     base = {'passed': False, 'failure': None, 'input_hashes': {},
             'output_hashes': {}, 'differences': [],
             'comparator_version': pilot.get('comparator', {}).get('version')}

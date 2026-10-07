@@ -255,6 +255,9 @@ failure delta. A repeated ID never launches again. Interrupted claims block
 handoff and need stopped-worker reconciliation before `repair stop
 --reason-code CODE --confirm-stopped-by ACTOR`. Review findings and item
 verification remain agent-led.
+Terminal worker or gate-runner failures after claim journal an abort with
+remaining failures. A running native invocation retains its lease until
+reconciliation.
 
 Opt-in run improvement uses `improve trace-enable` and `stats trace`. The
 export is an allowlist of stage/evidence IDs, repair fingerprints and reported
@@ -266,6 +269,9 @@ executes approved cases in a specified checkout; `improve compare` requires
 identical case hashes and scoring versions; `improve retrospective` groups
 evidence-cited feedback without editing the plugin. Missing usage remains
 unknown and no policy promotion occurs automatically.
+Candidate artifact hashes are caller-supplied labels; neither execution nor
+comparison verifies the checkout identity. Review the two artifacts and their
+result provenance before using the advisory quality delta.
 `improve model-evaluate --root ROOT --input INPUT.json` uses only approved
 stage-tagged cases in that journal and supplied host/model/version-bound
 results. [Illustrative suitability input](examples/model-suitability.json)
@@ -284,7 +290,9 @@ source Goal reference to the destination.
 
 `migrate verify-pilot --root ROOT --input migration-pilot.json
 --operation-id ID` reserves and executes a comparison of declared legacy and
-replacement argv commands against isolated copies of the same hashed fixtures.
+replacement argv commands in separate temporary directories containing the same
+hashed fixture bytes. This is not a sandbox: commands inherit the host environment
+and can access other paths. Use trusted programs or an external OS sandbox.
 The example [pilot contract](examples/migration-pilot.json) and
 [input fixture](examples/migration-input.txt) are disposable; replace both
 commands with actual programs. `exact-bytes` compares raw output, while

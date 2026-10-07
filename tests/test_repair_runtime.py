@@ -55,8 +55,19 @@ class RepairRuntimeTests(unittest.TestCase):
                                                                         'reason_code': 'MODEL_UNAVAILABLE'}):
             result = self.run_cycle('blocked')
         self.assertEqual(result['reason_code'], 'MODEL_UNAVAILABLE')
+        self.assertEqual(read_state(self.root)['data']['runs']['r']['repair_cycles'][0]['status'], 'aborted')
         self.assertIsNone(read_state(self.root)['data']['runs']['r'].get('active_attempt'))
         self.assertEqual(self.run_cycle('blocked')['reason_code'], 'REPAIR_ALREADY_CLAIMED')
+
+    def test_gate_runner_error_aborts_cycle_with_remaining_failures(self):
+        with patch('workflow_lib.repair_runtime.invoke', return_value={'status': 'allow'}), \
+             patch('workflow_lib.repair_runtime._run_gate',
+                   side_effect=RuntimeError('runner failed')):
+            result = self.run_cycle('gate-error')
+        self.assertEqual(result['reason_code'], 'REPAIR_VERIFICATION_FAILED')
+        run = read_state(self.root)['data']['runs']['r']
+        self.assertEqual(run['repair_cycles'][0]['status'], 'aborted')
+        self.assertEqual(run['repair_stop']['remaining_failures']['gate_ids'], ['security'])
 
     def test_failed_validation_leaves_failure_delta(self):
         with patch('workflow_lib.repair_runtime.invoke', return_value={'status': 'allow'}), \

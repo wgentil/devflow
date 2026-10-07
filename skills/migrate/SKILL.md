@@ -27,6 +27,8 @@ and records a proof tied to the current increment, criterion, item attempt and
 repository fingerprint. Replay never re-executes. Manual final-proof parity
 remains supported. Typed pilot proof becomes stale when the attempt or source
 repository changes before delivery; worker assertions alone never count.
+The temporary working directories do not sandbox the declared programs; use
+trusted commands and an external OS sandbox if isolation is required.
 
 ## Documentation
 

@@ -1,7 +1,7 @@
 # DevFlow evidence and improvement loops
 
-Status: design for user review. This spec extends the approved cross-host design;
-implementation status belongs in a separate validation report. The change to
+Status: approved design. This spec extends the approved cross-host design;
+implementation status is recorded in [evidence-loop acceptance](../../evidence-loops-acceptance.md). The change to
 automatic rework below supersedes that design's prohibition on launching rework
 agents **only for runs that explicitly enable bounded repair**.
 
