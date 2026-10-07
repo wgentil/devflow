@@ -84,6 +84,21 @@ def _apply_event(state: dict, event: dict) -> None:
         item["status"] = "complete" if status == "verified" else "pending"
         run["active_attempt"] = None
         run["state_version"] += 1
+    elif kind == "verification.recorded":
+        run = data.setdefault("runs", {}).get(payload.get("run_id"))
+        proof = payload.get("proof")
+        if not run or not isinstance(proof, dict) or proof.get("run_id") != payload.get("run_id"):
+            raise WorkflowError("INVALID_EVENT", "verification proof references an unknown run")
+        active = run.get("active_attempt")
+        if (not active or proof.get("token") != active.get("token")
+                or proof.get("item_id") != active.get("item_id") or proof.get("id") in run.setdefault("verification_proofs", {})):
+            raise WorkflowError("INVALID_EVENT", "verification proof does not match the active attempt")
+        run["verification_proofs"][proof["id"]] = proof
+        if proof.get("phase") == "GREEN":
+            run.setdefault("verifier_proofs", {})[proof["id"]] = {
+                "passed": True, "item_id": proof["item_id"], "token": proof["token"],
+                "evidence_id": proof["id"],
+            }
     else:
         data.update(payload)
 
@@ -100,9 +115,37 @@ def _validate_event_shape(event: dict) -> None:
                                 and isinstance(payload.get("token"), str)
                                 and isinstance(payload.get("result"), dict)
                                 and isinstance(payload.get("verified"), bool)),
+        "verification.recorded": _valid_verification_event(payload),
     }
     if kind in requirements and not requirements[kind]:
         raise WorkflowError("INVALID_EVENT", f"invalid payload shape for {kind}")
+
+
+def _valid_verification_event(payload: dict) -> bool:
+    proof = payload.get("proof")
+    if not isinstance(payload.get("run_id"), str) or not isinstance(proof, dict):
+        return False
+    required_strings = ("id", "kind", "phase", "run_id", "item_id", "token", "repo_id", "started_at",
+                        "finished_at", "repository_head", "worktree_digest", "stdout_ref", "stderr_ref")
+    if any(not isinstance(proof.get(key), str) or not proof[key] for key in required_strings):
+        return False
+    if (proof.get("phase") not in {"RED", "GREEN"} or proof.get("passed") is not True
+            or proof.get("run_id") != payload["run_id"] or type(proof.get("exit_code")) is not int
+            or not isinstance(proof.get("argv"), list) or not proof["argv"]
+            or any(not isinstance(arg, str) for arg in proof["argv"])):
+        return False
+    for field in ("test_hashes",):
+        hashes = proof.get(field)
+        if (not isinstance(hashes, dict) or not hashes
+                or any(not isinstance(key, str) or not isinstance(value, str) or len(value) != 64
+                       or any(char not in "0123456789abcdef" for char in value) for key, value in hashes.items())):
+            return False
+    outcomes = proof.get("target_outcomes")
+    if not isinstance(outcomes, dict) or not outcomes or any(not isinstance(key, str)
+            or not isinstance(value, str) or value not in {"passed", "failed", "skipped", "error"}
+            for key, value in outcomes.items()):
+        return False
+    return proof.get("phase") != "GREEN" or all(value == "passed" for value in outcomes.values())
 
 
 def _read_journal(root: Path) -> tuple[dict, list[str]]:

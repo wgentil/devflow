@@ -5,7 +5,7 @@ description: Guide a software project through scoped context, requirements, plan
 
 # Devflow workflow
 
-Use the bundled helper to inspect or advance a workflow. Supply an explicit control root for stateful commands; loading this skill does not create files. The current foundation supports context, repository registration, requirements, plan validation, and resumable attempts. Build verification, reviews, acceptance, and delivery are reported unavailable; a recorded implementation result remains provisional.
+Use the bundled helper to inspect or advance a workflow. Supply an explicit control root for stateful commands; loading this skill does not create files. The current foundation supports context, repository registration, requirements, plan validation, resumable attempts, and attempt-bound code RED/GREEN evidence. Independent reviews, acceptance, and delivery remain unavailable; a recorded implementation result remains provisional.
 
 ```sh
 python3 <skill-directory>/scripts/run.py version
@@ -29,4 +29,4 @@ Resume by run ID with `run status`; the active attempt token remains bound to th
 
 Deterministic operations record best-effort byte and duration measurements under the chosen root. Read `offload.jsonl` to inspect the measures; these bytes do not establish actual tokens saved. Reuse context projections only when source and resolver fingerprints match.
 
-Use the focused Devflow skills for project context, specification, and planning. Treat event journal state and evidence as authoritative. The dispatcher requires Python 3.11+ and `fcntl` on macOS/Linux; no daemon or dependencies are required.
+Use the focused Devflow skills for project context, specification, planning, and build verification. Treat event journal state and evidence as authoritative. The dispatcher requires Python 3.11+ and `fcntl` on macOS/Linux; no daemon or dependencies are required.

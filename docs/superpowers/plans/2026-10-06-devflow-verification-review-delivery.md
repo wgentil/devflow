@@ -40,22 +40,22 @@ All new records include schema version 1 and stable IDs. Mutations use `transact
 
 ### Task 1: Actual command evidence and repository fingerprints
 
-**Files:** workflow_lib/evidence.py; commands/build.py; skills/build-work/SKILL.md; tests/test_evidence.py. Shared paths are beneath `skills/workflow/scripts/` unless prefixed `skills/`, `tests/`, `docs/`, `definitions/`, `fixtures/` or `plugin.json`.
+**Files:** skills/workflow/scripts/workflow_lib/evidence.py; skills/workflow/scripts/commands/build.py; skills/build-work/SKILL.md; tests/test_evidence.py; plugin.json; skills/workflow/SKILL.md; docs/usage.md.
 
 **Interfaces:** capture_evidence(root: Path, run_id: str, token: str, phase: str, command: list[str], test_paths: list[str], target_ids: list[str], timeout: int) -> dict; repository_fingerprint(location: Path) -> dict.
 
 **Contract:** Proof fields: id, kind, phase, run_id, item_id, token, repo_id, argv, exit_code, started_at, finished_at, repository_head, worktree_digest, test_hashes, target_outcomes, stdout_ref, stderr_ref. Paths stay within the registered repo; commands use argv and no implicit shell. Store complete logs as content-addressed files under the control root. RED requires nonzero exit and at least one declared target test failing in a supported structured report; syntax/import/timeout failures cannot substitute. GREEN requires exit zero, every target passing, unchanged locked test hashes, and records the current repository fingerprint. Start with JSON/JUnit reports plus an explicit unittest adapter; unsupported reports remain unavailable.
 
-- [ ] Add the following regression/acceptance tests with these assertions:
+- [x] Add the following regression/acceptance tests with these assertions:
 
   - test_actual_target_red_green: execute a temporary failing target, record RED, fix implementation, run GREEN, assert actual exits and bound hashes.
   - test_unrelated_failure_and_timeout: only unrelated tests fail or runner times out; assert stable failure and no passed RED proof.
   - test_changed_tests_and_stale_tree: change locked tests or implementation after GREEN; assert proof invalidation and unchanged completion state.
 
-- [ ] Run `python3 -m unittest tests.test_evidence -v`; require the intended missing behavior failures before implementation.
-- [ ] Implement the listed interfaces and event/CLI boundaries without changing unrelated records or installing the plugin.
-- [ ] Run `python3 -m unittest tests.test_evidence -v`; require all tests passing. Run impacted earlier tests when shared contracts change.
-- [ ] Update interface documentation and parity evidence for the task; commit the implementation and tests with the appropriate `Work-Item:` trailer.
+- [x] Run `python3 -m unittest tests.test_evidence -v`; require the intended missing behavior failures before implementation.
+- [x] Implement the listed interfaces and event/CLI boundaries without changing unrelated records or installing the plugin.
+- [x] Run `python3 -m unittest tests.test_evidence -v`; require all tests passing. Run impacted earlier tests when shared contracts change.
+- [x] Update interface documentation and parity evidence for the task; commit the implementation and tests with the appropriate `Work-Item:` trailer.
 
 ### Task 2: Controlled test changes and typed verification gates
 

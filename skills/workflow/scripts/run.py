@@ -24,6 +24,7 @@ from workflow_lib.runs import (abandon_attempt, issue_attempt, record_result, ru
                                start_run)  # noqa: E402
 from workflow_lib.store import WorkflowError, read_state, transact  # noqa: E402
 from workflow_lib.telemetry import record_offload  # noqa: E402
+from commands import build as build_commands  # noqa: E402
 
 
 def _json_file(path: str | None) -> dict:
@@ -202,6 +203,7 @@ def main(argv: list[str] | None = None) -> int:
     result_command.add_argument("--attempt-id", required=True)
     result_command.add_argument("--result", required=True)
     result_command.add_argument("--operation-id")
+    build_commands.register_commands(commands)
     try:
         parsed = parser.parse_args(argv)
         if getattr(parsed, "root", None):
@@ -218,6 +220,7 @@ def main(argv: list[str] | None = None) -> int:
                     or getattr(parsed, "repo_command", None) == "register"
                     or getattr(parsed, "spec_command", None) in {"store", "approve"}
                     or getattr(parsed, "plan_command", None) == "validate"
+                    or getattr(parsed, "build_command", None) is not None
                     or run_command in {"start", "abandon", "result"})
         if mutation and getattr(parsed, "root", None):
             initial_state = read_state(Path(parsed.root))
@@ -483,6 +486,8 @@ def main(argv: list[str] | None = None) -> int:
                         "verified": updated["items"][item_id]["status"] == "complete",
                         "verifier_proof_id": submission.get("verifier_proof_id")}})
             result = run_summary(updated)
+        elif parsed.command == "build":
+            result = build_commands.dispatch(parsed)
         else:
             parser.error("select a supported command")
     except _OperationReplay as exc:
