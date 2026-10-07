@@ -126,6 +126,26 @@ also block mapped host task completion; proposed Codex guidance would invoke the
 same check explicitly. Neither prevents arbitrary filesystem edits outside the
 workflow. No current host-completion hook should be assumed implemented.
 
+## Proposed model selection
+
+The host design also proposes stage-based capability profiles. Specifications,
+planning and independent review favor deep reasoning; clearly scoped implementation
+can use an efficient coding model, with escalation for difficult work. Running
+actual tests and deterministic helpers does not require a separate model.
+
+DevFlow would map profiles to validated models/effort available in each host, using
+sensible defaults without shell configuration. New models remain candidates until
+validated; users choose when to install a release with changed defaults. Retired
+or inaccessible models can use only permitted validated fallbacks. An unavailable
+user-pinned model requires a user decision. No fallback silently exceeds spending
+policy or turns unknown pricing into zero cost.
+
+Requested, resolved and actual model settings are recorded separately where the
+host exposes them. Advisory mode discloses settings it cannot control/verify;
+strict mode blocks when required configuration or actual identity is unknown.
+Claude and Codex may use different models while sharing the same DevFlow release.
+These routing/lifecycle controls are proposed, not currently implemented.
+
 ## Pause and resume
 
 You should be able to say:

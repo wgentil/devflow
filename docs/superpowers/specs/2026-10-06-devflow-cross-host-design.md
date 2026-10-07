@@ -23,6 +23,9 @@ The user selected:
 5. Install-and-start user experience. Skills resolve their bundled helpers and
    initialize/resume the current project without user shell variables, installation
    paths, CLI functions or manual Python commands.
+6. Route model work through capability profiles with versioned host mappings,
+   validated fallbacks and explicit handling of new/retired models. Preserve user
+   pins and spending limits; never claim enforcement without host evidence.
 
 Assumptions proposed for approval: retain the existing Python 3.11+ macOS/Linux
 support; share a local filesystem control root; do not add remote coordination,
@@ -68,6 +71,7 @@ devflow/
   .claude-plugin/plugin.json        # Claude metadata; discovers shared skills/
   AGENTS.md                         # shared maintenance rules, Codex entry
   CLAUDE.md                         # imports/references those maintenance rules
+  definitions/model-policy.json     # versioned profiles and validated host mappings
   skills/                           # one copy of all skills and GUIDE.md files
     workflow/scripts/
       run.py                        # existing CLI, extended host commands
@@ -243,6 +247,134 @@ The same resume guard applies to detached or crashed-owner recovery. Missing
 source release identity requires explicit legacy adoption with a recorded actor
 and verified schema support; it cannot silently waive a known cross-host mismatch.
 Legacy adoption is for pre-binding runs only, not a bypass for existing records.
+
+## Model routing and model lifecycle
+
+Model selection and reasoning effort are separate controls. Shared skills request
+capability profiles; they do not embed provider model names. A versioned policy
+maps stages and roles to profiles, with host-specific validated model choices,
+supported effort settings, ordered fallbacks and provenance for their validation.
+Profiles describe expected suitability, not a guarantee that two provider models
+have identical intelligence, effort scales, cost or results.
+
+| Stage or activity | Default profile and routing |
+| --- | --- |
+| Specification, architecture and planning | deep-reasoning with high supported reasoning effort |
+| Clearly bounded implementation | efficient-coding with moderate supported effort |
+| Complex implementation, ambiguous failures or debugging | deep-reasoning escalation |
+| Independent review, acceptance and security/red-team analysis | deep-reasoning with high supported effort |
+| Narrow scans, extraction and routine summaries | fast-analysis where appropriate |
+| Running test commands, indexing, journal projection and calculations | deterministic helpers; no separate model invocation |
+
+Running tests is distinct from designing tests or diagnosing failures. The latter
+may need deep reasoning. Do not route all coding/testing work to the lowest-cost
+model merely because it has a build-stage label. Preserve review independence and
+existing work ownership when selecting or escalating a model.
+
+### Policy, discovery and selection
+
+The distributed `definitions/model-policy.json` declares a policy/schema version,
+stage profiles, host mappings and allowed fallback order. Each mapping records
+provider/model identifier, supported effort, capability validation status,
+validation reference and policy version. Only validated entries satisfy automatic
+profile selection. The same released policy is part of both package fingerprints;
+Claude and Codex resolve different provider models against it.
+
+At dispatch, the adapter intersects that policy with account/host access and
+supported model/effort controls. Use documented host discovery when available.
+Where there is no reliable enumeration API, validate a selected configured model
+through supported launch/resolution behavior; do not invent availability from a
+static catalog or scrape a website as a runtime dependency. Cached discovery is
+advisory and keyed by host/account/policy, with bounded lifetime; refresh on explicit
+user request, policy change or an availability failure. Do not contact providers
+or crawl model catalogs on every tool/hook event.
+
+Default behavior selects/configures a validated profile when the host supports it.
+If configuration or observation is unavailable, disclose advisory mode and the
+recommended setting. A project/user may select strict mode for specific profiles:
+then unavailable required configuration or unobservable effective model/effort
+blocks dispatch. Skill text or caller-supplied model claims are not sufficient
+proof of strict enforcement. Native organization/account policy takes precedence;
+DevFlow must report substitutions rather than circumvent host restrictions.
+
+Use supported Claude skill/subagent controls and Codex delegated-agent controls.
+Do not promise automatic switching of an existing parent conversation where the
+host exposes no such control. Delegate through an allowed host surface or explain
+the needed user selection. Apply host-specific metadata/configuration in adapters,
+not by duplicating the shared skill tree.
+
+Users may override profiles, pin exact models/effort, or restrict allowed fallbacks
+through a conversational project choice; no shell setup is required. Pins remain
+explicit: an unavailable pinned model pauses for a replacement decision and never
+silently falls back. An override applies to new invocations after its recorded
+policy revision, not to a model call already in flight.
+
+### New, retired and temporarily unavailable models
+
+Discovery marks previously unknown models as candidates. Availability alone does
+not establish capability or justify promoting a new default. Validate candidates
+on representative specification, coding, debugging and review fixtures relevant to
+the requested profile, record the result, and ship changed defaults through a
+DevFlow release that the user chooses to install. Explicit user selection can use
+an unvalidated candidate in advisory mode, visibly marked unvalidated; it cannot
+satisfy a strict validated-profile requirement.
+
+If a selected model is retired or inaccessible, choose the next validated allowed
+fallback satisfying the same profile and supported effort. Respect user pins,
+account permissions and recorded spending constraints. If no qualifying permitted
+fallback exists, pause with the unavailable model, requested profile and actionable
+choices. Do not silently substitute a weaker/unvalidated choice. A matching older
+DevFlow release on both hosts can continue with its accessible validated mappings;
+it need not update merely because a newer model exists.
+
+Do not classify all provider failures as retirement. Authentication, rate limits,
+network failures, quotas and context limits have distinct diagnostics. Retry transient
+failures only within the invocation retry policy; persistent unavailability triggers
+fallback selection or a user decision. Never retry indefinitely to conceal a missing
+model or escalate cost unexpectedly.
+
+If a model becomes unavailable mid-work, retain the run, attempt, artifacts and
+valid proof; record the interrupted invocation before deciding how to continue.
+A replacement starts a new invocation with the resolved profile/effort and fresh
+scoped context. No model change occurs invisibly within an in-flight invocation.
+Existing proof is retained subject to the same freshness rules, not invalidated
+solely because model identity changed. A replacement implementer identity is recorded
+in actor history and remains ineligible as an independent reviewer of that work.
+
+Escalation is triggered by documented ambiguity, complex/high-risk work, diagnosis
+that exceeds a bounded implementation task, or repeated failure requiring stronger
+analysis. It is an explicit routing decision, not a hook that spawns a rework agent.
+Use an already permitted escalation or ask for the user's choice if it exceeds the
+configured model/spending policy. No automatic increase beyond policy limits.
+
+### Cost, observability and audit
+
+Record each dispatch decision: run/item/role/attempt, host/session/actor, policy
+version, requested profile and model/effort, resolved model/effort, actual values
+when exposed, capability-validation reference, mode, override/pin and fallback or
+escalation reason. Distinguish requested, resolved and observed values. Unknown
+actual identity/effort is explicit and cannot satisfy strict completion policy.
+Receipts are journaled domain events; reducer replay does not query host/provider
+state. Historical dispatch policy and receipts are immutable.
+
+Model/effort observation requires trusted host metadata or supported effective
+configuration, not a model saying which model it is. Where later host substitution
+is observable, strict completion validates the effective invocation against the
+recorded policy. If identity is unavailable, strict work pauses; advisory work
+reports that enforcement could not be verified. This is local workflow provenance,
+not cryptographic identity or a security boundary around arbitrary host execution.
+
+Use explicitly sourced/versioned pricing when a policy imposes a numerical cost
+cap. Unknown price cannot be treated as zero or proven within that cap. Allow-list
+and no-higher-cost fallback rules can be used only when their required cost facts
+are known; otherwise ask rather than exceed a budget silently. Preserve existing
+usage reporting's unavailable-cost semantics, and do not claim guaranteed token
+savings from profile selection.
+
+Cross-host release parity still requires matching DevFlow policy/package versions
+and fingerprints. It does not require Claude and Codex to run the same model.
+Validate the destination's profile resolution before accepting a handoff. If a strict
+required destination profile cannot be satisfied, leave source ownership unchanged.
 
 ## Task mapping and completion policy
 
@@ -423,6 +555,30 @@ flowchart TD
   to-workflow smoke tests, package docs/examples resolve, missing runtime is diagnosed,
   and unimplemented distribution/runtime support is not presented as available.
 
+- R23: Stage profiles — shared policy distinguishes model and effort, routes deep
+  design/review and bounded implementation appropriately, and avoids model calls
+  for deterministic helper execution.
+- R24: Host capability honesty — supported host controls configure delegated work;
+  unsupported controls or unknown effective identity are disclosed in advisory mode
+  and block strict dispatch/completion without fabricated enforcement receipts.
+- R25: New models — discovery candidates cannot silently become defaults; validated
+  default changes are release-versioned and unvalidated user choices remain advisory.
+- R26: Retirement/fallback — unavailable mapped models resolve only to validated,
+  permitted profile-equivalent fallbacks; pins, missing options and unknown cost
+  under a numerical cap pause without exceeding user policy.
+- R27: Interrupted invocation — model loss preserves attempt/evidence and records
+  interruption before a replacement invocation; provider errors are distinguished
+  from retirement and no invisible mid-invocation switch occurs.
+- R28: Auditable routing — immutable receipts distinguish requested/resolved/observed
+  model and effort, policy version, overrides and fallback/escalation reasons;
+  replay requires no live host/provider discovery.
+- R29: Discovery overhead — cached supported discovery has defined invalidation;
+  routine tool/completion hooks do not enumerate models, scrape sites or retry
+  unavailable providers indefinitely.
+- R30: Handoff suitability — hosts may use different provider models, but destination
+  profile eligibility and exact DevFlow release parity are checked before transfer;
+  failure leaves source ownership unchanged.
+
 ## Validation and delivery
 
 Use reducer/command tests for binding conflicts, CAS races, task scopes, actor
@@ -431,7 +587,11 @@ directions, stale session after a user upgrade, same-version content drift,
 matching older releases, unsupported schemas, package changes during transfer,
 explicit binding refresh, and detached/crashed resume parity. Exercise install-and-
 start without manually set environment variables, repeated initialization, ignored
-runtime state, root ingestion, existing worktrees, and missing-runtime diagnostics. Protocol fixtures check Claude JSON
+runtime state, root ingestion, existing worktrees, and missing-runtime diagnostics. Model fixtures
+cover new candidates, retirement, pins, denied account access, silent native
+substitution, unsupported effort, unknown effective identity, transient failures,
+interrupted invocations, policy overrides, budget/cost gaps, cached discovery
+invalidation and destination routing failure without ownership transfer. Protocol fixtures check Claude JSON
 input/output separately from policy. Exercise installed/relocated paths, project
 paths containing spaces and read-only plugin caches. Existing full tests and all
 skill metadata/link/example checks must pass.
@@ -454,6 +614,11 @@ Claude host contracts were checked against official documentation during design:
 [skills and dynamic context](https://code.claude.com/docs/en/skills), and
 [hook protocol and TaskCompleted](https://code.claude.com/docs/en/hooks).
 Plugin-level adapters avoid coupling shared frontmatter to host extensions.
+Model controls were checked against [Claude skill model/effort settings](https://code.claude.com/docs/en/skills#frontmatter-reference),
+[Claude subagent settings](https://code.claude.com/docs/en/sub-agents), and
+[official OpenAI subagent configuration](https://learn.chatgpt.com/docs/agent-configuration/subagents).
+Availability and actual-model observability vary by installed host/account; these
+sources establish controls, not a guarantee that every installation exposes them.
 
 Existing source: [original design](2026-10-06-devflow-design.md),
 [skill guides](../../skills.md), [journal integration](../../journal-integration.md),

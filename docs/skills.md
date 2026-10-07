@@ -84,3 +84,7 @@ proposes shared skills with opt-in Claude hooks and sequential handoff. It is a
 draft, not a claim that the Claude adapter is implemented. Upgrades remain
 user-controlled; the proposed handoff requires matching DevFlow releases in both
 hosts and blocks mismatches without changing installations.
+
+The same draft defines stage model profiles, validated new-model adoption,
+retirement/fallback handling, user pins and explicit advisory versus strict
+enforcement. Model routing is proposed and not implemented in the current helpers.
