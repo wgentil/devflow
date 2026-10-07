@@ -74,3 +74,12 @@ authorization. No live provider behavior is implied by these local examples.
 Stale/partial snapshots, changed issue content, unaccepted scope and conflicting
 operation identities reject mutation. Inspect outbox status and receipts before
 retrying. Do not edit a human comment or fabricate delivery evidence.
+
+## Host usage example
+
+Invoke this skill from the same selected DevFlow project/run in either host. An
+attached session uses its binding revision; a handoff preserves the attempt while
+invalidating the old owner. This skill requests `scan` for model work.
+Helpers execute deterministically; model settings are advisory unless trusted host
+configuration/observation proves them. Ordinary unmapped tasks remain unaffected.
+See [setup](../../docs/setup-and-usage.md) and [host examples](../../docs/hosts.md).

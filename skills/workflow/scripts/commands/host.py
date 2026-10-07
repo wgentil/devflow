@@ -139,7 +139,7 @@ def _resolve_model(data, binding, stage):
     from workflow_lib.model_policy import resolve_profile
     policy=json.loads((PACKAGE_ROOT/'definitions/model-policy.json').read_text())
     run=data['runs'][binding['run_id']]
-    override=run.get('model_overrides', [{}])[-1]
+    override=next((entry for entry in reversed(run.get('model_overrides', [])) if entry.get('stage') in {None,stage}), {})
     request={**override,'host':binding['host'],'stage':stage}
     # The portable CLI has no authenticated host launch/observation API.
     return resolve_profile(policy,request,{'configure':False,'observe':False,'models':[],'efforts':[]},{},None)

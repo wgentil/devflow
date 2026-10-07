@@ -40,3 +40,12 @@ Escaping paths/symlinks, invalid UTF-8 and changes during indexing fail rather
 than silently indexing different content. A prior operation ID cannot be reused
 for a changed scope/profile. No source command executes during journal recovery.
 See the journal reference for stored index fields and specification grounding.
+
+## Host usage example
+
+Invoke this skill from the same selected DevFlow project/run in either host. An
+attached session uses its binding revision; a handoff preserves the attempt while
+invalidating the old owner. This skill requests `scan` for model work.
+Helpers execute deterministically; model settings are advisory unless trusted host
+configuration/observation proves them. Ordinary unmapped tasks remain unaffected.
+See [setup](../../docs/setup-and-usage.md) and [host examples](../../docs/hosts.md).

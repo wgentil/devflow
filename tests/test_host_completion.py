@@ -50,3 +50,11 @@ class CompletionTests(unittest.TestCase):
         self.assertEqual(check_completion(self.state,reviewer,'review',False)['status'],'allow')
         self.state['runs']['run']['reviews']['branch'][0]['actor_id']='other'
         self.assertEqual(check_completion(self.state,reviewer,'review',False)['status'],'block')
+    def test_brief_retains_criteria_and_relevant_context(self):
+        run=self.state['runs']['run'];run['plan']['stage']={'required_slices':['architecture']}
+        run['plan']['work_items'][0]['acceptance_criteria']=[{'kind':'code-test','text':'target passes'}]
+        run['context']={'values':{'architecture':'ports'}}
+        first=host_brief(self.state,self.binding)
+        self.assertEqual(first['work_items'][0]['acceptance_criteria'][0]['text'],'target passes')
+        run['context']['values']['architecture']='layers'
+        self.assertNotEqual(first['fingerprint'],host_brief(self.state,self.binding)['fingerprint'])

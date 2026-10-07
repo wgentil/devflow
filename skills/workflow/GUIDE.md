@@ -79,3 +79,12 @@ Say “start DevFlow in this project.” Workflow discovers the Git/worktree roo
 initializes `.devflow/control` and excludes runtime state locally. Existing records
 are reused. Multiple resumable runs require a selection. Missing compatible Python
 is diagnosed; the plugin does not bundle an interpreter. See [hosts](../../docs/hosts.md).
+
+## Host usage example
+
+Invoke this skill from the same selected DevFlow project/run in either host. An
+attached session uses its binding revision; a handoff preserves the attempt while
+invalidating the old owner. This skill requests `implementation` for model work.
+Helpers execute deterministically; model settings are advisory unless trusted host
+configuration/observation proves them. Ordinary unmapped tasks remain unaffected.
+See [setup](../../docs/setup-and-usage.md) and [host examples](../../docs/hosts.md).

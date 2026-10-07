@@ -57,3 +57,12 @@ report; old snapshots remain unchanged. `stats legacy-import --input ledger.json
 --root "$CONTROL" --operation-id legacy-v1` imports supported legacy JSON read-only
 and marks it legacy; it does not establish current verification. Actual runtime
 collection and provider pricing are supplied inputs, not automatically fetched.
+
+## Host usage example
+
+Invoke this skill from the same selected DevFlow project/run in either host. An
+attached session uses its binding revision; a handoff preserves the attempt while
+invalidating the old owner. This skill requests `scan` for model work.
+Helpers execute deterministically; model settings are advisory unless trusted host
+configuration/observation proves them. Ordinary unmapped tasks remain unaffected.
+See [setup](../../docs/setup-and-usage.md) and [host examples](../../docs/hosts.md).

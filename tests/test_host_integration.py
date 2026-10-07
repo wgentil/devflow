@@ -92,3 +92,29 @@ class IntegrationTests(unittest.TestCase):
             self.assertEqual(json.loads(check.stdout)['reason_code'],'RELEASE_MISMATCH')
             mutate=subprocess.run(base+['--binding-id','b1','--binding-revision','1','run','next','--root',str(root),'--run-id','run'],capture_output=True,text=True)
             self.assertEqual(json.loads(mutate.stdout)['error'],'RELEASE_MISMATCH')
+    def test_current_cli_transfer_between_relocated_packages(self):
+        import shutil
+        with tempfile.TemporaryDirectory() as temp:
+            base=Path(temp);project=base/'project with spaces';project.mkdir()
+            subprocess.run(['git','init','-q',str(project)],check=True)
+            root=project/'.devflow/control'
+            from workflow_lib.bootstrap import exclude_runtime
+            exclude_runtime(project)
+            state=host_state(str(project.resolve()));transact(root,0,'seed',{'kind':'fixture','payload':state})
+            copied=base/'second plugin with spaces'
+            shutil.copytree(ROOT,copied,ignore=shutil.ignore_patterns('.git','.worktrees','.superpowers','__pycache__'))
+            entries=[ROOT/'skills/workflow/scripts/run.py',copied/'skills/workflow/scripts/run.py']
+            def cli(entry,*args):
+                result=subprocess.run([sys.executable,'-B',str(entry),*map(str,args)],cwd=project,capture_output=True,text=True)
+                self.assertEqual(result.returncode,0,result.stdout+result.stderr);return json.loads(result.stdout)
+            def write(name,value):p=root/name;p.write_text(json.dumps(value));return p
+            loaded=write('loaded.json',cli(entries[0],'version'))
+            first=attachment(str(project.resolve()));first.pop('release')
+            cli(entries[0],'host','attach','--root',root,'--file',write('source.json',first),'--loaded-release',loaded,'--operation-id','source')
+            cli(entries[0],'host','handoff-prepare','--root',root,'--file',write('prepare.json',{'binding_id':'b1','revision':1,'handoff_id':'h','target_host':'claude','target_actor_id':'a2','target_session_id':'s2'}),'--operation-id','prepare')
+            target=attachment(str(project.resolve()),binding_id='b2',host='claude',session_id='s2',actor_id='a2');target.pop('release')
+            result=cli(entries[1],'host','handoff-accept','--root',root,'--file',write('accept.json',{'handoff_id':'h','destination':target}),'--loaded-release',loaded,'--operation-id','accept')
+            self.assertEqual(result['binding_id'],'b2')
+            self.assertEqual(read_state(root)['data']['runs']['run']['active_attempt']['token'],'t')
+            self.assertEqual(read_state(root)['data']['host_bindings']['b1']['status'],'transferred')
+            self.assertEqual(subprocess.check_output(['git','status','--porcelain'],cwd=project),b'')

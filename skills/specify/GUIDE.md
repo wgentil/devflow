@@ -47,3 +47,12 @@ extension, preserve stable IDs and add new requirements without silently removin
 accepted behavior. Migration grounding additionally uses the migrate guide.
 Duplicate IDs, missing criteria or incomplete derived citations fail validation.
 Continue with [plan-work](../plan-work/GUIDE.md).
+
+## Host usage example
+
+Invoke this skill from the same selected DevFlow project/run in either host. An
+attached session uses its binding revision; a handoff preserves the attempt while
+invalidating the old owner. This skill requests `specification` for model work.
+Helpers execute deterministically; model settings are advisory unless trusted host
+configuration/observation proves them. Ordinary unmapped tasks remain unaffected.
+See [setup](../../docs/setup-and-usage.md) and [host examples](../../docs/hosts.md).

@@ -37,7 +37,7 @@ renewed. Adjudication does not manufacture missing verification or acceptance.
 
 Use the active run ID and registered repository IDs. Prepare a read-only package for the item, branch, or acceptance role. Supply each repository's base and exact current head. The package includes the complete commit range, Work-Item attribution, working-tree and untracked changes, artifact references, criteria, prior findings, and a content hash.
 
-Review the package in a separate Codex invocation. A reviewer must use a stable actor ID distinct from the implementer and every other reviewer role. Record the real invocation reference and a structured report bound to the package hash. If independent review tooling or the separate invocation is unavailable, leave the gate blocked; do not record a self-review as independent.
+Review the package in a separate host invocation. A reviewer must use a stable actor ID distinct from the implementer and every other reviewer role. Record the real invocation reference and a structured report bound to the package hash. If independent review tooling or the separate invocation is unavailable, leave the gate blocked; do not record a self-review as independent.
 
 ```sh
 python3 <plugin-root>/skills/workflow/scripts/run.py review package \
@@ -57,3 +57,12 @@ Use verdicts `pass`, `request-changes`, or `block`. Item review permits four cor
 See [usage guide and examples](GUIDE.md) for prerequisites, commands, input shapes,
 outputs and recovery. The [documentation index](../../docs/skills.md) covers shared
 setup and all DevFlow skills.
+
+## Shared host contract
+
+When explicitly attached, retain the current binding ID/revision and include them
+in workflow mutations; transferred/stale bindings require refresh. Map actual
+host task IDs explicitly and check completion using the shared host policy.
+For model work here request `review` stage routing; deterministic helper execution
+uses no separate model. Unknown effective settings remain advisory; strict mode
+blocks. See [host contracts](../../docs/hosts.md) for handoff and model limits.

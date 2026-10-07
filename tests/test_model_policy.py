@@ -78,3 +78,11 @@ class ModelPolicyTests(unittest.TestCase):
         self.assertEqual(claude['agents']['reviewer']['model'],'deep')
         self.assertEqual(claude['agents']['reviewer']['effort'],'high')
         self.assertFalse(claude['enforced'])
+    def test_override_scope_does_not_change_other_stages(self):
+        from commands.host import _resolve_model
+        from test_hosts import host_state, attachment
+        from workflow_lib.hosts import apply_host_event
+        state=host_state();binding=apply_host_event(state,'attach',attachment())
+        apply_host_event(state,'model-override',{'binding_id':'b1','revision':1,'mode':'strict','stage':'planning'})
+        self.assertEqual(_resolve_model(state,binding,'planning')['status'],'block')
+        self.assertEqual(_resolve_model(state,binding,'implementation')['mode'],'advisory')

@@ -57,6 +57,8 @@ def initialize_project(project_dir: Path, control_root: Path | None, operation_i
     state = read_state(root)
     prior = [key for key, repo in state['data'].get('repositories', {}).items()
              if Path(repo['location']).resolve() == project]
+    if not prior and root == project/'.devflow/control' and state['data'].get('repositories'):
+        raise WorkflowError('PROJECT_RELOCATION_REQUIRED','Existing project records require explicit repository relocation; no duplicate identity was created.')
     if len(prior) > 1: raise WorkflowError('AMBIGUOUS_PROJECT', 'Several repository identities refer to this project.')
     identifier = prior[0] if prior else 'repo-' + hashlib.sha256(str(project).encode()).hexdigest()[:24]
     from argparse import Namespace

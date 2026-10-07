@@ -57,3 +57,12 @@ role, actor, decision, rationale and cost if wrong. Use `review impact` with
 `--changed-inputs-json` to assess invalidation. Missing independent tooling,
 reused actors or stale package content keep the gate blocked. The helper checks
 record relationships; it cannot prove a supplied invocation reference is real.
+
+## Host usage example
+
+Invoke this skill from the same selected DevFlow project/run in either host. An
+attached session uses its binding revision; a handoff preserves the attempt while
+invalidating the old owner. This skill requests `review` for model work.
+Helpers execute deterministically; model settings are advisory unless trusted host
+configuration/observation proves them. Ordinary unmapped tasks remain unaffected.
+See [setup](../../docs/setup-and-usage.md) and [host examples](../../docs/hosts.md).

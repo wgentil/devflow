@@ -54,3 +54,12 @@ checks source citations against index path/commit records. It does not replace
 human specification review or actual production parity testing. Missing criteria,
 cycles, incorrect scope or absent predecessor delivery keep the relevant gate
 blocked. Continue with normal workflow execution and independent reviews.
+
+## Host usage example
+
+Invoke this skill from the same selected DevFlow project/run in either host. An
+attached session uses its binding revision; a handoff preserves the attempt while
+invalidating the old owner. This skill requests `planning` for model work.
+Helpers execute deterministically; model settings are advisory unless trusted host
+configuration/observation proves them. Ordinary unmapped tasks remain unaffected.
+See [setup](../../docs/setup-and-usage.md) and [host examples](../../docs/hosts.md).

@@ -41,7 +41,9 @@ def check_completion(state: dict, binding: dict, task_id: str, live: bool = True
     except WorkflowError:return _decision('block','STALE_BINDING')
     run=state.get('runs',{}).get(task['run_id'])
     if not run:return _decision('block','RUN_UNAVAILABLE')
-    mode=run.get('model_overrides',[{}])[-1].get('mode','advisory')
+    stage='implementation' if task['scope']=='item' else 'acceptance' if binding['role']=='acceptance-reviewer' else 'review' if task['scope']=='review' else 'delivery'
+    override=next((entry for entry in reversed(run.get('model_overrides', [])) if entry.get('stage') in {None,stage}), {})
+    mode=override.get('mode','advisory')
     receipt=run.get('model_receipts',{}).get(task.get('invocation_id'),{})
     if receipt:mode=receipt.get('mode',mode)
     if any(i.get('invocation_id') == task.get('invocation_id') for i in run.get('model_interruptions',[])):
@@ -74,7 +76,17 @@ def check_completion(state: dict, binding: dict, task_id: str, live: bool = True
 def host_brief(state: dict, binding: dict) -> dict:
     run=state.get('runs',{}).get(binding['run_id'],{})
     tasks=[t for t in state.get('host_tasks',{}).values() if t['binding_id']==binding['binding_id']]
-    relevant={'binding_id':binding['binding_id'],'revision':binding['revision'],'role':binding['role'],
+    selected={t.get('item_id') for t in tasks if t.get('revision')==binding['revision']}
+    if binding.get('item_id'):selected.add(binding['item_id'])
+    if run.get('active_attempt'):selected.add(run['active_attempt'].get('item_id'))
+    work_items=[item for item in run.get('plan',{}).get('work_items',[]) if item['id'] in selected]
+    required=run.get('plan',{}).get('stage',{}).get('required_slices',[])
+    values=run.get('context',{}).get('values',{})
+    context={'values':{key:values[key] for key in required if key in values},
+             'missing':[key for key in required if key not in values],
+             'conflicts':[c for c in run.get('context',{}).get('conflicts',[]) if c.get('slice') in required]}
+    package=run.get('review_packages',{}).get(binding.get('package_hash'),{})
+    relevant={'work_items':work_items,'context':context,'package':package,'binding_id' :binding['binding_id'],'revision':binding['revision'],'role':binding['role'],
               'run_id':binding['run_id'],'active_attempt':run.get('active_attempt'),
               'stage':gate_status(run,live=False),'tasks':tasks,'model_policy':run.get('model_overrides',[]),
               'budget':run.get('context',{}).get('budgets',{}),'proofs':run.get('verification_proofs',{}),
@@ -84,4 +96,4 @@ def host_brief(state: dict, binding: dict) -> dict:
             'run_id':binding['run_id'],'role':binding['role'],'stage':relevant['stage']['stage'],
             'active_attempt':run.get('active_attempt'),'mapped_tasks':[t['task_id'] for t in tasks],
             'unmapped_tasks':'unaffected','blockers':relevant['stage']['blocking_findings'],
-            'budget':relevant['budget'],'evidence_refs':['journal:'+binding['run_id']]}
+            'budget':relevant['budget'],'work_items':work_items,'context':context,'package_hash':binding.get('package_hash'),'evidence_refs':['journal:'+binding['run_id']]}

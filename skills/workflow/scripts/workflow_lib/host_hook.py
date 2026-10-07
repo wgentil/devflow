@@ -29,6 +29,7 @@ def evaluate(project_dir, session_id, event, task_id=None):
             issue='LOCATOR_BINDING_MISMATCH'
         elif pointed['status'] != 'active':return {'status':'inactive','reason_code':'BINDING_DETACHED'}
     if not binding:return {'status':'inactive','reason_code':issue or 'NOT_ATTACHED'}
+    if Path(binding['project_dir']).resolve() != project:issue='PROJECT_BINDING_MISMATCH'
     if event == 'TaskCompleted':
         from .releases import release_descriptor
         decision=check_completion(state,binding,task_id,installed_release=release_descriptor())

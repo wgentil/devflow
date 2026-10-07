@@ -42,3 +42,12 @@ Unapproved or changed specs produce stale/approval errors. Missing coverage,
 unknown dependency IDs and cycles fail before dispatch. After execution begins,
 use controlled `run amend-item` with the current plan/spec hashes and explicit
 ruling; do not edit committed run state. Continue with the workflow guide.
+
+## Host usage example
+
+Invoke this skill from the same selected DevFlow project/run in either host. An
+attached session uses its binding revision; a handoff preserves the attempt while
+invalidating the old owner. This skill requests `planning` for model work.
+Helpers execute deterministically; model settings are advisory unless trusted host
+configuration/observation proves them. Ordinary unmapped tasks remain unaffected.
+See [setup](../../docs/setup-and-usage.md) and [host examples](../../docs/hosts.md).

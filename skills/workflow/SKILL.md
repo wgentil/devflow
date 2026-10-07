@@ -14,7 +14,8 @@ show the agent's process, including steps that require its judgment.
 
 ```mermaid
 flowchart TD
-    Context["project-context: resolve scoped context"] --> Spec["specify: create or refine requirements"]
+    Init["Discover Git project and initialize/resume"] --> Attach["Explicit host/session binding"]
+    Attach --> Context["project-context: resolve scoped context"] --> Spec["specify: create or refine requirements"]
     Sources["ingest: index source evidence"] -.-> Spec
     Issues["issues: capture and group complete snapshot"] -.-> Spec
     Migration["migrate: map parity and increment dependencies"] -.-> Spec
@@ -24,7 +25,8 @@ flowchart TD
     Gaps -->|No| Approval["Human reviews and approves exact spec hash"]
     Approval --> Plan["plan-work: validate coverage and dependencies"]
     Plan --> Next["run next: eligible item and attempt token"]
-    Next --> Build["build-work: implement and verify"]
+    Next --> Model["Resolve stage profile: disclose advisory or block strict"]
+    Model --> Build["build-work: implement and verify"]
     Build --> Item["review-work: independent item review"]
     Item --> More{"More work items?"}
     More -->|Yes| Next
@@ -42,6 +44,9 @@ flowchart TD
     Branch -->|Changes requested| Fix
     Accept -->|Requirements unmet| Fix
     Fix --> Build
+    Build -.-> Handoff["Prepare transfer; destination parity/profile CAS"]
+    Handoff -.-> Build
+    Build --> Complete["Mapped task: fresh shared completion check"]
     Fix -->|Review correction limit reached| Adjudicate["Independent adjudication"]
 ```
 
@@ -97,3 +102,22 @@ Call `host init --project-dir <actual host working directory> --operation-id <un
 Use the returned control root and stable repo ID. Select a run only when one is
 unambiguous; ask a concise selection question for multiple runs. Initialization
 never approves specs or creates a run without its ordinary prerequisites.
+
+## Shared host contract
+
+When explicitly attached, retain the current binding ID/revision and include them
+in workflow mutations; transferred/stale bindings require refresh. Map actual
+host task IDs explicitly and check completion using the shared host policy.
+For model work here request `implementation` stage routing; deterministic helper execution
+uses no separate model. Unknown effective settings remain advisory; strict mode
+blocks. See [host contracts](../../docs/hosts.md) for handoff and model limits.
+
+Before new model work, resolve the relevant stage with `host profile-resolve` for
+this binding. Apply a resolved model/effort through a supported native delegated
+agent control; use the adapter renderer for host configuration. If only an advisory
+recommendation is available, disclose it and preserve user/account choices.
+An unavailable pin or strict blocker requires a user decision, not silent fallback.
+Record immutable invocation receipts and interruptions; do not supply caller claims
+as observed host settings. Preferences may name a specific stage and apply only to
+new invocations. After rework/refresh, explicitly remap the task using the previous
+mapping hash returned by `host status`.

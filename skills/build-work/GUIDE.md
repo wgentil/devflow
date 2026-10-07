@@ -59,3 +59,12 @@ Locked-test correction uses `build test-change propose --patch-file --reason
 `apply --proposal-id --confirm-hash` after real approval. All require root/run.
 Applied changes invalidate affected GREEN proof. Never weaken tests merely to
 claim GREEN. Continue with independent review.
+
+## Host usage example
+
+Invoke this skill from the same selected DevFlow project/run in either host. An
+attached session uses its binding revision; a handoff preserves the attempt while
+invalidating the old owner. This skill requests `implementation` for model work.
+Helpers execute deterministically; model settings are advisory unless trusted host
+configuration/observation proves them. Ordinary unmapped tasks remain unaffected.
+See [setup](../../docs/setup-and-usage.md) and [host examples](../../docs/hosts.md).

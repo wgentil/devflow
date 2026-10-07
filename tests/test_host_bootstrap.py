@@ -45,3 +45,9 @@ class BootstrapTests(unittest.TestCase):
     def test_operation_id_required_before_writes(self):
         with self.assertRaises(WorkflowError): initialize_project(self.repo,None,'',None)
         self.assertFalse((self.repo/'.devflow').exists())
+    def test_moved_project_does_not_create_duplicate_registry_identity(self):
+        first=initialize_project(self.repo,None,'first',None)
+        moved=Path(self.temp.name)/'moved';self.repo.rename(moved)
+        with self.assertRaisesRegex(WorkflowError,'relocat'):
+            initialize_project(moved,None,'second',None)
+        self.assertEqual(len(read_state(moved/'.devflow/control')['data']['repositories']),1)
