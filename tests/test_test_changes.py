@@ -63,8 +63,8 @@ index 0000000..0000000 100644
         proposal = propose(self.run, "W1", self.patch, "expect the corrected behavior", self.repo)
 
         with self.assertRaises(ValueError):
-            approve(proposal, "wrong-hash")
-        approval = approve(proposal, proposal["proposal_hash"])
+            approve(proposal, "wrong-hash", "human-1")
+        approval = approve(proposal, proposal["proposal_hash"], "human-1")
         result = apply(self.repo, proposal, approval)
 
         self.assertEqual(self.source.read_text(), "def test_locked():\n    assert 1 == 2\n")
@@ -74,7 +74,7 @@ index 0000000..0000000 100644
     def test_edited_test_preimage_blocks_an_approved_patch(self):
         propose, approve, apply = self.module()
         proposal = propose(self.run, "W1", self.patch, "expect the corrected behavior", self.repo)
-        approval = approve(proposal, proposal["proposal_hash"])
+        approval = approve(proposal, proposal["proposal_hash"], "human-1")
         self.source.write_text("def test_locked():\n    assert 1 == 3\n")
 
         with self.assertRaises(ValueError):
@@ -84,7 +84,7 @@ index 0000000..0000000 100644
     def test_applied_change_marks_every_dependent_green_proof_stale(self):
         propose, approve, apply = self.module()
         proposal = propose(self.run, "W1", self.patch, "correct expected behavior", self.repo)
-        approval = approve(proposal, proposal["proposal_hash"])
+        approval = approve(proposal, proposal["proposal_hash"], "human-1")
         result = apply(self.repo, proposal, approval)
         green = {"id": "green-1", "phase": "GREEN", "passed": True, "item_id": "W1",
                  "token": "attempt-1", "test_hashes": {"tests/test_locked.py": self.before},

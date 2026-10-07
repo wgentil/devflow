@@ -74,8 +74,7 @@ def prepare_review(run: dict, role: str, repo_heads: dict,
     requirements = sorted({requirement for item in run.get("plan", {}).get("work_items", [])
                            for requirement in item.get("requirement_ids", [])})
     criteria = {item["id"]: item.get("acceptance_criteria", [])
-                for item in run.get("plan", {}).get("work_items", [])
-                if role != "item" or item["id"] in {f.get("item_id") for f in prior_findings or []}}
+                for item in run.get("plan", {}).get("work_items", [])}
     body = {"schema_version": 1, "run_id": run.get("id"), "role": role,
             "spec_hash": run.get("plan", {}).get("spec_hash"),
             "plan_hash": hashlib.sha256(_canonical(run.get("plan", {})).encode()).hexdigest(),
@@ -95,11 +94,14 @@ def record_review(run: dict, package_hash: str, reviewer: dict, report: dict) ->
     if reviewer.get("tool_available") is not True:
         raise ValueError("independent reviewer tooling is unavailable")
     implementer = run.get("actors", {}).get("implementer")
-    if not implementer or actor == implementer or actor in run.get("actors", {}).values():
+    if not implementer or actor == implementer:
         raise ValueError("reviewer actor must be distinct from implementer and prior reviewer roles")
     package = run.get("review_packages", {}).get(package_hash)
     if not package or package.get("package_hash") != package_hash or package.get("role") != role:
         raise ValueError("review package is missing, stale, or bound to a different role")
+    current_plan_hash = hashlib.sha256(_canonical(run.get("plan", {})).encode()).hexdigest()
+    if package.get("plan_hash") != current_plan_hash or package.get("spec_hash") != run.get("plan", {}).get("spec_hash"):
+        raise ValueError("review package is stale after a plan or specification amendment")
     for repo in package.get("repositories", {}).values():
         location = Path(repo["location"])
         if (repo.get("head_verified") is not True
@@ -115,13 +117,19 @@ def record_review(run: dict, package_hash: str, reviewer: dict, report: dict) ->
     if report.get("package_hash") != package_hash or report.get("verdict") not in {"pass", "request-changes", "block"}:
         raise ValueError("review report must bind the package and use a supported verdict")
     reviews = run.get("reviews", {}).get(role, [])
-    prior_actor = {entry.get("actor_id") for entries in run.get("reviews", {}).values() for entry in entries}
-    if actor in prior_actor:
-        raise ValueError("reviewer actor IDs must be distinct across review roles")
+    for prior_role, entries in run.get("reviews", {}).items():
+        if prior_role != role and any(entry.get("actor_id") == actor for entry in entries):
+            raise ValueError("reviewer actor IDs must be distinct across review roles")
     limits = {"item": 4, "branch": 1, "acceptance": 1}
-    corrections = sum(entry.get("verdict") == "request-changes" for entry in reviews)
+    corrections = sum(entry.get("verdict") == "request-changes"
+                      and (role != "item" or entry.get("item_id") == report.get("item_id"))
+                      for entry in reviews)
     if report["verdict"] == "request-changes" and corrections >= limits[role]:
         raise ValueError(f"{role} correction limit reached; adjudication is required")
+    item_id = report.get("item_id")
+    if role == "item" and (not isinstance(item_id, str) or item_id not in
+                            {item.get("id") for item in run.get("plan", {}).get("work_items", [])}):
+        raise ValueError("item review must identify a planned work item")
     if not isinstance(report.get("findings"), list):
         raise ValueError("review findings must be an array")
     finding_ids = set()
@@ -139,6 +147,8 @@ def record_review(run: dict, package_hash: str, reviewer: dict, report: dict) ->
               "findings": report["findings"], "review_id": hashlib.sha256(
                   _canonical({"package": package_hash, "actor": actor, "invocation": invocation,
                               "report": report}).encode()).hexdigest()}
+    if item_id:
+        review["item_id"] = item_id
     return review
 
 
@@ -157,3 +167,24 @@ def correction_impact(run: dict, changed_inputs: list[str]) -> dict:
                 affected.append(review.get("review_id"))
     return {"invalidate_all": unknown, "changed_inputs": sorted(set(changed_inputs)),
             "affected_review_ids": sorted(value for value in affected if value)}
+
+
+def record_adjudication(run: dict, role: str, actor_id: str, decision: str, rationale: str,
+                        cost_if_wrong: str, item_id: str | None = None) -> dict:
+    if role not in ROLES or decision not in {"approve", "return", "reject"}:
+        raise ValueError("adjudication requires a supported role and decision")
+    if any(not isinstance(value, str) or not value.strip() for value in (actor_id, rationale, cost_if_wrong)):
+        raise ValueError("adjudication requires actor, rationale, and cost if wrong")
+    rounds = sum(review.get("verdict") == "request-changes" and
+                 (role != "item" or review.get("item_id") == item_id)
+                 for review in run.get("reviews", {}).get(role, []))
+    limit = {"item": 4, "branch": 1, "acceptance": 1}[role]
+    if rounds < limit or role == "item" and not item_id:
+        raise ValueError("adjudication is available only after the role's correction limit")
+    if actor_id == run.get("actors", {}).get("implementer") or actor_id in run.get("actors", {}).values():
+        raise ValueError("adjudicator must be independent of the implementation and review roles")
+    record = {"schema_version": 1, "role": role, "item_id": item_id, "actor_id": actor_id.strip(),
+              "decision": decision, "rationale": rationale.strip(), "cost_if_wrong": cost_if_wrong.strip(),
+              "correction_rounds": rounds}
+    record["id"] = hashlib.sha256(_canonical(record).encode()).hexdigest()
+    return record

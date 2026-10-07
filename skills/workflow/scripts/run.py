@@ -24,6 +24,9 @@ from workflow_lib.runs import (abandon_attempt, issue_attempt, record_result, ru
                                start_run)  # noqa: E402
 from workflow_lib.store import WorkflowError, read_state, transact  # noqa: E402
 from workflow_lib.telemetry import record_offload  # noqa: E402
+from workflow_lib.gates import (accept_requirements, amend_item, discard_run, gate_status,
+                                park_finding, resolve_finding, waive_finding)  # noqa: E402
+from workflow_lib.reviews import record_adjudication  # noqa: E402
 from commands import build as build_commands  # noqa: E402
 from commands import review as review_commands  # noqa: E402
 
@@ -159,6 +162,7 @@ def main(argv: list[str] | None = None) -> int:
     approve_spec = spec_commands.add_parser("approve")
     approve_spec.add_argument("--root", required=True)
     approve_spec.add_argument("--confirm-hash", required=True)
+    approve_spec.add_argument("--actor-id", required=True)
     approve_spec.add_argument("--operation-id")
     plan_parser = commands.add_parser("plan")
     plan_commands = plan_parser.add_subparsers(dest="plan_command")
@@ -204,6 +208,58 @@ def main(argv: list[str] | None = None) -> int:
     result_command.add_argument("--attempt-id", required=True)
     result_command.add_argument("--result", required=True)
     result_command.add_argument("--operation-id")
+    gate_command = run_commands.add_parser("gate-status")
+    gate_command.add_argument("--root", required=True)
+    gate_command.add_argument("--run-id", required=True)
+    amend_command = run_commands.add_parser("amend-item")
+    amend_command.add_argument("--root", required=True)
+    amend_command.add_argument("--run-id", required=True)
+    amend_command.add_argument("--item-id", required=True)
+    amend_command.add_argument("--replacement-json", required=True)
+    amend_command.add_argument("--ruling-json", required=True)
+    amend_command.add_argument("--operation-id")
+    discard_command = run_commands.add_parser("discard")
+    discard_command.add_argument("--root", required=True)
+    discard_command.add_argument("--run-id", required=True)
+    discard_command.add_argument("--reason", required=True)
+    discard_command.add_argument("--actor-id", required=True)
+    discard_command.add_argument("--operation-id")
+    acceptance_command = run_commands.add_parser("accept")
+    acceptance_command.add_argument("--root", required=True)
+    acceptance_command.add_argument("--run-id", required=True)
+    acceptance_command.add_argument("--report-json", required=True)
+    acceptance_command.add_argument("--repositories-json", required=True)
+    acceptance_command.add_argument("--operation-id")
+    park_command = run_commands.add_parser("park-finding")
+    park_command.add_argument("--root", required=True)
+    park_command.add_argument("--run-id", required=True)
+    park_command.add_argument("--finding-id", required=True)
+    park_command.add_argument("--ruling-json", required=True)
+    park_command.add_argument("--operation-id")
+    waive_command = run_commands.add_parser("waive-finding")
+    waive_command.add_argument("--root", required=True)
+    waive_command.add_argument("--run-id", required=True)
+    waive_command.add_argument("--finding-id", required=True)
+    waive_command.add_argument("--authorization-json", required=True)
+    waive_command.add_argument("--operation-id")
+    adjudicate_command = run_commands.add_parser("adjudicate")
+    adjudicate_command.add_argument("--root", required=True)
+    adjudicate_command.add_argument("--run-id", required=True)
+    adjudicate_command.add_argument("--role", choices=("item", "branch", "acceptance"), required=True)
+    adjudicate_command.add_argument("--item-id")
+    adjudicate_command.add_argument("--actor-id", required=True)
+    adjudicate_command.add_argument("--decision", choices=("approve", "return", "reject"), required=True)
+    adjudicate_command.add_argument("--rationale", required=True)
+    adjudicate_command.add_argument("--cost-if-wrong", required=True)
+    adjudicate_command.add_argument("--operation-id")
+    resolve_finding_command = run_commands.add_parser("resolve-finding")
+    resolve_finding_command.add_argument("--root", required=True)
+    resolve_finding_command.add_argument("--run-id", required=True)
+    resolve_finding_command.add_argument("--finding-id", required=True)
+    resolve_finding_command.add_argument("--actor-id", required=True)
+    resolve_finding_command.add_argument("--why", required=True)
+    resolve_finding_command.add_argument("--evidence-refs-json", required=True)
+    resolve_finding_command.add_argument("--operation-id")
     build_commands.register_commands(commands)
     review_commands.register_commands(commands)
     try:
@@ -225,6 +281,7 @@ def main(argv: list[str] | None = None) -> int:
                     or getattr(parsed, "build_command", None) is not None
                     or getattr(parsed, "review_command", None) in {"package", "record"}
                     or run_command in {"start", "abandon", "result"})
+        mutation = mutation or run_command in {"amend-item", "discard", "accept", "park-finding", "waive-finding", "adjudicate", "resolve-finding"}
         if mutation and getattr(parsed, "root", None):
             initial_state = read_state(Path(parsed.root))
             previous = initial_state["operations"].get(parsed.operation_id)
@@ -312,6 +369,7 @@ def main(argv: list[str] | None = None) -> int:
             if specification is None:
                 raise WorkflowError("SPEC_NOT_FOUND", "store a specification before approving it")
             approval = approval_record(specification, parsed.confirm_hash)
+            approval["actor_id"] = parsed.actor_id
             if state["data"].get("approval") == approval:
                 result = {"approval": approval, "unchanged": True, "state_version": state["version"]}
             else:
@@ -489,6 +547,87 @@ def main(argv: list[str] | None = None) -> int:
                         "verified": updated["items"][item_id]["status"] == "complete",
                         "verifier_proof_id": submission.get("verifier_proof_id")}})
             result = run_summary(updated)
+        elif parsed.command == "run" and parsed.run_command == "gate-status":
+            state = initial_state if initial_state is not None else read_state(Path(parsed.root))
+            run = state["data"].get("runs", {}).get(parsed.run_id)
+            if run is None:
+                raise WorkflowError("RUN_NOT_FOUND", f"unknown run {parsed.run_id}")
+            result = gate_status(run)
+        elif parsed.command == "run" and parsed.run_command == "amend-item":
+            state = initial_state if initial_state is not None else read_state(Path(parsed.root))
+            run = state["data"].get("runs", {}).get(parsed.run_id)
+            if run is None:
+                raise WorkflowError("RUN_NOT_FOUND", f"unknown run {parsed.run_id}")
+            updated = amend_item(run, parsed.item_id, json.loads(parsed.replacement_json), json.loads(parsed.ruling_json))
+            receipt = transact(Path(parsed.root), state["version"], parsed.operation_id,
+                {"kind": "run.item.amended", "payload": {"run_id": parsed.run_id,
+                 "plan": updated["plan"], "amendment": updated["amendments"][-1]}})
+            result = {"amendment": updated["amendments"][-1], "state_version": receipt["state"]["version"]}
+        elif parsed.command == "run" and parsed.run_command == "discard":
+            state = initial_state if initial_state is not None else read_state(Path(parsed.root))
+            run = state["data"].get("runs", {}).get(parsed.run_id)
+            if run is None:
+                raise WorkflowError("RUN_NOT_FOUND", f"unknown run {parsed.run_id}")
+            discarded = discard_run(run, parsed.reason, parsed.actor_id)
+            receipt = transact(Path(parsed.root), state["version"], parsed.operation_id,
+                {"kind": "run.discarded", "payload": {"run_id": parsed.run_id,
+                    "reason": discarded["discard_reason"], "actor_id": parsed.actor_id}})
+            result = {**run_summary(discarded), "state_version": receipt["state"]["version"]}
+        elif parsed.command == "run" and parsed.run_command == "accept":
+            state = initial_state if initial_state is not None else read_state(Path(parsed.root))
+            run = state["data"].get("runs", {}).get(parsed.run_id)
+            if run is None:
+                raise WorkflowError("RUN_NOT_FOUND", f"unknown run {parsed.run_id}")
+            acceptance = accept_requirements(run, json.loads(parsed.report_json), json.loads(parsed.repositories_json))
+            receipt = transact(Path(parsed.root), state["version"], parsed.operation_id,
+                {"kind": "acceptance.recorded", "payload": {"run_id": parsed.run_id, "acceptance": acceptance}})
+            result = {**acceptance, "state_version": receipt["state"]["version"]}
+        elif parsed.command == "run" and parsed.run_command == "park-finding":
+            state = initial_state if initial_state is not None else read_state(Path(parsed.root))
+            run = state["data"].get("runs", {}).get(parsed.run_id)
+            if run is None:
+                raise WorkflowError("RUN_NOT_FOUND", f"unknown run {parsed.run_id}")
+            updated = park_finding(run, parsed.finding_id, json.loads(parsed.ruling_json))
+            ruling = next(value["ruling"] for value in updated["unresolved_findings"] if value["id"] == parsed.finding_id)
+            receipt = transact(Path(parsed.root), state["version"], parsed.operation_id,
+                {"kind": "finding.parked", "payload": {"run_id": parsed.run_id, "finding_id": parsed.finding_id,
+                 "ruling": ruling}})
+            result = {"finding_id": parsed.finding_id, "status": "parked", "state_version": receipt["state"]["version"]}
+        elif parsed.command == "run" and parsed.run_command == "waive-finding":
+            state = initial_state if initial_state is not None else read_state(Path(parsed.root))
+            run = state["data"].get("runs", {}).get(parsed.run_id)
+            if run is None:
+                raise WorkflowError("RUN_NOT_FOUND", f"unknown run {parsed.run_id}")
+            authorization = json.loads(parsed.authorization_json)
+            waive_finding(run, parsed.finding_id, authorization)
+            receipt = transact(Path(parsed.root), state["version"], parsed.operation_id,
+                {"kind": "finding.waived", "payload": {"run_id": parsed.run_id,
+                 "finding_id": parsed.finding_id, "authorization": authorization}})
+            result = {"finding_id": parsed.finding_id, "status": "waived", "state_version": receipt["state"]["version"]}
+        elif parsed.command == "run" and parsed.run_command == "adjudicate":
+            state = initial_state if initial_state is not None else read_state(Path(parsed.root))
+            run = state["data"].get("runs", {}).get(parsed.run_id)
+            if run is None:
+                raise WorkflowError("RUN_NOT_FOUND", f"unknown run {parsed.run_id}")
+            adjudication = record_adjudication(run, parsed.role, parsed.actor_id, parsed.decision,
+                parsed.rationale, parsed.cost_if_wrong, parsed.item_id)
+            receipt = transact(Path(parsed.root), state["version"], parsed.operation_id,
+                {"kind": "review.adjudicated", "payload": {"run_id": parsed.run_id,
+                    "adjudication": adjudication}})
+            result = {**adjudication, "state_version": receipt["state"]["version"]}
+        elif parsed.command == "run" and parsed.run_command == "resolve-finding":
+            state = initial_state if initial_state is not None else read_state(Path(parsed.root))
+            run = state["data"].get("runs", {}).get(parsed.run_id)
+            if run is None:
+                raise WorkflowError("RUN_NOT_FOUND", f"unknown run {parsed.run_id}")
+            updated = resolve_finding(run, parsed.finding_id, parsed.actor_id, parsed.why,
+                                      json.loads(parsed.evidence_refs_json))
+            resolution = next(value["resolution"] for value in updated["unresolved_findings"]
+                              if value["id"] == parsed.finding_id)
+            receipt = transact(Path(parsed.root), state["version"], parsed.operation_id,
+                {"kind": "finding.resolved", "payload": {"run_id": parsed.run_id,
+                 "finding_id": parsed.finding_id, "resolution": resolution}})
+            result = {"finding_id": parsed.finding_id, "status": "resolved", "state_version": receipt["state"]["version"]}
         elif parsed.command == "build":
             result = build_commands.dispatch(parsed)
         elif parsed.command == "review":

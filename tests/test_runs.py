@@ -70,10 +70,30 @@ class RunTests(unittest.TestCase):
             record_result(issued, token, {"outcome": "failed", "verifier_proof_id": "proof-1"})
         self.assertEqual(caught.exception.code, "VERIFIER_PROOF_MISMATCH")
 
+    def test_code_green_proof_cannot_complete_iac_work(self):
+        data = state()
+        plan = {**data["plan"], "work_items": [{"id": "W1", "kind": "iac", "requirement_ids": ["R1"],
+            "dependencies": [], "acceptance_criteria": [{"kind": "iac-plan-policy", "text": "plan"},
+            {"kind": "iac-apply-policy", "text": "apply"}]}, {**data["plan"]["work_items"][1],
+                "requirement_ids": ["R2"], "dependencies": ["W1"]}]}
+        data["plan"] = plan
+        data["plan_validation"] = {"valid": True, "spec_hash": plan["spec_hash"]}
+        run = start_run(data, "run-iac", plan)
+        issued = issue_attempt(run, "W1")
+        token = issued["active_attempt"]["token"]
+        issued["verification_proofs"] = {"green": {"id": "green", "kind": "code", "phase": "GREEN"}}
+        issued["verifier_proofs"] = {"green": {"passed": True, "item_id": "W1", "token": token,
+                                               "evidence_id": "green"}}
+        with self.assertRaises(WorkflowError) as caught:
+            record_result(issued, token, {"outcome": "passed", "verifier_proof_id": "green"})
+        self.assertEqual(caught.exception.code, "VERIFIER_PROOF_MISMATCH")
+
     def test_summary_reports_unavailable_gates(self):
         summary = run_summary(self.run)
         self.assertEqual(summary["status"], "active")
-        self.assertIn("build", summary["unavailable_gates"])
+        self.assertNotIn("build", summary["unavailable_gates"])
+        self.assertIn("hardening", summary["unavailable_gates"])
+        self.assertIn("delivery", summary["unavailable_gates"])
         self.assertEqual(summary["completed_items"], [])
 
     def test_start_rejects_plan_after_specification_changes(self):

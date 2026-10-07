@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import fcntl
 from copy import deepcopy
+import hashlib
 import json
 import os
 import tempfile
@@ -76,6 +77,15 @@ def _apply_event(state: dict, event: dict) -> None:
             if (not proof or proof.get("passed") is not True or proof.get("item_id") != active["item_id"]
                     or proof.get("token") != active["token"] or result.get("outcome") != "passed"):
                 raise WorkflowError("INVALID_EVENT", "verified result lacks a matching registered proof")
+            item_spec = next((value for value in run["plan"]["work_items"] if value["id"] == active["item_id"]), None)
+            evidence = run.get("verification_proofs", {}).get(proof.get("evidence_id", "")) if proof else None
+            eligible = (item_spec and evidence and
+                ((item_spec.get("kind") == "code" and evidence.get("kind") == "code" and evidence.get("phase") == "GREEN")
+                 or (item_spec.get("kind") == "iac" and evidence.get("kind") == "iac-apply")
+                 or (item_spec.get("kind") == "agent-config" and evidence.get("kind") == "agent-evaluation"
+                     and evidence.get("phase") == "post")))
+            if not eligible:
+                raise WorkflowError("INVALID_EVENT", "registered proof kind cannot complete this work item")
         status = "verified" if verified else "result_recorded"
         active["status"] = status
         active["result"] = payload["result"]
@@ -110,7 +120,8 @@ def _apply_event(state: dict, event: dict) -> None:
         run = data.setdefault("runs", {}).get(payload.get("run_id"))
         proposal = run.get("test_change_proposals", {}).get(payload.get("proposal_id")) if run else None
         approval = payload.get("approval")
-        if not proposal or not isinstance(approval, dict) or approval.get("proposal_hash") != proposal.get("proposal_hash"):
+        if (not proposal or not isinstance(approval, dict) or approval.get("proposal_hash") != proposal.get("proposal_hash")
+                or not isinstance(approval.get("actor_id"), str) or not approval["actor_id"].strip()):
             raise WorkflowError("INVALID_EVENT", "approval does not bind the current proposal")
         proposal["approval"] = approval
         proposal["status"] = "approved"
@@ -189,11 +200,127 @@ def _apply_event(state: dict, event: dict) -> None:
                 or not all(isinstance(review.get(key), str) and review[key]
                            for key in ("review_id", "actor_id", "invocation_ref"))):
             raise WorkflowError("INVALID_EVENT", "review record has invalid role, verdict, or actor reference")
-        if review.get("actor_id") in run.setdefault("actors", {}).values():
-            raise WorkflowError("INVALID_EVENT", "reviewer actor is not independent")
-        run.setdefault("actors", {})[review["role"] + "_reviewer"] = review["actor_id"]
+        actors = run.setdefault("actors", {})
+        reviewer_key = review["role"] + "_reviewer"
+        if (review.get("actor_id") == actors.get("implementer")
+                or any(key != reviewer_key and actor == review.get("actor_id") for key, actor in actors.items())
+                or reviewer_key in actors and actors[reviewer_key] != review.get("actor_id")):
+            raise WorkflowError("INVALID_EVENT", "reviewer actor is not independent for this role")
+        actors[reviewer_key] = review["actor_id"]
         run.setdefault("reviews", {}).setdefault(review["role"], []).append(review)
         run["review_ids"].append(review["review_id"])
+    elif kind == "review.adjudicated":
+        run = data.setdefault("runs", {}).get(payload.get("run_id"))
+        decision = payload.get("adjudication")
+        if (not run or not isinstance(decision, dict) or decision.get("role") not in {"item", "branch", "acceptance"}
+                or decision.get("decision") not in {"approve", "return", "reject"}
+                or not all(isinstance(decision.get(key), str) and decision[key]
+                           for key in ("id", "actor_id", "rationale", "cost_if_wrong"))
+                or decision.get("id") in run.setdefault("adjudication_ids", [])):
+            raise WorkflowError("INVALID_EVENT", "invalid review adjudication record")
+        if decision.get("actor_id") in run.setdefault("actors", {}).values():
+            raise WorkflowError("INVALID_EVENT", "adjudicator must be independent")
+        role = decision["role"]
+        limit = {"item": 4, "branch": 1, "acceptance": 1}[role]
+        rounds = sum(review.get("verdict") == "request-changes" and
+                     (role != "item" or review.get("item_id") == decision.get("item_id"))
+                     for review in run.get("reviews", {}).get(role, []))
+        if rounds < limit or role == "item" and not decision.get("item_id"):
+            raise WorkflowError("INVALID_EVENT", "adjudication precedes the correction limit")
+        run.setdefault("adjudications", []).append(decision)
+        run["adjudication_ids"].append(decision["id"])
+    elif kind == "run.item.amended":
+        run = data.setdefault("runs", {}).get(payload.get("run_id"))
+        amendment = payload.get("amendment")
+        if (not run or run.get("active_attempt") or not isinstance(amendment, dict)
+                or amendment.get("old_plan_hash") != hashlib.sha256(json.dumps(run.get("plan", {}), sort_keys=True,
+                    ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()
+                or not isinstance(payload.get("plan"), dict)):
+            raise WorkflowError("INVALID_EVENT", "amendment is stale or an attempt is active")
+        new_hash = hashlib.sha256(json.dumps(payload["plan"], sort_keys=True, ensure_ascii=False,
+            separators=(",", ":")).encode()).hexdigest()
+        replacement = amendment.get("replacement")
+        if (amendment.get("new_plan_hash") != new_hash or not isinstance(replacement, dict)
+                or replacement.get("id") != amendment.get("item_id") or replacement not in payload["plan"].get("work_items", [])):
+            raise WorkflowError("INVALID_EVENT", "amendment does not bind the updated plan")
+        run["plan"] = deepcopy(payload["plan"])
+        run.setdefault("amendments", []).append(amendment)
+        item_id = amendment["item_id"]
+        if item_id not in run.get("items", {}):
+            raise WorkflowError("INVALID_EVENT", "amendment references unknown item")
+        run["items"][item_id]["status"] = "pending"
+        for proof in run.get("verifier_proofs", {}).values():
+            if proof.get("item_id") == item_id:
+                proof["passed"] = False
+        for reviews in run.get("reviews", {}).values():
+            for review in reviews:
+                review["fresh"] = False
+        for acceptance in run.get("acceptances", []):
+            acceptance["fresh"] = False
+    elif kind == "run.discarded":
+        run = data.setdefault("runs", {}).get(payload.get("run_id"))
+        if (not run or run.get("status") != "active" or not isinstance(payload.get("reason"), str)
+                or not payload["reason"].strip() or not isinstance(payload.get("actor_id"), str)
+                or not payload["actor_id"].strip()):
+            raise WorkflowError("INVALID_EVENT", "invalid run discard event")
+        if run.get("active_attempt"):
+            active = run["active_attempt"]
+            active["status"] = "abandoned"
+            run["items"][active["item_id"]]["attempts"][-1]["status"] = "abandoned"
+            run["active_attempt"] = None
+        run["status"] = "discarded"
+        run["discard_reason"] = payload["reason"].strip()
+        run["discarded_by"] = payload["actor_id"]
+    elif kind == "acceptance.recorded":
+        run = data.setdefault("runs", {}).get(payload.get("run_id"))
+        acceptance = payload.get("acceptance")
+        if (not run or not isinstance(acceptance, dict) or acceptance.get("run_id") != run.get("id")
+                or not any(review.get("package_hash") == acceptance.get("package_hash")
+                           and review.get("role") == "acceptance" and review.get("verdict") == "pass"
+                           and review.get("fresh", True) for review in run.get("reviews", {}).get("acceptance", []))):
+            raise WorkflowError("INVALID_EVENT", "acceptance lacks a fresh independent review")
+        required = {rid for item in run.get("plan", {}).get("work_items", []) for rid in item.get("requirement_ids", [])}
+        values = acceptance.get("requirements", [])
+        if (not isinstance(values, list) or {value.get("id") for value in values if isinstance(value, dict)} != required
+                or len(values) != len(required) or acceptance.get("complete") is not all(value.get("verdict") == "MET" for value in values)):
+            raise WorkflowError("INVALID_EVENT", "acceptance does not cover every requirement consistently")
+        digest = hashlib.sha256(json.dumps({"run_id": run["id"], "requirements": values}, sort_keys=True,
+            ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()
+        if acceptance.get("acceptance_hash") != digest:
+            raise WorkflowError("INVALID_EVENT", "acceptance hash is invalid")
+        prior_met = {entry["id"] for value in run.get("acceptances", []) for entry in value.get("requirements", [])
+                     if entry.get("verdict") == "MET"}
+        current = {entry.get("id"): entry.get("verdict") for entry in acceptance.get("requirements", [])}
+        if any(current.get(requirement) != "MET" for requirement in prior_met):
+            raise WorkflowError("INVALID_EVENT", "acceptance regresses an already accepted requirement")
+        run.setdefault("acceptances", []).append(acceptance)
+    elif kind == "finding.parked":
+        run = data.setdefault("runs", {}).get(payload.get("run_id"))
+        ruling = payload.get("ruling")
+        finding = next((value for value in run.get("unresolved_findings", []) if value.get("id") == payload.get("finding_id")), None) if run else None
+        if not finding or not isinstance(ruling, dict) or not all(isinstance(ruling.get(key), str) and ruling[key]
+                for key in ("actor_id", "why", "cost_if_wrong")):
+            raise WorkflowError("INVALID_EVENT", "invalid finding parking ruling")
+        finding.update({"status": "parked", "ruling": ruling})
+    elif kind == "finding.resolved":
+        run = data.setdefault("runs", {}).get(payload.get("run_id"))
+        resolution = payload.get("resolution")
+        finding = next((value for value in run.get("unresolved_findings", []) if value.get("id") == payload.get("finding_id")), None) if run else None
+        if (not finding or not isinstance(resolution, dict)
+                or not all(isinstance(resolution.get(key), str) and resolution[key]
+                           for key in ("actor_id", "why"))
+                or not isinstance(resolution.get("evidence_refs"), list) or not resolution["evidence_refs"]):
+            raise WorkflowError("INVALID_EVENT", "invalid finding resolution evidence")
+        finding.update({"status": "resolved", "resolution": resolution})
+    elif kind == "finding.waived":
+        run = data.setdefault("runs", {}).get(payload.get("run_id"))
+        authorization = payload.get("authorization")
+        finding = next((value for value in run.get("unresolved_findings", []) if value.get("id") == payload.get("finding_id")), None) if run else None
+        if (not finding or not isinstance(authorization, dict) or authorization.get("approved") is not True
+                or authorization.get("run_id") != payload.get("run_id")
+                or authorization.get("finding_id") != payload.get("finding_id") or not authorization.get("scope")):
+            raise WorkflowError("INVALID_EVENT", "finding waiver lacks explicit scoped authorization")
+        finding.update({"status": "waived", "waiver": authorization})
     else:
         data.update(payload)
 
@@ -222,8 +349,24 @@ def _validate_event_shape(event: dict) -> None:
                                          and isinstance(payload.get("proof"), dict)
                                          and payload["proof"].get("passed") is True),
         "review.package.prepared": isinstance(payload.get("run_id"), str) and isinstance(payload.get("package"), dict),
+        "spec.approved": (isinstance(payload.get("approval"), dict)
+                          and isinstance(payload["approval"].get("actor_id"), str)
+                          and bool(payload["approval"]["actor_id"].strip())),
         "review.recorded": (isinstance(payload.get("run_id"), str) and isinstance(payload.get("review"), dict)
                             and isinstance(payload["review"].get("package_hash"), str)),
+        "review.adjudicated": (isinstance(payload.get("run_id"), str)
+                               and isinstance(payload.get("adjudication"), dict)),
+        "run.item.amended": (isinstance(payload.get("run_id"), str) and isinstance(payload.get("plan"), dict)
+                             and isinstance(payload.get("amendment"), dict)),
+        "run.discarded": (isinstance(payload.get("run_id"), str) and isinstance(payload.get("reason"), str)
+                           and isinstance(payload.get("actor_id"), str)),
+        "acceptance.recorded": isinstance(payload.get("run_id"), str) and isinstance(payload.get("acceptance"), dict),
+        "finding.parked": (isinstance(payload.get("run_id"), str) and isinstance(payload.get("finding_id"), str)
+                           and isinstance(payload.get("ruling"), dict)),
+        "finding.resolved": (isinstance(payload.get("run_id"), str) and isinstance(payload.get("finding_id"), str)
+                             and isinstance(payload.get("resolution"), dict)),
+        "finding.waived": (isinstance(payload.get("run_id"), str) and isinstance(payload.get("finding_id"), str)
+                           and isinstance(payload.get("authorization"), dict)),
     }
     if kind in requirements and not requirements[kind]:
         raise WorkflowError("INVALID_EVENT", f"invalid payload shape for {kind}")

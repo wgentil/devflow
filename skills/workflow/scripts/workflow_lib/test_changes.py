@@ -76,12 +76,15 @@ def propose_test_change(run: dict, item_id: str, patch: str, reason: str, repo_p
     return record
 
 
-def approve_test_change(proposal: dict, confirmed_hash: str) -> dict:
+def approve_test_change(proposal: dict, confirmed_hash: str, actor_id: str) -> dict:
     unsigned = {key: value for key, value in proposal.items() if key != "proposal_hash"}
     expected = hashlib.sha256(_canonical(unsigned).encode()).hexdigest()
     if proposal.get("proposal_hash") != expected or confirmed_hash != expected:
         raise ValueError("approval must confirm the exact current test-change proposal hash")
-    return {"approved": True, "proposal_id": proposal["id"], "proposal_hash": expected}
+    if not isinstance(actor_id, str) or not actor_id.strip():
+        raise ValueError("approval requires a stable human actor ID")
+    return {"approved": True, "proposal_id": proposal["id"], "proposal_hash": expected,
+            "actor_id": actor_id.strip()}
 
 
 def apply_approved_patch(repo_path: Path, proposal: dict, approval: dict) -> dict:

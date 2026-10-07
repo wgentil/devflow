@@ -13,13 +13,13 @@ python3 skills/workflow/scripts/run.py spec store --root "$CONTROL_ROOT" --file 
 python3 skills/workflow/scripts/run.py spec validate --file spec.json
 python3 skills/workflow/scripts/run.py spec gaps --file spec.json
 python3 skills/workflow/scripts/run.py spec render --file spec.json
-python3 skills/workflow/scripts/run.py spec approve --root "$CONTROL_ROOT" --confirm-hash "$SPEC_HASH"
+python3 skills/workflow/scripts/run.py spec approve --root "$CONTROL_ROOT" --confirm-hash "$SPEC_HASH" --actor-id "$HUMAN_ACTOR"
 python3 skills/workflow/scripts/run.py plan validate --root "$CONTROL_ROOT" --file plan.json
 python3 skills/workflow/scripts/run.py run start --root "$CONTROL_ROOT" --run-id run-001
 python3 skills/workflow/scripts/run.py run next --root "$CONTROL_ROOT" --run-id run-001
 ```
 
-Use the `content_hash` returned by `spec validate` as the explicit approval hash. The hash binds approval to the specification's exact content. Any edit makes the prior approval stale. Work items must cover every requirement, use their kind-specific acceptance criteria, and declare valid acyclic dependencies.
+Use the `content_hash` returned by `spec validate` as the explicit approval hash and record the approving human's stable actor ID. The hash binds approval to the specification's exact content. Any edit makes the prior approval stale. Work items must cover every requirement, use their kind-specific acceptance criteria, and declare valid acyclic dependencies.
 
 After changing a context layer, run `context resolve` before starting a new run. Runs retain the context snapshot they started with.
 
@@ -35,6 +35,10 @@ To change a test that was locked by RED evidence, use `build test-change propose
 
 Review packages bind a run's criteria and artifacts to exact repository base/head commits, commit diffs and Work-Item trailers, plus worktree and untracked inputs. Use `review package` before a separate reviewer invocation; record the verdict with the package hash, a distinct reviewer actor ID, invocation reference and structured findings. Packages become stale if repository inputs change. The helper records actor claims but cannot prove the Codex invocation's identity; independent invocation must be performed by the workflow.
 
+`run gate-status` reports the current implementation, item-review, branch-review, acceptance, hardening, or delivery stage. Passing attempt results without the kind-matched fresh proof cannot satisfy implementation. Each item needs a passing item review, then a passing branch review and independent acceptance. Use `run accept` only with the fresh acceptance package and exact repository heads; every planned requirement needs a verdict. MET requires a citation to an existing line in a changed file. Invalid or missing citations downgrade that requirement to NOT MET. Previously MET requirements cannot regress silently. Mandatory findings, including parked ones, block advancement until an explicitly scoped waiver is journaled.
+
+`run amend-item` binds its human ruling to current spec and plan hashes, preserves the old plan and ruling, and invalidates dependent implementation proofs, review judgments, and acceptance. `run park-finding` records why and cost if wrong; it does not satisfy a gate. Resolve findings with evidence references. `run waive-finding` requires an explicit run-scoped authorization record. After the correction limit, use `run adjudicate` to preserve an independent adjudicator's decision and rationale. `run discard` is terminal for the workflow run and preserves its history and reason.
+
 Deterministic operations append best-effort measurements to `offload.jsonl` under the selected control root. Records include operation, duration, result, byte counts, and available run/attempt/item attribution. Supplied operation IDs identify retries and are deduplicated; independent read commands receive distinct measurement IDs. A telemetry write failure emits a warning and leaves the workflow result and event journal unchanged. These byte counts do not prove tokens saved; actual usage requires supported runtime records in a later increment.
 
 Context projections are reused by source hashes, resolved input values, budget, and resolver version. Changing any of those inputs produces a new projection key; prior cache entries remain historical and do not satisfy execution or review evidence.
@@ -49,4 +53,4 @@ The implementation uses `fcntl` advisory locks and is supported on macOS/Linux. 
 
 ## Foundation limits
 
-The foundation covers context resolution, repository registration, specification records and approval hashes, dependency validation, resumable attempts, and initial attempt-bound code, IaC, and agent-evaluation proofs. Independent reviews, acceptance, delivery, issue management, ingestion, migration, and usage reporting remain unavailable until their follow-on increments are implemented. Never treat an attempt result or unavailable gate as passed evidence. Context token budgets are rough estimates; actual usage is not reported by the foundation.
+The foundation and current verification/review work cover context resolution, repository registration, approved specifications, dependency validation, resumable attempts, attempt-bound code/IaC/agent-evaluation proofs, independent review records, and requirement acceptance records. Exact-head delivery, issue management, ingestion, migration, and usage reporting remain unavailable until their follow-on increments are implemented. Never treat an attempt result or unavailable gate as passed evidence. Context token budgets are rough estimates; actual usage is not reported by the foundation.

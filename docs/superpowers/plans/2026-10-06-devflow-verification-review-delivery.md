@@ -103,16 +103,16 @@ All new records include schema version 1 and stable IDs. Mutations use `transact
 
 **Contract:** Record actual approval, waiver, adjudication and reviewer invocation events with stable actor IDs and role bindings for later touchpoint/review metrics; never infer human events from transcript text. Only registered fresh matching proofs complete implementation items. Routing proceeds implementation → item review → branch review → independent acceptance → configured hardening → delivery preparation. Amendments bind exact spec/plan hashes and invalidate dependent proofs/reviews. Findings can be open/resolved/parked; parking preserves decision, why and cost-if-wrong and does not waive mandatory gates. A waiver requires an explicit scoped human authorization record. Acceptance verdicts are MET, NOT MET or CANNOT VERIFY with requirement ID and resolvable changed-file citations; missing citations become NOT MET. Discard archives only workflow-owned records with a reason and terminal event; no repository changes.
 
-- [ ] Add the following regression/acceptance tests with these assertions:
+- [x] Add regression tests for unbacked completion, parked mandatory findings, acceptance citations/regression, atomic amendment history, cross-kind proof matching, and discard replay.
 
   - test_unbacked_pass_and_parked_mandatory_finding: asserted success or parked mandatory finding cannot advance routing.
   - test_citations_and_regression: missing/unresolvable citations fail acceptance and previously accepted requirements remain checked after corrections.
   - test_atomic_amend_discard_resume: invalid amendment commits nothing; valid amendments preserve history and invalidate dependents; discard is terminal and resumable status remains available.
 
-- [ ] Run `python3 -m unittest tests.test_gates -v`; require the intended missing behavior failures before implementation.
-- [ ] Implement the listed interfaces and event/CLI boundaries without changing unrelated records or installing the plugin.
-- [ ] Run `python3 -m unittest tests.test_gates -v`; require all tests passing. Run impacted earlier tests when shared contracts change.
-- [ ] Update interface documentation and parity evidence for the task; commit the implementation and tests with the appropriate `Work-Item:` trailer.
+- [x] `python3 -m unittest tests.test_gates -v` failed on the missing gate module before implementation.
+- [x] Implemented typed routing, scoped acceptance citations, amendment/discard/finding events, and run CLI commands.
+- [x] `python3 -m unittest discover -s tests -v` — 83 tests passed; `python3 -m compileall -q skills/workflow/scripts` and `git diff --check` passed.
+- [x] Updated run usage, actor-bound spec/test approvals, adjudication guidance, and parity evidence.
 
 ### Task 5: Canonical delivery manifest and authorized outcomes
 

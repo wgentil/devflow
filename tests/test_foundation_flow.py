@@ -55,7 +55,7 @@ class FoundationFlowTests(unittest.TestCase):
         spec_path = self.put_json("spec.json", specification)
         self.cli("spec", "store", "--root", self.control, "--file", spec_path)
         digest = self.cli("spec", "validate", "--file", spec_path)["content_hash"]
-        self.cli("spec", "approve", "--root", self.control, "--confirm-hash", digest)
+        self.cli("spec", "approve", "--root", self.control, "--confirm-hash", digest, "--actor-id", "owner")
         work_plan = {"spec_hash": digest, "stage": {"name": "build", "required_slices": ["architecture"]},
             "artifacts": {"requirements": f"sha256:{digest}"}, "work_items": [{"id": "W1", "kind": "code", "requirement_ids": ["R1"],
             "acceptance_criteria": [{"kind": "code-test", "text": "setting persistence test"}], "dependencies": []}]}
@@ -107,7 +107,8 @@ class FoundationFlowTests(unittest.TestCase):
         version_after = len(list((self.control / "events").glob("[0-9]*.json")))
         self.assertEqual(version_after, version_before + 1)
         self.assertEqual(summary["pending_items"], ["W1"])
-        self.assertIn("build", summary["unavailable_gates"])
+        self.assertNotIn("build", summary["unavailable_gates"])
+        self.assertIn("hardening", summary["unavailable_gates"])
         persisted = read_state(self.control)["data"]["runs"]["flow-1"]
         self.assertEqual(persisted["items"]["W1"]["attempts"][-1]["status"], "result_recorded")
         events = read_state(self.control)["operations"].values()
@@ -146,7 +147,7 @@ class FoundationFlowTests(unittest.TestCase):
         specification = {"mode": "new", "requirements": [{"id": "R1", "text": "One",
             "acceptance_criteria": ["one"], "provenance": {"kind": "authored"}}]}
         digest = content_hash(specification)
-        approval = approval_record(specification, digest)
+        approval = {**approval_record(specification, digest), "actor_id": "human-1"}
         work_plan = {"spec_hash": digest, "work_items": [{"id": "W1", "kind": "code",
             "requirement_ids": ["R1"], "dependencies": [], "acceptance_criteria": [{"kind": "code-test", "text": "test"}]}]}
         validation = validate_plan({**specification, "approval": approval}, work_plan)

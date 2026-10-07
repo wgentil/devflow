@@ -19,7 +19,7 @@ python3 <skill-directory>/scripts/run.py context resolve --root <control-root>
 python3 <skill-directory>/scripts/run.py repo register --root <control-root> --repo-id <stable-id> --location <checkout>
 python3 <skill-directory>/scripts/run.py spec store --root <control-root> --file spec.json
 python3 <skill-directory>/scripts/run.py spec validate --file spec.json
-python3 <skill-directory>/scripts/run.py spec approve --root <control-root> --confirm-hash <current-content-hash>
+python3 <skill-directory>/scripts/run.py spec approve --root <control-root> --confirm-hash <current-content-hash> --actor-id <approving-human-id>
 python3 <skill-directory>/scripts/run.py plan validate --root <control-root> --file plan.json
 python3 <skill-directory>/scripts/run.py run start --root <control-root> --run-id <run-id>
 python3 <skill-directory>/scripts/run.py run next --root <control-root> --run-id <run-id>

@@ -10,7 +10,7 @@ from .context import context_sources_hash
 from .specs import content_hash
 from .store import WorkflowError
 
-UNAVAILABLE_GATES = ["build", "review", "acceptance", "delivery"]
+UNAVAILABLE_GATES = ["hardening", "delivery"]
 
 
 def start_run(state: dict, run_id: str, plan: dict) -> dict:
@@ -44,7 +44,7 @@ def start_run(state: dict, run_id: str, plan: dict) -> dict:
         "artifacts": deepcopy(state.get("artifacts", plan.get("artifacts", {}))),
         "authorization_scope": deepcopy(state.get("authorization_scope", {})),
         "unresolved_findings": deepcopy(state.get("unresolved_findings", [])),
-        "available_gates": ["context", "specification", "planning"],
+        "available_gates": ["context", "specification", "planning", "build", "review", "acceptance"],
         "unavailable_gates": list(UNAVAILABLE_GATES),
     }
 
@@ -96,6 +96,15 @@ def record_result(run: dict, token: str, result: dict) -> dict:
     if proof and (result.get("outcome") != "passed" or proof.get("passed") is not True or proof.get("item_id") != source["item_id"]
                   or proof.get("token") != token):
         raise WorkflowError("VERIFIER_PROOF_MISMATCH", "verifier proof does not match this passing attempt")
+    if proof:
+        item = next(item for item in run["plan"]["work_items"] if item["id"] == source["item_id"])
+        evidence = run.get("verification_proofs", {}).get(proof.get("evidence_id", ""), {})
+        kind, phase = evidence.get("kind"), evidence.get("phase")
+        eligible = ((item["kind"] == "code" and kind == "code" and phase == "GREEN")
+                    or (item["kind"] == "iac" and kind == "iac-apply")
+                    or (item["kind"] == "agent-config" and kind == "agent-evaluation" and phase == "post"))
+        if not eligible:
+            raise WorkflowError("VERIFIER_PROOF_MISMATCH", "proof kind is not sufficient for this work item")
     attempt["status"] = "verified" if proof else "result_recorded"
     attempt["result"] = deepcopy(result)
     item_state = updated["items"][source["item_id"]]
@@ -118,12 +127,14 @@ def abandon_attempt(run: dict, token: str) -> dict:
 
 
 def run_summary(run: dict) -> dict:
+    from .gates import gate_status
     completed = sorted(item_id for item_id, value in run["items"].items() if value["status"] == "complete")
     pending = sorted(item_id for item_id, value in run["items"].items() if value["status"] != "complete")
     return {"run_id": run["id"], "status": run["status"], "state_version": run["state_version"],
             **resume_status(run),
             "completed_items": completed, "pending_items": pending,
-            "active_attempt": run["active_attempt"], "unavailable_gates": list(run["unavailable_gates"])}
+            "active_attempt": run["active_attempt"], "unavailable_gates": list(run["unavailable_gates"]),
+            "gate_status": gate_status(run)}
 
 
 def resume_status(run: dict) -> dict:

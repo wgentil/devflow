@@ -121,6 +121,8 @@ def capture_evidence(root: Path, run_id: str, token: str, phase: str, command: l
         raise WorkflowError("ATTEMPT_TOKEN_INVALID", "evidence requires the active attempt token")
     item_id = active["item_id"]
     work_item = next((item for item in run["plan"]["work_items"] if item["id"] == item_id), None)
+    if not work_item or work_item.get("kind") != "code":
+        raise WorkflowError("VERIFICATION_PROOF_MISMATCH", "code test evidence applies only to code work items")
     repo_id = work_item.get("repo_id") if work_item else None
     repository = state["data"].get("repositories", {}).get(repo_id) if repo_id else None
     if not repository or not repository.get("location"):

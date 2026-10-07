@@ -58,7 +58,7 @@ class ReviewTests(unittest.TestCase):
         package = prepare(self.run, "item", {"repo-1": {"location": str(self.repo),
                          "base": self.base, "head": self.head}}, [{"item_id": "W1", "id": "F1"}])
         self.run.setdefault("review_packages", {})[package["package_hash"]] = package
-        report = {"package_hash": package["package_hash"], "verdict": "pass", "findings": []}
+        report = {"package_hash": package["package_hash"], "verdict": "pass", "findings": [], "item_id": "W1"}
         with self.assertRaises(ValueError):
             record(self.run, package["package_hash"], {"role": "item", "actor_id": "impl", "tool_available": True,
                    "invocation_ref": "codex://review-1"}, report)
@@ -73,13 +73,14 @@ class ReviewTests(unittest.TestCase):
                          "base": self.base, "head": self.head}})
         self.run.setdefault("review_packages", {})[package["package_hash"]] = package
         run = {**self.run, "reviews": {"item": [{"package_hash": package["package_hash"],
-            "correction_round": n, "verdict": "request-changes"} for n in range(1, 5)]}}
+            "correction_round": n, "verdict": "request-changes", "item_id": "W1"} for n in range(1, 5)]}}
         self.assertTrue(impact(run, ["unknown/path.py"])["invalidate_all"])
         with self.assertRaises(ValueError):
             from workflow_lib.reviews import record_review
             record_review(run, package["package_hash"], {"role": "item", "actor_id": "reviewer",
                 "tool_available": True, "invocation_ref": "codex://review-2"}, {"package_hash": package["package_hash"],
-                "verdict": "request-changes", "findings": []})
+                "verdict": "request-changes", "findings": [{"id": "F1", "severity": "minor",
+                    "path": "src/app.py", "line": 1}], "item_id": "W1"})
 
     def test_package_and_judgment_are_journaled(self):
         prepare, record, _ = self.module()
@@ -94,13 +95,24 @@ class ReviewTests(unittest.TestCase):
         run = read_state(root)["data"]["runs"]["run-1"]
         result = record(run, package["package_hash"], {"role": "item", "actor_id": "reviewer",
             "tool_available": True, "invocation_ref": "codex://review-1"},
-            {"package_hash": package["package_hash"], "verdict": "pass", "findings": []})
+            {"package_hash": package["package_hash"], "verdict": "pass", "findings": [], "item_id": "W1"})
         state = read_state(root)
         transact(root, state["version"], "review", {"kind": "review.recorded",
             "payload": {"run_id": "run-1", "review": result}})
         saved = read_state(root)["data"]["runs"]["run-1"]
         self.assertEqual(saved["reviews"]["item"][0]["actor_id"], "reviewer")
         self.assertIn(package["package_hash"], saved["review_packages"])
+
+    def test_fifth_unresolved_item_correction_requires_independent_adjudication(self):
+        _, _, _ = self.module()
+        from workflow_lib.reviews import record_adjudication
+        run = {**self.run, "reviews": {"item": [{"verdict": "request-changes", "item_id": "W1"}
+            for _ in range(4)]}}
+        decision = record_adjudication(run, "item", "adjudicator", "return",
+                                       "needs evidence", "potential regression", "W1")
+        self.assertEqual(decision["correction_rounds"], 4)
+        with self.assertRaises(ValueError):
+            record_adjudication(run, "branch", "impl", "approve", "accept", "bad", None)
 
 
 if __name__ == "__main__":
