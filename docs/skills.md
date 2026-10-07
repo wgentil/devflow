@@ -67,3 +67,9 @@ authorization. Configure only the external actions actually authorized.
 [Journal request reference](journal-integration.md) describes durable domain
 records. [CLI walkthrough](usage.md) provides additional commands. Use `df GROUP
 --help` and `df GROUP ACTION --help` where the group has nested actions.
+
+## Proposed host support
+
+The [Codex and Claude Code design draft](superpowers/specs/2026-10-06-devflow-cross-host-design.md)
+proposes shared skills with opt-in Claude hooks and sequential handoff. It is a
+draft, not a claim that the Claude adapter is implemented.
