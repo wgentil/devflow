@@ -15,6 +15,11 @@ ORG_SLICES = (
 RESOLVER_VERSION = "1"
 
 
+def context_sources_hash(layers: dict) -> str:
+    canonical = json.dumps(layers, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
 def projection_key(source_hashes: dict, resolver_version: str) -> str:
     canonical = json.dumps({"source_hashes": source_hashes, "resolver_version": resolver_version},
                            sort_keys=True, ensure_ascii=False, separators=(",", ":"))
@@ -22,9 +27,23 @@ def projection_key(source_hashes: dict, resolver_version: str) -> str:
 
 
 def _slice_map(layer: dict | None) -> dict:
+    validate_context_layer(layer)
     if not layer:
         return {}
     return layer.get("slices", {})
+
+
+def validate_context_layer(layer: dict) -> None:
+    if not isinstance(layer, dict) or not isinstance(layer.get("slices", {}), dict):
+        raise WorkflowError("INVALID_CONTEXT", "context must be an object with an object of slices")
+    for name, record in layer.get("slices", {}).items():
+        if (not isinstance(name, str) or not name or not isinstance(record, dict)
+                or not isinstance(record.get("status"), str)
+                or record["status"] not in {"answered", "declined", "unanswered"}
+                or (record["status"] == "answered" and "value" not in record)
+                or ("sealed" in record and not isinstance(record["sealed"], bool))
+                or ("reason" in record and not isinstance(record["reason"], str))):
+            raise WorkflowError("INVALID_CONTEXT", f"invalid context slice: {name}")
 
 
 def org_slices_to_interview(org: dict) -> list[str]:
@@ -49,6 +68,11 @@ def register_repo(state: dict, repo_id: str, location: str) -> dict:
 def resolve_context(org: dict, project: dict, user_overrides: dict, budgets: dict) -> dict:
     """Resolve context precedence once and retain provenance and conflicts."""
     org_slices, project_slices = _slice_map(org), _slice_map(project)
+    if not isinstance(user_overrides, dict) or not isinstance(budgets, dict):
+        raise WorkflowError("INVALID_CONTEXT", "overrides and budgets must be objects")
+    limit = budgets.get("max_tokens")
+    if limit is not None and (type(limit) is not int or limit < 0):
+        raise WorkflowError("INVALID_CONTEXT", "max_tokens must be a nonnegative integer")
     values: dict = {}
     provenance: dict = {}
     conflicts: list[dict] = []

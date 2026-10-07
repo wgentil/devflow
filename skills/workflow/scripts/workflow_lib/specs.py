@@ -18,7 +18,7 @@ def content_hash(spec: dict) -> str:
 
 
 def validate_spec(spec: dict) -> dict:
-    if not isinstance(spec, dict) or spec.get("mode") not in MODES:
+    if not isinstance(spec, dict) or not isinstance(spec.get("mode"), str) or spec.get("mode") not in MODES:
         raise WorkflowError("INVALID_SPEC_MODE", "mode must be new, extend, or migrate")
     requirements = spec.get("requirements")
     if not isinstance(requirements, list):
@@ -39,7 +39,7 @@ def validate_spec(spec: dict) -> dict:
         if not isinstance(criteria, list) or not criteria or any(not isinstance(item, str) or not item.strip() for item in criteria):
             raise WorkflowError("INVALID_ACCEPTANCE_CRITERIA", f"requirement {rid} needs acceptance criteria")
         provenance = requirement.get("provenance")
-        if not isinstance(provenance, dict) or provenance.get("kind") not in PROVENANCE_KINDS:
+        if not isinstance(provenance, dict) or not isinstance(provenance.get("kind"), str) or provenance.get("kind") not in PROVENANCE_KINDS:
             raise WorkflowError("INVALID_PROVENANCE", f"requirement {rid} needs authored, derived, or assumed provenance")
         if provenance["kind"] == "derived":
             sources = provenance.get("sources")

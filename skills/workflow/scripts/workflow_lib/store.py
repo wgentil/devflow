@@ -28,7 +28,7 @@ def _empty() -> dict:
 
 def _apply_event(state: dict, event: dict) -> None:
     """Materialize generic patches and compact run deltas from journal events."""
-    kind, payload = event["kind"], event["payload"]
+    kind, payload = event["kind"], deepcopy(event["payload"])
     data = state["data"]
     if kind == "run.started":
         run = payload.get("run")

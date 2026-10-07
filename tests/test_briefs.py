@@ -88,7 +88,7 @@ class BriefTests(unittest.TestCase):
             {"context": brief["context"]},
             {"artifacts": brief["artifacts"]},
             {key: brief[key] for key in ("run_id", "stage", "attempt_id", "instructions", "authorization_scope",
-                                         "unresolved_findings", "unavailable_gates", "budget")},
+                                         "unresolved_findings", "unavailable_gates", "latest_attempts", "blocked_items", "budget")},
         ]
         separate_bytes = sum(actual_size(response) for response in separate_responses)
         brief_bytes = brief["budget"]["serialized_bytes"]

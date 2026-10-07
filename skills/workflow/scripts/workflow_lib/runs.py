@@ -6,6 +6,7 @@ from copy import deepcopy
 from secrets import token_hex
 
 from .plans import ready_items, validate_plan
+from .context import context_sources_hash
 from .specs import content_hash
 from .store import WorkflowError
 
@@ -13,6 +14,9 @@ UNAVAILABLE_GATES = ["build", "review", "acceptance", "delivery"]
 
 
 def start_run(state: dict, run_id: str, plan: dict) -> dict:
+    if state.get("context") and (state.get("resolved_context") is None
+            or state.get("resolved_context_source_hash") != context_sources_hash(state["context"])):
+        raise WorkflowError("CONTEXT_NOT_RESOLVED", "resolve the changed context before starting a run")
     if not isinstance(run_id, str) or not run_id:
         raise WorkflowError("INVALID_RUN_ID", "run_id must be non-empty")
     if state.get("plan") != plan or not state.get("plan_validation", {}).get("valid"):
@@ -116,5 +120,15 @@ def run_summary(run: dict) -> dict:
     completed = sorted(item_id for item_id, value in run["items"].items() if value["status"] == "complete")
     pending = sorted(item_id for item_id, value in run["items"].items() if value["status"] != "complete")
     return {"run_id": run["id"], "status": run["status"], "state_version": run["state_version"],
+            **resume_status(run),
             "completed_items": completed, "pending_items": pending,
             "active_attempt": run["active_attempt"], "unavailable_gates": list(run["unavailable_gates"])}
+
+
+def resume_status(run: dict) -> dict:
+    completed = {key for key, value in run["items"].items() if value["status"] == "complete"}
+    return {"latest_attempts": {key: deepcopy(value["attempts"][-1])
+                               for key, value in run["items"].items() if value.get("attempts")},
+            "blocked_items": [{"id": item["id"], "blocked_by": sorted(set(item.get("dependencies", [])) - completed)}
+                              for item in sorted(run["plan"]["work_items"], key=lambda item: item["id"])
+                              if item["id"] not in completed and set(item.get("dependencies", [])) - completed]}

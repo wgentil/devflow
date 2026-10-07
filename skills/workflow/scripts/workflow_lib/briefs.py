@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 
 from .plans import ready_items
+from .runs import resume_status
 from .store import WorkflowError
 
 
@@ -63,6 +64,7 @@ def assemble_brief(run: dict, context: dict, stage: dict, selected_ids: list[str
     if required_artifacts is not None:
         artifacts = {key: artifacts[key] for key in required_artifacts if key in artifacts}
     brief = {
+        **resume_status(run),
         "run_id": run["id"], "stage": stage.get("name", ""), "attempt_id": attempt_id,
         "work_items": [{key: item[key] for key in ("id", "kind", "requirement_ids", "acceptance_criteria", "dependencies") if key in item}
                        for item in selected],
