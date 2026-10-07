@@ -27,9 +27,8 @@ from workflow_lib.telemetry import record_offload  # noqa: E402
 from workflow_lib.gates import (accept_requirements, amend_item, discard_run, gate_status,
                                 park_finding, resolve_finding, waive_finding)  # noqa: E402
 from workflow_lib.reviews import record_adjudication  # noqa: E402
-from commands import build as build_commands  # noqa: E402
-from commands import review as review_commands  # noqa: E402
-from commands import delivery as delivery_commands  # noqa: E402
+from commands import dispatch as dispatch_command_group  # noqa: E402
+from commands import register_commands as register_command_groups  # noqa: E402
 
 
 def _json_file(path: str | None) -> dict:
@@ -179,6 +178,7 @@ def main(argv: list[str] | None = None) -> int:
     start = run_commands.add_parser("start")
     start.add_argument("--root", required=True)
     start.add_argument("--run-id", required=True)
+    start.add_argument("--actor-id")
     start.add_argument("--operation-id")
     for name in ("next", "retry"):
         command = run_commands.add_parser(name)
@@ -261,9 +261,7 @@ def main(argv: list[str] | None = None) -> int:
     resolve_finding_command.add_argument("--why", required=True)
     resolve_finding_command.add_argument("--evidence-refs-json", required=True)
     resolve_finding_command.add_argument("--operation-id")
-    build_commands.register_commands(commands)
-    review_commands.register_commands(commands)
-    delivery_commands.register_commands(commands)
+    register_command_groups(commands)
     try:
         parsed = parser.parse_args(argv)
         if getattr(parsed, "root", None):
@@ -420,6 +418,8 @@ def main(argv: list[str] | None = None) -> int:
                 result = run_summary(existing)
             else:
                 run_state = start_run(data, parsed.run_id, data.get("plan", {}))
+                if parsed.actor_id:
+                    run_state["actors"] = {"implementer": parsed.actor_id}
                 receipt = _commit(root, state["version"], _operation_id(parsed, f"run-start:{parsed.run_id}"),
                                   {"kind": "run.started", "payload": {"run": run_state}})
                 result = {**receipt, **run_summary(run_state)}
@@ -633,11 +633,9 @@ def main(argv: list[str] | None = None) -> int:
                  "finding_id": parsed.finding_id, "resolution": resolution}})
             result = {"finding_id": parsed.finding_id, "status": "resolved", "state_version": receipt["state"]["version"]}
         elif parsed.command == "build":
-            result = build_commands.dispatch(parsed)
-        elif parsed.command == "review":
-            result = review_commands.dispatch(parsed)
-        elif parsed.command == "delivery":
-            result = delivery_commands.dispatch(parsed)
+            result = dispatch_command_group(parsed)
+        elif parsed.command in {"review", "delivery"}:
+            result = dispatch_command_group(parsed)
         else:
             parser.error("select a supported command")
     except _OperationReplay as exc:

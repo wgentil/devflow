@@ -40,6 +40,9 @@ def _required_proof(run: dict, item: dict) -> dict | None:
 
 
 def gate_status(run: dict) -> dict:
+    if run.get("status") in {"delivered", "discarded"}:
+        return {"stage": run["status"], "can_advance": False, "blocking_findings": [],
+                "unverified_items": [], "terminal": True}
     items = run.get("plan", {}).get("work_items", [])
     unverified = [item["id"] for item in items if not _required_proof(run, item)]
     if unverified:

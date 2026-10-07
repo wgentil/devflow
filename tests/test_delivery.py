@@ -97,6 +97,7 @@ class DeliveryTests(unittest.TestCase):
             saved = read_state(root)["data"]["runs"]["run-1"]
             self.assertEqual(saved["status"], "delivered")
             self.assertEqual(saved["delivery"]["outcome"], outcome)
+            self.assertNotIn("delivery", saved["unavailable_gates"])
 
     def test_cleanup_requires_run_owned_resources_and_multi_repo_manifest_is_complete(self):
         prepare, _, _ = self.module()

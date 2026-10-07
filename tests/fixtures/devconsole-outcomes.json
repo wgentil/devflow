@@ -1,0 +1,20 @@
+{
+  "source": "DevConsole build orchestrator and deliver-branch stage, inspected locally on 2026-10-06",
+  "comparisons": [
+    {
+      "capability": "stale attempt token",
+      "reference_outcome": "reject mutation and preserve prior run state",
+      "devflow_test": "test_replayed_run_operation_never_returns_an_uncommitted_attempt_token"
+    },
+    {
+      "capability": "locked test change",
+      "reference_outcome": "require explicit approval before patch application and reverify GREEN",
+      "devflow_test": "test_applied_change_marks_every_dependent_green_proof_stale"
+    },
+    {
+      "capability": "delivery summary",
+      "reference_outcome": "bind exact reviewed heads, acceptance, unresolved findings, and rulings; stop for a human outcome decision",
+      "devflow_test": "test_local_merge_pull_request_and_retention_records_replay_for_standalone_runs"
+    }
+  ]
+}

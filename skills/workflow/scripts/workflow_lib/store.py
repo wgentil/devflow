@@ -380,6 +380,7 @@ def _apply_event(state: dict, event: dict) -> None:
             raise WorkflowError("INVALID_EVENT", "delivery gate is not open")
         run["status"] = "delivered"
         run["delivery"] = delivery
+        run["unavailable_gates"] = [gate for gate in run.get("unavailable_gates", []) if gate != "delivery"]
     else:
         data.update(payload)
 

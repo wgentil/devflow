@@ -4,6 +4,8 @@ Devflow is a skills-only Codex plugin. Run its helper from any working directory
 
 ## Basic sequence
 
+The executable for all workflow, build, review, and delivery commands is `<plugin-root>/skills/workflow/scripts/run.py`.
+
 ```sh
 python3 skills/workflow/scripts/run.py context set --root "$CONTROL_ROOT" --layer org --file org.json
 python3 skills/workflow/scripts/run.py context set --root "$CONTROL_ROOT" --layer project --file project.json

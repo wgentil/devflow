@@ -5,7 +5,7 @@ description: Guide a software project through scoped context, requirements, plan
 
 # Devflow workflow
 
-Use the bundled helper to inspect or advance a workflow. Supply an explicit control root for stateful commands; loading this skill does not create files. The current foundation supports context, repository registration, requirements, plan validation, resumable attempts, and attempt-bound code RED/GREEN evidence. Independent reviews, acceptance, and delivery remain unavailable; a recorded implementation result remains provisional.
+Use the bundled helper to inspect or advance a workflow. Supply an explicit control root for stateful commands; loading this skill does not create files. Devflow supports context, repository registration, approved requirements, validated plans, resumable attempts, attempt-bound code/IaC/agent-evaluation proof, independent review records, requirement acceptance, and exact-head delivery manifests. Infrastructure apply, hardening tools, external PR creation, merge execution, and cleanup remain conditional on configured tools and explicit user authorization.
 
 ```sh
 python3 <skill-directory>/scripts/run.py version
@@ -23,10 +23,11 @@ python3 <skill-directory>/scripts/run.py spec approve --root <control-root> --co
 python3 <skill-directory>/scripts/run.py plan validate --root <control-root> --file plan.json
 python3 <skill-directory>/scripts/run.py run start --root <control-root> --run-id <run-id>
 python3 <skill-directory>/scripts/run.py run next --root <control-root> --run-id <run-id>
+python3 <skill-directory>/scripts/run.py run gate-status --root <control-root> --run-id <run-id>
 ```
 
-Resume by run ID with `run status`; the active attempt token remains bound to the saved state version. `run brief` reassembles the scoped context without issuing a token; `run inspect` retrieves the full run record on request. Submit a result with `run result`, abandon with `run abandon`, or retry a prior attempt with `run retry`. Read the exact acceptance criteria and unavailable gates returned by `run next`. A result without registered verifier proof does not complete a work item. Brief byte limits never truncate mandatory criteria; overflow reports the required size and references.
+Resume by run ID with `run status`; the active attempt token remains bound to the saved state version. `run brief` reassembles the scoped context without issuing a token; `run inspect` retrieves the full run record on request. Submit a result with `run result`, abandon with `run abandon`, or retry a prior attempt with `run retry`. Read the exact acceptance criteria and unavailable gates returned by `run next`. A result without kind-matched verifier proof does not complete a work item. Follow the current stage from `run gate-status`: implementation, item review, branch review, acceptance, hardening, or delivery. Brief byte limits never truncate mandatory criteria; overflow reports the required size and references.
 
 Deterministic operations record best-effort byte and duration measurements under the chosen root. Read `offload.jsonl` to inspect the measures; these bytes do not establish actual tokens saved. Reuse context projections only when source and resolver fingerprints match.
 
-Use the focused Devflow skills for project context, specification, planning, and build verification. Treat event journal state and evidence as authoritative. The dispatcher requires Python 3.11+ and `fcntl` on macOS/Linux; no daemon or dependencies are required.
+Use the focused Devflow skills for project context, specification, planning, build verification, and independent review. Prepare and verify delivery manifests, then stop at the human's local-merge / pull-request / retained-branch decision. The helper never performs those external effects automatically. Treat event journal state and evidence as authoritative. The dispatcher requires Python 3.11+ and `fcntl` on macOS/Linux; no daemon or dependencies are required.

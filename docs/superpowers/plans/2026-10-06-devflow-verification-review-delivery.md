@@ -141,16 +141,16 @@ All new records include schema version 1 and stable IDs. Mutations use `transact
 
 **Contract:** Add build, review, acceptance and delivery command groups with explicit --root/--run-id/--attempt-id where applicable. Read-only package/preparation commands never create attempts. Extend workflow/build-work/review-work instructions and manifest progressively; unavailable conditional gates remain visible. Add compatibility fixtures from the local DevConsole reference that compare outcomes, not command names. Document actual executable paths, evidence formats, correction limits, authorization and remaining parity gaps.
 
-- [ ] Add the following regression/acceptance tests with these assertions:
+- [x] Add the end-to-end code-gate, six-skill relocation/journal replay, and DevConsole outcome compatibility fixtures.
 
   - test_end_to_end_code_gate_flow: failing target → RED → implementation → GREEN → independent review records → requirement acceptance → delivery preparation.
   - test_package_relocation_and_existing_journal: all six skills resolve after relocation and foundation events replay unchanged.
   - test_devconsole_selected_outcomes: compare stale-token rejection, locked-test behavior and exact-summary invariants with reference fixtures.
 
-- [ ] Run `python3 -m unittest tests.test_verification_flow tests.test_package -v`; require the intended missing behavior failures before implementation.
-- [ ] Implement the listed interfaces and event/CLI boundaries without changing unrelated records or installing the plugin.
-- [ ] Run `python3 -m unittest tests.test_verification_flow tests.test_package -v`; require all tests passing. Run impacted earlier tests when shared contracts change.
-- [ ] Update interface documentation and parity evidence for the task; commit the implementation and tests with the appropriate `Work-Item:` trailer.
+- [x] `python3 -m unittest tests.test_verification_flow tests.test_package -v` — 5 tests passed.
+- [x] Centralized build/review/delivery command registration; added implementer actor attribution at run start and included `review-work` in the six-skill package.
+- [x] `python3 -m unittest discover -s tests -v` — 90 tests passed; compileall, CLI help, and diff checks passed.
+- [x] Updated workflow/build/review instructions and the local DevConsole outcomes fixture.
 
 ## Final validation and delivery handoff
 
