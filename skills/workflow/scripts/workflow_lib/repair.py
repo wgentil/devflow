@@ -57,6 +57,22 @@ def repair_decision(run: dict, now_ms: int) -> dict:
                 'reason_code': 'ALL_CHECKS_PASS' if stage.get('stage') == 'delivery' else 'AWAITING_STAGE'}
     if not policy.get('enabled'):
         return {**base, 'status': 'blocked', 'reason_code': 'REPAIR_DISABLED'}
+    if run.get('repair_human_decision_required'):
+        return {**base, 'status': 'blocked', 'reason_code': 'HUMAN_DECISION'}
+    if any(row.get('status') == 'claimed' for row in cycles):
+        return {**base, 'status': 'blocked', 'reason_code': 'REPAIR_LEASE_ACTIVE'}
+    if len(cycles) >= max_attempts:
+        return {**base, 'status': 'blocked', 'reason_code': 'ATTEMPT_LIMIT'}
+    if remaining['elapsed_ms'] >= policy.get('max_elapsed_ms', 0):
+        return {**base, 'status': 'blocked', 'reason_code': 'TIME_LIMIT'}
+    if remaining['estimated_cost'] >= policy.get('max_estimated_cost', 0):
+        return {**base, 'status': 'blocked', 'reason_code': 'SPEND_LIMIT'}
+    window = policy.get('no_progress_window', 2)
+    recent = cycles[-window:]
+    if len(recent) == window and all(row.get('status') == 'recorded'
+            and row.get('input_delta_hash') == row.get('output_delta_hash') == delta['digest']
+            for row in recent):
+        return {**base, 'status': 'blocked', 'reason_code': 'NO_PROGRESS'}
     if not scope['implementer_actor']:
         return {**base, 'status': 'blocked', 'reason_code': 'IMPLEMENTER_UNAVAILABLE'}
     if (not delta['finding_ids'] and not delta['item_ids']

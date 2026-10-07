@@ -59,6 +59,32 @@ class RepairDecisionTests(unittest.TestCase):
         self.assertEqual(decision['reason_code'], 'REPAIR_DISABLED')
         self.assertEqual(decision['scope']['gate_ids'], ['security'])
 
+    def test_identical_delta_stops(self):
+        run = self.run_record()
+        digest = failure_delta(run)['digest']
+        run['repair_cycles'] = [{'status': 'recorded', 'input_delta_hash': digest,
+                                 'output_delta_hash': digest, 'estimated_cost': 1},
+                                {'status': 'recorded', 'input_delta_hash': digest,
+                                 'output_delta_hash': digest, 'estimated_cost': 1}]
+        self.assertEqual(repair_decision(run, 1000)['reason_code'], 'NO_PROGRESS')
+
+    def test_budget_stops_before_dispatch(self):
+        run = self.run_record()
+        run['repair_cycles'] = [{'status': 'recorded', 'estimated_cost': 10}]
+        self.assertEqual(repair_decision(run, 1000)['reason_code'], 'SPEND_LIMIT')
+        run['repair_cycles'] = []
+        run['repair_policy']['max_attempts'] = 0
+        self.assertEqual(repair_decision(run, 1000)['reason_code'], 'ATTEMPT_LIMIT')
+        run['repair_policy']['max_attempts'] = 3
+        run['repair_started_ms'] = 1
+        run['repair_policy']['max_elapsed_ms'] = 999
+        self.assertEqual(repair_decision(run, 1000)['reason_code'], 'TIME_LIMIT')
+
+    def test_changed_spec_or_locked_test_needs_human(self):
+        run = self.run_record()
+        run['repair_human_decision_required'] = 'SPEC_CHANGED'
+        self.assertEqual(repair_decision(run, 1000)['reason_code'], 'HUMAN_DECISION')
+
 
 if __name__ == '__main__':
     unittest.main()

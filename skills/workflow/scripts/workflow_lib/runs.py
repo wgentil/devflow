@@ -40,6 +40,8 @@ def start_run(state: dict, run_id: str, plan: dict) -> dict:
         "state_version": 0,
         "items": {item["id"]: {"status": "pending", "attempts": []} for item in plan["work_items"]},
         "active_attempt": None,
+        "repair_policy": {"enabled": False},
+        "repair_cycles": [],
         "verifier_proofs": {},
         "verification_proofs": {},
         "context": deepcopy(state.get("resolved_context", {})),

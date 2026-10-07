@@ -53,6 +53,60 @@ def reduce_event(data, kind, payload, version):
 
 
 def _reduce(data, kind, req, version):
+    if kind.startswith('domain.repair.'):
+        from .repair import failure_delta, repair_decision
+        run = data.get('runs', {}).get(req.get('run_id'))
+        require(run is not None and run.get('status') == 'active', 'active repair run required')
+        action = kind.removeprefix('domain.repair.')
+        cycles = run.setdefault('repair_cycles', [])
+        if action == 'configure':
+            policy = req.get('policy')
+            require(isinstance(policy, dict) and set(policy) == {'enabled', 'max_attempts',
+                    'max_elapsed_ms', 'max_estimated_cost', 'no_progress_window'}, 'complete repair policy required')
+            require(type(policy['enabled']) is bool and type(policy['max_attempts']) is int
+                    and policy['max_attempts'] > 0 and type(policy['max_elapsed_ms']) is int
+                    and policy['max_elapsed_ms'] > 0 and type(policy['no_progress_window']) is int
+                    and policy['no_progress_window'] >= 2 and type(policy['max_estimated_cost']) in (int, float)
+                    and policy['max_estimated_cost'] >= 0, 'invalid repair limits')
+            require(not cycles, 'repair policy is frozen after first claim')
+            run['repair_policy'] = deepcopy(policy)
+            return {'run_id': req['run_id'], 'policy': deepcopy(policy)}
+        if action == 'claim':
+            require(text(req.get('cycle_id')) and isinstance(req.get('delta_hash'), str), 'repair cycle identity required')
+            require(type(req.get('claimed_at_ms')) is int and req['claimed_at_ms'] >= 0, 'claim time required')
+            cost = req.get('estimated_cost')
+            require(type(cost) in (int, float) and cost >= 0, 'known nonnegative estimated cost required')
+            require(not any(row['cycle_id'] == req['cycle_id'] for row in cycles), 'repair cycle ID already used')
+            decision = repair_decision(run, req['claimed_at_ms'])
+            require(decision['status'] == 'ready' and decision['delta_hash'] == req['delta_hash'],
+                    'repair decision changed or is blocked')
+            spent = decision['remaining']['estimated_cost']
+            require(spent + cost <= run['repair_policy']['max_estimated_cost'], 'repair cost limit reached')
+            run.setdefault('repair_started_ms', req['claimed_at_ms'])
+            record = {'cycle_id': req['cycle_id'], 'status': 'claimed', 'input_delta_hash': req['delta_hash'],
+                      'claimed_at_ms': req['claimed_at_ms'], 'estimated_cost': cost,
+                      'scope': deepcopy(decision['scope'])}
+            cycles.append(record)
+            return deepcopy(record)
+        if action == 'record':
+            cycle = next((row for row in cycles if row['cycle_id'] == req.get('cycle_id')), None)
+            require(cycle is not None and cycle['status'] == 'claimed', 'claimed repair cycle required')
+            require(type(req.get('completed_at_ms')) is int
+                    and req['completed_at_ms'] >= cycle['claimed_at_ms'], 'valid completion time required')
+            delta = failure_delta(run)
+            require(req.get('output_delta_hash') == delta['digest'], 'repair output delta changed')
+            remaining = req.get('remaining_failures')
+            require(remaining == delta, 'remaining failures do not match evidence')
+            cycle.update(status='recorded', output_delta_hash=delta['digest'],
+                         completed_at_ms=req['completed_at_ms'], remaining_failures=deepcopy(remaining),
+                         worker_ref=req.get('worker_ref'), proof_refs=deepcopy(req.get('proof_refs', [])))
+            return deepcopy(cycle)
+        if action == 'stop':
+            require(not any(row['status'] == 'claimed' for row in cycles), 'active repair lease must reconcile')
+            require(text(req.get('reason_code')), 'stop reason required')
+            run['repair_stop'] = {'reason_code': req['reason_code'], 'remaining_failures': failure_delta(run)}
+            return deepcopy(run['repair_stop'])
+        raise WorkflowError('INVALID_EVENT', f'unsupported repair event: {action}')
     if kind.startswith('domain.host.') and kind != 'domain.host.init':
         from .hosts import apply_host_event
         return apply_host_event(data, kind.removeprefix('domain.host.'), req)

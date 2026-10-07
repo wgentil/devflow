@@ -84,6 +84,50 @@ class JournalIntegrationTests(unittest.TestCase):
             transact(self.root,0,'unknown',{'kind':'domain.unknown','payload':{'request':{}}})
         self.assertEqual(read_state(self.root)['version'],0)
 
+    def test_policy_is_explicit_and_bounded(self):
+        self._repair_fixture()
+        bad = {'enabled': True, 'max_attempts': 0, 'max_elapsed_ms': 1000,
+               'max_estimated_cost': 10, 'no_progress_window': 2}
+        with self.assertRaises(WorkflowError):
+            self._repair_event('configure', {'run_id': 'r', 'policy': bad}, 'bad')
+        self.assertEqual(read_state(self.root)['data']['runs']['r'].get('repair_policy'), None)
+        good = {**bad, 'max_attempts': 2}
+        self._repair_event('configure', {'run_id': 'r', 'policy': good}, 'policy')
+        self.assertEqual(read_state(self.root)['data']['runs']['r']['repair_policy'], good)
+
+    def test_duplicate_claim_replays_once(self):
+        from workflow_lib.repair import failure_delta
+        self._repair_fixture()
+        policy = {'enabled': True, 'max_attempts': 2, 'max_elapsed_ms': 1000,
+                  'max_estimated_cost': 10, 'no_progress_window': 2}
+        self._repair_event('configure', {'run_id': 'r', 'policy': policy}, 'policy')
+        digest = failure_delta(read_state(self.root)['data']['runs']['r'])['digest']
+        req = {'run_id': 'r', 'cycle_id': 'cycle-1', 'delta_hash': digest,
+               'claimed_at_ms': 100, 'estimated_cost': 1}
+        first = self._repair_event('claim', req, 'claim')
+        replay = self._repair_event('claim', req, 'claim')
+        self.assertFalse(first['replayed'])
+        self.assertTrue(replay['replayed'])
+        self.assertEqual(len(read_state(self.root)['data']['runs']['r']['repair_cycles']), 1)
+        self._repair_event('record', {'run_id': 'r', 'cycle_id': 'cycle-1',
+                           'output_delta_hash': digest, 'completed_at_ms': 200,
+                           'remaining_failures': __import__('workflow_lib.repair', fromlist=['failure_delta']).failure_delta(
+                               read_state(self.root)['data']['runs']['r'])}, 'record')
+        self.assertEqual(read_state(self.root)['data']['runs']['r']['repair_cycles'][0]['status'], 'recorded')
+
+    def _repair_fixture(self):
+        run = {'id': 'r', 'status': 'active', 'actors': {'implementer': 'worker'},
+               'plan': {'work_items': []}, 'items': {},
+               'required_hardening_gates': ['security'], 'hardening_config_hash': 'cfg',
+               'hardening_proofs': {'security': {'passed': False, 'config_hash': 'cfg'}},
+               'unresolved_findings': []}
+        transact(self.root, 0, 'fixture', {'kind': 'fixture', 'payload': {'runs': {'r': run}}})
+
+    def _repair_event(self, action, request, operation_id):
+        state = read_state(self.root)
+        return transact(self.root, state['version'], operation_id,
+                        {'kind': 'domain.repair.' + action, 'payload': {'request': request}})
+
 
 class DurableOutboxTests(unittest.TestCase):
     setUp=JournalIntegrationTests.setUp
