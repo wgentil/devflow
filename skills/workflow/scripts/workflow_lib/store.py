@@ -110,6 +110,19 @@ def _apply_event(state: dict, event: dict) -> None:
                 "passed": True, "item_id": proof["item_id"], "token": proof["token"],
                 "evidence_id": proof["id"],
             }
+    elif kind == "authorization.recorded":
+        run = data.setdefault("runs", {}).get(payload.get("run_id"))
+        authorization = payload.get("authorization")
+        active = run.get("active_attempt") if run else None
+        if (not run or not isinstance(authorization, dict) or not active
+                or authorization.get("attempt_id") != active.get("token")
+                or authorization.get("id") in run.setdefault("authorizations", {})):
+            raise WorkflowError("INVALID_EVENT", "authorization must bind a unique active attempt")
+        plan = run.get("verification_proofs", {}).get(authorization.get("plan_proof_id"), {})
+        if (plan.get("kind") != "iac-plan" or plan.get("token") != active.get("token")
+                or plan.get("repo_id") != authorization.get("repo_id")):
+            raise WorkflowError("INVALID_EVENT", "authorization must bind the current attempt's plan proof")
+        run["authorizations"][authorization["id"]] = deepcopy(authorization)
     elif kind == "test.change.proposed":
         run = data.setdefault("runs", {}).get(payload.get("run_id"))
         proposal = payload.get("proposal")
@@ -126,11 +139,23 @@ def _apply_event(state: dict, event: dict) -> None:
             raise WorkflowError("INVALID_EVENT", "approval does not bind the current proposal")
         proposal["approval"] = approval
         proposal["status"] = "approved"
+    elif kind == "test.change.applying":
+        run = data.setdefault("runs", {}).get(payload.get("run_id"))
+        proposal = run.get("test_change_proposals", {}).get(payload.get("proposal_id")) if run else None
+        if not proposal or not proposal.get("approval") or proposal.get("status") not in {"approved", "applying"}:
+            raise WorkflowError("INVALID_EVENT", "test-change apply requires current approval")
+        proposal["status"] = "applying"
+        for affected_run in data.get("runs", {}).values():
+            for proof_id, proof in affected_run.get("verification_proofs", {}).items():
+                if proof.get("phase") == "GREEN" and set(proposal.get("changed_paths", [])).intersection(proof.get("test_hashes", {})):
+                    proof["fresh"] = False
+                    if proof_id in affected_run.get("verifier_proofs", {}):
+                        affected_run["verifier_proofs"][proof_id]["passed"] = False
     elif kind == "test.change.applied":
         run = data.setdefault("runs", {}).get(payload.get("run_id"))
         proposal = run.get("test_change_proposals", {}).get(payload.get("proposal_id")) if run else None
         hashes = payload.get("after_hashes")
-        if (not proposal or not proposal.get("approval") or proposal.get("status") != "approved"
+        if (not proposal or not proposal.get("approval") or proposal.get("status") != "applying"
                 or not isinstance(hashes, dict) or set(hashes) != set(proposal.get("changed_paths", []))
                 or any(not isinstance(value, str) or len(value) != 64 for value in hashes.values())):
             raise WorkflowError("INVALID_EVENT", "test-change patch is not approved or already applied")
@@ -158,6 +183,7 @@ def _apply_event(state: dict, event: dict) -> None:
             if item.get("kind") != "iac" or not any(previous.get("kind") == "iac-plan"
                     and previous.get("passed") is True and previous.get("token") == active["token"]
                     and previous.get("repo_id") == proof.get("repo_id")
+                    and previous.get("id") == proof.get("plan_proof_id")
                     for previous in run["verification_proofs"].values()):
                 raise WorkflowError("INVALID_EVENT", "IaC apply proof requires a matching plan proof")
         elif proof.get("kind") == "iac-plan" and item.get("kind") != "iac":
@@ -398,10 +424,12 @@ def _validate_event_shape(event: dict) -> None:
                                 and isinstance(payload.get("result"), dict)
                                 and isinstance(payload.get("verified"), bool)),
         "verification.recorded": _valid_verification_event(payload),
+        "authorization.recorded": isinstance(payload.get("run_id"), str) and isinstance(payload.get("authorization"), dict),
         "test.change.proposed": isinstance(payload.get("run_id"), str) and isinstance(payload.get("proposal"), dict),
         "test.change.approved": (isinstance(payload.get("run_id"), str)
                                   and isinstance(payload.get("proposal_id"), str)
                                   and isinstance(payload.get("approval"), dict)),
+        "test.change.applying": isinstance(payload.get("run_id"), str) and isinstance(payload.get("proposal_id"), str),
         "test.change.applied": (isinstance(payload.get("run_id"), str)
                                  and isinstance(payload.get("proposal_id"), str)
                                  and isinstance(payload.get("after_hashes"), dict)),

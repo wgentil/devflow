@@ -7,6 +7,7 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+from pathlib import Path
 
 
 def _canonical(value: dict) -> str:
@@ -35,7 +36,15 @@ def _required_proof(run: dict, item: dict) -> dict | None:
         actual = (phase if kind == "code" else kind + ("-post" if kind == "agent-evaluation" and phase == "post" else ""))
         if (proof.get("passed") is True and proof.get("item_id") == item["id"]
                 and proof.get("token") == token and actual in expected and evidence.get("fresh", True)):
-            return proof
+            try:
+                from .evidence import repository_fingerprint
+                repo = run.get("repositories", {}).get(evidence.get("repo_id"), {})
+                current = repository_fingerprint(Path(repo["location"])) if repo.get("location") else {}
+            except Exception:
+                current = {}
+            if (current.get("head") == evidence.get("repository_head")
+                    and current.get("worktree_digest") == evidence.get("worktree_digest")):
+                return proof
     return None
 
 

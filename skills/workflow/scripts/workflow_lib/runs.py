@@ -35,6 +35,7 @@ def start_run(state: dict, run_id: str, plan: dict) -> dict:
         "id": run_id,
         "status": "active",
         "plan": deepcopy(plan),
+        "repositories": deepcopy(state.get("repositories", {})),
         "state_version": 0,
         "items": {item["id"]: {"status": "pending", "attempts": []} for item in plan["work_items"]},
         "active_attempt": None,
@@ -105,6 +106,14 @@ def record_result(run: dict, token: str, result: dict) -> dict:
                     or (item["kind"] == "agent-config" and kind == "agent-evaluation" and phase == "post"))
         if not eligible:
             raise WorkflowError("VERIFIER_PROOF_MISMATCH", "proof kind is not sufficient for this work item")
+        if evidence.get("kind") == "code":
+            from pathlib import Path
+            from .evidence import repository_fingerprint
+            repo = run.get("repositories", {}).get(evidence.get("repo_id"), {})
+            current = repository_fingerprint(Path(repo["location"])) if repo.get("location") else {}
+            if (current.get("head") != evidence.get("repository_head")
+                    or current.get("worktree_digest") != evidence.get("worktree_digest")):
+                raise WorkflowError("VERIFICATION_STALE", "repository changed after GREEN verification")
     attempt["status"] = "verified" if proof else "result_recorded"
     attempt["result"] = deepcopy(result)
     item_state = updated["items"][source["item_id"]]

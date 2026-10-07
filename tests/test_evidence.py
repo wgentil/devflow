@@ -123,6 +123,21 @@ class EvidenceTests(unittest.TestCase):
         self.assertTrue(result["passed"])
         self.assertEqual(result["target_outcomes"], {"tests.test_x.target": "passed"})
 
+    def test_unittest_verbose_adapter_parses_failures_from_stderr(self):
+        from workflow_lib.evidence import _report
+        self.assertEqual(_report("", "test_target (tests.test_x.Target) ... FAIL\n", "unittest"),
+                         {"tests.test_x.Target.test_target": "failed"})
+
+    def test_repository_mutation_during_test_command_cannot_produce_green(self):
+        self.capture(self.root, "run-1", "attempt-1", "RED",
+                     self.command({"tests": [{"id": "test_target", "outcome": "failed"}]}, 1),
+                     ["test_target.py"], ["test_target"], 10)
+        mutating = [sys.executable, "-c", "import pathlib,json; pathlib.Path('source.py').write_text('changed'); print(json.dumps({'tests':[{'id':'test_target','outcome':'passed'}]}))"]
+        result = self.capture(self.root, "run-1", "attempt-1", "GREEN", mutating,
+                              ["test_target.py"], ["test_target"], 10)
+        self.assertFalse(result["passed"])
+        self.assertEqual(result["failure"], "REPOSITORY_CHANGED_DURING_VERIFICATION")
+
 
 if __name__ == "__main__":
     unittest.main()

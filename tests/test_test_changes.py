@@ -70,6 +70,8 @@ index 0000000..0000000 100644
         self.assertEqual(self.source.read_text(), "def test_locked():\n    assert 1 == 2\n")
         self.assertEqual(proposal["before_hashes"], {"tests/test_locked.py": self.before})
         self.assertEqual(len(result["after_hashes"]["tests/test_locked.py"]), 64)
+        replay = apply(self.repo, proposal, approval)
+        self.assertEqual(replay["after_hashes"], result["after_hashes"])
 
     def test_edited_test_preimage_blocks_an_approved_patch(self):
         propose, approve, apply = self.module()
@@ -97,6 +99,9 @@ index 0000000..0000000 100644
                                                                     "status": "approved"}}},
             "run-2": {"id": "run-2", "verification_proofs": {"green-2": {
                 **green, "id": "green-2"}}, "verifier_proofs": {"green-2": {"passed": True}}}}}})
+        state = read_state(root)
+        transact(root, state["version"], "begin", {"kind": "test.change.applying", "payload": {
+            "run_id": "run-1", "proposal_id": proposal["id"]}})
         state = read_state(root)
         transact(root, state["version"], "apply", {"kind": "test.change.applied", "payload": {
             "run_id": "run-1", "proposal_id": proposal["id"], "after_hashes": result["after_hashes"]}})

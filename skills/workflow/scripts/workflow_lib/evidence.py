@@ -67,7 +67,19 @@ def repository_fingerprint(location: Path) -> dict:
     return {"head": head, "worktree_digest": digest.hexdigest()}
 
 
-def _report(stdout: str) -> dict:
+def _report(stdout: str, stderr: str = "", report_format: str = "json") -> dict:
+    if report_format == "unittest":
+        import re
+        result = {}
+        for line in (stdout + "\n" + stderr).splitlines():
+            match = re.match(r"^(\S+) \(([^)]+)\) \.\.\. (ok|FAIL|ERROR|skipped(?: .*)?)$", line.strip())
+            if match:
+                name, cls, status = match.groups()
+                result[f"{cls}.{name}"] = ("passed" if status == "ok" else "failed" if status == "FAIL"
+                                           else "error" if status == "ERROR" else "skipped")
+        if result:
+            return result
+        raise WorkflowError("UNSUPPORTED_TEST_REPORT", "unittest output contained no structured test results")
     try:
         value = json.loads(stdout)
         if isinstance(value, dict) and isinstance(value.get("tests"), list):
@@ -105,7 +117,8 @@ def _report(stdout: str) -> dict:
 
 
 def capture_evidence(root: Path, run_id: str, token: str, phase: str, command: list[str],
-                     test_paths: list[str], target_ids: list[str], timeout: int) -> dict:
+                     test_paths: list[str], target_ids: list[str], timeout: int,
+                     report_format: str = "json") -> dict:
     if phase not in {"RED", "GREEN"} or not isinstance(command, list) or not command or any(not isinstance(arg, str) for arg in command):
         raise WorkflowError("INVALID_EVIDENCE_REQUEST", "phase and argv are invalid")
     if (type(timeout) is not int or timeout <= 0 or not isinstance(test_paths, list)
@@ -157,8 +170,13 @@ def capture_evidence(root: Path, run_id: str, token: str, phase: str, command: l
     except OSError as exc:
         return {"passed": False, "failure": "COMMAND_FAILED", "message": str(exc), "exit_code": None}
     finished = _now()
+    after_repo = repository_fingerprint(repo)
+    if after_repo != before_repo:
+        return {"passed": False, "failure": "REPOSITORY_CHANGED_DURING_VERIFICATION", "exit_code": exit_code,
+                "started_at": started, "finished_at": finished,
+                "stdout_ref": _blob(root, stdout), "stderr_ref": _blob(root, stderr)}
     try:
-        outcomes = _report(stdout)
+        outcomes = _report(stdout, stderr, report_format)
     except WorkflowError as exc:
         return {"passed": False, "failure": exc.code, "exit_code": exit_code,
                 "started_at": started, "finished_at": finished,

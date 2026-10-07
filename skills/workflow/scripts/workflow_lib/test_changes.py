@@ -92,21 +92,29 @@ def apply_approved_patch(repo_path: Path, proposal: dict, approval: dict) -> dic
             or approval.get("proposal_hash") != proposal.get("proposal_hash")):
         raise ValueError("the exact test-change proposal has not been approved")
     repo = Path(repo_path).expanduser().resolve()
+    preimage_matches = True
     for path, expected in proposal["before_hashes"].items():
         current = (repo / path).resolve()
-        if not current.is_relative_to(repo) or not current.is_file() or _hash(current) != expected:
-            raise ValueError("a locked test preimage changed after approval")
+        if not current.is_relative_to(repo) or not current.is_file():
+            raise ValueError("a locked test path changed after approval")
+        preimage_matches = preimage_matches and _hash(current) == expected
     with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", suffix=".patch") as handle:
         handle.write(proposal["patch"])
         handle.flush()
-        checked = subprocess.run(["git", "apply", "--check", handle.name], cwd=repo,
-                                 capture_output=True, text=True, check=False)
-        if checked.returncode:
-            raise ValueError("approved test patch no longer applies to the repository")
-        applied = subprocess.run(["git", "apply", handle.name], cwd=repo,
-                                 capture_output=True, text=True, check=False)
-        if applied.returncode:
-            raise ValueError(f"approved test patch failed to apply: {applied.stderr.strip()}")
+        if preimage_matches:
+            checked = subprocess.run(["git", "apply", "--check", handle.name], cwd=repo,
+                                     capture_output=True, text=True, check=False)
+            if checked.returncode:
+                raise ValueError("approved test patch no longer applies to the repository")
+            applied = subprocess.run(["git", "apply", handle.name], cwd=repo,
+                                     capture_output=True, text=True, check=False)
+            if applied.returncode:
+                raise ValueError(f"approved test patch failed to apply: {applied.stderr.strip()}")
+        else:
+            reversed_check = subprocess.run(["git", "apply", "--reverse", "--check", handle.name], cwd=repo,
+                                            capture_output=True, text=True, check=False)
+            if reversed_check.returncode:
+                raise ValueError("approved test patch is partially applied or repository content has changed")
     after = {path: _hash((repo / path).resolve()) for path in proposal["changed_paths"]}
     return {"proposal_id": proposal["id"], "before_hashes": dict(proposal["before_hashes"]),
             "after_hashes": after, "changed_paths": list(proposal["changed_paths"])}

@@ -24,6 +24,7 @@ def register_commands(parser: argparse.ArgumentParser) -> None:
     verify.add_argument("--test-path", action="append", required=True)
     verify.add_argument("--target-id", action="append", required=True)
     verify.add_argument("--timeout", type=int, default=900)
+    verify.add_argument("--report-format", choices=("json", "junit", "unittest"), default="json")
     iac_plan = subcommands.add_parser("verify-iac-plan")
     iac_plan.add_argument("--root", required=True)
     iac_plan.add_argument("--run-id", required=True)
@@ -37,7 +38,7 @@ def register_commands(parser: argparse.ArgumentParser) -> None:
     iac_apply.add_argument("--attempt-id", required=True)
     iac_apply.add_argument("--apply-argv-json", required=True)
     iac_apply.add_argument("--policy-argv-json", required=True)
-    iac_apply.add_argument("--authorization-file", required=True)
+    iac_apply.add_argument("--authorization-id", required=True)
     iac_apply.add_argument("--timeout", type=int, default=900)
     evaluation = subcommands.add_parser("verify-eval-set")
     evaluation.add_argument("--root", required=True)
@@ -70,9 +71,44 @@ def register_commands(parser: argparse.ArgumentParser) -> None:
     listing = change_commands.add_parser("list")
     listing.add_argument("--root", required=True)
     listing.add_argument("--run-id", required=True)
+    authorize = subcommands.add_parser("authorize-apply")
+    authorize.add_argument("--root", required=True)
+    authorize.add_argument("--run-id", required=True)
+    authorize.add_argument("--attempt-id", required=True)
+    authorize.add_argument("--apply-argv-json", required=True)
+    authorize.add_argument("--policy-argv-json", required=True)
+    authorize.add_argument("--plan-proof-id", required=True)
+    authorize.add_argument("--actor-id", required=True)
 
 
 def dispatch(parsed: argparse.Namespace) -> dict:
+    if parsed.build_command == "authorize-apply":
+        root = Path(parsed.root).expanduser().resolve()
+        state = read_state(root)
+        run = state["data"].get("runs", {}).get(parsed.run_id)
+        active = run.get("active_attempt") if run else None
+        if not active or active.get("token") != parsed.attempt_id:
+            raise WorkflowError("ATTEMPT_TOKEN_INVALID", "authorization requires the active attempt")
+        apply_argv, policy_argv = json.loads(parsed.apply_argv_json), json.loads(parsed.policy_argv_json)
+        item = next(item for item in run["plan"]["work_items"] if item["id"] == active["item_id"])
+        repo_id = item.get("repo_id")
+        plan = run.get("verification_proofs", {}).get(parsed.plan_proof_id)
+        if (not plan or plan.get("kind") != "iac-plan" or plan.get("passed") is not True
+                or plan.get("token") != parsed.attempt_id or plan.get("repo_id") != repo_id):
+            raise WorkflowError("PLAN_PROOF_REQUIRED", "authorization must bind the active attempt's plan proof")
+        from workflow_lib.evidence import repository_fingerprint
+        location = Path(state["data"]["repositories"][repo_id]["location"]).resolve()
+        current = repository_fingerprint(location)
+        if current != {"head": plan.get("repository_head"), "worktree_digest": plan.get("worktree_digest")}:
+            raise WorkflowError("PLAN_STALE", "repository changed after plan verification")
+        record = {"id": parsed.plan_proof_id + ":apply", "actor_id": parsed.actor_id,
+            "attempt_id": parsed.attempt_id, "repo_id": repo_id, "cwd": str(location),
+            "action": "infrastructure.apply", "argv": [apply_argv, policy_argv], "plan_proof_id": parsed.plan_proof_id}
+        if not parsed.actor_id.strip() or not apply_argv or not policy_argv:
+            raise WorkflowError("INVALID_AUTHORIZATION", "actor and command arrays are required")
+        response = transact(root, state["version"], f"authorization:{parsed.run_id}:{record['id']}",
+            {"kind": "authorization.recorded", "payload": {"run_id": parsed.run_id, "authorization": record}})
+        return {**record, "state_version": response["state"]["version"]}
     if parsed.build_command in {"verify-iac-plan", "verify-iac-apply", "verify-eval-set"}:
         root = Path(parsed.root).expanduser().resolve()
         state = read_state(root)
@@ -87,12 +123,29 @@ def dispatch(parsed: argparse.Namespace) -> dict:
             raise WorkflowError("REPOSITORY_NOT_REGISTERED", "active work item has no registered repository")
         cwd = Path(repository["location"])
         if parsed.build_command == "verify-iac-plan":
+            from workflow_lib.evidence import repository_fingerprint
+            before = repository_fingerprint(cwd)
             proof = verify_iac_plan(json.loads(parsed.plan_argv_json), json.loads(parsed.policy_argv_json),
                                     cwd, parsed.timeout)
+            if proof.get("passed") and repository_fingerprint(cwd) != before:
+                return {"passed": False, "failure": "REPOSITORY_CHANGED_DURING_VERIFICATION"}
+            if proof.get("passed"):
+                proof.update(repository_head=before["head"], worktree_digest=before["worktree_digest"], repo_id=repo_id)
         elif parsed.build_command == "verify-iac-apply":
             apply_argv, policy_argv = json.loads(parsed.apply_argv_json), json.loads(parsed.policy_argv_json)
-            authorization = json.loads(Path(parsed.authorization_file).read_text(encoding="utf-8"))
-            proof = verify_iac_apply(apply_argv, policy_argv, cwd, authorization, parsed.timeout)
+            authorization = run.get("authorizations", {}).get(parsed.authorization_id)
+            if (not authorization or authorization.get("attempt_id") != parsed.attempt_id
+                    or authorization.get("repo_id") != repo_id or authorization.get("cwd") != str(cwd.resolve())
+                    or authorization.get("argv") != [apply_argv, policy_argv]):
+                raise WorkflowError("AUTHORIZATION_SCOPE_MISMATCH", "apply requires a recorded exact-scope authorization")
+            plan = run.get("verification_proofs", {}).get(authorization.get("plan_proof_id"), {})
+            from workflow_lib.evidence import repository_fingerprint
+            if repository_fingerprint(cwd) != {"head": plan.get("repository_head"), "worktree_digest": plan.get("worktree_digest")}:
+                raise WorkflowError("PLAN_STALE", "repository changed after the authorized plan")
+            proof = verify_iac_apply(apply_argv, policy_argv, cwd,
+                {"approved": True, "action": authorization["action"], "cwd": authorization["cwd"],
+                 "argv": authorization["argv"], "authorization_id": authorization["id"]}, parsed.timeout)
+            proof["plan_proof_id"] = authorization["plan_proof_id"]
         else:
             baseline = run.get("verification_proofs", {}).get(parsed.baseline_id) if parsed.baseline_id else None
             proof = verify_eval_set(json.loads(parsed.eval_argv_json), cwd, parsed.phase, baseline,
@@ -148,11 +201,16 @@ def dispatch(parsed: argparse.Namespace) -> dict:
                     "state_version": state["version"], "replayed": True}
         if parsed.confirm_hash != proposal.get("proposal_hash"):
             raise WorkflowError("EXPLICIT_CONFIRMATION_REQUIRED", "apply requires the approved proposal hash")
-        if (proposal.get("status") != "approved"
+        if (proposal.get("status") not in {"approved", "applying"}
                 or proposal.get("approval", {}).get("proposal_hash") != parsed.confirm_hash):
             raise WorkflowError("TEST_CHANGE_NOT_APPROVED", "proposal requires approval before application")
+        if proposal.get("status") == "approved":
+            response = transact(root, state["version"], f"test-change:begin:{parsed.run_id}:{parsed.proposal_id}",
+                {"kind": "test.change.applying", "payload": {"run_id": parsed.run_id, "proposal_id": parsed.proposal_id}})
+            state = response["state"]
         item = next(item for item in run["plan"]["work_items"] if item["id"] == proposal["item_id"])
         repo = Path(state["data"]["repositories"][item["repo_id"]]["location"])
+        proposal = state["data"]["runs"][parsed.run_id]["test_change_proposals"][parsed.proposal_id]
         applied = apply_approved_patch(repo, proposal, proposal["approval"])
         response = transact(root, state["version"], operation_id,
             {"kind": "test.change.applied", "payload": {"run_id": parsed.run_id,
@@ -162,4 +220,4 @@ def dispatch(parsed: argparse.Namespace) -> dict:
     if not isinstance(command, list) or not command:
         raise ValueError("--argv-json must be a non-empty JSON array")
     return capture_evidence(Path(parsed.root), parsed.run_id, parsed.attempt_id, parsed.phase.upper(),
-                            command, parsed.test_path, parsed.target_id, parsed.timeout)
+                            command, parsed.test_path, parsed.target_id, parsed.timeout, parsed.report_format)
