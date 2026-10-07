@@ -5,6 +5,39 @@ description: Record fresh, attempt-bound verification evidence for Devflow work 
 
 # Build work
 
+## Verification and rework
+
+```mermaid
+flowchart TD
+    Attempt["Active item and attempt token"] --> Kind{"Work-item kind"}
+    Kind -->|Code| Red["Record target RED failure with locked test hashes"]
+    Red --> Code["Implement code"]
+    Code --> Green["Run declared targets for GREEN"]
+    Kind -->|IaC| Plan["Verify plan and policy"]
+    Plan --> Auth["Record explicit apply authorization bound to plan"]
+    Auth --> Apply["Verify apply and policy"]
+    Kind -->|Agent configuration| Baseline["Record baseline evaluation"]
+    Baseline --> Config["Update configuration and run post evaluation"]
+    Green --> Passed{"Fresh kind-matched proof passed?"}
+    Apply --> Passed
+    Config --> Passed
+    Passed -->|No| Fix["Agent diagnoses, fixes and reruns verification"]
+    Fix --> Kind
+    Passed -->|Yes| Result["Submit result and proceed to independent item review"]
+    Result -.-> Gates["Later: configured E2E or red-team hardening commands"]
+    Gates --> GatePass{"All required gates pass on current repository?"}
+    GatePass -->|No| Rework["Agent reworks and renews affected proof and reviews"]
+    Rework --> Attempt
+    GatePass -->|Yes| Delivery["Proceed to delivery checks"]
+```
+
+Unit and E2E suites can be declared code verification targets when they emit a
+supported report. E2E and red-team checks can also be configured hardening gates.
+Failures block the relevant gate; the agent must coordinate rework and reruns.
+There is no automatic failure dispatcher or dedicated red-team findings loop.
+Test reruns have no enforced correction counter; review correction limits apply
+when reviewers request changes.
+
 Use this skill only for an active run attempt with declared test paths and target test IDs. Run the actual target test command and have it emit either JSON `{ "tests": [{ "id": "...", "outcome": "passed|failed|skipped|error" }] }` or JUnit XML to standard output. A nonzero exit alone never proves RED. GREEN requires all declared targets to pass and the same test files to match the recorded RED hashes.
 
 ```sh

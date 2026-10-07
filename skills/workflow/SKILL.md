@@ -5,6 +5,54 @@ description: Guide a software project through scoped context, requirements, plan
 
 # Devflow workflow
 
+## Work orchestration
+
+The coordinating agent selects skills, runs helpers and arranges separate review
+invocations. The journal records progress and enforces gates; it does not spawn
+workers or automatically dispatch failed checks for rework. Solid arrows below
+show the agent's process, including steps that require its judgment.
+
+```mermaid
+flowchart TD
+    Context["project-context: resolve scoped context"] --> Spec["specify: create or refine requirements"]
+    Sources["ingest: index source evidence"] -.-> Spec
+    Issues["issues: capture and group complete snapshot"] -.-> Spec
+    Migration["migrate: map parity and increment dependencies"] -.-> Spec
+    Spec --> Gaps{"Agent finds unresolved gaps?"}
+    Gaps -->|Yes| Interview["Ask unresolved questions and revise spec"]
+    Interview --> Spec
+    Gaps -->|No| Approval["Human reviews and approves exact spec hash"]
+    Approval --> Plan["plan-work: validate coverage and dependencies"]
+    Plan --> Next["run next: eligible item and attempt token"]
+    Next --> Build["build-work: implement and verify"]
+    Build --> Item["review-work: independent item review"]
+    Item --> More{"More work items?"}
+    More -->|Yes| Next
+    More -->|No| Branch["Independent branch review"]
+    Branch --> Accept["Independent acceptance review and requirement verdicts"]
+    Accept --> Harden["Run configured hardening gates"]
+    Harden --> Manifest["Prepare and verify exact delivery manifest"]
+    Manifest --> Choice["Human chooses merge, PR or retained branch"]
+    Choice --> Delivered["Execute authorized delivery and record actual result"]
+    Delivered -.-> Reconcile["issues: scoped authorization and durable outbox"]
+    Delivered -.-> Stats["stats: import usage and freeze outcome reports"]
+    Build -->|Verification fails| Fix["Agent fixes implementation and reruns checks"]
+    Harden -->|Gate fails| Fix
+    Item -->|Changes requested| Fix
+    Branch -->|Changes requested| Fix
+    Accept -->|Requirements unmet| Fix
+    Fix --> Build
+    Fix -->|Review correction limit reached| Adjudicate["Independent adjudication"]
+```
+
+After changes, renew affected evidence and review packages before advancing.
+Unconfigured tests are not enforced. Gap discovery/interviews are agent-led;
+`spec gaps` lists recorded unanswered questions and approval does not currently
+reject them automatically. Migration delivery also requires recorded predecessor
+and parity evidence. Resume any stage from journaled run status and gate status.
+See [specify](../specify/SKILL.md), [build-work](../build-work/SKILL.md) and
+[review-work](../review-work/SKILL.md) for the focused flows.
+
 Use the bundled helper to inspect or advance a workflow. Supply an explicit control root for stateful commands; loading this skill does not create files. Devflow supports context, repository registration, approved requirements, validated plans, resumable attempts, attempt-bound code/IaC/agent-evaluation proof, independent review records, requirement acceptance, and exact-head delivery manifests. Infrastructure apply, hardening tools, external PR creation, merge execution, and cleanup remain conditional on configured tools and explicit user authorization.
 
 ```sh
