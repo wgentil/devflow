@@ -104,3 +104,42 @@ read-only; CSV formula prefixes are escaped. `stats inspect` reads stored inputs
 `stats legacy-import` preserves the supported DevConsole ledger's source hash and
 original data in a tagged compatibility record. Imported evidence never becomes
 current verification. Unsupported schemas fail; original ledgers remain unchanged.
+
+## Integration review corrections
+
+Issue groups used to start a build must include a `requirement_ids` object mapping
+**every issue ID** to its planned requirement IDs, for example:
+`{"id":"g","issue_ids":["I1"],"requirement_ids":{"I1":["R1"]}}`.
+The run freezes this membership, snapshot and per-issue scope. Authorizing an
+external action requires that exact scope to be accepted and the issue content
+to match its implementation snapshot. Regrouping cannot retarget delivered work.
+Outbox IDs bind action, authorization, target, manifest and payload permanently,
+including after dispatch or receipt.
+
+Migration criterion definitions must include their `requirement_ids` list.
+Each verified criterion maps to `{run_id, proof_id, requirement_ids}` in the
+`evidence` object. The run must already be bound to the increment and the proof
+must be its latest final verifier evidence covering those requirements. Evidence
+references are retained and rechecked at delivery; RED, obsolete and unrelated
+proofs are rejected. Increment delivery is immutable and predecessors must have
+been recorded first. Explicit scoped waivers remain supported.
+
+Historical delivery materialization checks committed proof, acceptance, manifest
+and migration relationships only. Live repository freshness and Git ancestry are
+checked at delivery preparation, verification and result recording. Later source
+edits or repository relocation do not invalidate recovery of terminal records.
+
+Usage identities and normalized token categories must be valid; conflicting
+records and cached counts above input counts fail the import. Unresolved usage
+gaps prevent available costs. Coverage is calculated independently for each run,
+with matching runtime expectation and imported run bindings. `cost` is available
+only when all selected outcome runs have eligible usage and prices. `run_costs`,
+`cost_excluded_run_ids`, `cost_run_ids`, `priced_cost` and `cost_denominator`
+disclose the priced subset. Rollups pair its cost with only its accepted
+requirements, keeping unavailable runs out of the cost denominator while outcome
+metrics retain their independent eligibility.
+
+Reports select the effective confirmed classification revision per issue as of
+the observation time before assigning attribution or applying the defect window.
+Rollup snapshot precedence uses UTC observation time, journal source version and
+append order, so equal-time repricing selects the newer frozen report.

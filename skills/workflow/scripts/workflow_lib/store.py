@@ -7,7 +7,6 @@ from copy import deepcopy
 import hashlib
 import json
 import os
-import subprocess
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
@@ -397,11 +396,6 @@ def _apply_event(state: dict, event: dict) -> None:
             if (not isinstance(merges, dict) or merges != heads
                     or any(not isinstance(value, str) or not value for value in heads.values())):
                 raise WorkflowError("INVALID_EVENT", "delivery merge commits do not match resulting heads")
-            for repo_id, value in repositories.items():
-                result = subprocess.run(["git", "merge-base", "--is-ancestor", value["head"], heads[repo_id]],
-                    cwd=value["location"], capture_output=True, text=True, check=False)
-                if result.returncode:
-                    raise WorkflowError("INVALID_EVENT", "local merge does not contain the verified source head")
         if delivery["outcome"] == "pull-request":
             request = delivery["actual_result"].get("pull_request")
             if not isinstance(request, dict) or not isinstance(request.get("id"), str) or not request["id"]:
@@ -411,7 +405,7 @@ def _apply_event(state: dict, event: dict) -> None:
         if not acceptance or acceptance.get("acceptance_hash") != delivery.get("verification", {}).get("acceptance_hash"):
             raise WorkflowError("INVALID_EVENT", "delivery does not bind current requirement acceptance")
         from .gates import gate_status
-        if gate_status(run).get("stage") != "delivery":
+        if gate_status(run, live=False).get("stage") != "delivery":
             raise WorkflowError("INVALID_EVENT", "delivery gate is not open")
         from .journal_domains import migration_delivery_guard
         migration_delivery_guard(data, run['id'])

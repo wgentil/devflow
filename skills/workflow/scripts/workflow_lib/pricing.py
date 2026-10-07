@@ -10,8 +10,10 @@ def store_prices(state:dict,version:str,source:dict,rates:dict)->dict:
 
 def price_usage(usage:dict,prices:dict,coverage:dict)->dict:
  if type(coverage.get('coverage')) not in (int,float) or coverage['coverage']<.9:return {'eligible':False,'cost':None,'reason':'usage coverage below 90%'}
+ if usage.get('gaps'):return {'eligible':False,'cost':None,'reason':'unresolved usage gaps'}
  total=0.0
  for e in usage.get('events',[]):
+  if any(type(e.get(k)) is not int or e[k]<0 for k in ('input_tokens','cached_tokens','output_tokens')) or e['cached_tokens']>e['input_tokens']:return {'eligible':False,'cost':None,'reason':'invalid normalized token counts'}
   rate=prices.get('rates',{}).get(f"{e.get('provider')}/{e.get('model')}")
   if not rate:return {'eligible':False,'cost':None,'reason':'missing model price'}
   total+=((e.get('input_tokens',0)-e.get('cached_tokens',0))*rate['input']+e.get('cached_tokens',0)*rate['cached']+e.get('output_tokens',0)*rate['output'])/1_000_000

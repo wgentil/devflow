@@ -99,6 +99,8 @@ def verify_delivery(run: dict, manifest: dict, confirmed_hash: str, repositories
     if run.get("id") != manifest.get("run_id") or hashlib.sha256(
             _canonical(run.get("plan", {})).encode()).hexdigest() != manifest.get("plan_hash"):
         raise ValueError("delivery manifest run or plan is stale")
+    if gate_status(run).get("stage") != "delivery":
+        raise ValueError("delivery gate is no longer open")
     acceptance = _current_acceptance(run)
     if acceptance.get("acceptance_hash") != manifest.get("acceptance_hash"):
         raise ValueError("delivery manifest acceptance is stale")
@@ -124,6 +126,8 @@ def record_delivery(run: dict, manifest: dict, actual_result: dict) -> dict:
         raise ValueError("delivery must pass exact-head verification immediately before recording")
     if run.get("status") != "active" or run.get("id") != manifest.get("run_id"):
         raise ValueError("delivery run is no longer active or does not match the manifest")
+    if gate_status(run).get("stage") != "delivery":
+        raise ValueError("delivery gate is no longer open")
     acceptance = _current_acceptance(run)
     if acceptance.get("acceptance_hash") != manifest.get("acceptance_hash"):
         raise ValueError("delivery acceptance changed after authorization")

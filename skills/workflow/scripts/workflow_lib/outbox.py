@@ -14,8 +14,8 @@ def enqueue_write(state:dict,approved_manifest_hash:str,operation:dict)->dict:
   raise ValueError('recorded exact-manifest authorization required')
  result=deepcopy(state); box=result.setdefault('outbox',{}); digest=_hash(operation.get('payload'))
  old=box.get(operation['id'])
- record={'id':operation['id'],'manifest_hash':approved_manifest_hash,'payload':deepcopy(operation['payload']),'payload_hash':digest,'status':'pending','receipt':None}
- if old and old['payload_hash']!=digest: raise ValueError('operation ID payload conflict')
+ record={'id':operation['id'],'manifest_hash':approved_manifest_hash,'payload':deepcopy(operation['payload']),'payload_hash':digest,'status':'pending','receipt':None,'authorization_id':operation['authorization_id'],'action':authorization.get('action')}
+ if old and any(old.get(k)!=record[k] for k in ('manifest_hash','payload_hash','payload','authorization_id','action')): raise ValueError('operation ID scope conflict')
  box.setdefault(operation['id'],record)
  return result
 

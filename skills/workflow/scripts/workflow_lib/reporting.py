@@ -6,7 +6,15 @@ from datetime import datetime,timezone
 def rollup(reports: list[dict], scope: dict) -> dict:
     eligible, excluded, reasons = [], [], {}
     seen_runs = set()
-    for record in sorted(reports, key=lambda r: r.get('as_of', r.get('date', '')), reverse=True):
+    def order(pair):
+        index, record = pair
+        try:
+            date = datetime.fromisoformat(record.get('as_of', record.get('date', '')).replace('Z', '+00:00'))
+            stamp = date.timestamp() if date.tzinfo else float('-inf')
+        except ValueError:
+            stamp = float('-inf')
+        return stamp, record.get('source_version', 0), index
+    for _, record in sorted(enumerate(reports), key=order, reverse=True):
         date = record.get('as_of', record.get('date', ''))
         month = None
         if date:
@@ -16,16 +24,16 @@ def rollup(reports: list[dict], scope: dict) -> dict:
                     month = parsed.astimezone(timezone.utc).strftime('%Y-%m')
             except ValueError:
                 pass
-        numerator = record.get('numerator', record.get('cost'))
-        denominator = record.get('denominator', record.get('accepted_requirements'))
+        numerator = record.get('numerator', record.get('priced_cost', record.get('cost')))
+        denominator = record.get('denominator', record.get('cost_denominator', record.get('accepted_requirements')))
         matches = ((scope.get('project') is None or record.get('project') == scope['project'])
                    and (scope.get('version') is None or record.get('version') == scope['version'])
                    and (scope.get('month') is None or month == scope['month']))
         numeric = type(numerator) in (int, float) and type(denominator) in (int, float) and denominator > 0
-        overlap = bool(set(record.get('run_ids', [])) & seen_runs)
+        overlap = bool(set(record.get('cost_run_ids', record.get('run_ids', []))) & seen_runs)
         if matches and numeric and not overlap:
             eligible.append((record, numerator, denominator))
-            seen_runs.update(record.get('run_ids', []))
+            seen_runs.update(record.get('cost_run_ids', record.get('run_ids', [])))
         else:
             excluded.append(record)
             reasons[record.get('id', '')] = ('outside scope' if not matches else

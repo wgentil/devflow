@@ -21,7 +21,7 @@ def _git_text(repo: Path, *argv: str) -> str:
     return result.stdout
 
 
-def _required_proof(run: dict, item: dict) -> dict | None:
+def _required_proof(run: dict, item: dict, live: bool = True) -> dict | None:
     item_state = run.get("items", {}).get(item["id"], {})
     attempts = item_state.get("attempts", [])
     token = attempts[-1].get("token") if attempts else None
@@ -36,6 +36,8 @@ def _required_proof(run: dict, item: dict) -> dict | None:
         actual = (phase if kind == "code" else kind + ("-post" if kind == "agent-evaluation" and phase == "post" else ""))
         if (proof.get("passed") is True and proof.get("item_id") == item["id"]
                 and proof.get("token") == token and actual in expected and evidence.get("fresh", True)):
+            if not live:
+                return proof
             try:
                 from .evidence import repository_fingerprint
                 repo = run.get("repositories", {}).get(evidence.get("repo_id"), {})
@@ -48,12 +50,14 @@ def _required_proof(run: dict, item: dict) -> dict | None:
     return None
 
 
-def hardening_ready(run: dict) -> bool:
+def hardening_ready(run: dict, live: bool = True) -> bool:
     from .evidence import repository_fingerprint
     for identifier in run.get('required_hardening_gates', []):
         proof = run.get('hardening_proofs', {}).get(identifier, {})
         if proof.get('passed') is not True or proof.get('config_hash') != run.get('hardening_config_hash'):
             return False
+        if not live:
+            continue
         repo = run.get('repositories', {}).get(proof.get('repo_id'), {})
         try:
             if repository_fingerprint(Path(repo['location'])) != proof.get('repository_fingerprint'):
@@ -65,12 +69,12 @@ def hardening_ready(run: dict) -> bool:
     return True
 
 
-def gate_status(run: dict) -> dict:
+def gate_status(run: dict, live: bool = True) -> dict:
     if run.get("status") in {"delivered", "discarded"}:
         return {"stage": run["status"], "can_advance": False, "blocking_findings": [],
                 "unverified_items": [], "terminal": True}
     items = run.get("plan", {}).get("work_items", [])
-    unverified = [item["id"] for item in items if not _required_proof(run, item)]
+    unverified = [item["id"] for item in items if not _required_proof(run, item, live)]
     if unverified:
         stage = "implementation"
     else:
@@ -83,7 +87,7 @@ def gate_status(run: dict) -> dict:
             stage = "acceptance"
             accepted = run.get("acceptances", [])
             if accepted and accepted[-1].get("complete") is True and accepted[-1].get("fresh", True):
-                stage = "delivery" if hardening_ready(run) else "hardening"
+                stage = "delivery" if hardening_ready(run, live) else "hardening"
     mandatory_blockers = [finding.get("id") for finding in run.get("unresolved_findings", [])
                           if finding.get("mandatory") is True and finding.get("status") != "waived"]
     if mandatory_blockers:

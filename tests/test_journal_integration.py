@@ -98,7 +98,7 @@ class DurableOutboxTests(unittest.TestCase):
             'issues':{'i1':{'id':'i1','original':issue,'fingerprint':digest(issue)}},
             'snapshots':{h:snap},'snapshot_hash':h,'snapshot_valid':True,
             'groups':[{'id':'g','issue_ids':['i1']}],
-            'runs':{'run':{'id':'run','status':'delivered','issue_group_id':'g',
+            'runs':{'run':{'id':'run','status':'delivered','issue_group_id':'g','issue_scope':{'snapshot_hash':h,'issue_ids':['i1'],'requirement_ids':{'i1':['R1']}},
                      'acceptances':[{'complete':True,'fresh':True,'requirements':[{'id':'R1','verdict':'MET'}]}],
                      'delivery':{'manifest_hash':'m','recorded_at':'2026-10-01T00:00:00Z'}}}}})
         return h
@@ -252,7 +252,6 @@ class ClassificationIntegrationTests(unittest.TestCase):
                 'action':'update-comment','actor_id':'human','requirement_ids':['R1'],
                 'payload':{'issue_id':'i1','body':'overwrite','ownership_marker':'devflow:run:i1','remote_comment_id':'human-comment'}}}})
 
-if __name__=='__main__': unittest.main()
 
 class SnapshotRollupTests(unittest.TestCase):
     def test_repriced_snapshots_do_not_count_a_delivered_run_twice(self):
@@ -275,3 +274,5 @@ class ReportInspectionTests(unittest.TestCase):
         self.assertEqual(result.returncode,0,result.stdout+result.stderr)
         self.assertEqual(json.loads(json.loads(result.stdout)['output']),record)
         self.assertEqual(read_state(self.root)['version'],1)
+
+if __name__=='__main__': unittest.main()

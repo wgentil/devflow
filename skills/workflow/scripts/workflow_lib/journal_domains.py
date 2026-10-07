@@ -89,7 +89,15 @@ def _reduce(data, kind, req, version):
         from .issues import start_issue_run
         current_snapshot(data, req['snapshot_hash'])
         link = start_issue_run(data, req['group_id'], req['intent'])
+        group = next(g for g in data['groups'] if g['id'] == req['group_id'])
+        scope = group.get('requirement_ids', {})
+        require(req['intent'] != 'build' or (isinstance(scope, dict) and set(scope) == set(group['issue_ids'])
+                and all(isinstance(ids, list) and ids and all(text(i) for i in ids) for ids in scope.values())),
+                'issue run requires per-issue requirement_ids mapping')
         link['snapshot_hash'] = req['snapshot_hash']
+        link['issue_ids'] = deepcopy(group['issue_ids'])
+        link['requirement_ids'] = deepcopy(scope)
+        link['group_revision'] = len(data.get('group_revisions', []))
         link['run_id'] = digest(link)[:24]
         links = data.setdefault('issue_runs', {})
         require(link['run_id'] not in links, 'linked issue run already exists')
@@ -97,6 +105,9 @@ def _reduce(data, kind, req, version):
             from .runs import start_run
             run = start_run(data, link['run_id'], data.get('plan', {}))
             run['issue_group_id'] = req['group_id']
+            planned = {r for i in run['plan']['work_items'] for r in i['requirement_ids']}
+            require(all(set(ids).issubset(planned) for ids in scope.values()), 'issue scope is outside the run plan')
+            run['issue_scope'] = deepcopy(link)
             data.setdefault('runs', {})[run['id']] = run
         links[link['run_id']] = link
         return link
@@ -121,10 +132,14 @@ def _reduce(data, kind, req, version):
         current_snapshot(data, req['snapshot_hash'])
         run = data.get('runs', {}).get(req['run_id'], {})
         require(run.get('status') == 'delivered' and run.get('delivery', {}).get('manifest_hash') == req['manifest_hash'], 'exact terminal delivery manifest required')
-        group = next((g for g in data.get('groups', []) if g['id'] == run.get('issue_group_id')), {})
-        require(req['issue_id'] in group.get('issue_ids', []), 'issue is not linked to the delivered run')
+        scope = run.get('issue_scope', {})
+        require(req['issue_id'] in scope.get('issue_ids', []), 'issue is not linked to the immutable delivered run scope')
+        original = data.get('snapshots', {}).get(scope.get('snapshot_hash'), {})
+        issue = next((i for i in original.get('issues', []) if i.get('id') == req['issue_id']), None)
+        require(issue is not None and data['issues'][req['issue_id']]['fingerprint'] == digest(issue), 'issue changed since implementation scope')
         accepted = {r['id'] for a in run.get('acceptances', []) if a.get('complete') is True and a.get('fresh', True) for r in a.get('requirements', []) if r.get('verdict') == 'MET'}
         require(isinstance(req.get('requirement_ids'), list) and req['requirement_ids'] and set(req['requirement_ids']).issubset(accepted), 'accepted issue requirements required')
+        require(set(req['requirement_ids']) == set(scope.get('requirement_ids', {}).get(req['issue_id'], [])), 'authorization must cover the exact per-issue requirement scope')
         require(text(req.get('actor_id')) and text(req.get('operation_id')), 'explicit authorizing actor and operation ID required')
         require(req.get('action') in {'create-comment', 'update-comment', 'close-issue'}, 'unsupported external action')
         payload = req['payload']
@@ -195,15 +210,16 @@ def _reduce(data, kind, req, version):
         require(row is not None, 'unknown increment')
         verified = req.get('verified', [])
         require(isinstance(verified, list) and all(text(c) for c in verified), 'verified criteria must be IDs')
-        # A criterion's evidence must already be registered by a verifier on its run.
         refs = req.get('evidence', {})
+        require(isinstance(refs, dict) and set(refs) == set(verified), 'exact criterion evidence mappings required')
         for criterion in verified:
-            ref = refs.get(criterion, {})
-            run = data.get('runs', {}).get(ref.get('run_id'), {})
-            proof = run.get('verification_proofs', {}).get(ref.get('proof_id'), {})
-            require(proof.get('passed') is True and proof.get('fresh', True), 'criterion lacks registered passing evidence')
+            parity_proof(data, row['id'], criterion, refs[criterion])
         updated = record_parity({'required_criteria': {row['id']: row['criteria']},
-                                 'parity': migration['parity']}, row['id'], verified, req.get('ruling'))
+                                 'parity': [{k:v for k,v in p.items() if k != 'evidence'} for p in migration['parity']]}, row['id'], verified, req.get('ruling'))
+        record = next(p for p in updated['parity'] if p['increment_id'] == row['id'])
+        prior = next((p for p in migration['parity'] if p['increment_id'] == row['id']), None)
+        require(prior is None or prior.get('evidence', {}) == refs, 'parity evidence is immutable')
+        record['evidence'] = deepcopy(refs)
         migration['parity'] = updated['parity']
         return {'increment_id': row['id'], 'migration_hash': migration['hash']}
     if kind == 'domain.migrate.bind':
@@ -224,6 +240,8 @@ def _reduce(data, kind, req, version):
         require(any(p['increment_id'] == row['id'] for p in migration.get('parity', [])), 'parity acceptance required')
         run = data.get('runs', {}).get(req['run_id'], {})
         require(run.get('status') == 'delivered' and isinstance(run.get('delivery'), dict), 'terminal run delivery evidence required')
+        require(run.get('migration_increment_id') == row['id'], 'delivery run is not bound to this increment')
+        migration_delivery_guard(data, req['run_id'])
         require(row['id'] not in delivered, 'increment already delivered')
         delivered[row['id']] = {'run_id': req['run_id'], 'manifest_hash': run['delivery']['manifest_hash']}
         return delivered[row['id']]
@@ -241,11 +259,14 @@ def _reduce(data, kind, req, version):
             paths.add(source['path'])
         require(isinstance(req.get('cache'), dict), 'ingestion cache required')
         record = {**deepcopy(index), 'repo_id': repo_id, 'repository_fingerprint': req['repository_fingerprint'], 'profile': req['profile'], 'scope': req['scope']}
-        data.setdefault('source_indexes', {})[index['fingerprint']] = record
+        identifier = digest({'repo_id': repo_id, 'content_fingerprint': index['fingerprint']})
+        record['content_fingerprint'] = index['fingerprint']
+        record['fingerprint'] = identifier
+        data.setdefault('source_indexes', {})[identifier] = record
         data.setdefault('ingestion_cache', {}).update(deepcopy(req['cache']))
         # Views that depend on this repository must use the current index.
-        data.setdefault('current_source_indexes', {})[repo_id] = index['fingerprint']
-        return {'index_id': index['fingerprint'], 'source_count': len(index['sources']), 'cache_hit': index['cache_hit']}
+        data.setdefault('current_source_indexes', {})[repo_id] = identifier
+        return {'index_id': identifier, 'source_count': len(index['sources']), 'cache_hit': index['cache_hit']}
     if kind == 'domain.harden.configure':
         run = data.get('runs', {}).get(req['run_id'])
         require(run is not None and run.get('status') == 'active', 'active run required')
@@ -312,6 +333,12 @@ def _reduce(data, kind, req, version):
         as_of = req['as_of']
         parsed = datetime.fromisoformat(as_of.replace('Z', '+00:00'))
         require(parsed.tzinfo is not None, 'report date requires an explicit timezone')
+        effective = {}
+        for c in data.get('classifications', []):
+            if c.get('confirmed') is True and c.get('confirmed_at'):
+                at = datetime.fromisoformat(c['confirmed_at'].replace('Z', '+00:00'))
+                if at <= parsed and (c['issue_id'] not in effective or at >= datetime.fromisoformat(effective[c['issue_id']]['confirmed_at'].replace('Z', '+00:00'))):
+                    effective[c['issue_id']] = c
         runs = []
         selected = req.get('run_ids')
         if selected is not None:
@@ -329,7 +356,7 @@ def _reduce(data, kind, req, version):
                 continue
             runs.append({'id': run_id, 'status': 'delivered', 'acceptance': True,
                          'delivery_at': date, 'accepted_requirements': [r['id'] for r in acceptance['requirements'] if r['verdict'] == 'MET'],
-                         'classifications': [c for c in data.get('classifications', [])
+                         'classifications': [c for c in effective.values()
                             if c['proposal'].get('run_id') == run_id and c.get('confirmed') is True
                             and c.get('confirmed_at') and datetime.fromisoformat(c['confirmed_at'].replace('Z', '+00:00')) <= parsed]})
         report = calculate_metrics(runs, {}, as_of)
@@ -342,16 +369,33 @@ def _reduce(data, kind, req, version):
         report['cost'] = None
         report['cost_reason'] = 'supported usage expectations and prices required'
         report['usage_coverage'] = None
-        # Expectations must be persisted runtime identities, never caller-supplied percentages.
-        expected = [r for r in data.get('usage_expectations', []) if r.get('run_id') in report['run_ids']]
-        usage = {'events': [r for r in data.get('usage', {}).get('events', []) if isinstance(r.get('binding'), dict) and r['binding'].get('run_id') in report['run_ids']]}
-        if expected and req.get('price_version') in data.get('prices', {}):
-            from .usage import usage_coverage
-            from .pricing import price_usage
+        # Price each run independently: a covered run cannot hide missing usage in another.
+        from .usage import usage_coverage
+        from .pricing import price_usage
+        price = data.get('prices', {}).get(req.get('price_version'))
+        costs = {}
+        expectations = data.get('usage_expectations', [])
+        events = data.get('usage', {}).get('events', [])
+        for run in runs:
+            identifier = run['id']
+            expected = [e for e in expectations if e.get('run_id') == identifier]
+            usage = {'events': [e for e in events if isinstance(e.get('binding'), dict) and e['binding'].get('run_id') == identifier],
+                     'gaps': data.get('usage', {}).get('gaps', [])}
             coverage = usage_coverage(expected, usage)
-            report['usage_coverage'] = coverage['coverage']
-            result = price_usage(usage, data['prices'][req['price_version']], coverage)
-            report['cost'], report['cost_reason'] = result['cost'], result.get('reason')
+            conflicts = [e for e in usage['events'] if any(x['source_id'] == e['source_id'] and x['event_id'] == e['event_id'] and x['run_id'] != identifier for x in expectations)]
+            result = (price_usage(usage, price, coverage) if price and expected and not conflicts
+                      else {'cost': None, 'reason': 'matching runtime expectations and prices required'})
+            costs[identifier] = {**result, 'coverage': coverage, 'accepted_requirements': len(run['accepted_requirements'])}
+        report['run_costs'] = costs
+        report['cost_excluded_run_ids'] = sorted(r for r, c in costs.items() if c['cost'] is None)
+        report['cost_run_ids'] = sorted(r for r, c in costs.items() if c['cost'] is not None)
+        report['cost_denominator'] = sum(c['accepted_requirements'] for c in costs.values() if c['cost'] is not None)
+        report['priced_cost'] = sum(c['cost'] for c in costs.values() if c['cost'] is not None) if report['cost_run_ids'] else None
+        report['usage_coverage'] = min((c['coverage']['coverage'] if c['coverage']['coverage'] is not None else 0 for c in costs.values()), default=None)
+        if costs and not report['cost_excluded_run_ids']:
+            report['cost'], report['cost_reason'] = report['priced_cost'], None
+        elif costs:
+            report['cost_reason'] = 'one or more runs lack eligible usage or prices'
         updated = freeze_report(data, report)
         data['reports'] = updated['reports']
         return {'report': data['reports'][-1]}
@@ -382,5 +426,33 @@ def migration_delivery_guard(data, run_id):
     migration = data.get('migration', {})
     row = next((r for r in migration.get('increments', {}).get('increments', []) if r['id'] == identifier), None)
     require(row is not None, 'bound migration increment is unavailable')
+    require(identifier not in migration.get('deliveries', {}), 'increment already delivered')
     require(all(dep in migration.get('deliveries', {}) for dep in row.get('depends_on', [])), 'predecessor delivery required')
-    require(any(p['increment_id'] == identifier for p in migration.get('parity', [])), 'migration parity evidence required')
+    parity = next((p for p in migration.get('parity', []) if p['increment_id'] == identifier), None)
+    require(parity is not None, 'migration parity evidence required')
+    for criterion in parity.get('verified', []):
+        ref = parity.get('evidence', {}).get(criterion, {})
+        require(ref.get('run_id') == run_id, 'parity proof belongs to another run')
+        parity_proof(data, identifier, criterion, ref)
+
+
+def parity_proof(data, increment_id, criterion, ref):
+    run = data.get('runs', {}).get(ref.get('run_id'), {})
+    require(run.get('migration_increment_id') == increment_id, 'parity run is not bound to this increment')
+    proof_id = ref.get('proof_id')
+    proof = run.get('verification_proofs', {}).get(proof_id, {})
+    verifier = next((v for k,v in run.get('verifier_proofs', {}).items() if v.get('evidence_id', k) == proof_id), {})
+    item_id = proof.get('item_id')
+    item = next((i for i in run.get('plan', {}).get('work_items', []) if i['id'] == item_id), {})
+    attempts = run.get('items', {}).get(item_id, {}).get('attempts', [])
+    final = ((item.get('kind') == 'code' and proof.get('phase') == 'GREEN') or
+             (item.get('kind') == 'iac' and proof.get('kind') == 'iac-apply') or
+             (item.get('kind') == 'agent-config' and proof.get('kind') == 'agent-evaluation' and proof.get('phase') == 'post'))
+    require(proof.get('passed') is True and proof.get('fresh', True) and verifier.get('passed') is True
+            and final and attempts and proof.get('token') == attempts[-1].get('token')
+            and verifier.get('token') == proof.get('token') and verifier.get('item_id') == item_id,
+            'criterion requires current final registered verification')
+    definition = next((c for c in data['migration']['criteria'] if c['id'] == criterion), {})
+    required = definition.get('requirement_ids')
+    require(isinstance(required, list) and required and ref.get('requirement_ids') == required
+            and set(required).issubset(item.get('requirement_ids', [])), 'criterion requirement scope mismatch')

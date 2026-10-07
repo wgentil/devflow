@@ -8,4 +8,14 @@ Implementation is present in commits `cdcebdd`, `1c3d3ce`, and `5864738`.
 - Local issue snapshots/groups/classification/outbox: `tests.test_issues`, `tests.test_issue_verdicts`, `tests.test_outbox` pass; command `issues` registered.
 - Hardening/docs/cross-repository schedule: `tests.test_hardening`, `tests.test_issue_migration_flow` pass; commands registered.
 
-Known conditional scope: issue-provider adapters are injected only in fixtures; no live external writes were made. Event-journal persistence for these new auxiliary workflows is not yet complete, so the detailed plan's full event-boundary and independent whole-branch acceptance requirements remain open.
+Journal integration is complete locally in `60bb3a6` plus the tested independent
+review correction wave. Auxiliary CLI mutations now persist validated requests,
+proofs, authorizations, receipts, caches, usage and frozen reports through the
+append-only journal with conflict/CAS/recovery coverage. Independent integration
+review identified nine findings; all were addressed in one correction wave.
+See `docs/journal-integration-acceptance.md` and `docs/journal-integration-review.md`.
+
+Known conditional scope: provider adapters remain injected; no live provider
+writes were made. Accessible runtime usage and authoritative prices remain
+explicit inputs; no real costs were inferred. Complete DevConsole parity and
+external runtime-wide enforcement are separate from this local integration audit.
