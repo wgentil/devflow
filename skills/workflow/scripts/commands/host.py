@@ -10,11 +10,16 @@ def register_commands(parser):
     init = commands.add_parser('init')
     add_journal_options(init)
     init.add_argument('--project-dir', required=True)
-    for name in ('attach','detach','task-bind','handoff-prepare','handoff-accept'):
+    for name in ('attach','detach','task-bind','handoff-prepare','handoff-accept','model-override','model-receipt','model-interrupt'):
         action = commands.add_parser(name)
         add_journal_options(action)
         action.add_argument('--file', required=True)
         if name in {'attach','handoff-accept'}: action.add_argument('--loaded-release', required=True)
+    resolve = commands.add_parser('profile-resolve')
+    resolve.add_argument('--root', required=True)
+    resolve.add_argument('--binding-id', required=True)
+    resolve.add_argument('--revision',type=int,required=True)
+    resolve.add_argument('--stage',required=True)
     status = commands.add_parser('status')
     status.add_argument('--root', required=True)
     status.add_argument('--host', choices=('claude','codex'), required=True)
@@ -32,6 +37,11 @@ def dispatch(parsed):
         state = read_state(Path(parsed.root))
         binding = binding_for_session(state['data'],parsed.host,parsed.session_id)
         return {'binding':binding,'state_version':state['version']}
+    if parsed.host_command == 'profile-resolve':
+        from workflow_lib.hosts import validate_binding
+        state=read_state(Path(parsed.root))
+        binding=validate_binding(state['data'],parsed.binding_id,parsed.revision)
+        return _resolve_model(state['data'],binding,parsed.stage)
     request = json.loads(Path(parsed.file).read_text())
     if parsed.host_command in {'attach','handoff-accept'}:
         from workflow_lib.bootstrap import discover_project
@@ -54,13 +64,31 @@ def dispatch(parsed):
             source_release = release_descriptor(source_root)
             request['source_release'] = source_release
             request['destination_release'] = installed
-            request['destination_decision'] = {'status':'block','reason_code':'MODEL_POLICY_UNRESOLVED'}
+            request['destination_decision'] = _resolve_model(state['data'],target,'implementation')
             # Repeat reads immediately before committing; no cached source identity is sufficient.
             if release_descriptor(source_root) != source_release or release_descriptor() != installed:
                 raise WorkflowError('RELEASE_CHANGED','Package changed during transfer; source owner unchanged.')
+    if parsed.host_command == 'model-receipt':
+        from workflow_lib.hosts import validate_binding
+        state=read_state(Path(parsed.root))
+        binding=validate_binding(state['data'],request['binding_id'],request['revision'])
+        invocation_id=request['receipt'].get('invocation_id')
+        stage=request['receipt'].get('stage','implementation')
+        request['receipt']={**_resolve_model(state['data'],binding,stage),'invocation_id':invocation_id,'stage':stage}
     from .journal import commit
     result = commit(parsed,'domain.host.'+parsed.host_command,request)
     if parsed.host_command in {'attach','handoff-accept'}:
         from workflow_lib.host_locators import write_locator
         write_locator(Path(result['project_dir']),result['host'],result['session_id'],Path(parsed.root),result['binding_id'])
     return result
+
+
+def _resolve_model(data, binding, stage):
+    from workflow_lib.releases import PACKAGE_ROOT
+    from workflow_lib.model_policy import resolve_profile
+    policy=json.loads((PACKAGE_ROOT/'definitions/model-policy.json').read_text())
+    run=data['runs'][binding['run_id']]
+    override=run.get('model_overrides', [{}])[-1]
+    request={**override,'host':binding['host'],'stage':stage}
+    # The portable CLI has no authenticated host launch/observation API.
+    return resolve_profile(policy,request,{'configure':False,'observe':False,'models':[],'efforts':[]},{},None)

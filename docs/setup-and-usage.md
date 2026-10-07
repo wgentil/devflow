@@ -230,3 +230,9 @@ Explicit workflow invocation now initializes the current Git project/worktree,
 reuses a stable repository ID and lists resumable runs. Runtime data lives in
 `.devflow/` and is excluded through local Git excludes and source ingestion.
 Initialization does not approve a spec or plan or start implementation.
+
+Choose model preferences conversationally, for example “use strict model policy
+for planning” or “pin this permitted model for new implementation invocations.”
+The agent records the choice. Current portable adapters provide advisory stage
+recommendations; strict configuration/observation and numerical caps without sourced
+prices block. This release has no capability-validated automatic provider defaults.

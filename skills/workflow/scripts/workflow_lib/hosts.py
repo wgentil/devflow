@@ -35,6 +35,28 @@ def _identity(req):
 
 def apply_host_event(state: dict, kind: str, request: dict) -> dict:
     req = deepcopy(request)
+    if kind in {'model-override','model-receipt','model-interrupt'}:
+        binding = validate_binding(state,req.get('binding_id'),req.get('revision'))
+        run = state['runs'][binding['run_id']]
+        require(binding['role'] == 'implementer', 'Model policy changes belong to current implementer.')
+        if kind == 'model-override':
+            require(req.get('mode','advisory') in {'strict','advisory'}, 'Supported routing mode required.')
+            record = {**req, 'policy_revision':len(run.get('model_overrides', []))+1}
+            run.setdefault('model_overrides', []).append(record)
+        elif kind == 'model-receipt':
+            record = req['receipt']
+            require(isinstance(record,dict) and isinstance(record.get('invocation_id'),str) and record['invocation_id'], 'Invocation ID required.')
+            require(record.get('observed') is None and record.get('observation_source') is None, 'Portable CLI cannot assert trusted host observations.')
+            records = run.setdefault('model_receipts', {})
+            require(record['invocation_id'] not in records, 'Invocation receipt is immutable.')
+            records[record['invocation_id']] = deepcopy(record)
+        else:
+            from .model_policy import interruption
+            record = interruption(req['invocation'],req['error_kind'],req.get('retry_count',0))
+            records = run.setdefault('model_interruptions', [])
+            require(record.get('invocation_id') in run.get('model_receipts', {}), 'Recorded invocation required before interruption.')
+            records.append(record)
+        return deepcopy(record)
     if kind == 'handoff-prepare': return prepare_handoff(state,req)
     if kind == 'handoff-accept':
         return accept_handoff(state,req,req['source_release'],req['destination_release'],req['destination_decision'])

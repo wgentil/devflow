@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "version": "1",
+  "stages": {
+    "specification": "deep-reasoning", "architecture": "deep-reasoning",
+    "planning": "deep-reasoning", "review": "deep-reasoning",
+    "acceptance": "deep-reasoning", "security": "deep-reasoning",
+    "debugging": "deep-reasoning", "implementation": "efficient-coding",
+    "scan": "fast-analysis", "tests": "deterministic", "indexing": "deterministic",
+    "journal": "deterministic", "calculations": "deterministic"
+  },
+  "profiles": {
+    "deep-reasoning": {"effort": "high"},
+    "efficient-coding": {"effort": "medium"},
+    "fast-analysis": {"effort": "low"}
+  },
+  "hosts": {"codex": {}, "claude": {}},
+  "validation_note": "No provider mapping has completed representative live capability evaluation in this release. Empty mappings disclose advisory recommendations; strict routing pauses. Availability alone is never validation."
+}

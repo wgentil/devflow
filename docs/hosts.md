@@ -46,3 +46,29 @@ After intentionally aligning installations, reload instructions and explicitly
 refresh the existing attachment with its revision. Compatible refresh preserves
 attempts and immutable release history. Unsupported journal contracts require a
 separate migration; DevFlow never installs or chooses an upgrade.
+
+## Model profiles and lifecycle
+
+Specification/planning/debugging/review/acceptance/security request deep-reasoning
+(high supported effort); bounded implementation requests efficient-coding (moderate
+supported effort); narrow scans request fast-analysis. Deterministic tests/indexing/
+journal/calculations never dispatch a model. Designing tests and diagnosing failures
+are model work, distinct from executing tests.
+
+This release ships profiles but no capability-validated provider defaults. Runtime
+availability does not prove suitability. Portable adapters disclose advisory
+recommendations and do not configure an existing parent conversation. The resolution
+engine supports validated ordered mappings, pins, allowed fallback lists, effort and
+sourced numerical cost caps; live automatic host dispatch is not yet available.
+Strict mode blocks when mapping, configuration or effective identity is unavailable.
+CLI input cannot manufacture trusted observation receipts.
+
+New models remain candidates until representative specification/coding/debug/review
+evaluations establish suitability and a user-installed release promotes them.
+Unavailable pins pause; fallback requires a validated permitted equivalent mapping.
+Auth/network/quota/rate-limit/context failures are distinct from retirement. A model
+interruption preserves attempts/evidence and requires a new recorded invocation.
+Transient retry allowance is bounded at two; no automatic spend escalation.
+Discovery caches are advisory, keyed by host/account/policy with TTL at most one
+hour, invalidated explicitly, on policy revision and on availability failure.
+Hooks never enumerate models or contact providers.
