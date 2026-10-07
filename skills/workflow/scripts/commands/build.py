@@ -144,8 +144,9 @@ def dispatch(parsed: argparse.Namespace) -> dict:
                 raise WorkflowError("PLAN_STALE", "repository changed after the authorized plan")
             proof = verify_iac_apply(apply_argv, policy_argv, cwd,
                 {"approved": True, "action": authorization["action"], "cwd": authorization["cwd"],
-                 "argv": authorization["argv"], "authorization_id": authorization["id"]}, parsed.timeout)
+                 "argv": authorization["argv"]}, parsed.timeout)
             proof["plan_proof_id"] = authorization["plan_proof_id"]
+            proof["authorization_id"] = authorization["id"]
         else:
             baseline = run.get("verification_proofs", {}).get(parsed.baseline_id) if parsed.baseline_id else None
             proof = verify_eval_set(json.loads(parsed.eval_argv_json), cwd, parsed.phase, baseline,

@@ -27,7 +27,7 @@ def revise_groups(state:dict,snapshot_hash:str,groups:list[dict])->dict:
   if any(i not in known for i in ids): raise ValueError('group contains unknown issue')
   assigned.extend(ids)
  if set(assigned)!=known or len(assigned)!=len(set(assigned)): raise ValueError('every issue must be assigned exactly once')
- result=deepcopy(state); history=result.setdefault('group_revisions',[]); record={'snapshot_hash':snapshot_hash,'groups':deepcopy(groups),'revision':len(history)+1}; history.append(record); result['groups']=record['groups']; return result
+ result=deepcopy(state); history=result.setdefault('group_revisions',[]); record={'snapshot_hash':snapshot_hash,'groups':deepcopy(groups),'revision':len(history)+1}; history.append(record); result['groups']=record['groups']; result['snapshot_valid']=True; result['snapshot_hash']=snapshot_hash; return result
 
 def start_issue_run(state:dict,group_id:str,intent:str)->dict:
  if intent not in {'capture','specify','build'}: raise ValueError('unsupported issue intent')

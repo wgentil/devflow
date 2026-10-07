@@ -40,6 +40,15 @@ def validate_increments(increments: dict, parity: list[dict]) -> dict:
 
 def record_parity(state: dict, increment_id: str, verified: list[str], ruling: dict|None) -> dict:
     result=deepcopy(state); records=result.setdefault('parity',[])
+    required=set(result.get('required_criteria',{}).get(increment_id,[]))
+    waived=set()
+    if ruling is not None:
+        if (ruling.get('approved') is not True or not ruling.get('actor_id') or not ruling.get('why')
+                or not ruling.get('cost_if_wrong') or not isinstance(ruling.get('criteria'),list)):
+            raise ValueError('parity waiver requires scoped approval, rationale, and cost if wrong')
+        waived=set(ruling['criteria'])
+    if required and (set(verified)|waived)!=required:
+        raise ValueError('every criterion must be verified or explicitly waived')
     existing=next((r for r in records if r.get('increment_id')==increment_id),None)
     record={'increment_id':increment_id,'verified':sorted(set(verified)),'ruling':deepcopy(ruling)}
     if existing:

@@ -19,7 +19,7 @@ def export_report(report:dict,format:str)->str:
   output=io.StringIO(); w=csv.writer(output); w.writerow(['field','value'])
   for k,v in sorted(report.items()):
    text=str(v)
-   if text.startswith(('=','+','-','@','\t','\r')):text="'"+text
+   if text.lstrip().startswith(('=','+','-','@')):text="'"+text
    w.writerow([k,text])
   return output.getvalue()
  raise ValueError('unsupported export format')

@@ -180,6 +180,11 @@ def _apply_event(state: dict, event: dict) -> None:
         if not item or (item.get("kind") == "code"):
             raise WorkflowError("INVALID_EVENT", "typed evidence cannot verify this work-item kind")
         if proof.get("kind") == "iac-apply":
+            authorization = run.get("authorizations", {}).get(proof.get("authorization_id"), {})
+            if (authorization.get("plan_proof_id") != proof.get("plan_proof_id")
+                    or authorization.get("attempt_id") != active.get("token")
+                    or authorization.get("repo_id") != proof.get("repo_id")):
+                raise WorkflowError("INVALID_EVENT", "IaC apply proof lacks its recorded authorization")
             if item.get("kind") != "iac" or not any(previous.get("kind") == "iac-plan"
                     and previous.get("passed") is True and previous.get("token") == active["token"]
                     and previous.get("repo_id") == proof.get("repo_id")

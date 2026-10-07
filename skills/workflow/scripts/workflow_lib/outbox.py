@@ -5,7 +5,13 @@ import hashlib,json
 
 def _hash(x): return hashlib.sha256(json.dumps(x,sort_keys=True,ensure_ascii=False,separators=(',',':')).encode()).hexdigest()
 def enqueue_write(state:dict,approved_manifest_hash:str,operation:dict)->dict:
- if not approved_manifest_hash or not isinstance(operation,dict) or not operation.get('id') or operation.get('authorized') is not True or operation.get('manifest_hash')!=approved_manifest_hash: raise ValueError('exact manifest authorization required')
+ authorization=state.get('write_authorizations',{}).get(operation.get('authorization_id')) if isinstance(operation,dict) else None
+ if (not approved_manifest_hash or not isinstance(operation,dict) or not operation.get('id')
+     or not authorization or authorization.get('approved') is not True
+     or authorization.get('manifest_hash')!=approved_manifest_hash
+     or authorization.get('operation_id')!=operation.get('id')
+     or authorization.get('payload_hash')!=_hash(operation.get('payload'))):
+  raise ValueError('recorded exact-manifest authorization required')
  result=deepcopy(state); box=result.setdefault('outbox',{}); digest=_hash(operation.get('payload'))
  old=box.get(operation['id'])
  record={'id':operation['id'],'manifest_hash':approved_manifest_hash,'payload':deepcopy(operation['payload']),'payload_hash':digest,'status':'pending','receipt':None}
@@ -19,6 +25,9 @@ def retry_writes(state:dict,adapter:object)->dict:
   if op.get('status')=='sent': continue
   reconcile=getattr(adapter,'reconcile',None)
   receipt=reconcile(op) if reconcile else None
+  if not receipt and op.get('status')=='failed':
+   op['failure']='remote result remains unknown; no resend was attempted'
+   continue
   if not receipt: receipt=adapter.send(op)
   if isinstance(receipt,dict) and receipt.get('receipt'):
    op.update(status='sent',receipt=receipt['receipt'])
