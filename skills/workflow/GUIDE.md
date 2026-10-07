@@ -85,6 +85,13 @@ is diagnosed; the plugin does not bundle an interpreter. See [hosts](../../docs/
 Invoke this skill from the same selected DevFlow project/run in either host. An
 attached session uses its binding revision; a handoff preserves the attempt while
 invalidating the old owner. This skill requests `implementation` for model work.
-Helpers execute deterministically; model settings are advisory unless trusted host
-configuration/observation proves them. Ordinary unmapped tasks remain unaffected.
+Helpers execute deterministically. Native model launch/access/discovery is missing
+production integration; recommendations are advisory and strict model checks block. Ordinary unmapped tasks remain unaffected.
 See [setup](../../docs/setup-and-usage.md) and [host examples](../../docs/hosts.md).
+
+After an upgrade, ask “Resume my detached DevFlow binding using its current
+revision.” The agent checks compatible protocol/schema and unchanged identity,
+retains release history and remaps work. Exact mutation retries remain read-only.
+A planning-only preference change keeps existing caps/allowlists unless you
+explicitly remove them. Native model launch/access/discovery is currently missing;
+manual host selection and advisory recommendations remain available.

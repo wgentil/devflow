@@ -323,19 +323,14 @@ create arbitrary new IDs to bypass a scope, evidence or authorization failure.
 | Usage cost is null | Inspect per-run expectations, bindings, coverage, gaps, prices and delivery timestamps |
 | Telemetry warning | Workflow records remain authoritative; bytes/duration do not establish tokens saved |
 
-## Upgrade and proposed cross-host use
+## Upgrade and cross-host use
 
-Users decide when to upgrade their DevFlow source/installation. Inspect `df version`
-and package changes, preserve the control root, and use a release that supports its
-journal schema. This source has no automatic updater. Do not assume identical
-version strings alone establish future cross-host release parity.
-
-The proposed Claude/Codex increment would add separate host installation entries,
-explicit session attachment/task mapping, Claude completion hooks and sequential
-handoff with version/fingerprint parity. In that design, mismatched or unknown
-releases block handoff without updating installations or changing the current
-owner. Until implemented, only normal journal-based agent resume is available;
-there is no host ownership or version-parity enforcement.
+Users choose upgrades. Current helpers enforce explicit host ownership, task scope
+and exact release parity at handoff. Reload instructions and refresh an active
+binding, or explicitly resume a compatible detached binding with its revision.
+No automatic installer/updater is included. Claude hooks are implemented; native
+Codex local installation remains unverified. Native model launch/discovery is
+missing; see [host contracts](hosts.md) and [requirement review](cross-host-validation.md).
 
 ## Reference and maintenance
 
@@ -403,3 +398,28 @@ retry remains idempotent; ordinary conflicting task-ID reuse is rejected.
 Model overrides may name `stage` to scope a preference (for example planning).
 An override without stage applies across stages. An already recorded invocation
 retains its recorded routing mode; a new preference does not switch it mid-flight.
+
+### Scoped routing and compatible detached resume
+
+`host attach` supports `resume: true` with the exact detached `revision`, unchanged
+host/session/actor/role/run/project/package/item and freshly captured loaded
+release. It checks protocol/schema compatibility, increments revision and appends
+release history. Remap tasks explicitly. Transferred or active bindings cannot use
+resume; new binding creation still checks exact last-owner release.
+
+Model preference dictionaries are field updates, optionally scoped by `stage`.
+`clear: ["max_cost"]` explicitly removes that field; omission keeps prior values.
+For example, changing planning `mode` leaves a global `max_cost` and allowlist intact.
+Receipt input names `invocation_id` and `stage`; implementation captures the active
+item/token, review captures the attached package/item. The helper supplies binding,
+actor, policy revision and decision; caller scope/observation claims are not evidence.
+Task `invocation_id` must match that exact scope. Old unscoped receipts must be replaced
+by a new invocation, not retroactively amended. `model-interrupt` derives scope
+from the recorded invocation and rejects another binding's receipt.
+
+Exact host retries compare the original kind/request/loaded release before rejecting
+a now-stale precondition. They return the original committed response without
+reapplying it. Changed input requires a new operation ID. `host profile-resolve`
+currently supplies no authenticated native model-access/discovery input; pins block.
+`delegated_configuration` and discovery cache are library-only prototypes, not a
+production launch adapter. R24–R27/R29 remain incomplete end to end.

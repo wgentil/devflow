@@ -600,6 +600,11 @@ def transact(root: Path, expected_version: int, operation_id: str, event: dict) 
                 if event['kind'] == 'review.recorded':
                     review=request.get('review', {})
                     require(review.get('actor_id') == binding['actor_id'] and review.get('package_hash') == binding.get('package_hash'), 'Assessment must match reviewer attachment.')
+                    require(review.get('role') == binding['role'].removesuffix('-reviewer'), 'Assessment role must match reviewer attachment.')
+                    if binding['role'] == 'item-reviewer':require(review.get('item_id') == binding.get('item_id'), 'Assessment item must match reviewer attachment.')
+                if event['kind'] == 'review.package.prepared':
+                    package=request.get('package',{})
+                    require(package.get('role') == binding['role'].removesuffix('-reviewer') and package.get('package_hash') == binding.get('package_hash'), 'Reviewer cannot replace attached review package.')
             run_id = request.get('run_id')
             require(not run_id or run_id == binding['run_id'], 'Mutation belongs to another attached run.')
         preflight=LIVE_TRANSFER.get()

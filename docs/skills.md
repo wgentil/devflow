@@ -77,17 +77,14 @@ authorization. Configure only the external actions actually authorized.
 records. [CLI walkthrough](usage.md) provides additional commands. Use `df GROUP
 --help` and `df GROUP ACTION --help` where the group has nested actions.
 
-## Proposed host support
+## Host support
 
-The [Codex and Claude Code design draft](superpowers/specs/2026-10-06-devflow-cross-host-design.md)
-proposes shared skills with opt-in Claude hooks and sequential handoff. It is a
-draft, not a claim that the Claude adapter is implemented. Upgrades remain
-user-controlled; the proposed handoff requires matching DevFlow releases in both
-hosts and blocks mismatches without changing installations.
-
-The same draft defines stage model profiles, validated new-model adoption,
-retirement/fallback handling, user pins and explicit advisory versus strict
-enforcement. Model routing is proposed and not implemented in the current helpers.
+The [approved cross-host design](superpowers/specs/2026-10-06-devflow-cross-host-design.md)
+is partly implemented: shared skills, explicit ownership, task completion, Claude
+hooks and parity-checked sequential handoff are current. Native Codex installation
+remains unverified. Stage profiles and model-policy libraries are present, but
+native model launch, selected-model validation and discovery are missing production
+integration. See the [requirement report](cross-host-validation.md) for unmet scope.
 
 ## Shared hosts
 

@@ -65,4 +65,5 @@ in workflow mutations; transferred/stale bindings require refresh. Map actual
 host task IDs explicitly and check completion using the shared host policy.
 For model work here request `review` stage routing; deterministic helper execution
 uses no separate model. Unknown effective settings remain advisory; strict mode
-blocks. See [host contracts](../../docs/hosts.md) for handoff and model limits.
+blocks. Native model launch/access/discovery is not integrated; explicit pins
+pause in the shipped resolver. See [host contracts](../../docs/hosts.md) for handoff and model limits.

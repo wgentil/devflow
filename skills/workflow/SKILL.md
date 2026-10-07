@@ -25,7 +25,7 @@ flowchart TD
     Gaps -->|No| Approval["Human reviews and approves exact spec hash"]
     Approval --> Plan["plan-work: validate coverage and dependencies"]
     Plan --> Next["run next: eligible item and attempt token"]
-    Next --> Model["Resolve stage profile: disclose advisory or block strict"]
+    Next --> Model["Resolve stage profile: advisory; native routing incomplete"]
     Model --> Build["build-work: implement and verify"]
     Build --> Item["review-work: independent item review"]
     Item --> More{"More work items?"}
@@ -110,14 +110,23 @@ in workflow mutations; transferred/stale bindings require refresh. Map actual
 host task IDs explicitly and check completion using the shared host policy.
 For model work here request `implementation` stage routing; deterministic helper execution
 uses no separate model. Unknown effective settings remain advisory; strict mode
-blocks. See [host contracts](../../docs/hosts.md) for handoff and model limits.
+blocks. Native model launch/access/discovery is not integrated; explicit pins
+pause in the shipped resolver. See [host contracts](../../docs/hosts.md) for handoff and model limits.
 
 Before new model work, resolve the relevant stage with `host profile-resolve` for
-this binding. Apply a resolved model/effort through a supported native delegated
-agent control; use the adapter renderer for host configuration. If only an advisory
+this binding. Native launch, account validation and discovery are not integrated in this
+release; the renderer is a library prototype. Preserve the user's native host
+selection and disclose this limitation. If only an advisory
 recommendation is available, disclose it and preserve user/account choices.
 An unavailable pin or strict blocker requires a user decision, not silent fallback.
 Record immutable invocation receipts and interruptions; do not supply caller claims
 as observed host settings. Preferences may name a specific stage and apply only to
 new invocations. After rework/refresh, explicitly remap the task using the previous
 mapping hash returned by `host status`.
+
+Receipts must be created for the actual active invocation and mapped to its exact
+binding/role/stage/item token or review package. Preferences update fields; use
+explicit `clear` for removal. Known mapped tasks with inconsistent locators block.
+After a compatible upgrade, refresh an active binding or explicitly resume the
+exact detached revision without changing identity, then remap tasks. See the
+[recovery contracts](../../docs/hosts.md#review-fixes-and-remaining-model-scope).

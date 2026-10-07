@@ -7,7 +7,8 @@
     "acceptance": "deep-reasoning", "security": "deep-reasoning",
     "debugging": "deep-reasoning", "implementation": "efficient-coding",
     "scan": "fast-analysis", "tests": "deterministic", "indexing": "deterministic",
-    "journal": "deterministic", "calculations": "deterministic"
+    "journal": "deterministic", "calculations": "deterministic",
+    "delivery": "deterministic"
   },
   "profiles": {
     "deep-reasoning": {"effort": "high"},

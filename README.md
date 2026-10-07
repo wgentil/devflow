@@ -14,7 +14,8 @@ and delivery, with current implementation limits clearly identified.
 - [Proposed Codex/Claude design](docs/superpowers/specs/2026-10-06-devflow-cross-host-design.md)
 
 The current helper runs from a checkout with Python 3.11+ on macOS/Linux. Claude
-adapters, host hooks and enforced cross-host handoff are proposed, not implemented.
+completion hooks, attachment and parity-checked handoff are implemented. Native
+Codex installation remains unverified; native model launch/discovery is incomplete.
 Users control upgrades; no automatic installer/updater is bundled.
 
 Repository maintenance instructions are in [AGENTS.md](AGENTS.md). Every DevFlow

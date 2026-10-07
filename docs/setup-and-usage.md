@@ -89,15 +89,20 @@ or filesystem access.
 Design/planning/debugging/review/acceptance/security request deep-reasoning with
 high supported effort; bounded coding requests efficient-coding with moderate
 effort; narrow scans request fast-analysis. Executing deterministic tests, indexing
-and journal operations uses no additional model.
+and journal/delivery-record operations uses no additional model.
 
 Ask for preferences conversationally, for example “use strict policy for planning”
 or “pin this permitted model for new implementation calls.” Requested, resolved
 and observed settings are separate. New models remain candidates until capability
 validation; unavailable pins pause; fallback needs a validated permitted equivalent.
 Unknown pricing under a numerical spending cap blocks rather than counting as zero.
+Stage preferences preserve prior constraints unless explicitly removed. Receipts
+are scoped to the actual binding/actor/stage and item attempt or review package;
+an unrelated earlier advisory receipt cannot relax strict completion.
 
-This release ships profiles and a tested resolution engine, with no capability-
+This release ships profiles and a tested library resolution engine. Native launch,
+selected-model/account validation and runtime discovery are missing implementation;
+explicit pins cannot resolve through the shipped workflow. There are no capability-
 validated automatic provider defaults or portable trusted observation integration.
 Adapters disclose advisory recommendations. Strict dispatch/completion pauses when
 mapping, configuration or actual model/effort cannot be verified. Existing parent
@@ -118,9 +123,13 @@ supported schema and model eligibility before CAS transfer. The token is preserv
 Parity means identical DevFlow release/version/fingerprint/protocol, not identical
 host application or provider models. A mismatch leaves ownership unchanged; users
 align installations themselves. Matching older pairs can hand off. After upgrading,
-reload instructions and explicitly refresh attachment; known release history cannot
+reload instructions and explicitly refresh an active attachment or resume the exact
+detached binding revision with unchanged identity. Compatible explicit resume keeps
+release history and attempts; known release history cannot
 be bypassed by detaching or pretending the run is legacy. Lost locators are repaired
-through explicit attachment retry; they never grant authority.
+through explicit attachment retry; they never grant authority. Known mapped tasks
+block if their locator points at the wrong root or binding. An exact committed
+retry returns its original receipt even after detach/refresh/transfer.
 
 ## Delivery and optional workflows
 
@@ -137,7 +146,8 @@ prices and provider records are fixtures unless explicitly described as live.
 
 Back up the authoritative control journal. `state.json`, locators and brief caches
 are rebuildable. Corrupt/future-schema events require diagnosis, not history edits.
-Stale bindings require refresh; stale proof requires verification; changed review
+Stale active bindings require refresh; detached ones require explicit revision-bound
+resume. Stale proof requires verification; changed review
 inputs require a renewed package. Uncertain provider outcomes require reconciliation.
 
 Review this guide and affected skills, guides, diagrams and examples whenever

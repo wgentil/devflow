@@ -1,0 +1,11 @@
+{
+  "binding_id": "example-owner",
+  "revision": "<exact-detached-revision-integer>",
+  "resume": true,
+  "host": "codex",
+  "session_id": "<same-host-session-id>",
+  "actor_id": "<same-implementer-actor-id>",
+  "role": "implementer",
+  "run_id": "<same-active-run-id>",
+  "project_dir": "<same-project-path>"
+}

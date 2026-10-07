@@ -65,6 +65,10 @@ def resolve_profile(policy: dict, request: dict, capabilities: dict, discovery: 
 
 
 def check_model_receipt(receipt: dict, mode: str) -> dict:
+    if receipt.get('status') == 'block':
+        return {'status':'block','reason_code':receipt.get('reason_code','MODEL_INELIGIBLE')}
+    if receipt.get('status')=='allow' and receipt.get('reason_code')=='DETERMINISTIC' and receipt.get('profile')=='deterministic':
+        return {'status':'allow','reason_code':'DETERMINISTIC'}
     if mode != 'strict':return {'status':'allow','reason_code':'ADVISORY'}
     resolved = receipt.get('resolved')
     observed = receipt.get('observed')
@@ -82,3 +86,24 @@ def interruption(invocation: dict, error_kind: str, retries: int) -> dict:
     return {**deepcopy(invocation),'status':'interrupted','error_kind':error_kind,
             'retry_count':retries,'retry_allowed':error_kind in {'network','rate-limit'} and retries < 2,
             'replacement_requires_new_invocation':True}
+
+
+PREFERENCE_KEYS = {'mode','profile','pin','effort','allowed_models','max_cost','estimated_tokens','allow_unvalidated'}
+
+def effective_preferences(run: dict, stage: str) -> dict:
+    """Apply explicit field changes in journal order; omission never removes a constraint."""
+    result = {}
+    for entry in run.get('model_overrides', []):
+        if entry.get('stage') not in {None, stage}: continue
+        for key in entry.get('clear', []): result.pop(key, None)
+        result.update({key:entry[key] for key in PREFERENCE_KEYS if key in entry})
+    return result
+
+
+def resolve_host_profile(data, binding, stage):
+    """Portable adapter disclosure: no authenticated launch/observation surface."""
+    import json
+    from .releases import PACKAGE_ROOT
+    policy=json.loads((PACKAGE_ROOT/'definitions/model-policy.json').read_text())
+    request={**effective_preferences(data['runs'][binding['run_id']],stage),'host':binding['host'],'stage':stage}
+    return resolve_profile(policy,request,{'configure':False,'observe':False,'models':[],'efforts':[]},{},None)

@@ -67,6 +67,29 @@ def dispatch(parsed):
         return _resolve_model(state['data'],binding,parsed.stage)
     request = json.loads(Path(parsed.file).read_text())
     if not isinstance(request,dict):raise ValueError('host request must be an object')
+    from workflow_lib.journal_domains import digest
+    client={'kind':parsed.host_command,'request':request}
+    if getattr(parsed,'loaded_release',None):client['loaded_release']=json.loads(Path(parsed.loaded_release).read_text())
+    client_hash=digest(client)
+    if getattr(parsed,'operation_id_explicit',False) and parsed.root:
+        prior_state=read_state(Path(parsed.root))
+        previous=prior_state['operations'].get(parsed.operation_id)
+        if previous:
+            if previous['kind'] != 'domain.host.'+parsed.host_command or previous['payload'].get('request',{}).get('client_request_hash') != client_hash:
+                raise WorkflowError('OPERATION_CONFLICT','Operation ID belongs to a different host request.')
+            # A committed response is read-only: its original precondition may now be stale.
+            from .journal import commit
+            result=commit(parsed,previous['kind'],previous['payload']['request'])
+            if parsed.host_command in {'attach','handoff-accept','legacy-adopt'}:
+                current=prior_state['data'].get('host_bindings',{}).get(result.get('binding_id'),{})
+                if current.get('status')=='active' and current.get('revision')==result.get('revision'):
+                    from workflow_lib.host_locators import write_locator
+                    write_locator(Path(current['project_dir']),current['host'],current['session_id'],Path(parsed.root),current['binding_id'])
+            if parsed.host_command == 'task-bind':
+                _repair_task_index(prior_state['data'],result,Path(parsed.root))
+            return result
+    request['client_request_hash']=client_hash
+
     if parsed.host_command in {'attach','handoff-accept','legacy-adopt'}:
         from workflow_lib.bootstrap import discover_project
         from workflow_lib.releases import release_descriptor, check_release
@@ -106,6 +129,7 @@ def dispatch(parsed):
         binding=validate_binding(state['data'],request['binding_id'],request['revision'])
         invocation_id=request['receipt'].get('invocation_id')
         stage=request['receipt'].get('stage','implementation')
+        request['resolution_policy_revision']=len(state['data']['runs'][binding['run_id']].get('model_overrides',[]))
         request['receipt']={**_resolve_model(state['data'],binding,stage),'invocation_id':invocation_id,'stage':stage}
     from .journal import commit
     from workflow_lib.store import LIVE_TRANSFER, HOST_CONTEXT
@@ -126,20 +150,18 @@ def dispatch(parsed):
         from workflow_lib.host_locators import write_locator
         write_locator(Path(result['project_dir']),result['host'],result['session_id'],Path(parsed.root),result['binding_id'])
     if parsed.host_command == 'task-bind':
-        from workflow_lib.host_locators import write_task_index
-        state=read_state(Path(parsed.root))['data']
-        binding=state['host_bindings'][result['binding_id']]
-        tasks=[t['task_id'] for t in state.get('host_tasks',{}).values() if t['host']==binding['host'] and t['session_id']==binding['session_id']]
-        write_task_index(Path(binding['project_dir']),binding['host'],binding['session_id'],Path(parsed.root),tasks)
+        _repair_task_index(read_state(Path(parsed.root))['data'],result,Path(parsed.root))
     return result
 
 
 def _resolve_model(data, binding, stage):
-    from workflow_lib.releases import PACKAGE_ROOT
-    from workflow_lib.model_policy import resolve_profile
-    policy=json.loads((PACKAGE_ROOT/'definitions/model-policy.json').read_text())
-    run=data['runs'][binding['run_id']]
-    override=next((entry for entry in reversed(run.get('model_overrides', [])) if entry.get('stage') in {None,stage}), {})
-    request={**override,'host':binding['host'],'stage':stage}
-    # The portable CLI has no authenticated host launch/observation API.
-    return resolve_profile(policy,request,{'configure':False,'observe':False,'models':[],'efforts':[]},{},None)
+    from workflow_lib.model_policy import resolve_host_profile
+    return resolve_host_profile(data,binding,stage)
+
+
+def _repair_task_index(data, result, root):
+    from workflow_lib.host_locators import write_task_index
+    binding=data.get('host_bindings',{}).get(result['binding_id'],{})
+    if binding.get('status')!='active' or binding.get('revision')!=result.get('revision'):return
+    tasks=[t['task_id'] for t in data.get('host_tasks',{}).values() if t['host']==binding['host'] and t['session_id']==binding['session_id']]
+    write_task_index(Path(binding['project_dir']),binding['host'],binding['session_id'],root,tasks)

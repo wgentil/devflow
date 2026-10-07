@@ -47,18 +47,26 @@ def apply_host_event(state: dict, kind: str, request: dict) -> dict:
         if kind == 'model-override':require(binding['role'] == 'implementer', 'Model policy changes belong to current implementer.')
         if kind == 'model-override':
             require(req.get('mode','advisory') in {'strict','advisory'}, 'Supported routing mode required.')
+            from .model_policy import PREFERENCE_KEYS
+            require(isinstance(req.get('clear',[]),list) and all(k in PREFERENCE_KEYS for k in req.get('clear',[])), 'Clear must explicitly name model preference fields.')
             record = {**req, 'policy_revision':len(run.get('model_overrides', []))+1}
             run.setdefault('model_overrides', []).append(record)
         elif kind == 'model-receipt':
-            record = req['receipt']
+            record = deepcopy(req['receipt'])
             require(isinstance(record,dict) and isinstance(record.get('invocation_id'),str) and record['invocation_id'], 'Invocation ID required.')
             require(record.get('observed') is None and record.get('observation_source') is None, 'Portable CLI cannot assert trusted host observations.')
+            require(req.get('resolution_policy_revision',len(run.get('model_overrides',[])))==len(run.get('model_overrides',[])), 'Model policy changed before receipt commit; resolve again.', 'STALE_STATE')
+            record['scope'] = invocation_scope(binding,run,record.get('stage','implementation'),record)
+            record['policy_revision'] = len(run.get('model_overrides', []))
             records = run.setdefault('model_receipts', {})
             require(record['invocation_id'] not in records, 'Invocation receipt is immutable.')
             records[record['invocation_id']] = deepcopy(record)
         else:
             from .model_policy import interruption
-            record = interruption(req['invocation'],req['error_kind'],req.get('retry_count',0))
+            invocation_id=req['invocation'].get('invocation_id')
+            original=run.get('model_receipts',{}).get(invocation_id,{})
+            require(original and all(original.get('scope',{}).get(k)==binding.get(k) for k in ('binding_id','revision','actor_id','role','run_id')), 'Interruption must belong to this binding invocation.', 'INVOCATION_SCOPE_MISMATCH')
+            record = interruption(original,req['error_kind'],req.get('retry_count',0))
             records = run.setdefault('model_interruptions', [])
             require(record.get('invocation_id') in run.get('model_receipts', {}), 'Recorded invocation required before interruption.')
             records.append(record)
@@ -79,7 +87,12 @@ def apply_host_event(state: dict, kind: str, request: dict) -> dict:
         if original and original not in history: history.append(original)
         require(existing is None or req.get('refresh') is True and existing['binding_id'] == req['binding_id'], 'Session already attached; detach or explicitly refresh.')
         prior = bindings.get(req['binding_id'])
-        if req.get('refresh'):
+        if req.get('resume'):
+            require(not req.get('refresh') and prior and prior['status']=='detached' and prior['revision']==req.get('revision'), 'Resume needs exact detached binding revision.', 'STALE_BINDING')
+            require(all(prior.get(k)==req.get(k) for k in ('host','session_id','actor_id','role','run_id','project_dir','package_hash','item_id')), 'Resume cannot change attachment identity or work scope.')
+            old=prior['release'];new=req['release']
+            require(old.get('plugin')==new.get('plugin') and old.get('host_protocol_version')==new.get('host_protocol_version') and 1 in old.get('supported_schemas',[]) and 1 in new.get('supported_schemas',[]), 'Resume upgrade requires compatible protocol and state schema.', 'RELEASE_MISMATCH')
+        elif req.get('refresh'):
             current = validate_binding(state,req['binding_id'],req.get('revision'))
             require(all(current.get(k) == req.get(k) for k in ('host','session_id','actor_id','role','run_id','project_dir')), 'Refresh cannot change identity or ownership.')
         else: require(prior is None, 'Binding ID is immutable; choose a new binding ID.')
@@ -87,7 +100,7 @@ def apply_host_event(state: dict, kind: str, request: dict) -> dict:
             owners = [b for b in bindings.values() if b['run_id'] == run['id'] and b['role'] == 'implementer' and b['status'] == 'active']
             require(not owners or req.get('refresh') and owners[0]['binding_id'] == req['binding_id'], 'Run already has an implementation owner.')
             baseline = run.get('host_owner_release')
-            if baseline and not req.get('refresh'):
+            if baseline and not (req.get('refresh') or req.get('resume')):
                 from .releases import check_release
                 require(check_release(baseline,req['release'],1)['status'] == 'allow', 'Resume must match last owner release.', 'RELEASE_MISMATCH')
             if req['actor_id'] not in history: history.append(req['actor_id'])
@@ -100,7 +113,7 @@ def apply_host_event(state: dict, kind: str, request: dict) -> dict:
             require(req['actor_id'] not in history, 'Every implementing actor is excluded from independent review.')
             if role == 'item': require(req.get('item_id') in run.get('items', {}), 'Planned item required.')
         record = {**req, 'revision':prior['revision']+1 if prior else 1,'status':'active'}
-        record.pop('refresh',None)
+        record.pop('refresh',None);record.pop('resume',None)
         record['release_history'] = deepcopy(prior.get('release_history', [prior['release']]))+[req['release']] if prior else [req['release']]
         bindings[req['binding_id']] = record
         return deepcopy(record)
@@ -120,6 +133,9 @@ def apply_host_event(state: dict, kind: str, request: dict) -> dict:
         else:
             require(req.get('scope') == 'review' and req.get('package_hash') == binding.get('package_hash'), 'Review task must bind attached package.')
             if binding['role'] == 'item-reviewer': require(req.get('item_id') == binding.get('item_id'), 'Review task item differs from attachment.')
+        if req.get('invocation_id'):
+            receipt=run.get('model_receipts',{}).get(req['invocation_id'],{})
+            require(receipt_matches_task(receipt,binding,req), 'Invocation receipt does not match task binding, stage, role and work scope.', 'INVOCATION_SCOPE_MISMATCH')
         key = binding['host'] + ':' + binding['session_id'] + ':' + req['task_id']
         tasks = state.setdefault('host_tasks', {})
         record = {**req,'run_id':binding['run_id'],'role':binding['role'],'actor_id':binding['actor_id'], 'host':binding['host'],'session_id':binding['session_id']}
@@ -170,3 +186,28 @@ def accept_handoff(state: dict, envelope: dict, source_release: dict, destinatio
     prepared['accepted'] = result['binding_id']
     prepared['destination_decision'] = deepcopy(destination_decision)
     return result
+
+
+def task_stage(binding, task):
+    return 'implementation' if task['scope']=='item' else 'acceptance' if binding['role']=='acceptance-reviewer' else 'review' if task['scope']=='review' else 'delivery'
+
+def invocation_scope(binding, run, stage, receipt):
+    scope={key:binding[key] for key in ('binding_id','revision','host','session_id','actor_id','role','run_id')}
+    scope['stage']=stage
+    if stage == 'implementation':
+        require(binding['role']=='implementer', 'Implementation invocation needs implementing actor.')
+        active=run.get('active_attempt')
+        require(active and active.get('item_id') and active.get('token'), 'Implementation invocation needs active item attempt.')
+        scope.update(item_id=active['item_id'],token=active['token'])
+    elif stage in {'review','acceptance'}:
+        require(binding['role'] != 'implementer' and (stage=='acceptance') == (binding['role']=='acceptance-reviewer'), 'Review invocation stage must match reviewer role.')
+        scope.update(package_hash=binding.get('package_hash'),item_id=binding.get('item_id'))
+    else:require(binding['role']=='implementer', 'This invocation stage belongs to implementing actor.')
+    return scope
+
+def receipt_matches_task(receipt, binding, task):
+    scope=receipt.get('scope',{})
+    if any(scope.get(key)!=binding.get(key) for key in ('binding_id','revision','host','session_id','actor_id','role','run_id')):return False
+    if scope.get('stage') != task_stage(binding,task):return False
+    fields=('item_id','token') if task['scope']=='item' else ('package_hash','item_id') if task['scope']=='review' else ()
+    return all(scope.get(key)==task.get(key) for key in fields) and isinstance(receipt.get('policy_revision'),int)

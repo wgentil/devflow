@@ -140,3 +140,14 @@ R1–R2: Tasks 1,7,8. R3: Tasks 2,3,6,7. R4–R6: Tasks 3,4. R7–R8: Tasks 3,6.
 Before execution, create an ignored `.worktrees/cross-host` worktree on `feat/devflow-cross-host`, record baseline `2f1c080` plus the plan commit, and run the existing suite there. Reuse established worktree isolation; preserve main and any user changes. Native execution is recommended because ownership, release identity, routing and completion share evolving journal contracts; one full-context implementer avoids repeated context and interface drift. Required final independent review remains separate.
 
 Self-review completed: all 30 requirements mapped; interfaces use JSON-compatible dictionaries consistently; five review-focus cases are assigned explicit tests; no implementation bodies embedded. Live host/model validation may be unavailable and must remain visibly unverified rather than silently deferred.
+
+## Execution disposition (2026-10-07)
+
+Tasks 1–4 and 6–7 are implemented; Task 5's policy libraries and durable receipts
+are implemented but native model launch/account validation/discovery are absent.
+Task 8 produced real Claude/local CLI evidence and a fresh independent review.
+Seven important behavioral findings were fixed; native model integration remains
+a delivery blocker. The original unchecked steps remain the original plan, not
+an assertion of completion. See [requirement report](../../cross-host-validation.md)
+and [decisions and review](../../cross-host-execution-review.md). Full-spec completion
+and delivery are pending; no merge/push/install was authorized or performed.

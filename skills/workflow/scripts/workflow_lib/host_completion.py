@@ -2,7 +2,7 @@
 import hashlib
 import json
 from pathlib import Path
-from .hosts import validate_binding
+from .hosts import validate_binding, receipt_matches_task, task_stage
 from .store import WorkflowError
 from .gates import _required_proof, gate_status
 from .model_policy import check_model_receipt
@@ -41,11 +41,18 @@ def check_completion(state: dict, binding: dict, task_id: str, live: bool = True
     except WorkflowError:return _decision('block','STALE_BINDING')
     run=state.get('runs',{}).get(task['run_id'])
     if not run:return _decision('block','RUN_UNAVAILABLE')
-    stage='implementation' if task['scope']=='item' else 'acceptance' if binding['role']=='acceptance-reviewer' else 'review' if task['scope']=='review' else 'delivery'
-    override=next((entry for entry in reversed(run.get('model_overrides', [])) if entry.get('stage') in {None,stage}), {})
-    mode=override.get('mode','advisory')
+    from .model_policy import effective_preferences
+    stage=task_stage(binding,task)
+    mode=effective_preferences(run,stage).get('mode','advisory')
     receipt=run.get('model_receipts',{}).get(task.get('invocation_id'),{})
-    if receipt:mode=receipt.get('mode',mode)
+    if receipt:
+        if not receipt_matches_task(receipt,binding,task):return _decision('block','INVOCATION_SCOPE_MISMATCH')
+        mode=receipt.get('mode',mode)
+    else:
+        from .model_policy import resolve_host_profile
+        eligibility=resolve_host_profile(state,binding,stage)
+        if eligibility['reason_code']=='DETERMINISTIC':receipt=eligibility
+        elif eligibility['status']=='block' and mode != 'strict':return _decision('block',eligibility['reason_code'])
     if any(i.get('invocation_id') == task.get('invocation_id') for i in run.get('model_interruptions',[])):
         return _decision('block','INVOCATION_INTERRUPTED')
     model=check_model_receipt(receipt,mode)

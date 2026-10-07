@@ -35,3 +35,12 @@ project/run/item/token values; placeholders are not evidence or runnable identit
 See [host contracts](../hosts.md) and [developer syntax](../developer-cli.md).
 The unittest JSON runner imports project modules from its actual working directory,
 including when its bundled script is invoked by absolute path.
+
+Recovery/routing templates: [detached resume](host-resume.json),
+[stage preference](host-model-preference.json) and
+[invocation receipt](host-model-receipt.json). Resume requires the actual integer
+detached revision and unchanged identity; use a newly captured loaded release.
+The preference is a field update, preserving global restrictions; explicit `clear`
+removes named fields. Record an implementation receipt while its attempt is active
+and map its returned invocation ID to that exact work. Examples are shapes, not
+evidence of native model launch or account access.

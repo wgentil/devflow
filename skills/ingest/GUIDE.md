@@ -46,6 +46,6 @@ See the journal reference for stored index fields and specification grounding.
 Invoke this skill from the same selected DevFlow project/run in either host. An
 attached session uses its binding revision; a handoff preserves the attempt while
 invalidating the old owner. This skill requests `scan` for model work.
-Helpers execute deterministically; model settings are advisory unless trusted host
-configuration/observation proves them. Ordinary unmapped tasks remain unaffected.
+Helpers execute deterministically. Native model launch/access/discovery is missing
+production integration; recommendations are advisory and strict model checks block. Ordinary unmapped tasks remain unaffected.
 See [setup](../../docs/setup-and-usage.md) and [host examples](../../docs/hosts.md).

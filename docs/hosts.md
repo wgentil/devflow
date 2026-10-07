@@ -13,8 +13,9 @@ Invoke workflow from the project after enabling the plugin. Capture the loaded
 release when reading workflow instructions; after an upgrade, reload/restart and
 explicitly refresh attachment. Unknown loaded release blocks attachment/handoff.
 
-Codex uses explicit completion checks. Claude's adapter and both installed-host
-workflows are under implementation; fixture checks alone do not establish readiness.
+Codex uses explicit completion checks. Claude's completion adapter is implemented
+and has passed a real local-load smoke. Native Codex installation and native model
+launch/discovery integration remain incomplete or unverified; see the validation report.
 
 Packaging contracts: [Codex packaging](https://developers.openai.com/plugins/build/plugins)
 and [Claude manifest](https://code.claude.com/docs/en/plugins-reference).
@@ -43,7 +44,10 @@ Every mismatch leaves the original owner active. Detach/resume checks the last
 owner's release; detaching cannot bypass parity. Matching older releases work.
 
 After intentionally aligning installations, reload instructions and explicitly
-refresh the existing attachment with its revision. Compatible refresh preserves
+refresh the existing attachment with its revision. For a detached binding, use explicit resume with the exact detached revision and
+unchanged identity. Resume checks protocol/schema compatibility and preserves the
+previous release in history; it cannot transfer ownership or bypass an active owner.
+Compatible refresh/resume preserves
 attempts and immutable release history. Unsupported journal contracts require a
 separate migration; DevFlow never installs or chooses an upgrade.
 
@@ -52,14 +56,17 @@ separate migration; DevFlow never installs or chooses an upgrade.
 Specification/planning/debugging/review/acceptance/security request deep-reasoning
 (high supported effort); bounded implementation requests efficient-coding (moderate
 supported effort); narrow scans request fast-analysis. Deterministic tests/indexing/
-journal/calculations never dispatch a model. Designing tests and diagnosing failures
+journal/calculations and delivery-record checks never dispatch a model. Designing tests and diagnosing failures
 are model work, distinct from executing tests.
 
 This release ships profiles but no capability-validated provider defaults. Runtime
 availability does not prove suitability. Portable adapters disclose advisory
-recommendations and do not configure an existing parent conversation. The resolution
+recommendations and do not configure an existing parent conversation. The library resolution
 engine supports validated ordered mappings, pins, allowed fallback lists, effort and
-sourced numerical cost caps; live automatic host dispatch is not yet available.
+sourced numerical cost caps. Production resolution has no account-access/discovery
+input, so explicit pins are unavailable even if a native host would permit them.
+Native launch, selected-model validation and the discovery cache are not integrated.
+This is missing implementation, not merely missing live test evidence.
 Strict mode blocks when mapping, configuration or effective identity is unavailable.
 CLI input cannot manufacture trusted observation receipts.
 
@@ -69,7 +76,7 @@ Unavailable pins pause; fallback requires a validated permitted equivalent mappi
 Auth/network/quota/rate-limit/context failures are distinct from retirement. A model
 interruption preserves attempts/evidence and requires a new recorded invocation.
 Transient retry allowance is bounded at two; no automatic spend escalation.
-Discovery caches are advisory, keyed by host/account/policy with TTL at most one
+The unintegrated library discovery cache is advisory, keyed by host/account/policy with TTL at most one
 hour, invalidated explicitly, on policy revision and on availability failure.
 Hooks never enumerate models or contact providers.
 
@@ -109,3 +116,29 @@ release descriptor on every operation; release history belongs to the binding.
 Moving a project with its default control directory requires explicit repository/
 binding relocation repair; initialization does not invent a second repository ID.
 A locator copied from another project cannot make mapped work complete there.
+
+## Review fixes and remaining model scope
+
+Stage preferences are field updates in journal order. Omitting a field keeps its
+prior restriction; explicit `clear` removes named fields for the chosen stage.
+A stage-only mode change never silently removes a spending cap or allowlist.
+Advisory observation does not override an explicit ineligible pin/budget decision.
+
+Invocation receipts capture binding/revision, host/session, role/actor, run, stage,
+policy revision and active item/token or attached review package/item. Map only
+the receipt for that work. A matching invocation keeps its original mode; unrelated
+or legacy unscoped receipts cannot relax completion. Interruption records derive
+from that binding's immutable receipt and preserve its scope. Receipt creation for
+implementation occurs while the attempt is active, before model work starts.
+
+Exact committed host retries return the original response even after detach,
+refresh or transfer. They do not mutate ownership again; conflicting reuse of an
+operation ID fails. Retry cache repair only uses a still-current active binding.
+Known mapped completion blocks on locator/root/binding inconsistencies, including
+a wrong existing journal. Repair attachment against the task index's intended
+control root; never edit authoritative history to make a task complete.
+
+Native model integration remains a delivery blocker (R24–R27/R29). Profiles,
+resolution fixtures, receipts and configuration rendering do not constitute
+account validation, actual native launch, retirement handling or runtime discovery.
+No new native model probe is invoked by hooks or the portable resolver.

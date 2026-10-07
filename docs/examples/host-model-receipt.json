@@ -1,0 +1,8 @@
+{
+  "binding_id": "example-owner",
+  "revision": 1,
+  "receipt": {
+    "invocation_id": "<actual-new-invocation-id>",
+    "stage": "implementation"
+  }
+}

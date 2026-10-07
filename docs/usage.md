@@ -73,8 +73,9 @@ verification, independent review, requirement acceptance, delivery records,
 ingestion, issues, migration, hardening and reporting. Provider dispatch needs an
 injected adapter; actual runtime usage and prices remain explicit inputs. Semantic
 spec-gap interviews and automatic rework dispatch remain agent responsibilities.
-Claude adapters, attachment, hooks and enforced cross-host handoff are proposed,
-not implemented. Never treat unsupported or unavailable gates as passing evidence.
+Claude hooks, explicit attachment and parity-checked sequential handoff are
+implemented. Native Codex installation remains unverified; model launch/account
+validation/discovery remain missing production integration. Never treat unsupported or unavailable gates as passing evidence.
 
 The auxiliary commands are now routed and journal-backed. Mutations require a
 control root and explicit operation ID; retry receipts survive fresh sessions and
@@ -94,3 +95,7 @@ legacy adoption and model preference/receipt/interruption records. See
 Host read-only commands do not emit offload files. Completion hooks never execute
 tests or replay live APIs. Legacy journals continue to materialize without host
 records; explicit adoption is required before assigning a first host binding.
+
+Host retry, compatible detached resume, scoped receipts and field-preserving model
+preferences are described in [host recovery](hosts.md#review-fixes-and-remaining-model-scope)
+and the [optional CLI reference](developer-cli.md#scoped-routing-and-compatible-detached-resume).

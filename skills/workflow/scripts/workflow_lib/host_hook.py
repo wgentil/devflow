@@ -17,6 +17,8 @@ def evaluate(project_dir, session_id, event, task_id=None):
     except WorkflowError as exc:locator=None;issue=exc.code
     index=read_task_index(project,'claude',session_id)
     known_mapped=event == 'TaskCompleted' and index and task_id in index['task_ids']
+    if locator and index and Path(locator['control_root']).resolve() != Path(index['control_root']).resolve():
+        issue='LOCATOR_ROOT_MISMATCH'
     root=Path(locator['control_root']) if locator else Path(index['control_root']) if index else project/'.devflow/control'
     if not locator and index:issue=issue or 'LOCATOR_MISSING' 
     if not root.is_dir():
@@ -27,12 +29,17 @@ def evaluate(project_dir, session_id, event, task_id=None):
         pointed=state.get('host_bindings',{}).get(locator['binding_id'])
         if not pointed or pointed.get('session_id') != session_id or pointed.get('host') != 'claude':
             issue='LOCATOR_BINDING_MISMATCH'
-        elif pointed['status'] != 'active':return {'status':'inactive','reason_code':'BINDING_DETACHED'}
-    if not binding:return {'status':'inactive','reason_code':issue or 'NOT_ATTACHED'}
+        elif pointed['status'] != 'active':issue='BINDING_DETACHED'
+        elif binding and pointed['binding_id'] != binding['binding_id']:issue='LOCATOR_BINDING_MISMATCH'
+    if not binding or known_mapped and issue:
+        return {'status':'block' if known_mapped else 'inactive','reason_code':issue or 'NOT_ATTACHED',
+                'message':'Repair locator by retrying explicit attachment against the task index control root.'}
     if Path(binding['project_dir']).resolve() != project:issue='PROJECT_BINDING_MISMATCH'
     if event == 'TaskCompleted':
         from .releases import release_descriptor
         decision=check_completion(state,binding,task_id,installed_release=release_descriptor())
+        if known_mapped and decision['status'] == 'inactive':
+            return {'status':'block','reason_code':'TASK_MAPPING_UNAVAILABLE','message':'Repair the task index/locator against the authoritative journal.'}
         if decision['status'] != 'inactive' and issue:
             return {'status':'block','reason_code':issue,'message':'Repair locator by retrying explicit attachment.'}
         return decision
