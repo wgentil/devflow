@@ -10,7 +10,7 @@ def register_commands(parser):
     init = commands.add_parser('init')
     add_journal_options(init)
     init.add_argument('--project-dir', required=True)
-    for name in ('attach','detach','task-bind','handoff-prepare','handoff-accept','model-override','model-receipt','model-interrupt','legacy-adopt'):
+    for name in ('attach','detach','task-bind','handoff-prepare','handoff-accept','model-override','model-receipt','model-interrupt','legacy-adopt','goal-bind'):
         action = commands.add_parser(name)
         add_journal_options(action)
         action.add_argument('--file', required=True)
@@ -45,6 +45,9 @@ def register_commands(parser):
     status.add_argument('--root', required=True)
     status.add_argument('--host', choices=('claude','codex'), required=True)
     status.add_argument('--session-id', required=True)
+    goal_status = commands.add_parser('goal-status')
+    goal_status.add_argument('--root', required=True)
+    goal_status.add_argument('--binding-id', required=True)
 
 
 def dispatch(parsed):
@@ -87,6 +90,17 @@ def dispatch(parsed):
         mappings=[{**task,'mapping_hash':digest(task)} for task in state['data'].get('host_tasks',{}).values()
                   if binding and task['host']==binding['host'] and task['session_id']==binding['session_id']]
         return {'binding':binding,'brief':host_brief(state['data'],binding) if binding else None,'task_mappings':mappings,'state_version':state['version']}
+    if parsed.host_command == 'goal-status':
+        state = read_state(Path(parsed.root))['data']
+        binding = state.get('host_bindings', {}).get(parsed.binding_id)
+        if not binding: raise WorkflowError('BINDING_REQUIRED', 'known binding required')
+        from workflow_lib.goals import goal_contract
+        from workflow_lib.journal_domains import digest
+        run = state['runs'][binding['run_id']]
+        contract = goal_contract(run)
+        return {'binding': run.get('goal_bindings', {}).get(binding['binding_id']),
+                'contract': contract, 'contract_hash': digest(contract),
+                'capability': 'manual-host-goal-lifecycle'}
     if parsed.host_command == 'profile-resolve':
         from workflow_lib.hosts import validate_binding
         state=read_state(Path(parsed.root))

@@ -35,6 +35,30 @@ def _identity(req):
 
 def apply_host_event(state: dict, kind: str, request: dict) -> dict:
     req = deepcopy(request)
+    if kind == 'goal-bind':
+        from .goals import goal_contract
+        from .journal_domains import digest
+        binding = validate_binding(state, req.get('binding_id'), req.get('revision'))
+        require(binding['role'] == 'implementer' and binding['host'] == req.get('host')
+                and binding['run_id'] == req.get('run_id'), 'Goal belongs to current implementing host and run.')
+        authorization = req.get('authorization') or {}
+        require(authorization.get('approved') is True and isinstance(authorization.get('actor_id'), str)
+                and authorization['actor_id'].strip(), 'Explicit human Goal authorization required.', 'GOAL_AUTHORIZATION_REQUIRED')
+        require(isinstance(req.get('goal_ref'), str) and req['goal_ref'].strip()
+                and isinstance(req.get('capability_version'), str) and req['capability_version'].strip(),
+                'Opaque host Goal reference and capability version required.')
+        run = state['runs'][binding['run_id']]
+        contract_hash = digest(goal_contract(run))
+        require(req.get('contract_hash') == contract_hash, 'Goal contract changed; review again.', 'GOAL_CONTRACT_STALE')
+        goals = run.setdefault('goal_bindings', {})
+        require(binding['binding_id'] not in goals, 'This host binding already has a Goal.')
+        record = {'binding_id': binding['binding_id'], 'host': binding['host'],
+                  'run_id': binding['run_id'], 'goal_ref': req['goal_ref'],
+                  'capability_version': req['capability_version'],
+                  'release': deepcopy(binding['release']), 'contract_hash': contract_hash,
+                  'authorization': deepcopy(authorization)}
+        goals[binding['binding_id']] = record
+        return deepcopy(record)
     if kind in {'native-start','native-finish'}:return apply_native_event(state,kind,req)
     if kind == 'legacy-adopt':
         require(req.get('adopt_legacy') is True and not any(b['run_id']==req.get('run_id') for b in state.get('host_bindings',{}).values()), 'Legacy adoption is explicit and only for pre-binding runs.')
@@ -169,6 +193,10 @@ def prepare_handoff(state: dict, request: dict) -> dict:
     require(req.get('target_host') in HOSTS and isinstance(req.get('handoff_id'),str) and req['handoff_id'], 'Handoff ID and target host required.')
     require(all(isinstance(req.get(k),str) and req[k] for k in ('target_actor_id',)), 'Target actor required.')
     envelope = {**req,'source_release':deepcopy(source['release']),'run_id':source['run_id']}
+    run = state['runs'][source['run_id']]
+    if run.get('goal_bindings', {}).get(source['binding_id']):
+        from .goals import goal_handoff_decision
+        envelope['goal_handoff'] = goal_handoff_decision(state, source, req['target_host'])
     envelopes = state.setdefault('host_handoffs', {})
     require(req['handoff_id'] not in envelopes, 'Handoff ID already prepared.')
     envelopes[req['handoff_id']] = envelope
@@ -197,6 +225,8 @@ def accept_handoff(state: dict, envelope: dict, source_release: dict, destinatio
     source['status'] = 'transferred'; source['revision'] += 1
     target['release'] = deepcopy(destination_release)
     result = apply_host_event(state,'attach',target)
+    if prepared.get('goal_handoff'):
+        result['goal_handoff'] = deepcopy(prepared['goal_handoff'])
     prepared['accepted'] = result['binding_id']
     prepared['destination_decision'] = deepcopy(destination_decision)
     return result

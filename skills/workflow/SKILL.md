@@ -57,6 +57,9 @@ flowchart TD
     Fix --> Build
     Build -.-> Handoff["Prepare transfer; destination parity/profile CAS"]
     Handoff -.-> Build
+    Approval -.-> Goal["Optional user-authorized host Goal"]
+    Goal -.-> Build
+    Handoff -.-> NewGoal["Destination needs a new host Goal; no ID transfer"]
     Build --> Complete["Mapped task: fresh shared completion check"]
     Fix -->|Review correction limit reached| Adjudicate["Independent adjudication"]
 ```
@@ -73,6 +76,11 @@ binds its exact trace hash; a distinct approving actor promotes a candidate
 to the durable case set. `improve run-cases` executes only approved cases,
 and `improve compare` requires identical case hashes/scoring versions. Missing
 usage remains unknown; comparison never promotes a skill or policy automatically.
+With explicit user authorization, `host goal-status` supplies a completion
+contract and `host goal-bind` records an opaque host-specific Goal reference.
+The agent activates the host Goal through its supported session command; no
+portable automatic lifecycle API is claimed. Goal state cannot override journal
+gates. Handoff carries the contract but never a source Goal ID.
 Unconfigured tests are not enforced. Gap discovery/interviews are agent-led;
 `spec gaps` lists recorded unanswered questions and approval does not currently
 reject them automatically. Migration delivery also requires recorded predecessor

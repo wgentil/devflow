@@ -46,6 +46,24 @@ An active bounded-repair claim also blocks handoff and mapped task completion.
 Reconcile a stopped native invocation and stop its repair cycle before changing
 ownership; the old owner remains active throughout.
 
+## Optional Goals
+
+`host goal-status` returns the current journal-derived completion contract and
+hash. With explicit user authorization, an agent activates `/goal` in its own
+host session and records an opaque reference using `host goal-bind`. Codex Goals
+are thread-scoped; Claude Goals are session-scoped. Both host command surfaces
+exist, but DevFlow does not claim a portable API to create, pause or inspect
+them programmatically. See the [Codex adapter](../adapters/codex/GOALS.md) and
+[Claude adapter](../adapters/claude/GOALS.md), grounded in their respective
+official guides. `goal-status` reports `manual-host-goal-lifecycle` to make
+that limitation explicit.
+
+The binding records the exact run, release, host, contract hash and user
+authorization. Goal status never grants a DevFlow gate. On handoff, the source
+Goal reference stays with its host; the destination sees a fresh contract and
+must obtain a new authorization and Goal. Repair exhaustion and user pause
+remain blockers regardless of host Goal state.
+
 After intentionally aligning installations, reload instructions and explicitly
 refresh the existing attachment with its revision. For a detached binding, use explicit resume with the exact detached revision and
 unchanged identity. Resume checks protocol/schema compatibility and preserves the

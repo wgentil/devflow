@@ -32,6 +32,13 @@ case commands. `improve compare` rejects case/scoring-version mismatch and
 marks absent usage unknown. `improve retrospective` groups cited feedback by
 owner. None of these commands promotes a revision automatically.
 
+`host goal-status --root ROOT --binding-id ID` reads a generated completion
+contract and hash. Once the user authorizes a host Goal in the current
+session, `host goal-bind --root ROOT --file goal-binding.json --operation-id ID`
+records its opaque reference, host, release and exact contract. It never
+advances DevFlow gates; handoff requires a fresh destination Goal. The host
+Goal lifecycle itself remains manual because no portable plugin API is used.
+
 ```sh
 python3 skills/workflow/scripts/run.py context set --root "$CONTROL_ROOT" --layer org --file org.json
 python3 skills/workflow/scripts/run.py context set --root "$CONTROL_ROOT" --layer project --file project.json

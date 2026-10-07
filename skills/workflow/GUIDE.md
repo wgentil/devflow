@@ -110,6 +110,21 @@ TRACES.json` groups cited feedback by owner without editing the plugin.
 Trace output omits prompts, worker output and repository content. Missing
 runtime usage is unknown; byte estimates do not establish token savings.
 
+## Optional host Goals
+
+Ask DevFlow to show `host goal-status` for the attached binding. It returns a
+contract hash, verification surface, constraints and blocked condition. After
+the user authorizes that exact condition, activate `/goal` in the current
+Codex or Claude session and fill
+[goal-binding.json](../../docs/examples/goal-binding.json) with the active
+binding, opaque host reference, contract hash and authorizing actor. Record it
+with `host goal-bind --root "$CONTROL" --file goal-binding.json
+--operation-id goal-bind-v1`. The host Goal's completion signal never replaces
+DevFlow proof, independent review or delivery approval. On cross-host handoff,
+the destination reviews the carried contract and activates a new Goal with
+fresh authorization. See the [Codex](../../adapters/codex/GOALS.md) and
+[Claude](../../adapters/claude/GOALS.md) adapter notes.
+
 ## Delivery example
 
 After all gates pass, set `REPOSITORIES_JSON` to a JSON object mapping `app` to its

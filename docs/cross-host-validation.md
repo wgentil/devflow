@@ -110,3 +110,12 @@ Claude `claude://affa6be0-b9eb-4d9e-89cc-d30ada244fea` used `claude-sonnet-5-5`,
 unknown. Both returned the tiny requested marker, preserved attempts and replayed
 exact retries. These models are evidence of access at test time, not recommended
 or capability-validated defaults. No paid failure/retirement probes were run.
+
+## Optional Goal adapter validation
+
+The shared contract, exact-hash authorized binding, replay, and cross-host Goal
+ID isolation pass unit tests in `test_goals.py` and `test_goal_handoff.py`.
+Codex `/goal` and Claude `/goal` are documented host session commands; DevFlow
+does not call a portable lifecycle API. Live Goal activation in either installed
+host was **CANNOT VERIFY** here because no user-authorized host Goal was created
+for this test. A host Goal's own completion never advances a DevFlow gate.

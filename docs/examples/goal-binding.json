@@ -1,0 +1,13 @@
+{
+  "binding_id": "REPLACE_WITH_ACTIVE_BINDING_ID",
+  "revision": 1,
+  "host": "codex",
+  "run_id": "REPLACE_WITH_RUN_ID",
+  "goal_ref": "REPLACE_WITH_HOST_SESSION_GOAL_REFERENCE",
+  "capability_version": "manual-v1",
+  "contract_hash": "REPLACE_WITH_GOAL_STATUS_CONTRACT_HASH",
+  "authorization": {
+    "approved": true,
+    "actor_id": "REPLACE_WITH_AUTHORIZING_HUMAN"
+  }
+}

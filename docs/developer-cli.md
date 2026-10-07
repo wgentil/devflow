@@ -267,6 +267,14 @@ identical case hashes and scoring versions; `improve retrospective` groups
 evidence-cited feedback without editing the plugin. Missing usage remains
 unknown and no policy promotion occurs automatically.
 
+`host goal-status --root ROOT --binding-id ID` returns a contract/hash derived
+from the current run. After the user authorizes and activates a host Goal,
+`host goal-bind --root ROOT --file goal-binding.json --operation-id ID` binds
+its opaque reference to the exact host/run/release. [Goal binding example](examples/goal-binding.json).
+No Goal lifecycle CLI API is invoked by DevFlow, and a host Goal cannot satisfy
+the journal's verification, review or delivery gates. Handoff never copies a
+source Goal reference to the destination.
+
 Current enforcement is in helper transitions and skill instructions. Claude
 completion hooks are implemented for explicitly mapped tasks; Codex completion
 checks remain explicit. There are no repo-wide edit restrictions. Ordinary

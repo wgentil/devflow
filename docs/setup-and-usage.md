@@ -62,6 +62,9 @@ flowchart TD
     Fix --> Work
     Work -.-> Transfer[Prepare handoff; destination checks release and profile]
     Transfer -.-> Work
+    Spec -.-> Goal[Optional user-authorized host Goal]
+    Goal -.-> Work
+    Transfer -.-> NewGoal[Destination activates a new Goal]
     Deliver -.-> Trace[Optional redacted run trace]
     Trace --> Feedback[Reviewed feedback and exact case approval]
     Feedback --> Eval[Run same versioned cases on candidate and baseline]
@@ -99,6 +102,15 @@ the resulting case hash. Approved cases can run against baseline and candidate
 checkouts with identical scoring versions. The report exposes quality,
 coverage and elapsed time; missing usage stays unknown. No skill or policy
 revision is promoted automatically. See the [workflow guide](../skills/workflow/GUIDE.md#run-derived-improvement-cases).
+
+For long-running work, ask DevFlow to show the optional Goal contract for the
+attached host. Review its outcome, verification, limits and blocked condition
+before authorizing activation in the current Codex or Claude session. DevFlow
+records that host-specific Goal reference only after authorization. A host Goal
+cannot mark tests, review or delivery complete in DevFlow. Handoff carries the
+contract, not the Goal ID; the destination requires a new host Goal. Host
+activation and lifecycle are currently agent/user actions, not an automatic
+plugin API. See [host Goal adapters](hosts.md#optional-goals).
 
 ## Host task completion
 
