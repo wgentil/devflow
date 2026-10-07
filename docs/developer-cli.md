@@ -353,3 +353,14 @@ implemented and validated.
 Host initialization developer command: invoke the bundled helper with
 `host init --project-dir <working-directory> --operation-id <unique-id>`.
 `--root` optionally selects external control state; omit it for project-local state.
+
+`host attach --root <control> --file <attachment.json> --loaded-release <captured-version.json> --operation-id <id>`
+records an explicit attachment. Request fields: binding_id, host (claude/codex),
+session_id, actor_id, role, run_id, project_dir; reviewers also package_hash and
+item reviewers item_id. Capture version when loading skill instructions.
+`host status --root <control> --host <host> --session-id <session>` is read-only.
+`host detach` and `host task-bind` use `--file`, `--root`, `--operation-id` and
+optional `--expected-version`. Task requests name binding_id/revision/task_id and
+scope item/delivery/review; items require item_id/token, reviews package_hash.
+For other mutations put `--binding-id <id> --binding-revision <revision>` before
+the command group. Stale bindings are rejected inside the commit lock.

@@ -69,6 +69,7 @@ def _run_brief(run: dict, item_ids: list[str], max_bytes: int) -> dict:
 
 
 def _measure_cli(parsed, result: dict, result_code: str, started: float, stdout_bytes: int, input_bytes: int) -> None:
+    if parsed and parsed.command == "host": return
     root_value = getattr(parsed, "root", None) if parsed else None
     if not root_value:
         return
@@ -128,6 +129,8 @@ def main(argv: list[str] | None = None) -> int:
     input_bytes = 0
     initial_state = None
     parser = argparse.ArgumentParser(prog="devflow")
+    parser.add_argument('--binding-id')
+    parser.add_argument('--binding-revision', type=int)
     commands = parser.add_subparsers(dest="command")
     commands.add_parser("version")
     context = commands.add_parser("context")
@@ -264,6 +267,14 @@ def main(argv: list[str] | None = None) -> int:
     register_command_groups(commands)
     try:
         parsed = parser.parse_args(argv)
+        from workflow_lib.store import HOST_CONTEXT
+        HOST_CONTEXT.set(None)
+        if parsed.binding_id or parsed.binding_revision is not None:
+            if not parsed.binding_id or parsed.binding_revision is None or not getattr(parsed,'root',None):
+                raise WorkflowError('BINDING_REQUIRED','Binding ID, revision and control root must be supplied together.')
+            from workflow_lib.hosts import validate_binding
+            validate_binding(read_state(Path(parsed.root))['data'],parsed.binding_id,parsed.binding_revision)
+            HOST_CONTEXT.set({'binding_id':parsed.binding_id,'revision':parsed.binding_revision})
         if getattr(parsed, "root", None):
             parsed.root = str(Path(parsed.root).expanduser().resolve())
         default_id = uuid4().hex

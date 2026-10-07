@@ -18,3 +18,17 @@ workflows are under implementation; fixture checks alone do not establish readin
 
 Packaging contracts: [Codex packaging](https://developers.openai.com/plugins/build/plugins)
 and [Claude manifest](https://code.claude.com/docs/en/plugins-reference).
+
+## Explicit attachment
+
+The agent records a host/session/actor and role against a selected run. One
+implementer owns a run; separate reviewers attach to prepared review packages.
+All actors that implemented the run remain excluded from independent review.
+Task mapping explicitly names the item/latest token or exact review package.
+Unmapped tasks are ordinary host work. Detach preserves attempts and release history.
+
+Locators under `.devflow/hosts/<host>/<hashed-session>.json` contain only control
+root and binding ID. Journal state grants ownership. Retrying committed attachment
+repairs a missing/corrupt locator; locator edits cannot grant ownership. Mutating
+commands from attached sessions include binding ID/revision, checked again under
+the journal lock. Unattached trusted developer CLI access remains supported.

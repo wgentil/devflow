@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import fcntl
+from contextvars import ContextVar
+
+HOST_CONTEXT = ContextVar("devflow_host_context", default=None)
 from copy import deepcopy
 import hashlib
 import json
@@ -31,6 +34,10 @@ def _apply_event(state: dict, event: dict) -> None:
     """Materialize generic patches and compact run deltas from journal events."""
     kind, payload = event["kind"], deepcopy(event["payload"])
     data = state["data"]
+    if event.get('host_binding'):
+        from .hosts import validate_binding
+        guard = event['host_binding']
+        validate_binding(data,guard['binding_id'],guard['revision'])
     if kind.startswith("domain."):
         from .journal_domains import reduce_event
         result = reduce_event(data, kind, payload, event.get("sequence", 1) - 1)
@@ -237,7 +244,7 @@ def _apply_event(state: dict, event: dict) -> None:
             raise WorkflowError("INVALID_EVENT", "review record has invalid role, verdict, or actor reference")
         actors = run.setdefault("actors", {})
         reviewer_key = review["role"] + "_reviewer"
-        if (review.get("actor_id") == actors.get("implementer")
+        if (review.get("actor_id") in run.get("implementer_actors", []) or review.get("actor_id") == actors.get("implementer")
                 or any(key != reviewer_key and actor == review.get("actor_id") for key, actor in actors.items())
                 or reviewer_key in actors and actors[reviewer_key] != review.get("actor_id")):
             raise WorkflowError("INVALID_EVENT", "reviewer actor is not independent for this role")
@@ -579,6 +586,13 @@ def transact(root: Path, expected_version: int, operation_id: str, event: dict) 
     _validate_event_shape(event)
     with _exclusive(root):
         state, _ = _read_journal(root)
+        guard = HOST_CONTEXT.get()
+        if guard:
+            from .hosts import validate_binding, require
+            binding = validate_binding(state['data'],guard['binding_id'],guard['revision'])
+            request = event['payload'].get('request',event['payload'])
+            run_id = request.get('run_id')
+            require(not run_id or run_id == binding['run_id'], 'Mutation belongs to another attached run.')
         previous = state["operations"].get(operation_id)
         if previous is not None:
             return {"state": state, "event": previous, "replayed": True}
@@ -591,6 +605,7 @@ def transact(root: Path, expected_version: int, operation_id: str, event: dict) 
             "kind": event["kind"],
             "payload": event["payload"],
         }
+        if guard: committed["host_binding"] = guard
         journal = root / "events"
         journal.mkdir(parents=True, exist_ok=True)
         event_path = journal / f"{committed['sequence']:08d}.json"

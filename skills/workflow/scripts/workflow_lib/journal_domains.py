@@ -52,6 +52,9 @@ def reduce_event(data, kind, payload, version):
 
 
 def _reduce(data, kind, req, version):
+    if kind.startswith('domain.host.') and kind != 'domain.host.init':
+        from .hosts import apply_host_event
+        return apply_host_event(data, kind.removeprefix('domain.host.'), req)
     if kind == 'domain.host.init':
         require(text(req.get('repo_id')) and text(req.get('location')), 'repository identity required')
         repositories = data.setdefault('repositories', {})

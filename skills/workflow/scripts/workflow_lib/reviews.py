@@ -94,7 +94,7 @@ def record_review(run: dict, package_hash: str, reviewer: dict, report: dict) ->
     if reviewer.get("tool_available") is not True:
         raise ValueError("independent reviewer tooling is unavailable")
     implementer = run.get("actors", {}).get("implementer")
-    if not implementer or actor == implementer:
+    if not implementer or actor in set(run.get('implementer_actors', [])) | {implementer}:
         raise ValueError("reviewer actor must be distinct from implementer and prior reviewer roles")
     package = run.get("review_packages", {}).get(package_hash)
     if not package or package.get("package_hash") != package_hash or package.get("role") != role:
@@ -181,7 +181,7 @@ def record_adjudication(run: dict, role: str, actor_id: str, decision: str, rati
     limit = {"item": 4, "branch": 1, "acceptance": 1}[role]
     if rounds < limit or role == "item" and not item_id:
         raise ValueError("adjudication is available only after the role's correction limit")
-    if actor_id == run.get("actors", {}).get("implementer") or actor_id in run.get("actors", {}).values():
+    if actor_id in run.get("implementer_actors", []) or actor_id in run.get("actors", {}).values():
         raise ValueError("adjudicator must be independent of the implementation and review roles")
     record = {"schema_version": 1, "role": role, "item_id": item_id, "actor_id": actor_id.strip(),
               "decision": decision, "rationale": rationale.strip(), "cost_if_wrong": cost_if_wrong.strip(),
