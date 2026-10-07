@@ -50,6 +50,13 @@ Review packages bind a run's criteria and artifacts to exact repository base/hea
 
 `run gate-status` reports the current implementation, item-review, branch-review, acceptance, hardening, or delivery stage. Passing attempt results without the kind-matched fresh proof cannot satisfy implementation. Each item needs a passing item review, then a passing branch review and independent acceptance. Use `run accept` only with the fresh acceptance package and exact repository heads; every planned requirement needs a verdict. MET requires a citation to an existing line in a changed file. Invalid or missing citations downgrade that requirement to NOT MET. Previously MET requirements cannot regress silently. Mandatory findings, including parked ones, block advancement until an explicitly scoped waiver is journaled.
 
+`harden configure` accepts a per-gate `contract`. Existing gates default to
+`exit-status`; version 1 `json-report` requires a JSON object with a `findings`
+array of objects carrying nonempty string IDs. A missing or invalid report, or
+any findings, leaves the gate failed even if the command exits zero. The
+normalized contract is bound to the gate configuration and proof; see the
+[structured example](examples/structured-gate.json).
+
 `run amend-item` binds its human ruling to current spec and plan hashes, preserves the old plan and ruling, and invalidates dependent implementation proofs, review judgments, and acceptance. `run park-finding` records why and cost if wrong; it does not satisfy a gate. Resolve findings with evidence references. `run waive-finding` requires an explicit run-scoped authorization record. After the correction limit, use `run adjudicate` to preserve an independent adjudicator's decision and rationale. `run discard` is terminal for the workflow run and preserves its history and reason.
 
 Delivery preparation is read-only: `delivery prepare` emits a canonical manifest covering the exact spec/plan and acceptance hashes, repository base/head and worktree fingerprints, unresolved findings, rulings, outcome, and run-owned cleanup resources. Save the manifest and confirm its exact `manifest_hash` with `delivery verify` immediately before any authorized outcome. `delivery record` requires a separately authorized actual-result record bound to the same manifest and every repository. Retained branches must preserve exact heads; local-merge records must identify resulting commits; pull-request records require a provider request ID and remain caller-reported. The helper does not merge, push, create a PR, or delete resources. It only records verified outcomes and validates ownership metadata.

@@ -32,14 +32,14 @@ flowchart TD
     More -->|Yes| Next
     More -->|No| Branch["Independent branch review"]
     Branch --> Accept["Independent acceptance review and requirement verdicts"]
-    Accept --> Harden["Run configured hardening gates"]
+    Accept --> Harden["Run and validate configured hardening gates"]
     Harden --> Manifest["Prepare and verify exact delivery manifest"]
     Manifest --> Choice["Human chooses merge, PR or retained branch"]
     Choice --> Delivered["Execute authorized delivery and record actual result"]
     Delivered -.-> Reconcile["issues: scoped authorization and durable outbox"]
     Delivered -.-> Stats["stats: import usage and freeze outcome reports"]
     Build -->|Verification fails| Fix["Agent fixes implementation and reruns checks"]
-    Harden -->|Gate fails| Fix
+    Harden -->|Command fails, report invalid or findings remain| Fix
     Item -->|Changes requested| Fix
     Branch -->|Changes requested| Fix
     Accept -->|Requirements unmet| Fix
@@ -55,6 +55,10 @@ Unconfigured tests are not enforced. Gap discovery/interviews are agent-led;
 `spec gaps` lists recorded unanswered questions and approval does not currently
 reject them automatically. Migration delivery also requires recorded predecessor
 and parity evidence. Resume any stage from journaled run status and gate status.
+Hardening gates default to command exit status. When a scanner is configured
+with `json-report` version 1, require a valid `{"findings":[]}` report: missing
+or malformed output and nonempty findings block advancement even if the command
+exits zero. Keep the configured report contract bound to its journaled proof.
 See [specify](../specify/SKILL.md), [build-work](../build-work/SKILL.md) and
 [review-work](../review-work/SKILL.md) for the focused flows.
 

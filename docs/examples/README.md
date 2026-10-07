@@ -19,6 +19,7 @@ human approval, independent review, provider receipt or authoritative price.
 | [usage.json](usage.json), [expectations.json](expectations.json) | stats | Actual supported event identities, token categories and run bindings |
 | [prices.json](prices.json) | stats | Illustrative only; replace with explicitly sourced/versioned rates |
 | [hardening.json](hardening.json), [gate.json](gate.json) | workflow | Configuring actor and existing gate tools |
+| [structured-gate.json](structured-gate.json) | workflow | Version 1 JSON report gate with a real unit-suite command; replace with the project's scanner for security checks |
 
 Replace every `REPLACE_WITH_...` marker before mutation. Returned IDs/hashes bind
 specific content and must not be guessed. Actor IDs and invocation references

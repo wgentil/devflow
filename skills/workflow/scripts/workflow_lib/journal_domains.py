@@ -8,6 +8,7 @@ from datetime import datetime
 import hashlib
 import json
 
+from .gate_reports import normalize_contract
 from .store import WorkflowError
 
 
@@ -286,6 +287,8 @@ def _reduce(data, kind, req, version):
             require(text(identifier) and isinstance(config, dict) and config.get('repo_id') in data.get('repositories', {}), 'gate repository missing')
             require(isinstance(config.get('command'), list) and config['command'] and all(isinstance(a, str) for a in config['command']), 'gate argv required')
             require(any(i.get('repo_id') == config['repo_id'] for i in run.get('plan', {}).get('work_items', [])), 'gate repository is outside run')
+            if 'contract' in config:
+                normalize_contract(config)
         run['hardening_config'] = deepcopy(gates)
         run['hardening_config_hash'] = digest(gates)
         run['required_hardening_gates'] = sorted(gates)
@@ -297,6 +300,11 @@ def _reduce(data, kind, req, version):
         run = data.get('runs', {}).get(req['run_id'], {})
         require(req['config_hash'] == run.get('hardening_config_hash') and req['gate_id'] in run.get('hardening_config', {}), 'gate configuration is stale')
         require(text(req.get('token')), 'execution token required')
+        config = run['hardening_config'][req['gate_id']]
+        if 'contract' in config:
+            require(req.get('contract_hash') == digest(normalize_contract(config)), 'gate contract is stale')
+        else:
+            require(req.get('contract_hash') in {None, digest({'kind': 'exit-status'})}, 'legacy gate contract mismatch')
         run.setdefault('hardening_attempts', {})[req['token']] = deepcopy(req)
         return {'token': req['token'], 'status': 'running'}
     if kind == 'domain.harden.record':
@@ -308,6 +316,12 @@ def _reduce(data, kind, req, version):
         require(type(proof.get('passed')) is bool, 'gate outcome required')
         config = run['hardening_config'][req['gate_id']]
         require(proof.get('argv') == config['command'], 'gate command mismatch')
+        expected_contract_hash = digest(normalize_contract(config))
+        if 'contract' in config or attempt.get('contract_hash') is not None:
+            require(proof.get('contract_hash') == attempt.get('contract_hash') == expected_contract_hash,
+                    'gate report contract mismatch')
+        else:
+            require(proof.get('contract_hash') is None, 'legacy gate report contract mismatch')
         proof = {**deepcopy(proof), 'config_hash': req['config_hash'], 'repo_id': config['repo_id'],
                  'repository_fingerprint': attempt['repository_fingerprint']}
         attempt['status'] = 'passed' if proof['passed'] else 'failed'

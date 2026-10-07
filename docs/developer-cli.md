@@ -237,9 +237,17 @@ Configure any required E2E, red-team or other hardening checks with actual argv
 commands using `harden configure`; execute them with `harden gate`. Missing, failed
 or stale required proof blocks delivery. DevFlow enforces only declared/configured
 checks. The agent coordinates fixes; no automatic failure dispatcher exists.
+An omitted gate `contract` means `{"kind":"exit-status"}` and preserves the
+legacy command-only behavior. `{"kind":"json-report","version":1}` expects a
+top-level JSON object with a `findings` array of objects, each with a nonempty
+string `id`. Valid empty findings pass; findings, missing output, malformed
+JSON, unsupported versions and reports over 1 MiB fail. The normalized contract
+is part of the configuration hash and the execution proof; replay never
+re-executes the command. See [structured gate example](examples/structured-gate.json).
 
-Current enforcement is in helper transitions and skill instructions. There are
-no implemented Claude completion hooks or repo-wide edit restrictions. Ordinary
+Current enforcement is in helper transitions and skill instructions. Claude
+completion hooks are implemented for explicitly mapped tasks; Codex completion
+checks remain explicit. There are no repo-wide edit restrictions. Ordinary
 shell/file operations can bypass the helper; DevFlow is not a security boundary.
 
 ## Resume, retry and change scope

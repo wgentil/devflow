@@ -44,6 +44,21 @@ verification and affected reviews, then reruns the gate with a new operation ID.
 Interrupted execution reports `EXECUTION_INTERRUPTED`; a new execution requires
 a new ID. Exact successful retries return committed proof without running again.
 
+The default gate uses `exit-status`: exit zero passes, and command output is not
+interpreted. For a scanner that emits a structured report, configure
+`"contract":{"kind":"json-report","version":1}` as in
+[structured-gate.json](../../docs/examples/structured-gate.json). Version 1
+requires one JSON object with a `findings` array; each finding has a nonempty
+string `id`. An empty array passes. Missing, malformed, oversized or nonempty
+reports fail even when the scanner exits zero. The example runs the unit suite
+and reports a finding if it fails; replace that command with the project's
+actual scanner when using this contract for security checks.
+
+```sh
+df harden configure --root "$CONTROL" --input "$EXAMPLES/structured-gate.json" --operation-id configure-structured-v1
+df harden gate --root "$CONTROL" --input "$EXAMPLES/gate.json" --operation-id structured-gate-v1
+```
+
 ## Delivery example
 
 After all gates pass, set `REPOSITORIES_JSON` to a JSON object mapping `app` to its

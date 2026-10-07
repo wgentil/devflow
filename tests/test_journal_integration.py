@@ -160,6 +160,50 @@ class ExecutionIntegrationTests(unittest.TestCase):
         self.assertEqual(counter.read_text(),'1')
         state=read_state(self.root)
         self.assertTrue(state['data']['runs']['run']['hardening_proofs']['security']['passed'])
+    def test_structured_gate_replay_does_not_execute(self):
+        self.seed_repo()
+        counter=Path(self.temp.name)/'count'
+        command=[sys.executable,'-c',f"from pathlib import Path; p=Path({str(counter)!r}); p.write_text(str(int(p.read_text())+1) if p.exists() else '1'); print('{{\"findings\":[]}}')"]
+        self.cli('harden','configure',{'run_id':'run','actor_id':'human','gates':{'security':{
+            'repo_id':'r','command':command,'contract':{'kind':'json-report','version':1}}}},'config')
+        first=self.cli('harden','gate',{'run_id':'run','gate_id':'security'},'gate')
+        second=self.cli('harden','gate',{'run_id':'run','gate_id':'security'},'gate')
+        self.assertTrue(first['proof']['passed'])
+        self.assertTrue(second['replayed'])
+        self.assertEqual(counter.read_text(),'1')
+        attempt=next(iter(read_state(self.root)['data']['runs']['run']['hardening_attempts'].values()))
+        self.assertEqual(first['proof']['contract_hash'],attempt['contract_hash'])
+    def test_legacy_gate_config_remains_valid(self):
+        self.seed_repo()
+        command=[sys.executable,'-c','print("unstructured output")']
+        self.cli('harden','configure',{'run_id':'run','actor_id':'human','gates':{'security':{'repo_id':'r','command':command}}},'config')
+        result=self.cli('harden','gate',{'run_id':'run','gate_id':'security'},'gate')
+        self.assertTrue(result['proof']['passed'])
+        self.assertEqual(read_state(self.root)['data']['runs']['run']['hardening_config']['security']['contract'],{'kind':'exit-status'})
+    def test_changed_contract_or_repository_invalidates_proof(self):
+        from workflow_lib.gates import hardening_ready
+        self.seed_repo()
+        command=[sys.executable,'-c','print("{\\\"findings\\\":[]}")']
+        gate={'repo_id':'r','command':command,'contract':{'kind':'json-report','version':1}}
+        self.cli('harden','configure',{'run_id':'run','actor_id':'human','gates':{'security':gate}},'config')
+        self.cli('harden','gate',{'run_id':'run','gate_id':'security'},'gate')
+        self.assertTrue(hardening_ready(read_state(self.root)['data']['runs']['run']))
+        (self.repo/'app.py').write_text('x=2\n')
+        self.assertFalse(hardening_ready(read_state(self.root)['data']['runs']['run']))
+        (self.repo/'app.py').write_text('x=1\n')
+        self.cli('harden','configure',{'run_id':'run','actor_id':'human','gates':{'security':{
+            'repo_id':'r','command':command,'contract':{'kind':'exit-status'}}}},'config2')
+        self.assertFalse(hardening_ready(read_state(self.root)['data']['runs']['run']))
+    def test_missing_report_blocks_delivery(self):
+        from workflow_lib.gates import hardening_ready
+        self.seed_repo()
+        command=[sys.executable,'-c','pass']
+        self.cli('harden','configure',{'run_id':'run','actor_id':'human','gates':{'security':{
+            'repo_id':'r','command':command,'contract':{'kind':'json-report','version':1}}}},'config')
+        result=self.cli('harden','gate',{'run_id':'run','gate_id':'security'},'gate')
+        self.assertFalse(result['proof']['passed'])
+        self.assertEqual(result['proof']['failure'],'REPORT_MISSING')
+        self.assertFalse(hardening_ready(read_state(self.root)['data']['runs']['run']))
     def test_ingestion_persists_index_cache_and_provenance_for_equal_files(self):
         self.seed_repo()
         (self.repo/'copy.py').write_text('x=1\n')

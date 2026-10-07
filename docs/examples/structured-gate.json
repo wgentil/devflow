@@ -1,0 +1,19 @@
+{
+  "run_id": "greeting-run",
+  "actor_id": "REPLACE_WITH_CONFIGURING_ACTOR",
+  "gates": {
+    "unit-suite": {
+      "repo_id": "app",
+      "command": [
+        "python3",
+        "-B",
+        "-c",
+        "import json,subprocess; r=subprocess.run(['python3','-B','-m','unittest','discover','-s','tests'],capture_output=True,text=True); print(json.dumps({'findings':[] if r.returncode==0 else [{'id':'unit-tests-failed'}]}))"
+      ],
+      "contract": {
+        "kind": "json-report",
+        "version": 1
+      }
+    }
+  }
+}

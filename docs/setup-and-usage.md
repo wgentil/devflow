@@ -63,6 +63,11 @@ explicit authorization before apply. Agent configurations need baseline/post
 results. E2E/red-team checks must be configured as supported targets/hardening
 gates; DevFlow does not infer all suites. A proof must match the latest attempt
 and current repository fingerprint. Missing live evidence never counts as success.
+Configured hardening gates use command exit status by default. A version 1
+`json-report` gate also requires valid JSON with a `findings` array; missing or
+malformed output and reported findings fail the gate even on exit zero. The
+[workflow guide](../skills/workflow/GUIDE.md#configured-hardening-example)
+shows both contracts.
 
 Reviewers use separate invocations and distinct actors, excluding every actor who
 implemented the run. Item reviews allow four correction waves; branch/acceptance
