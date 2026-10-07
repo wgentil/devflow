@@ -1,12 +1,28 @@
-"""Migration and parity validation helpers."""
-import argparse,json
+"""Journal-backed migration plans, evidence, and delivery ordering."""
+import json
 from pathlib import Path
-from workflow_lib.migrations import validate_increments,review_specification,record_parity
+from .journal import add_journal_options, commit
+from workflow_lib.migrations import validate_increments, review_specification
+from workflow_lib.store import read_state, WorkflowError
 
-def register_commands(parser:argparse.ArgumentParser):
- p=parser.add_parser('migrate'); p.add_argument('operation',choices=['validate','review-spec','record-parity']); p.add_argument('--input',required=True)
+
+def register_commands(parser):
+    command = parser.add_parser('migrate')
+    command.add_argument('operation', choices=['validate','store','review-spec','record-parity','bind','delivered','inspect'])
+    command.add_argument('--input')
+    add_journal_options(command)
+
+
 def dispatch(parsed):
- d=json.loads(Path(parsed.input).read_text())
- if parsed.operation=='validate':return validate_increments(d['increments'],d['parity'])
- if parsed.operation=='review-spec':return review_specification(d['spec'],d['source_index'])
- return record_parity(d['state'],d['increment_id'],d['verified'],d.get('ruling'))
+    if parsed.operation == 'inspect':
+        if not parsed.root:
+            raise WorkflowError('CONTROL_ROOT_REQUIRED', 'inspection requires --root')
+        return read_state(Path(parsed.root))['data'].get('migration', {})
+    if not parsed.input:
+        raise WorkflowError('INVALID_INPUT', '--input is required')
+    request = json.loads(Path(parsed.input).read_text())
+    if parsed.operation == 'validate':
+        return validate_increments(request['increments'], request['parity'])
+    if parsed.operation == 'review-spec':
+        return review_specification(request['spec'], request['source_index'])
+    return commit(parsed, 'domain.migrate.' + parsed.operation, request)

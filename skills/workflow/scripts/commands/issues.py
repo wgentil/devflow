@@ -1,12 +1,27 @@
-"""Local issue snapshot helpers; no connector is invoked here."""
-import argparse,json
+"""Journal-backed local issue workflows; connector dispatch is separate."""
+import json
 from pathlib import Path
-from workflow_lib.issues import capture_issue,validate_snapshot,revise_groups
+from .journal import add_journal_options, commit
+from workflow_lib.issues import validate_snapshot
+from workflow_lib.store import read_state, WorkflowError
 
-def register_commands(parser:argparse.ArgumentParser):
- p=parser.add_parser('issues'); p.add_argument('operation',choices=['capture','validate-snapshot','group']); p.add_argument('--input',required=True)
+
+def register_commands(parser):
+    command = parser.add_parser('issues')
+    command.add_argument('operation', choices=['capture','snapshot','validate-snapshot','group','start','classify','authorize-write','enqueue','inspect'])
+    command.add_argument('--input')
+    add_journal_options(command)
+
+
 def dispatch(parsed):
- data=json.loads(Path(parsed.input).read_text())
- if parsed.operation=='capture':return capture_issue(data.get('state',{}),data['issue'])
- if parsed.operation=='validate-snapshot':return validate_snapshot(data['snapshot'])
- return revise_groups(data['state'],data['snapshot_hash'],data['groups'])
+    if parsed.operation == 'inspect':
+        if not parsed.root:
+            raise WorkflowError('CONTROL_ROOT_REQUIRED', 'inspection requires --root')
+        data = read_state(Path(parsed.root))['data']
+        return {k: data.get(k, {}) for k in ('issues','snapshots','groups','issue_runs','classifications','outbox')}
+    if not parsed.input:
+        raise WorkflowError('INVALID_INPUT', '--input is required')
+    request = json.loads(Path(parsed.input).read_text())
+    if parsed.operation == 'validate-snapshot':
+        return validate_snapshot(request['snapshot'])
+    return commit(parsed, 'domain.issues.' + parsed.operation, request)

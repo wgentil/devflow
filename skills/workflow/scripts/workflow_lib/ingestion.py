@@ -25,15 +25,15 @@ def ingest_sources(repo: dict, scope: list[str], profile: dict, cache: dict) -> 
     commit=subprocess.run(['git','rev-parse','HEAD'],cwd=root,capture_output=True,text=True,check=False)
     commit_id=commit.stdout.strip() if commit.returncode==0 else None
     for path in sorted(set(selected)):
-        data=path.read_bytes(); rel=path.relative_to(root).as_posix(); text=data.decode('utf-8',errors='replace')
-        key=_sha(_canonical({'version':VERSION,'content':_sha(data),'scope':scope,'profile':profile}).encode())
+        data=path.read_bytes(); rel=path.relative_to(root).as_posix(); text=data.decode('utf-8')
+        key=_sha(_canonical({'version':VERSION,'path':rel,'commit':commit_id,'content':_sha(data),'scope':scope,'profile':profile}).encode())
         hits.append(key in cache)
         if key in cache: record=dict(cache[key])
         else:
             lines=text.splitlines(); record={'path':rel,'hash':_sha(data),'commit':commit_id,'line_start':1 if lines else 0,'line_end':len(lines),'text':text}
             cache[key]=dict(record)
         records.append(record)
-    key=_sha(_canonical({'version':VERSION,'scope':scope,'profile':profile,'sources':[(r['path'],r['hash']) for r in records]}).encode())
+    key=_sha(_canonical({'version':VERSION,'commit':commit_id,'scope':scope,'profile':profile,'sources':[(r['path'],r['hash']) for r in records]}).encode())
     return {'schema_version':1,'fingerprint':key,'sources':records,'cache_hit':bool(records) and all(hits)}
 
 def merge_digests(chunks: list[dict]) -> dict:

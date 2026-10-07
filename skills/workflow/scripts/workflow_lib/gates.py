@@ -48,6 +48,23 @@ def _required_proof(run: dict, item: dict) -> dict | None:
     return None
 
 
+def hardening_ready(run: dict) -> bool:
+    from .evidence import repository_fingerprint
+    for identifier in run.get('required_hardening_gates', []):
+        proof = run.get('hardening_proofs', {}).get(identifier, {})
+        if proof.get('passed') is not True or proof.get('config_hash') != run.get('hardening_config_hash'):
+            return False
+        repo = run.get('repositories', {}).get(proof.get('repo_id'), {})
+        try:
+            if repository_fingerprint(Path(repo['location'])) != proof.get('repository_fingerprint'):
+                return False
+        except (KeyError, OSError, ValueError):
+            return False
+        except Exception:
+            return False
+    return True
+
+
 def gate_status(run: dict) -> dict:
     if run.get("status") in {"delivered", "discarded"}:
         return {"stage": run["status"], "can_advance": False, "blocking_findings": [],
@@ -66,7 +83,7 @@ def gate_status(run: dict) -> dict:
             stage = "acceptance"
             accepted = run.get("acceptances", [])
             if accepted and accepted[-1].get("complete") is True and accepted[-1].get("fresh", True):
-                stage = "hardening" if run.get("required_hardening_gates") else "delivery"
+                stage = "delivery" if hardening_ready(run) else "hardening"
     mandatory_blockers = [finding.get("id") for finding in run.get("unresolved_findings", [])
                           if finding.get("mandatory") is True and finding.get("status") != "waived"]
     if mandatory_blockers:

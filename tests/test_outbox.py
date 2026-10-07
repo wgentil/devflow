@@ -3,13 +3,15 @@ from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'skills/workflow/scripts'))
 from workflow_lib.outbox import enqueue_write, retry_writes
 class OutboxTests(unittest.TestCase):
- def test_partial_external_failure_and_retry(self):
+ def test_enqueue_binds_authorization_and_preserves_generated_payload(self):
   import hashlib,json
-  payload={'comment':'generated'}; digest=hashlib.sha256(json.dumps(payload,sort_keys=True,ensure_ascii=False,separators=(',',':')).encode()).hexdigest()
+  payload={'comment':'generated'}
+  digest=hashlib.sha256(json.dumps(payload,sort_keys=True,ensure_ascii=False,separators=(',',':')).encode()).hexdigest()
   authorization={'approved':True,'manifest_hash':'approved','operation_id':'op','payload_hash':digest}
-  state=enqueue_write({'write_authorizations':{'a':authorization}},'approved',{'id':'op','payload':payload,'authorization_id':'a'}); adapter=type('A',(),{'send':lambda self,op:{'receipt':'r1'}})(); result=retry_writes(state,adapter); again=retry_writes(result,adapter); self.assertEqual(again['outbox']['op']['receipt'],'r1')
-  calls=[]
-  class Uncertain:
-   def send(self,op): calls.append('send'); return {}
-   def reconcile(self,op): return None
-  uncertain=retry_writes(state,Uncertain()); retry_writes(uncertain,Uncertain()); self.assertEqual(calls,['send'])
+  state={'write_authorizations':{'a':authorization}}
+  result=enqueue_write(state,'approved',{'id':'op','payload':payload,'authorization_id':'a'})
+  self.assertEqual(result['outbox']['op']['payload'],payload)
+  self.assertNotIn('outbox',state)
+  with self.assertRaises(ValueError):
+   enqueue_write(state,'different',{'id':'op','payload':payload,'authorization_id':'a'})
+  with self.assertRaises(TypeError): retry_writes(result,object())

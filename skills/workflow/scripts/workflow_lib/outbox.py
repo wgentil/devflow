@@ -19,20 +19,65 @@ def enqueue_write(state:dict,approved_manifest_hash:str,operation:dict)->dict:
  box.setdefault(operation['id'],record)
  return result
 
-def retry_writes(state:dict,adapter:object)->dict:
- result=deepcopy(state)
- for op in result.get('outbox',{}).values():
-  if op.get('status')=='sent': continue
-  reconcile=getattr(adapter,'reconcile',None)
-  receipt=reconcile(op) if reconcile else None
-  if not receipt and op.get('status')=='failed':
-   op['failure']='remote result remains unknown; no resend was attempted'
+def retry_writes(root, adapter):
+ """Dispatch authorized writes from a durable control root, with crash recovery."""
+ if isinstance(root, dict):
+  raise TypeError('retry_writes requires a journal root, not an editable state dictionary')
+ return _retry_journal(root, adapter)
+
+
+def _retry_journal(root, adapter):
+ from pathlib import Path
+ from uuid import uuid4
+ from .store import read_state, transact, WorkflowError
+ root = Path(root).expanduser().resolve()
+ for identifier in list(read_state(root)['data'].get('outbox', {})):
+  state = read_state(root)
+  record = state['data']['outbox'][identifier]
+  if record['status'] == 'sent':
    continue
-  if not receipt: receipt=adapter.send(op)
-  if isinstance(receipt,dict) and receipt.get('receipt'):
-   op.update(status='sent',receipt=receipt['receipt'])
-  else: op.update(status='failed',failure='remote result unavailable; reconcile before retry')
- return result
+  if record['status'] == 'pending':
+   token = uuid4().hex
+   try:
+    receipt = transact(root, state['version'], f'outbox:start:{identifier}',
+        {'kind': 'domain.outbox.started', 'payload': {'request': {'id': identifier, 'token': token}}})
+   except WorkflowError as exc:
+    if exc.code == 'STALE_STATE':
+     continue
+    raise
+   # Another dispatcher may have reserved this ID between read and commit.
+   if receipt['replayed']:
+    continue
+   record = receipt['state']['data']['outbox'][identifier]
+   try:
+    response = adapter.send(deepcopy(record))
+   except Exception:
+    response = None
+  else:
+   # Interrupted sends are reconciled only. Never blindly resend them.
+   reconcile = getattr(adapter, 'reconcile', None)
+   try:
+    response = reconcile(deepcopy(record)) if reconcile else None
+   except Exception:
+    response = None
+  request = {'id': identifier, 'token': record['dispatch_token']}
+  if isinstance(response, dict) and isinstance(response.get('receipt'), str) and response['receipt']:
+   request['receipt'] = response['receipt']
+   kind, operation_id = 'domain.outbox.receipt', f'outbox:receipt:{identifier}:{_hash(response["receipt"])}'
+  else:
+   kind, operation_id = 'domain.outbox.uncertain', f'outbox:uncertain:{identifier}'
+  # A concurrent state update must not lose a known remote receipt.
+  while True:
+   latest = read_state(root)
+   if latest['data']['outbox'][identifier]['status'] == 'sent':
+    break
+   try:
+    transact(root, latest['version'], operation_id, {'kind': kind, 'payload': {'request': request}})
+    break
+   except WorkflowError as exc:
+    if exc.code != 'STALE_STATE':
+     raise
+ return read_state(root)['data']
 
 def classify_issue(state:dict,issue_id:str,proposal:dict,confirmed_hash:str|None)->dict:
  import copy

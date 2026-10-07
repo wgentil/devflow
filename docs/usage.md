@@ -62,3 +62,9 @@ The implementation uses `fcntl` advisory locks and is supported on macOS/Linux. 
 ## Foundation limits
 
 The foundation and current verification/review work cover context resolution, repository registration, approved specifications, dependency validation, resumable attempts, attempt-bound code/IaC/agent-evaluation proofs, independent review records, and requirement acceptance records. Exact-head delivery, issue management, ingestion, migration, and usage reporting remain unavailable until their follow-on increments are implemented. Never treat an attempt result or unavailable gate as passed evidence. Context token budgets are rough estimates; actual usage is not reported by the foundation.
+
+The auxiliary commands are now routed and journal-backed. Mutations require a
+control root and explicit operation ID; retry receipts survive fresh sessions and
+snapshot corruption. See [durable workflow interfaces](journal-integration.md) for
+issue snapshots/authorizations, migration binding, persisted ingestion caches,
+hardening attempts, usage backfills, immutable prices, and frozen report exports.

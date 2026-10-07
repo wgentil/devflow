@@ -1,0 +1,277 @@
+"""Exercise authoritative auxiliary workflows through fresh CLI processes."""
+import json
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+ENTRY = ROOT / 'skills/workflow/scripts/run.py'
+sys.path.insert(0, str(ENTRY.parent))
+from workflow_lib.store import read_state, transact, WorkflowError
+
+class JournalIntegrationTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp.name) / 'control'
+        self.input = Path(self.temp.name) / 'input.json'
+    def tearDown(self): self.temp.cleanup()
+    def cli(self, group, operation, data, op, **options):
+        self.input.write_text(json.dumps(data))
+        args = [sys.executable, str(ENTRY), group, operation, '--root', str(self.root),
+                '--input', str(self.input), '--operation-id', op]
+        if options: args += ['--options', json.dumps(options)]
+        result = subprocess.run(args, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        return json.loads(result.stdout)
+    def test_issue_snapshot_group_and_replay_survive_snapshot_loss(self):
+        self.cli('issues', 'capture', {'issue': {'id':'i1','description':'human'}}, 'capture')
+        snapshot={'complete':True,'repo_id':'r','pages':[1],'expected_pages':1,
+                  'issues':[{'id':'i1','description':'human'}]}
+        result=self.cli('issues','snapshot',{'snapshot':snapshot},'snapshot')
+        self.cli('issues','group',{'snapshot_hash':result['snapshot_hash'],
+                 'groups':[{'id':'g','issue_ids':['i1']}]},'group')
+        version=read_state(self.root)['version']
+        (self.root/'state.json').write_text('corrupt cache')
+        replay=self.cli('issues','group',{'snapshot_hash':result['snapshot_hash'],
+                 'groups':[{'id':'g','issue_ids':['i1']}]},'group')
+        self.assertTrue(replay['replayed'])
+        state=read_state(self.root)
+        self.assertEqual(state['version'],version)
+        self.assertEqual(state['data']['issues']['i1']['original']['description'],'human')
+        self.assertEqual(state['data']['groups'][0]['id'],'g')
+    def test_partial_snapshot_and_injected_state_cannot_group(self):
+        self.cli('issues','snapshot',{'snapshot':{'complete':False,'issues':[{'id':'i'}]}},'partial')
+        before=read_state(self.root)
+        with self.assertRaises(WorkflowError):
+            transact(self.root,before['version'],'bad',{'kind':'domain.issues.group',
+                     'payload':{'request':{'snapshot_hash':'bad','groups':[]}}})
+        self.assertEqual(read_state(self.root)['version'],before['version'])
+    def test_usage_backfill_and_prices_are_append_only(self):
+        row={'source_id':'session','event_id':'e','provider':'p','model':'m',
+             'input_tokens':10,'cached_tokens':2,'output_tokens':3}
+        self.cli('stats','usage-import',[row],'u1',adapter_version='v1')
+        self.cli('stats','usage-import',[row],'u2',adapter_version='v1')
+        self.assertEqual(len(read_state(self.root)['data']['usage']['events']),1)
+        prices={'version':'v1','source':{'timestamp':'2026-10-06T00:00:00Z'},
+                'rates':{'p/m':{'input':1,'cached':.5,'output':2}}}
+        self.cli('stats','prices',prices,'p1')
+        original=read_state(self.root)['data']['prices']['v1']
+        with self.assertRaises(WorkflowError):
+            transact(self.root,read_state(self.root)['version'],'p2',{'kind':'domain.stats.prices',
+                     'payload':{'request':{**prices,'rates':{'p/m':{'input':9,'cached':9,'output':9}}}}})
+        self.assertEqual(read_state(self.root)['data']['prices']['v1'],original)
+    def test_report_freezes_journal_inputs_instead_of_caller_outcomes(self):
+        result=self.cli('stats','metrics',{'runs':[{'id':'forged','status':'delivered','acceptance':True}]},
+                        'report',as_of='2026-10-06T00:00:00Z')
+        self.assertEqual(result['report']['run_ids'],[])
+        before=read_state(self.root)['data']['reports'][0]
+        self.cli('stats','metrics',{},'later',as_of='2026-11-06T00:00:00Z')
+        self.assertEqual(read_state(self.root)['data']['reports'][0],before)
+    def test_migration_plan_and_parity_survive_replay(self):
+        self.cli('migrate','store',{'increments':{'increments':[{'id':'one','depends_on':[],
+                 'criteria':['c1']}]},'parity':[{'id':'c1'}]},'migration')
+        with self.assertRaises(WorkflowError):
+            transact(self.root,1,'unknown',{'kind':'domain.migrate.record-parity',
+                'payload':{'request':{'increment_id':'missing','verified':[]}}})
+        result=self.cli('migrate','record-parity',{'increment_id':'one','verified':[],
+            'ruling':{'approved':True,'actor_id':'human','why':'removed intentionally',
+                      'cost_if_wrong':'restore it','criteria':['c1']}},'parity')
+        self.assertEqual(read_state(self.root)['data']['migration']['parity'][0]['increment_id'],'one')
+    def test_unknown_domain_events_fail_without_mutation(self):
+        with self.assertRaises(WorkflowError):
+            transact(self.root,0,'unknown',{'kind':'domain.unknown','payload':{'request':{}}})
+        self.assertEqual(read_state(self.root)['version'],0)
+
+
+class DurableOutboxTests(unittest.TestCase):
+    setUp=JournalIntegrationTests.setUp
+    tearDown=JournalIntegrationTests.tearDown
+    cli=JournalIntegrationTests.cli
+    def seed_delivery(self):
+        from workflow_lib.journal_domains import digest
+        issue={'id':'i1','description':'human'}
+        snap={'complete':True,'repo_id':'r','pages':[1],'expected_pages':1,'issues':[issue]}
+        h=digest(snap)
+        transact(self.root,0,'fixture',{'kind':'fixture','payload':{
+            'issues':{'i1':{'id':'i1','original':issue,'fingerprint':digest(issue)}},
+            'snapshots':{h:snap},'snapshot_hash':h,'snapshot_valid':True,
+            'groups':[{'id':'g','issue_ids':['i1']}],
+            'runs':{'run':{'id':'run','status':'delivered','issue_group_id':'g',
+                     'acceptances':[{'complete':True,'fresh':True,'requirements':[{'id':'R1','verdict':'MET'}]}],
+                     'delivery':{'manifest_hash':'m','recorded_at':'2026-10-01T00:00:00Z'}}}}})
+        return h
+    def test_crash_after_external_receipt_reconciles_without_resending(self):
+        from workflow_lib.outbox import retry_writes
+        h=self.seed_delivery()
+        result=self.cli('issues','authorize-write',{'run_id':'run','issue_id':'i1',
+            'snapshot_hash':h,'manifest_hash':'m','operation_id':'comment',
+            'action':'create-comment','actor_id':'human','requirement_ids':['R1'],
+            'payload':{'issue_id':'i1','body':'done','ownership_marker':'devflow:run:i1'}},'approve')
+        self.cli('issues','enqueue',{'authorization_id':result['authorization_id']},'enqueue')
+        class Connector:
+            calls=0
+            receipt=None
+            def reconcile(self,op): return self.receipt
+            def send(self,op):
+                self.calls+=1
+                self.receipt={'receipt':'remote-123'}
+                raise KeyboardInterrupt('crash after remote write')
+        connector=Connector()
+        with self.assertRaises(KeyboardInterrupt): retry_writes(self.root,connector)
+        self.assertEqual(read_state(self.root)['data']['outbox']['comment']['status'],'dispatching')
+        retry_writes(self.root,connector)
+        retry_writes(self.root,connector)
+        self.assertEqual(connector.calls,1)
+        self.assertEqual(read_state(self.root)['data']['outbox']['comment']['receipt'],'remote-123')
+    def test_operation_conflict_and_stale_version_commit_nothing(self):
+        self.cli('issues','capture',{'issue':{'id':'i','description':'original'}},'capture')
+        before=read_state(self.root)['version']
+        args=[sys.executable,str(ENTRY),'issues','capture','--root',str(self.root),
+              '--input',str(self.input),'--operation-id','capture']
+        self.input.write_text(json.dumps({'issue':{'id':'i','description':'changed'}}))
+        conflict=subprocess.run(args,capture_output=True,text=True)
+        self.assertEqual(json.loads(conflict.stdout)['error'],'OPERATION_CONFLICT')
+        stale=subprocess.run(args[:-1]+['new','--expected-version','0'],capture_output=True,text=True)
+        self.assertEqual(json.loads(stale.stdout)['error'],'STALE_STATE')
+        self.assertEqual(read_state(self.root)['version'],before)
+
+class ExecutionIntegrationTests(unittest.TestCase):
+    setUp=JournalIntegrationTests.setUp
+    tearDown=JournalIntegrationTests.tearDown
+    cli=JournalIntegrationTests.cli
+    def seed_repo(self):
+        self.repo=Path(self.temp.name)/'repo'; self.repo.mkdir()
+        (self.repo/'app.py').write_text('x=1\n')
+        subprocess.run(['git','init','-q'],cwd=self.repo,check=True)
+        subprocess.run(['git','add','.'],cwd=self.repo,check=True)
+        subprocess.run(['git','-c','user.name=fixture','-c','user.email=fixture@test','commit','-qm','base'],cwd=self.repo,check=True)
+        transact(self.root,0,'fixture',{'kind':'fixture','payload':{'repositories':{'r':{'location':str(self.repo)}},
+            'runs':{'run':{'id':'run','status':'active','plan':{'work_items':[{'id':'w','repo_id':'r'}]}}}}})
+    def test_hardening_proofs_are_journaled_and_replay_does_not_execute(self):
+        self.seed_repo()
+        counter=Path(self.temp.name)/'count'
+        command=[sys.executable,'-c',f"from pathlib import Path; p=Path({str(counter)!r}); p.write_text(str(int(p.read_text())+1) if p.exists() else '1')"]
+        self.cli('harden','configure',{'run_id':'run','actor_id':'human','gates':{'security':{'repo_id':'r','command':command}}},'config')
+        result=self.cli('harden','gate',{'run_id':'run','gate_id':'security'},'gate')
+        self.assertTrue(result['proof']['passed'])
+        self.cli('harden','gate',{'run_id':'run','gate_id':'security'},'gate')
+        self.assertEqual(counter.read_text(),'1')
+        state=read_state(self.root)
+        self.assertTrue(state['data']['runs']['run']['hardening_proofs']['security']['passed'])
+    def test_ingestion_persists_index_cache_and_provenance_for_equal_files(self):
+        self.seed_repo()
+        (self.repo/'copy.py').write_text('x=1\n')
+        profile=Path(self.temp.name)/'profile.json'; profile.write_text(json.dumps({'extensions':['.py']}))
+        args=[sys.executable,str(ENTRY),'ingest','--root',str(self.root),'--repo-id','r',
+              '--scope','.','--profile-json',str(profile),'--operation-id','ingest']
+        result=subprocess.run(args,capture_output=True,text=True)
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        data=read_state(self.root)['data']
+        index=next(iter(data['source_indexes'].values()))
+        self.assertEqual({s['path'] for s in index['sources']},{'app.py','copy.py'})
+        self.assertTrue(data['ingestion_cache'])
+        version=read_state(self.root)['version']
+        subprocess.run(args,capture_output=True,text=True,check=True)
+        self.assertEqual(read_state(self.root)['version'],version)
+    def test_metrics_use_delivery_acceptance_and_bound_usage_only(self):
+        from workflow_lib.journal_domains import digest
+        transact(self.root,0,'fixture',{'kind':'fixture','payload':{'runs':{
+            'run':{'id':'run','status':'delivered','delivery':{'recorded_at':'2026-10-01T00:00:00Z'},
+                'acceptances':[{'complete':True,'requirements':[{'id':'R1','verdict':'MET'}]}]},
+            'pending':{'status':'active'}}}})
+        row={'source_id':'s','event_id':'e','provider':'p','model':'m','input_tokens':100,'cached_tokens':10,'output_tokens':5}
+        self.cli('stats','usage-import',[row],'usage',adapter_version='v1',bindings={'s:e':{'run_id':'run'}})
+        self.cli('stats','expectations',{'events':[{'source_id':'s','event_id':'e','run_id':'run'}]},'expected')
+        self.cli('stats','prices',{'version':'v1','source':{'timestamp':'2026-10-06T00:00:00Z'},'rates':{'p/m':{'input':1,'cached':.5,'output':2}}},'prices')
+        report=self.cli('stats','metrics',{},'report',as_of='2026-11-01T00:00:00Z',price_version='v1')['report']
+        self.assertEqual(report['run_ids'],['run']); self.assertEqual(report['accepted_requirements'],1)
+        self.assertEqual(report['usage_coverage'],1); self.assertAlmostEqual(report['cost'],.000105)
+        self.assertIn('pending',report['excluded_run_ids'])
+
+class ReportingIntegrationTests(unittest.TestCase):
+    def test_frozen_report_rollup_excludes_unpriced_denominators(self):
+        from workflow_lib.reporting import rollup
+        result=rollup([{'id':'a','cost':10,'accepted_requirements':2,'as_of':'2026-11-01T00:30:00+01:00'},
+                       {'id':'b','cost':None,'accepted_requirements':100,'as_of':'2026-10-31T23:30:00Z'}],{'month':'2026-10'})
+        self.assertEqual(result['eligible_run_ids'],['a'])
+        self.assertEqual(result['excluded_run_ids'],['b'])
+        self.assertEqual(result['ratio'],5)
+    def test_nonfinite_usage_prices_fail_without_commit(self):
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d)
+            with self.assertRaises(WorkflowError):
+                transact(root,0,'nan',{'kind':'domain.stats.prices','payload':{'request':{
+                    'version':'v','source':{'timestamp':'now'},'rates':{'p/m':{'input':float('nan'),'cached':0,'output':0}}}}})
+            self.assertEqual(read_state(root)['version'],0)
+
+class GateIntegrationTests(unittest.TestCase):
+    setUp=JournalIntegrationTests.setUp
+    tearDown=JournalIntegrationTests.tearDown
+    cli=JournalIntegrationTests.cli
+    seed_repo=ExecutionIntegrationTests.seed_repo
+    def test_missing_or_stale_hardening_proof_blocks_delivery(self):
+        from workflow_lib.gates import hardening_ready
+        self.seed_repo()
+        self.cli('harden','configure',{'run_id':'run','actor_id':'human','gates':{'security':{'repo_id':'r','command':[sys.executable,'-c','print("ok")']}}},'config')
+        self.assertFalse(hardening_ready(read_state(self.root)['data']['runs']['run']))
+        self.cli('harden','gate',{'run_id':'run','gate_id':'security'},'gate')
+        self.assertTrue(hardening_ready(read_state(self.root)['data']['runs']['run']))
+        (self.repo/'app.py').write_text('changed\n')
+        self.assertFalse(hardening_ready(read_state(self.root)['data']['runs']['run']))
+    def test_migration_binding_keeps_predecessor_delivery_guard(self):
+        self.seed_repo()
+        self.cli('migrate','store',{'increments':{'increments':[{'id':'a','depends_on':[],'criteria':['a']},{'id':'b','depends_on':['a'],'criteria':['b']}]},'parity':[{'id':'a'},{'id':'b'}]},'plan')
+        self.cli('migrate','bind',{'run_id':'run','increment_id':'b'},'bind')
+        from workflow_lib.journal_domains import migration_delivery_guard
+        with self.assertRaises(WorkflowError): migration_delivery_guard(read_state(self.root)['data'],'run')
+
+class ClassificationIntegrationTests(unittest.TestCase):
+    setUp=JournalIntegrationTests.setUp
+    tearDown=JournalIntegrationTests.tearDown
+    cli=JournalIntegrationTests.cli
+    seed_delivery=DurableOutboxTests.seed_delivery
+    def test_confirmed_classifications_are_counted_once_within_delivery_window(self):
+        h=self.seed_delivery()
+        request={'issue_id':'i1','proposal':{'kind':'escaped-defect','run_id':'run','requirement_ids':['R1']}}
+        proposed=self.cli('issues','classify',request,'proposal')
+        confirmed={**request,'confirmed_hash':proposed['proposal_hash'],'actor_id':'human','confirmed_at':'2026-10-05T00:00:00Z'}
+        self.cli('issues','classify',confirmed,'confirmation')
+        self.cli('issues','classify',confirmed,'duplicate-confirmation')
+        early=self.cli('stats','metrics',{},'early',as_of='2026-10-02T00:00:00Z')['report']
+        later=self.cli('stats','metrics',{},'later',as_of='2026-11-01T00:00:00Z')['report']
+        self.assertEqual(early['escaped_defects'],0)
+        self.assertEqual(later['escaped_defects'],1)
+        self.assertEqual(later['escaped_defect_rate'],1)
+    def test_caller_cannot_authorize_updating_a_human_comment(self):
+        h=self.seed_delivery()
+        with self.assertRaises(WorkflowError):
+            transact(self.root,1,'edit-human',{'kind':'domain.issues.authorize-write','payload':{'request':{
+                'run_id':'run','issue_id':'i1','snapshot_hash':h,'manifest_hash':'m','operation_id':'edit',
+                'action':'update-comment','actor_id':'human','requirement_ids':['R1'],
+                'payload':{'issue_id':'i1','body':'overwrite','ownership_marker':'devflow:run:i1','remote_comment_id':'human-comment'}}}})
+
+if __name__=='__main__': unittest.main()
+
+class SnapshotRollupTests(unittest.TestCase):
+    def test_repriced_snapshots_do_not_count_a_delivered_run_twice(self):
+        from workflow_lib.reporting import rollup
+        old={'id':'old','run_ids':['r'],'cost':1,'accepted_requirements':1,'as_of':'2026-10-01T00:00:00Z'}
+        new={**old,'id':'new','cost':2,'as_of':'2026-10-02T00:00:00Z'}
+        result=rollup([old,new],{})
+        self.assertEqual(result['ratio'],2)
+        self.assertEqual(result['eligible_run_ids'],['new'])
+        self.assertIn('old',result['excluded_run_ids'])
+
+class ReportInspectionTests(unittest.TestCase):
+    setUp=JournalIntegrationTests.setUp
+    tearDown=JournalIntegrationTests.tearDown
+    cli=JournalIntegrationTests.cli
+    def test_frozen_report_exports_without_resubmitting_its_content(self):
+        record=self.cli('stats','metrics',{},'report',as_of='2026-10-06T00:00:00Z')['report']
+        result=subprocess.run([sys.executable,str(ENTRY),'stats','export','--root',str(self.root),
+            '--options',json.dumps({'report_id':record['id'],'format':'json'})],capture_output=True,text=True)
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        self.assertEqual(json.loads(json.loads(result.stdout)['output']),record)
+        self.assertEqual(read_state(self.root)['version'],1)

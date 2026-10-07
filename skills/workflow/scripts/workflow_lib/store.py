@@ -32,7 +32,11 @@ def _apply_event(state: dict, event: dict) -> None:
     """Materialize generic patches and compact run deltas from journal events."""
     kind, payload = event["kind"], deepcopy(event["payload"])
     data = state["data"]
-    if kind == "run.started":
+    if kind.startswith("domain."):
+        from .journal_domains import reduce_event
+        result = reduce_event(data, kind, payload, event.get("sequence", 1) - 1)
+        data.setdefault("domain_receipts", {})[event["operation_id"]] = result
+    elif kind == "run.started":
         run = payload.get("run")
         if not isinstance(run, dict) or not run.get("id") or run["id"] in data.setdefault("runs", {}):
             raise WorkflowError("INVALID_EVENT", "invalid or duplicate run.started event")
@@ -409,6 +413,11 @@ def _apply_event(state: dict, event: dict) -> None:
         from .gates import gate_status
         if gate_status(run).get("stage") != "delivery":
             raise WorkflowError("INVALID_EVENT", "delivery gate is not open")
+        from .journal_domains import migration_delivery_guard
+        migration_delivery_guard(data, run['id'])
+        if run.get('migration_increment_id'):
+            data['migration'].setdefault('deliveries', {})[run['migration_increment_id']] = {
+                'run_id': run['id'], 'manifest_hash': delivery['manifest_hash']}
         run["status"] = "delivered"
         run["delivery"] = delivery
         run["unavailable_gates"] = [gate for gate in run.get("unavailable_gates", []) if gate != "delivery"]
