@@ -18,6 +18,8 @@ The user selected:
    implementation attempt per run; independent reviewers use separate roles.
 3. Return verification failures to the current implementer for rework. Do not
    automatically launch a rework agent.
+4. Upgrades are user-controlled. Cross-host handoff must detect and enforce
+   DevFlow version parity; no automatic installation updates.
 
 Assumptions proposed for approval: retain the existing Python 3.11+ macOS/Linux
 support; share a local filesystem control root; do not add remote coordination,
@@ -119,13 +121,19 @@ One active implementer binding owns a run. Reviewers may attach concurrently to
 independent packages; they cannot take implementation ownership. Two sessions
 cannot acquire implementer ownership through concurrent attach requests.
 
-Handoff atomically transfers the implementer binding from source session to a
-specified target host/session/actor, invalidates the source binding and preserves
-the existing run/attempt token. The destination recreates its locator from the
-committed transfer using `host attach`; locator updates cannot grant ownership.
-If no target session ID exists yet, the user can explicitly detach the old session
-and then attach the new one. A crashed owner is replaced only by an explicit
-handoff/detach naming the prior binding revision; no clock-based auto takeover.
+Handoff is prepared by the source and accepted by the destination using its own
+installed helper. Preparation identifies the source binding revision, target
+host/session/actor and release identity without relinquishing ownership. Acceptance
+rechecks both releases and atomically transfers the implementer binding, invalidates
+the source binding and preserves the existing run/attempt token. The destination
+recreates its locator from the committed transfer; locator updates cannot grant
+ownership. A failed preflight leaves the source owner and attempt unchanged.
+
+If no target session exists yet, prepare the handoff for later acceptance. The
+user may explicitly detach first, but the journal preserves the last owner release
+as the resume baseline; detach/attach must not bypass version parity. A crashed
+owner is replaced only by an explicit handoff/detach naming the prior binding
+revision; no clock-based auto takeover.
 
 Track every implementing actor across handoffs. Independent reviewers cannot be
 any actor that implemented the reviewed work, regardless of host or later ownership
@@ -136,6 +144,58 @@ After transfer, old sessions must refresh before any new workflow mutation. Shar
 mutation preflight must reject an explicitly supplied stale host binding. Existing
 unattached trusted CLI clients retain current behavior; host ownership is local
 coordination, not a security boundary around arbitrary shell or filesystem access.
+
+## User-controlled upgrades and version parity
+
+Codex and Claude installations remain separately managed by the user. DevFlow
+never installs, upgrades, downgrades or reloads either host automatically.
+Compatibility checks concern the installed DevFlow package, not equality of the
+Codex and Claude application versions.
+
+Each package exposes a release descriptor through `version`: plugin version,
+release identity, host-binding protocol version, supported journal schema and a
+fingerprint of the distributed skills, engine, adapters and manifests. The release
+identity is common to both host packages produced from the same source revision.
+Compute fingerprints from package content, excluding Git metadata, runtime caches,
+local bindings and installation-specific absolute paths. This catches a changed
+helper/skill shipped under an unchanged version string.
+
+Bindings capture the release actually used by the session. Attachment and resume
+compare that session's loaded release with its installed helper descriptor. If a
+user upgrades the installation while the session retains old skill instructions,
+require the user to reload/restart and reattach; do not combine old instructions
+with new helpers silently. Host guidance must explain how to obtain the loaded
+release identity, and missing identity is not assumed compatible.
+
+Before accepting a cross-host transfer, the destination reads its own installed
+release and validates the source release against the source binding and package
+fingerprint. A stale source descriptor or changed installed source package requires
+source refresh before proceeding. Cached registration alone is insufficient.
+Ownership transfer commits only after this preflight and expected-binding/version
+checks succeed. Installation files must remain stable across the check; recheck
+fingerprints before transfer and reject a detected change.
+
+Require exact plugin version, release identity/fingerprint and host-binding protocol
+parity, plus journal-schema support. Do not infer compatibility from the same major
+version. A matching older pair may hand off without contacting an update service;
+this is parity checking, not enforcement of the latest available release. If either
+side differs or its release is unknown, block with a structured mismatch response
+showing host, installed/loaded versions, release fingerprints and the unchanged
+owner. Explain which installation/session must be upgraded, aligned or refreshed.
+Never choose or perform an upgrade for the user.
+
+For an intentional upgrade between handoffs, both installations must be brought to
+the same release. An explicit `host attach` refresh, after user reload/restart,
+may update the session binding's release only when the new release supports the
+existing journal and run/attempt contracts. Record that refresh without changing
+attempt ownership or manufacturing evidence. Historical release metadata remains
+immutable. An incompatible journal/run contract stays blocked and requires a
+separately documented migration; do not rewrite history to make versions match.
+
+The same resume guard applies to detached or crashed-owner recovery. Missing
+source release identity requires explicit legacy adoption with a recorded actor
+and verified schema support; it cannot silently waive a known cross-host mismatch.
+Legacy adoption is for pre-binding runs only, not a bypass for existing records.
 
 ## Task mapping and completion policy
 
@@ -247,8 +307,11 @@ flowchart TD
     Decision -->|No| Feedback["Actionable feedback to current implementer or reviewer"]
     Feedback --> Work
     Feedback -->|Correction budget exhausted| Adjudicate["Independent adjudication"]
-    Journal --> Transfer["Explicit sequential handoff"]
-    Transfer --> Resume["Other host resumes from journal"]
+    Journal --> Transfer["Prepare sequential handoff"]
+    Transfer --> Parity{"Installed and loaded DevFlow releases match?"}
+    Parity -->|No or unknown| Align["Block transfer; user aligns versions or refreshes sessions"]
+    Align --> Transfer
+    Parity -->|Yes| Resume["Other host resumes from journal"]
     Resume --> Brief
     Host -->|No attachment or task mapping| Ordinary["Ordinary host work"]
 ```
@@ -293,10 +356,23 @@ flowchart TD
 - R16: Usage honesty — host provenance supports normalized imports; unsupported
   raw collection and unavailable costs remain explicitly unavailable.
 
+- R17: Handoff parity — matching installed/loaded release identities permit transfer;
+  differing versions, same-version modified packages, unknown identity, unsupported
+  schema or stale loaded skills block before changing owner, attempt or evidence.
+- R18: User-controlled upgrade — mismatch feedback identifies both host releases
+  and remediation, but no hook/command downloads, installs, updates or reloads a
+  host automatically. An older matching pair needs no network freshness check.
+- R19: Upgrade/resume recovery — explicit supported release refresh preserves the
+  attempt and journal history; detached, crashed and legacy adoption paths cannot
+  bypass known parity conflicts. Concurrent install changes reject transfer.
+
 ## Validation and delivery
 
 Use reducer/command tests for binding conflicts, CAS races, task scopes, actor
-history, proof freshness and crash recovery. Protocol fixtures check Claude JSON
+history, proof freshness and crash recovery. Include version mismatch in both
+directions, stale session after a user upgrade, same-version content drift,
+matching older releases, unsupported schemas, package changes during transfer,
+explicit binding refresh, and detached/crashed resume parity. Protocol fixtures check Claude JSON
 input/output separately from policy. Exercise installed/relocated paths, project
 paths containing spaces and read-only plugin caches. Existing full tests and all
 skill metadata/link/example checks must pass.

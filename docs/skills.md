@@ -72,4 +72,6 @@ records. [CLI walkthrough](usage.md) provides additional commands. Use `df GROUP
 
 The [Codex and Claude Code design draft](superpowers/specs/2026-10-06-devflow-cross-host-design.md)
 proposes shared skills with opt-in Claude hooks and sequential handoff. It is a
-draft, not a claim that the Claude adapter is implemented.
+draft, not a claim that the Claude adapter is implemented. Upgrades remain
+user-controlled; the proposed handoff requires matching DevFlow releases in both
+hosts and blocks mismatches without changing installations.
