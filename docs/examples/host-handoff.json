@@ -1,0 +1,7 @@
+{
+  "binding_id": "example-owner",
+  "revision": 1,
+  "handoff_id": "<unique-handoff-id>",
+  "target_host": "codex",
+  "target_actor_id": "<destination-actor>"
+}

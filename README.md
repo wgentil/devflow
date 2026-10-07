@@ -19,3 +19,7 @@ Users control upgrades; no automatic installer/updater is bundled.
 
 Repository maintenance instructions are in [AGENTS.md](AGENTS.md). Every DevFlow
 change must review and update the affected setup guide, skill guides and examples.
+
+Shared Codex/Claude packaging uses one skill/helper tree. See [host guide](docs/hosts.md)
+and [cross-host verification](docs/cross-host-validation.md); automatic model routing
+and installed-host readiness have explicit evidence limits.

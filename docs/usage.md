@@ -84,3 +84,13 @@ hardening attempts, usage backfills, immutable prices, and frozen report exports
 
 For prerequisites, complete input examples and troubleshooting for every skill,
 see the [skill documentation index](skills.md).
+
+## Shared host integration
+
+The additive `host` command group provides initialization, attachment, status,
+detach, explicit task mapping, completion checks, handoff preparation/acceptance,
+legacy adoption and model preference/receipt/interruption records. See
+[developer command syntax](developer-cli.md) and [host policy](hosts.md).
+Host read-only commands do not emit offload files. Completion hooks never execute
+tests or replay live APIs. Legacy journals continue to materialize without host
+records; explicit adoption is required before assigning a first host binding.

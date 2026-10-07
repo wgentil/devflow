@@ -1,0 +1,8 @@
+{
+  "binding_id": "example-owner",
+  "revision": 1,
+  "task_id": "<actual-host-task-id>",
+  "scope": "item",
+  "item_id": "<planned-item>",
+  "token": "<latest-attempt-token>"
+}

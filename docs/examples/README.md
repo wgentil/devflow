@@ -28,3 +28,10 @@ The test runner is a minimal example for ordinary unittest methods. Subtests,
 expected failures and advanced custom runners need an adapter that emits the
 complete supported outcome records for their actual cases; don't treat omissions
 as GREEN. Run it with `python3 -B test_runner.py` from the application root.
+
+Host templates: [attachment](host-attach.json), [task mapping](host-task.json) and
+[handoff preparation](host-handoff.json). The agent fills actual host/session/task,
+project/run/item/token values; placeholders are not evidence or runnable identities.
+See [host contracts](../hosts.md) and [developer syntax](../developer-cli.md).
+The unittest JSON runner imports project modules from its actual working directory,
+including when its bundled script is invoked by absolute path.

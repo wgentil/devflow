@@ -399,3 +399,7 @@ To remap after a new attempt/refresh, use `host task-bind` with `replace: true`
 and `previous_mapping_hash` (canonical SHA-256 of the prior mapping, excluding
 command receipt metadata), preserving run/role/item/binding scope. Exact operation
 retry remains idempotent; ordinary conflicting task-ID reuse is rejected.
+
+Model overrides may name `stage` to scope a preference (for example planning).
+An override without stage applies across stages. An already recorded invocation
+retains its recorded routing mode; a new preference does not switch it mid-flight.

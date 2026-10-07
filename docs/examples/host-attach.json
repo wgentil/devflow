@@ -1,0 +1,9 @@
+{
+  "binding_id": "example-owner",
+  "host": "claude",
+  "session_id": "<actual-host-session-id>",
+  "actor_id": "<implementer-actor>",
+  "role": "implementer",
+  "run_id": "<selected-run>",
+  "project_dir": "<discovered-project>"
+}

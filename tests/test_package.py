@@ -20,7 +20,7 @@ class PackageTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         descriptor = json.loads(result.stdout)
         self.assertEqual(descriptor['plugin'], 'devflow')
-        self.assertEqual(descriptor['plugin_version'], '0.1.0')
+        self.assertEqual(descriptor['plugin_version'], '0.2.0')
         self.assertEqual(descriptor['state_schema_version'], 1)
         self.assertEqual(len(descriptor['fingerprint']), 64)
 
@@ -59,3 +59,24 @@ class PackageTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class HostResourceTests(unittest.TestCase):
+    def test_shared_guides_and_host_resources_resolve(self):
+        import re
+        files=list((ROOT/'skills').glob('*/SKILL.md'))+list((ROOT/'skills').glob('*/GUIDE.md'))+[ROOT/'docs/setup-and-usage.md',ROOT/'docs/hosts.md',ROOT/'docs/skills.md']
+        for file in files:
+            for target in re.findall(r'\[[^\]]+\]\(([^)]+)\)',file.read_text()):
+                if '://' in target or target.startswith('#'):continue
+                path=(file.parent/target.split('#')[0]).resolve()
+                self.assertTrue(path.exists(),f'{file.relative_to(ROOT)}: {target}')
+        hooks=json.loads((ROOT/'adapters/claude-code/hooks.json').read_text())['hooks']
+        self.assertEqual(set(hooks),{'SessionStart','UserPromptSubmit','TaskCompleted','Stop'})
+        self.assertEqual(json.loads((ROOT/'.codex-plugin/plugin.json').read_text())['skills'],'./skills/')
+    def test_host_examples_cover_attachment_mapping_and_handoff(self):
+        attach=json.loads((ROOT/'docs/examples/host-attach.json').read_text())
+        task=json.loads((ROOT/'docs/examples/host-task.json').read_text())
+        handoff=json.loads((ROOT/'docs/examples/host-handoff.json').read_text())
+        self.assertEqual(attach['role'],'implementer')
+        self.assertEqual(task['binding_id'],attach['binding_id'])
+        self.assertEqual(handoff['binding_id'],attach['binding_id'])
+        self.assertEqual(task['scope'],'item')

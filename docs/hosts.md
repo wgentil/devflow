@@ -105,3 +105,7 @@ Compatible binding refresh likewise requires remapping tasks to the new revision
 `host status` includes current task mapping hashes for explicit rework remapping.
 Journal mutation events reference binding ID/revision rather than duplicating the
 release descriptor on every operation; release history belongs to the binding.
+
+Moving a project with its default control directory requires explicit repository/
+binding relocation repair; initialization does not invent a second repository ID.
+A locator copied from another project cannot make mapped work complete there.

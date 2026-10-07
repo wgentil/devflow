@@ -2,6 +2,7 @@
 import json
 import sys
 import unittest
+from pathlib import Path
 
 
 class RecordedResult(unittest.TextTestResult):
@@ -27,6 +28,7 @@ class RecordedResult(unittest.TextTestResult):
 
 
 if __name__ == '__main__':
+    sys.path.insert(0, str(Path.cwd()))
     suite = unittest.defaultTestLoader.discover('tests')
     result = unittest.TextTestRunner(stream=sys.stderr, resultclass=RecordedResult).run(suite)
     print(json.dumps({'tests': result.records}))

@@ -88,3 +88,9 @@ hosts and blocks mismatches without changing installations.
 The same draft defines stage model profiles, validated new-model adoption,
 retirement/fallback handling, user pins and explicit advisory versus strict
 enforcement. Model routing is proposed and not implemented in the current helpers.
+
+## Shared hosts
+
+All ten skills share [host ownership, completion and model contracts](hosts.md).
+See [setup and initialization](setup-and-usage.md) and the
+[installed-host validation report](cross-host-validation.md).

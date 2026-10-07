@@ -1,7 +1,8 @@
 # DevFlow shared Codex and Claude Code design
 
-Status: draft for user review. This document proposes a new increment; none of
-its new adapters or hook behaviors should be treated as implemented.
+Status: approved for implementation by the user. This document defines the target
+contracts; [implementation validation](../../cross-host-validation.md) records
+actual coverage, host verification and remaining limitations.
 
 ## Intent and agreed decisions
 
