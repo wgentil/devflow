@@ -65,6 +65,31 @@ def register_repo(state: dict, repo_id: str, location: str) -> dict:
     return result
 
 
+def record_slice(state: dict, layer: str, name: str, answer: dict) -> dict:
+    if layer not in {"org", "project"} or not isinstance(name, str) or not name:
+        raise WorkflowError("INVALID_CONTEXT", "layer and slice name are required")
+    validate_context_layer({"slices": {name: answer}})
+    result = deepcopy(state)
+    contexts = result.setdefault("context", {})
+    contexts.setdefault(layer, {"slices": {}}).setdefault("slices", {})[name] = deepcopy(answer)
+    result["resolved_context"] = None
+    result["resolved_context_source_hash"] = None
+    result["context_projections"] = {}
+    return result
+
+
+def remove_location(state: dict, repo_id: str) -> dict:
+    repos = state.get("repositories", {})
+    if repo_id not in repos:
+        raise WorkflowError("REPOSITORY_NOT_REGISTERED", f"unknown repository {repo_id}")
+    for run in state.get("runs", {}).values():
+        if run.get("status") == "active" and any(item.get("repo_id") == repo_id for item in run.get("plan", {}).get("work_items", [])):
+            raise WorkflowError("REPOSITORY_IN_USE", "repository is referenced by an active run")
+    result = deepcopy(state)
+    del result["repositories"][repo_id]
+    return result
+
+
 def resolve_context(org: dict, project: dict, user_overrides: dict, budgets: dict) -> dict:
     """Resolve context precedence once and retain provenance and conflicts."""
     org_slices, project_slices = _slice_map(org), _slice_map(project)
