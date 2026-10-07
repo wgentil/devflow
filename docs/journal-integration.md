@@ -54,6 +54,13 @@ or a scoped human waiver including rationale and cost if wrong. `migrate bind` b
 an active run to an increment. Terminal delivery checks predecessor deliveries and
 parity acceptance and records the increment's delivery atomically with the run.
 `migrate inspect` reads the committed migration state.
+`migrate verify-pilot` reserves an execution before running legacy and replacement
+commands on separate copies of identical hashed fixtures. It records the
+versioned comparator, input/output hashes, differences, current item token,
+increment/criterion and repository fingerprint. An exact replay returns the
+same proof without rerunning commands. Typed passing pilot proof can back a
+criterion; manual final-verifier evidence remains valid. Delivery compares a
+typed proof to the current manifest repository fingerprint and latest attempt.
 
 `ingest --root ROOT --repo-id ID --scope PATH --profile-json PROFILE --operation-id ID`
 uses the stable repository registry and persisted content/configuration cache. It

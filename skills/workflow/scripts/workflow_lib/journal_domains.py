@@ -314,6 +314,47 @@ def _reduce(data, kind, req, version):
         data['migration'] = {'hash': fingerprint, 'increments': deepcopy(req['increments']),
                              'criteria': deepcopy(req['parity']), 'parity': []} if prior is None else prior
         return {'migration_hash': fingerprint}
+    if kind == 'domain.migrate.pilot-start':
+        migration = data.get('migration', {})
+        run = data.get('runs', {}).get(req.get('run_id'), {})
+        row = next((value for value in migration.get('increments', {}).get('increments', [])
+                    if value['id'] == req.get('increment_id')), None)
+        item = next((value for value in run.get('plan', {}).get('work_items', [])
+                     if value['id'] == req.get('item_id')), None)
+        attempts = run.get('items', {}).get(req.get('item_id'), {}).get('attempts', [])
+        require(run.get('status') == 'active' and run.get('migration_increment_id') == req.get('increment_id')
+                and row is not None and req.get('criterion_id') in row['criteria'],
+                'active bound migration criterion required')
+        require(item and item.get('repo_id') == req.get('repo_id') and attempts
+                and attempts[-1].get('token') == req.get('token'), 'current item attempt and repository required')
+        require(req.get('migration_hash') == migration.get('hash') and text(req.get('pilot_hash'))
+                and isinstance(req.get('repository_fingerprint'), dict)
+                and text(req.get('execution_id')), 'immutable pilot scope required')
+        records = run.setdefault('migration_pilot_attempts', {})
+        require(req['execution_id'] not in records, 'pilot execution ID already reserved')
+        records[req['execution_id']] = {**deepcopy(req), 'status': 'running'}
+        return {'execution_id': req['execution_id'], 'status': 'running'}
+    if kind == 'domain.migrate.pilot-record':
+        run = data.get('runs', {}).get(req.get('run_id'), {})
+        attempt = run.get('migration_pilot_attempts', {}).get(req.get('execution_id'))
+        proof = req.get('proof')
+        require(attempt and attempt['status'] == 'running' and isinstance(proof, dict),
+                'reserved pilot execution required')
+        require(req.get('execution', {}).get('run_id') == req.get('run_id')
+                and digest(req['execution']['pilot']) == attempt['pilot_hash'],
+                'pilot execution contract changed')
+        require(all(proof.get(key) == attempt.get(key) for key in
+                    ('run_id', 'increment_id', 'criterion_id', 'item_id', 'repo_id',
+                     'token', 'migration_hash', 'pilot_hash', 'repository_fingerprint')),
+                'pilot proof scope mismatch')
+        unsigned = {key: value for key, value in proof.items() if key != 'proof_id'}
+        require(proof.get('proof_id') == digest(unsigned) and type(proof.get('passed')) is bool,
+                'pilot proof digest or outcome invalid')
+        attempts = run.get('items', {}).get(proof['item_id'], {}).get('attempts', [])
+        require(attempts and attempts[-1].get('token') == proof['token'], 'pilot attempt became stale')
+        attempt['status'] = 'passed' if proof['passed'] else 'failed'
+        run.setdefault('migration_pilot_proofs', {})[proof['proof_id']] = deepcopy(proof)
+        return {'proof': deepcopy(proof)}
     if kind == 'domain.migrate.record-parity':
         from .migrations import record_parity
         migration = data.get('migration')
@@ -353,7 +394,8 @@ def _reduce(data, kind, req, version):
         run = data.get('runs', {}).get(req['run_id'], {})
         require(run.get('status') == 'delivered' and isinstance(run.get('delivery'), dict), 'terminal run delivery evidence required')
         require(run.get('migration_increment_id') == row['id'], 'delivery run is not bound to this increment')
-        migration_delivery_guard(data, req['run_id'])
+        migration_delivery_guard(data, req['run_id'],
+                                 run.get('delivery', {}).get('manifest', {}).get('repositories'))
         require(row['id'] not in delivered, 'increment already delivered')
         delivered[row['id']] = {'run_id': req['run_id'], 'manifest_hash': run['delivery']['manifest_hash']}
         return delivered[row['id']]
@@ -543,7 +585,7 @@ def _reduce(data, kind, req, version):
     raise WorkflowError('INVALID_EVENT', f'unsupported domain event: {kind}')
 
 
-def migration_delivery_guard(data, run_id):
+def migration_delivery_guard(data, run_id, repository_fingerprints=None):
     run = data.get('runs', {}).get(run_id, {})
     identifier = run.get('migration_increment_id')
     if identifier is None:
@@ -558,13 +600,35 @@ def migration_delivery_guard(data, run_id):
     for criterion in parity.get('verified', []):
         ref = parity.get('evidence', {}).get(criterion, {})
         require(ref.get('run_id') == run_id, 'parity proof belongs to another run')
-        parity_proof(data, identifier, criterion, ref)
+        parity_proof(data, identifier, criterion, ref, repository_fingerprints)
 
 
-def parity_proof(data, increment_id, criterion, ref):
+def parity_proof(data, increment_id, criterion, ref, repository_fingerprints=None):
     run = data.get('runs', {}).get(ref.get('run_id'), {})
     require(run.get('migration_increment_id') == increment_id, 'parity run is not bound to this increment')
     proof_id = ref.get('proof_id')
+    pilot = run.get('migration_pilot_proofs', {}).get(proof_id)
+    if pilot is not None:
+        item_id = pilot.get('item_id')
+        item = next((i for i in run.get('plan', {}).get('work_items', []) if i['id'] == item_id), {})
+        attempts = run.get('items', {}).get(item_id, {}).get('attempts', [])
+        require(pilot.get('passed') is True and pilot.get('criterion_id') == criterion
+                and pilot.get('increment_id') == increment_id
+                and pilot.get('migration_hash') == data.get('migration', {}).get('hash')
+                and attempts and attempts[-1].get('token') == pilot.get('token'),
+                'criterion requires current passing pilot comparison')
+        if repository_fingerprints is not None:
+            current = repository_fingerprints.get(pilot.get('repo_id'), {})
+            original = pilot.get('repository_fingerprint', {})
+            require(current.get('repository_head') == original.get('head')
+                    and current.get('worktree_digest') == original.get('worktree_digest'),
+                    'pilot proof repository changed before delivery')
+        definition = next((c for c in data['migration']['criteria'] if c['id'] == criterion), {})
+        required = definition.get('requirement_ids')
+        require(isinstance(required, list) and required and ref.get('requirement_ids') == required
+                and set(required).issubset(item.get('requirement_ids', [])),
+                'criterion requirement scope mismatch')
+        return
     proof = run.get('verification_proofs', {}).get(proof_id, {})
     verifier = next((v for k,v in run.get('verifier_proofs', {}).items() if v.get('evidence_id', k) == proof_id), {})
     item_id = proof.get('item_id')

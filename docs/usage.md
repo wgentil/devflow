@@ -39,6 +39,13 @@ records its opaque reference, host, release and exact contract. It never
 advances DevFlow gates; handoff requires a fresh destination Goal. The host
 Goal lifecycle itself remains manual because no portable plugin API is used.
 
+`migrate verify-pilot --root ROOT --input migration-pilot.json --operation-id ID`
+runs declared legacy and replacement commands on identical hashed fixtures,
+compares versioned outputs and journals attempt/increment/repository-bound
+proof. `record-parity` accepts the returned passing `proof_id` for its matching
+criterion. Replay never re-executes; delivery rejects stale attempts or source
+fingerprints. Manual final-verifier parity remains supported.
+
 ```sh
 python3 skills/workflow/scripts/run.py context set --root "$CONTROL_ROOT" --layer org --file org.json
 python3 skills/workflow/scripts/run.py context set --root "$CONTROL_ROOT" --layer project --file project.json

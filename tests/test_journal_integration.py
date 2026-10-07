@@ -138,6 +138,93 @@ class JournalIntegrationTests(unittest.TestCase):
                         {'kind': 'domain.repair.' + action, 'payload': {'request': request}})
 
 
+class MigrationPilotIntegrationTests(unittest.TestCase):
+    cli = JournalIntegrationTests.cli
+    def setUp(self):
+        JournalIntegrationTests.setUp(self)
+        self.repo = Path(self.temp.name) / 'app'
+        self.repo.mkdir()
+        subprocess.run(['git', 'init', '-q', str(self.repo)], check=True)
+        subprocess.run(['git', '-C', str(self.repo), 'config', 'user.email', 'test@example.invalid'], check=True)
+        subprocess.run(['git', '-C', str(self.repo), 'config', 'user.name', 'Test'], check=True)
+        (self.repo / 'fixture.txt').write_text('same')
+        subprocess.run(['git', '-C', str(self.repo), 'add', 'fixture.txt'], check=True)
+        subprocess.run(['git', '-C', str(self.repo), 'commit', '-qm', 'fixture'], check=True)
+        run = {'id': 'r', 'status': 'active', 'plan': {'work_items': [{
+            'id': 'W1', 'kind': 'code', 'repo_id': 'app', 'requirement_ids': ['R1']}]},
+            'items': {'W1': {'status': 'complete', 'attempts': [{'token': 't', 'status': 'verified'}]}},
+            'repositories': {'app': {'location': str(self.repo)}}}
+        transact(self.root, 0, 'fixture', {'kind': 'fixture', 'payload': {
+            'repositories': {'app': {'location': str(self.repo)}}, 'runs': {'r': run}}})
+        self.cli('migrate', 'store', {'increments': {'increments': [{
+            'id': 'greetings', 'depends_on': [], 'criteria': ['P1']}]},
+            'parity': [{'id': 'P1', 'requirement_ids': ['R1']}]}, 'migration')
+        self.cli('migrate', 'bind', {'run_id': 'r', 'increment_id': 'greetings'}, 'bind')
+
+    def tearDown(self): JournalIntegrationTests.tearDown(self)
+
+    def pilot(self):
+        import hashlib
+        digest = hashlib.sha256(b'same').hexdigest()
+        command = [sys.executable, '-c',
+                   "from pathlib import Path; Path('out.txt').write_text(Path('fixture.txt').read_text())"]
+        return {'run_id': 'r', 'increment_id': 'greetings', 'criterion_id': 'P1',
+                'item_id': 'W1', 'repo_id': 'app', 'pilot': {
+                'fixtures': [{'path': 'fixture.txt', 'sha256': digest}],
+                'legacy_argv': command, 'replacement_argv': command,
+                'legacy_output_path': 'out.txt', 'replacement_output_path': 'out.txt',
+                'comparator': {'kind': 'exact-bytes', 'version': 1}}}
+
+    def test_pilot_proof_survives_replay_without_execution(self):
+        request = self.pilot()
+        first = self.cli('migrate', 'verify-pilot', request, 'pilot')
+        self.assertTrue(first['proof']['passed'])
+        replay = self.cli('migrate', 'verify-pilot', request, 'pilot')
+        self.assertTrue(replay['replayed'])
+        self.assertEqual(replay['proof']['proof_id'], first['proof']['proof_id'])
+
+    def test_stale_repo_blocks_typed_parity(self):
+        request = self.pilot()
+        result = self.cli('migrate', 'verify-pilot', request, 'pilot')
+        ref = {'run_id': 'r', 'proof_id': result['proof']['proof_id'],
+               'requirement_ids': ['R1']}
+        self.cli('migrate', 'record-parity', {'increment_id': 'greetings',
+                 'verified': ['P1'], 'evidence': {'P1': ref}}, 'parity')
+        (self.repo / 'fixture.txt').write_text('changed')
+        from workflow_lib.journal_domains import migration_delivery_guard
+        from workflow_lib.evidence import repository_fingerprint
+        fingerprint = repository_fingerprint(self.repo)
+        with self.assertRaises(WorkflowError):
+            migration_delivery_guard(read_state(self.root)['data'], 'r', {'app': {
+                'repository_head': fingerprint['head'],
+                'worktree_digest': fingerprint['worktree_digest']}})
+
+    def test_stale_attempt_or_comparator_mismatch_blocks_parity(self):
+        request = self.pilot()
+        request['pilot']['replacement_argv'] = [sys.executable, '-c',
+            "from pathlib import Path; Path('out.txt').write_text('different')"]
+        failed = self.cli('migrate', 'verify-pilot', request, 'failed-pilot')
+        self.assertFalse(failed['proof']['passed'])
+        ref = {'run_id': 'r', 'proof_id': failed['proof']['proof_id'], 'requirement_ids': ['R1']}
+        with self.assertRaises(WorkflowError):
+            state = read_state(self.root)
+            transact(self.root, state['version'], 'bad-parity', {'kind': 'domain.migrate.record-parity',
+                'payload': {'request': {'increment_id': 'greetings', 'verified': ['P1'],
+                                        'evidence': {'P1': ref}}}})
+        passed = self.cli('migrate', 'verify-pilot', self.pilot(), 'passed-pilot')
+        state = read_state(self.root)
+        run = state['data']['runs']['r']
+        run['items']['W1']['attempts'].append({'token': 'new', 'status': 'active'})
+        transact(self.root, state['version'], 'new-attempt', {'kind': 'fixture',
+                 'payload': {'runs': {'r': run}}})
+        ref['proof_id'] = passed['proof']['proof_id']
+        with self.assertRaises(WorkflowError):
+            state = read_state(self.root)
+            transact(self.root, state['version'], 'stale-parity', {'kind': 'domain.migrate.record-parity',
+                'payload': {'request': {'increment_id': 'greetings', 'verified': ['P1'],
+                                        'evidence': {'P1': ref}}}})
+
+
 class DurableOutboxTests(unittest.TestCase):
     setUp=JournalIntegrationTests.setUp
     tearDown=JournalIntegrationTests.tearDown

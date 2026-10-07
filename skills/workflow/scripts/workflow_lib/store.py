@@ -420,7 +420,7 @@ def _apply_event(state: dict, event: dict) -> None:
         if gate_status(run, live=False).get("stage") != "delivery":
             raise WorkflowError("INVALID_EVENT", "delivery gate is not open")
         from .journal_domains import migration_delivery_guard
-        migration_delivery_guard(data, run['id'])
+        migration_delivery_guard(data, run['id'], delivery['manifest']['repositories'])
         if run.get('migration_increment_id'):
             data['migration'].setdefault('deliveries', {})[run['migration_increment_id']] = {
                 'run_id': run['id'], 'manifest_hash': delivery['manifest_hash']}

@@ -275,6 +275,17 @@ No Goal lifecycle CLI API is invoked by DevFlow, and a host Goal cannot satisfy
 the journal's verification, review or delivery gates. Handoff never copies a
 source Goal reference to the destination.
 
+`migrate verify-pilot --root ROOT --input migration-pilot.json
+--operation-id ID` reserves and executes a comparison of declared legacy and
+replacement argv commands against isolated copies of the same hashed fixtures.
+The example [pilot contract](examples/migration-pilot.json) and
+[input fixture](examples/migration-input.txt) are disposable; replace both
+commands with actual programs. `exact-bytes` compares raw output, while
+`json-fields` version 1 ignores only explicitly listed top-level keys. Passing
+typed proof binds the increment, criterion, current item token and repository
+fingerprint; delivery rejects stale proof. Manual final-verifier parity and
+waivers remain available.
+
 Current enforcement is in helper transitions and skill instructions. Claude
 completion hooks are implemented for explicitly mapped tasks; Codex completion
 checks remain explicit. There are no repo-wide edit restrictions. Ordinary

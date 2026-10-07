@@ -16,6 +16,7 @@ human approval, independent review, provider receipt or authoritative price.
 | [classification.json](classification.json) | issues | Actual accepted requirement attribution; confirm separately |
 | [write-authorization.json](write-authorization.json) | issues | Exact delivered issue-run scope and real authorizing actor |
 | [migration.json](migration.json), [parity.json](parity.json) | migrate | Bound increment, actual current final proof ID and requirement mappings |
+| [migration-pilot.json](migration-pilot.json), [migration-input.txt](migration-input.txt) | migrate | Executable legacy/replacement comparison; copy fixture as `input.txt` to the registered repository and replace commands with real programs |
 | [usage.json](usage.json), [expectations.json](expectations.json) | stats | Actual supported event identities, token categories and run bindings |
 | [prices.json](prices.json) | stats | Illustrative only; replace with explicitly sourced/versioned rates |
 | [hardening.json](hardening.json), [gate.json](gate.json) | workflow | Configuring actor and existing gate tools |

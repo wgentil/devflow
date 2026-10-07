@@ -1,0 +1,18 @@
+{
+  "run_id": "greeting-run",
+  "increment_id": "greetings",
+  "criterion_id": "P1",
+  "item_id": "W1",
+  "repo_id": "app",
+  "timeout_seconds": 30,
+  "pilot": {
+    "fixtures": [
+      {"path": "input.txt", "sha256": "5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03"}
+    ],
+    "legacy_argv": ["python3", "-c", "from pathlib import Path; Path('out.txt').write_text(Path('input.txt').read_text().upper())"],
+    "replacement_argv": ["python3", "-c", "from pathlib import Path; Path('out.txt').write_text(Path('input.txt').read_text().upper())"],
+    "legacy_output_path": "out.txt",
+    "replacement_output_path": "out.txt",
+    "comparator": {"kind": "exact-bytes", "version": 1}
+  }
+}

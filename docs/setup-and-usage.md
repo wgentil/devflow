@@ -44,6 +44,9 @@ flowchart TD
     Invoke[Invoke workflow] --> Init[Discover project and initialize or resume]
     Init --> Spec[Clarify and approve specification]
     Spec --> Plan[Validate covered plan and dependencies]
+    Spec -.-> Migration[Optional ordered migration increments]
+    Migration --> Pilot[Run declared legacy and replacement pilot on hashed fixtures]
+    Pilot -.-> Accept
     Plan --> Attach[Attach session and map host tasks]
     Attach --> Work[Issue attempt and implement]
     Work --> Proof[Execute real required verification]
@@ -75,6 +78,12 @@ explicit authorization before apply. Agent configurations need baseline/post
 results. E2E/red-team checks must be configured as supported targets/hardening
 gates; DevFlow does not infer all suites. A proof must match the latest attempt
 and current repository fingerprint. Missing live evidence never counts as success.
+For a bounded migration pilot, DevFlow can run declared legacy and replacement
+commands over separate copies of the same hashed fixtures and compare declared
+outputs. The passing proof binds the increment, criterion, current item attempt
+and repository fingerprint; delivery rejects stale proof. Existing manual
+final-proof parity and scoped waivers remain available. See the
+[migration guide](../skills/migrate/GUIDE.md#executable-pilot-parity).
 Configured hardening gates use command exit status by default. A version 1
 `json-report` gate also requires valid JSON with a `findings` array; missing or
 malformed output and reported findings fail the gate even on exit zero. The
