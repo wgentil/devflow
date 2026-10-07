@@ -1,0 +1,13 @@
+{
+  "run_id": "REPLACE_WITH_OPTED_IN_RUN_ID",
+  "trace_hash": "REPLACE_WITH_CURRENT_TRACE_HASH",
+  "actor_id": "REPLACE_WITH_REVIEWER_ACTOR_ID",
+  "feedback": {
+    "observation": "The configured gate missed a reproducible case.",
+    "owner": "validator",
+    "expected": {"status": "pass"},
+    "command": ["python3", "-c", "import json; print(json.dumps({'status':'pass'}))"],
+    "scoring_version": 1,
+    "timeout_seconds": 60
+  }
+}

@@ -58,6 +58,16 @@ report; old snapshots remain unchanged. `stats legacy-import --input ledger.json
 and marks it legacy; it does not establish current verification. Actual runtime
 collection and provider pricing are supplied inputs, not automatically fetched.
 
+## Opt-in improvement trace
+
+After explicit `improve trace-enable` for a run, `stats trace --root "$CONTROL"
+--options '{"run_id":"greeting-run"}'` returns an allowlisted summary and
+`trace_hash`. It includes stage, finding and gate IDs, repair delta hashes,
+trusted model observations where present, and reported usage status. Missing
+usage is `unknown`; prompts, worker output and repository bodies are omitted.
+The hash binds reviewed feedback and later approved eval cases. See the
+[workflow guide](../workflow/GUIDE.md#run-derived-improvement-cases).
+
 ## Host usage example
 
 Invoke this skill from the same selected DevFlow project/run in either host. An

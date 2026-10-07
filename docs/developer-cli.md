@@ -256,6 +256,17 @@ handoff and need stopped-worker reconciliation before `repair stop
 --reason-code CODE --confirm-stopped-by ACTOR`. Review findings and item
 verification remain agent-led.
 
+Opt-in run improvement uses `improve trace-enable` and `stats trace`. The
+export is an allowlist of stage/evidence IDs, repair fingerprints and reported
+usage; raw prompts and repository bodies stay out. `improve feedback` requires
+the exact trace hash and stores a candidate from
+[improvement-case.json](examples/improvement-case.json). A distinct actor uses
+`improve case-approve` with the returned case hash. `improve run-cases`
+executes approved cases in a specified checkout; `improve compare` requires
+identical case hashes and scoring versions; `improve retrospective` groups
+evidence-cited feedback without editing the plugin. Missing usage remains
+unknown and no policy promotion occurs automatically.
+
 Current enforcement is in helper transitions and skill instructions. Claude
 completion hooks are implemented for explicitly mapped tasks; Codex completion
 checks remain explicit. There are no repo-wide edit restrictions. Ordinary

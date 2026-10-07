@@ -22,6 +22,16 @@ missing estimate blocks before claim. `repair stop --reason-code CODE` preserves
 remaining failures; an active claim additionally needs `--confirm-stopped-by
 ACTOR` after native worker stop/reconciliation. See the [workflow guide](../skills/workflow/GUIDE.md#optional-bounded-repair).
 
+`improve trace-enable --root ROOT --run-id ID --actor-id ACTOR --operation-id ID`
+opts a selected run into redacted trace export. `stats trace --root ROOT
+--options '{"run_id":"ID"}'` returns the exact trace hash. `improve feedback`
+binds an example-shaped reviewed case proposal to that hash; `improve
+case-approve` requires a distinct human actor and exact candidate case hash.
+`improve run-cases --input CANDIDATE.json --cwd CHECKOUT` executes approved
+case commands. `improve compare` rejects case/scoring-version mismatch and
+marks absent usage unknown. `improve retrospective` groups cited feedback by
+owner. None of these commands promotes a revision automatically.
+
 ```sh
 python3 skills/workflow/scripts/run.py context set --root "$CONTROL_ROOT" --layer org --file org.json
 python3 skills/workflow/scripts/run.py context set --root "$CONTROL_ROOT" --layer project --file project.json

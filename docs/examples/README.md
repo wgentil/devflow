@@ -21,6 +21,7 @@ human approval, independent review, provider receipt or authoritative price.
 | [hardening.json](hardening.json), [gate.json](gate.json) | workflow | Configuring actor and existing gate tools |
 | [structured-gate.json](structured-gate.json) | workflow | Version 1 JSON report gate with a real unit-suite command; replace with the project's scanner for security checks |
 | [bounded-repair.json](bounded-repair.json) | workflow | Optional repair limits; adjust attempt/time/spend caps and supply a known per-cycle estimate |
+| [improvement-case.json](improvement-case.json) | workflow, stats | Reviewed feedback and executable case proposal; replace run, trace hash and actor placeholders before approval |
 
 Replace every `REPLACE_WITH_...` marker before mutation. Returned IDs/hashes bind
 specific content and must not be guessed. Actor IDs and invocation references

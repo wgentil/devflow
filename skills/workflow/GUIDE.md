@@ -84,6 +84,32 @@ for automatic repair on that run. Review findings and item proofs still
 require agent-led rework and fresh validation; independent review is renewed
 after repository edits.
 
+## Run-derived improvement cases
+
+Selected runs may opt into redacted improvement traces. Use a real actor ID
+for opt-in, then inspect the trace and copy its returned `trace_hash` into
+[improvement-case.json](../../docs/examples/improvement-case.json). Feedback
+records a case proposal; a different human actor approves the exact returned
+`case_hash` before it becomes runnable.
+
+```sh
+df improve trace-enable --root "$CONTROL" --run-id greeting-run --actor-id reviewer-1 --operation-id trace-opt-in
+df stats trace --root "$CONTROL" --options '{"run_id":"greeting-run"}'
+df improve feedback --root "$CONTROL" --input "$EXAMPLES/improvement-case.json" --operation-id feedback-1
+```
+
+Approve with `improve case-approve --input APPROVAL.json --operation-id ID`,
+where `APPROVAL.json` has the returned `feedback_id`, `case_hash`, a distinct
+human `actor_id`, and `"approved":true`. `improve inspect` lists approved
+cases. `improve run-cases --input CANDIDATE.json --cwd CHECKOUT` executes the
+same approved argv cases against a candidate checkout; the candidate JSON
+must include its artifact hash. Save both baseline and candidate results, then
+pass them together with `improve compare --input COMPARISON.json`. Case and
+scoring-version mismatch blocks comparison. `improve retrospective --input
+TRACES.json` groups cited feedback by owner without editing the plugin.
+Trace output omits prompts, worker output and repository content. Missing
+runtime usage is unknown; byte estimates do not establish token savings.
+
 ## Delivery example
 
 After all gates pass, set `REPOSITORIES_JSON` to a JSON object mapping `app` to its

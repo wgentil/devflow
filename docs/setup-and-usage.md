@@ -62,6 +62,9 @@ flowchart TD
     Fix --> Work
     Work -.-> Transfer[Prepare handoff; destination checks release and profile]
     Transfer -.-> Work
+    Deliver -.-> Trace[Optional redacted run trace]
+    Trace --> Feedback[Reviewed feedback and exact case approval]
+    Feedback --> Eval[Run same versioned cases on candidate and baseline]
 ```
 
 Code needs declared-target RED/GREEN proof. IaC requires plan/policy proof and
@@ -87,6 +90,15 @@ stop further dispatch. Missing cost estimates or model eligibility block dispatc
 Interrupted claims require reconciliation and never replay a second worker.
 Review findings and item proofs still require agent-led rework. Hooks never launch
 repair, and independent review must be renewed after source changes.
+
+For improvement work, select a run and explicitly enable its redacted trace.
+The agent can show its stage, evidence IDs, repair fingerprints, model observations
+and reported usage while omitting prompts and repository contents. A reviewer
+records feedback against the exact trace hash; a different human actor approves
+the resulting case hash. Approved cases can run against baseline and candidate
+checkouts with identical scoring versions. The report exposes quality,
+coverage and elapsed time; missing usage stays unknown. No skill or policy
+revision is promoted automatically. See the [workflow guide](../skills/workflow/GUIDE.md#run-derived-improvement-cases).
 
 ## Host task completion
 

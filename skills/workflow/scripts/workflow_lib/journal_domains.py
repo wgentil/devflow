@@ -53,6 +53,42 @@ def reduce_event(data, kind, payload, version):
 
 
 def _reduce(data, kind, req, version):
+    if kind == 'domain.improve.trace-enable':
+        run = data.get('runs', {}).get(req.get('run_id'))
+        require(run is not None and text(req.get('actor_id')), 'known run and opt-in actor required')
+        require(not run.get('improvement_trace_enabled'), 'trace is already enabled')
+        run['improvement_trace_enabled'] = True
+        run['improvement_trace_actor'] = req['actor_id']
+        return {'run_id': req['run_id'], 'trace_enabled': True}
+    if kind == 'domain.improve.feedback':
+        from .improvement_traces import project_run_trace
+        from .improvement_cases import propose_case
+        require(text(req.get('actor_id')), 'feedback reviewer actor required')
+        trace = project_run_trace(data, req.get('run_id'), True)
+        require(req.get('trace_hash') == digest(trace), 'feedback trace has changed')
+        candidate = propose_case(trace, req.get('feedback'))
+        feedback_id = digest({'trace_hash': req['trace_hash'], 'actor_id': req['actor_id'],
+                              'feedback': req['feedback']})
+        record = {'feedback_id': feedback_id, 'run_id': req['run_id'],
+                  'trace_hash': req['trace_hash'], 'actor_id': req['actor_id'],
+                  'feedback': deepcopy(req['feedback']), 'candidate': candidate}
+        prior = data.setdefault('improvement_feedback', {}).get(feedback_id)
+        require(prior is None or prior == record, 'feedback identity conflict')
+        data['improvement_feedback'][feedback_id] = record
+        return {'feedback_id': feedback_id, 'candidate': candidate}
+    if kind == 'domain.improve.case-approve':
+        record = data.get('improvement_feedback', {}).get(req.get('feedback_id'))
+        require(record is not None and req.get('approved') is True and text(req.get('actor_id')),
+                'recorded feedback and human approval required')
+        candidate = record['candidate']
+        require(req.get('case_hash') == candidate['case_hash'], 'case hash changed')
+        require(req['actor_id'] != record['actor_id'], 'case approval needs a distinct reviewer')
+        approved = {**deepcopy(candidate), 'feedback_id': record['feedback_id'],
+                    'approved_by': req['actor_id']}
+        cases = data.setdefault('improvement_cases', {})
+        require(candidate['case_id'] not in cases, 'case already approved')
+        cases[candidate['case_id']] = approved
+        return {'case_id': candidate['case_id'], 'case_hash': candidate['case_hash']}
     if kind.startswith('domain.repair.'):
         from .repair import failure_delta, repair_decision
         run = data.get('runs', {}).get(req.get('run_id'))

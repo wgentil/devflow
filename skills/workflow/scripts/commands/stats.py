@@ -10,7 +10,7 @@ from workflow_lib.legacy import import_legacy
 
 def register_commands(parser):
     command = parser.add_parser('stats')
-    command.add_argument('operation', choices=['usage-import','expectations','prices','price','metrics','rollup','export','legacy-import','inspect'])
+    command.add_argument('operation', choices=['usage-import','expectations','prices','price','metrics','rollup','export','legacy-import','inspect','trace'])
     command.add_argument('--input')
     command.add_argument('--options', default='{}')
     add_journal_options(command)
@@ -18,6 +18,14 @@ def register_commands(parser):
 
 def dispatch(parsed):
     opts = json.loads(parsed.options)
+    if parsed.operation == 'trace':
+        if not parsed.root or not opts.get('run_id'):
+            raise WorkflowError('TRACE_INPUT_REQUIRED', 'trace requires --root and options run_id')
+        from workflow_lib.improvement_traces import project_run_trace
+        from workflow_lib.journal_domains import digest
+        trace = project_run_trace(read_state(Path(parsed.root)), opts['run_id'],
+                                  opts.get('include_usage', True))
+        return {**trace, 'trace_hash': digest(trace)}
     if parsed.operation == 'inspect':
         if not parsed.root:
             raise WorkflowError('CONTROL_ROOT_REQUIRED', 'inspection requires --root')

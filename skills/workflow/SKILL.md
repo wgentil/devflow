@@ -38,6 +38,11 @@ flowchart TD
     Choice --> Delivered["Execute authorized delivery and record actual result"]
     Delivered -.-> Reconcile["issues: scoped authorization and durable outbox"]
     Delivered -.-> Stats["stats: import usage and freeze outcome reports"]
+    Stats -.-> OptIn["Optional trace opt-in and redacted run projection"]
+    OptIn --> Feedback["Reviewer records cited feedback"]
+    Feedback --> Case["Different human approves exact eval case hash"]
+    Case --> Eval["Run same versioned cases on baseline and candidate"]
+    Eval --> Decision["Compare quality, coverage, latency and reported usage"]
     Build -->|Verification fails| Fix["Agent fixes implementation and reruns checks"]
     Harden -->|Command fails or report has findings| Repair{"Bounded repair enabled and eligible?"}
     Repair -->|Yes; explicit next command| Lease["Journal one repair claim"]
@@ -63,6 +68,11 @@ Claims are journaled before native launch. A claimed/interrupted cycle blocks
 replay and handoff until reconciled. The runner reruns only failed configured
 hardening gates; findings or failed item proofs outside those gates still need
 agent-led verification. Worker prose never counts as proof.
+Selected runs can opt into a redacted improvement trace. Reviewer feedback
+binds its exact trace hash; a distinct approving actor promotes a candidate
+to the durable case set. `improve run-cases` executes only approved cases,
+and `improve compare` requires identical case hashes/scoring versions. Missing
+usage remains unknown; comparison never promotes a skill or policy automatically.
 Unconfigured tests are not enforced. Gap discovery/interviews are agent-led;
 `spec gaps` lists recorded unanswered questions and approval does not currently
 reject them automatically. Migration delivery also requires recorded predecessor
