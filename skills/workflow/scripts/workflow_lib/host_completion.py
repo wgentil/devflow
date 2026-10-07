@@ -41,6 +41,8 @@ def check_completion(state: dict, binding: dict, task_id: str, live: bool = True
     except WorkflowError:return _decision('block','STALE_BINDING')
     run=state.get('runs',{}).get(task['run_id'])
     if not run:return _decision('block','RUN_UNAVAILABLE')
+    if any(row.get('status') == 'claimed' for row in run.get('repair_cycles', [])):
+        return _decision('block', 'REPAIR_LEASE_ACTIVE')
     from .model_policy import effective_preferences
     stage=task_stage(binding,task)
     mode=effective_preferences(run,stage,binding['host']).get('mode','advisory')

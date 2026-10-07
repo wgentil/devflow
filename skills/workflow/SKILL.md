@@ -8,9 +8,9 @@ description: Guide a software project through scoped context, requirements, plan
 ## Work orchestration
 
 The coordinating agent selects skills, runs helpers and arranges separate review
-invocations. The journal records progress and enforces gates; it does not spawn
-workers or automatically dispatch failed checks for rework. Solid arrows below
-show the agent's process, including steps that require its judgment.
+invocations. The journal records progress and enforces gates. An explicit, opted-in
+bounded repair command can launch one scoped native worker for a failed configured
+hardening gate. Solid arrows below show the agent's process.
 
 ```mermaid
 flowchart TD
@@ -39,7 +39,13 @@ flowchart TD
     Delivered -.-> Reconcile["issues: scoped authorization and durable outbox"]
     Delivered -.-> Stats["stats: import usage and freeze outcome reports"]
     Build -->|Verification fails| Fix["Agent fixes implementation and reruns checks"]
-    Harden -->|Command fails, report invalid or findings remain| Fix
+    Harden -->|Command fails or report has findings| Repair{"Bounded repair enabled and eligible?"}
+    Repair -->|Yes; explicit next command| Lease["Journal one repair claim"]
+    Lease --> Worker["Current implementer native worker"]
+    Worker --> Recheck["Rerun configured hardening gate"]
+    Recheck -->|Still failing; budget remains| Repair
+    Recheck -->|Green; renew affected evidence| Branch
+    Repair -->|No; manual decision| Fix
     Item -->|Changes requested| Fix
     Branch -->|Changes requested| Fix
     Accept -->|Requirements unmet| Fix
@@ -51,6 +57,12 @@ flowchart TD
 ```
 
 After changes, renew affected evidence and review packages before advancing.
+Repair is manual by default. `repair configure` enables a bounded policy;
+`repair next` requires a known cost estimate and an active implementer binding.
+Claims are journaled before native launch. A claimed/interrupted cycle blocks
+replay and handoff until reconciled. The runner reruns only failed configured
+hardening gates; findings or failed item proofs outside those gates still need
+agent-led verification. Worker prose never counts as proof.
 Unconfigured tests are not enforced. Gap discovery/interviews are agent-led;
 `spec gaps` lists recorded unanswered questions and approval does not currently
 reject them automatically. Migration delivery also requires recorded predecessor

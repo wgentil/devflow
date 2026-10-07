@@ -115,6 +115,15 @@ class JournalIntegrationTests(unittest.TestCase):
                                read_state(self.root)['data']['runs']['r'])}, 'record')
         self.assertEqual(read_state(self.root)['data']['runs']['r']['repair_cycles'][0]['status'], 'recorded')
 
+    def test_repair_stop_surfaces_remaining_failures(self):
+        from workflow_lib.repair import repair_decision
+        self._repair_fixture()
+        result = self._repair_event('stop', {'run_id': 'r', 'reason_code': 'HUMAN_DECISION'}, 'stop')
+        self.assertEqual(result['state']['data']['domain_receipts']['stop']['remaining_failures']['gate_ids'],
+                         ['security'])
+        self.assertEqual(repair_decision(read_state(self.root)['data']['runs']['r'], 100)['reason_code'],
+                         'HUMAN_DECISION')
+
     def _repair_fixture(self):
         run = {'id': 'r', 'status': 'active', 'actors': {'implementer': 'worker'},
                'plan': {'work_items': []}, 'items': {},

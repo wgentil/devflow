@@ -1,0 +1,7 @@
+{
+  "enabled": true,
+  "max_attempts": 3,
+  "max_elapsed_ms": 3600000,
+  "max_estimated_cost": 2.0,
+  "no_progress_window": 2
+}

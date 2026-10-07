@@ -47,3 +47,8 @@ class HandoffTests(unittest.TestCase):
         result=apply_host_event(self.state,'attach',attachment(refresh=True,revision=1,release=release))
         self.assertEqual(result['revision'],2);self.assertEqual(len(result['release_history']),2)
         self.assertEqual(self.state['runs']['run']['active_attempt']['token'],'t')
+    def test_active_repair_blocks_handoff(self):
+        self.state['runs']['run']['repair_cycles']=[{'cycle_id':'c','status':'claimed'}]
+        with self.assertRaises(WorkflowError) as caught:self.accept()
+        self.assertEqual(caught.exception.code,'REPAIR_LEASE_ACTIVE')
+        self.assertEqual(self.state['host_bindings']['b1']['status'],'active')

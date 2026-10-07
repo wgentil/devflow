@@ -27,15 +27,20 @@ flowchart TD
     Passed -->|Yes| Result["Submit result and proceed to independent item review"]
     Result -.-> Gates["Later: configured E2E or red-team hardening commands"]
     Gates --> GatePass{"All required gates pass on current repository?"}
-    GatePass -->|No| Rework["Agent reworks and renews affected proof and reviews"]
+    GatePass -->|No; eligible and opted in| Repair["Explicit bounded repair claim and native worker"]
+    Repair --> Rerun["Rerun configured gate and journal remaining failures"]
+    Rerun --> GatePass
+    GatePass -->|No; otherwise| Rework["Agent reworks and renews affected proof and reviews"]
     Rework --> Attempt
     GatePass -->|Yes| Delivery["Proceed to delivery checks"]
 ```
 
 Unit and E2E suites can be declared code verification targets when they emit a
 supported report. E2E and red-team checks can also be configured hardening gates.
-Failures block the relevant gate; the agent must coordinate rework and reruns.
-There is no automatic failure dispatcher or dedicated red-team findings loop.
+Failures block the relevant gate. An explicit opted-in `repair next` command can
+dispatch the current implementer for a failed configured hardening gate, rerun it,
+and stop at attempt, time, spend or no-progress limits. Review findings and item
+verification still need agent-led rework and fresh proof. No hook launches repair.
 Test reruns have no enforced correction counter; review correction limits apply
 when reviewers request changes.
 

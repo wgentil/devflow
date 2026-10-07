@@ -55,6 +55,8 @@ def repair_decision(run: dict, now_ms: int) -> dict:
         stage = gate_status(run, live=False)
         return {**base, 'status': 'complete' if stage.get('stage') == 'delivery' else 'blocked',
                 'reason_code': 'ALL_CHECKS_PASS' if stage.get('stage') == 'delivery' else 'AWAITING_STAGE'}
+    if run.get('repair_stop'):
+        return {**base, 'status': 'blocked', 'reason_code': run['repair_stop']['reason_code']}
     if not policy.get('enabled'):
         return {**base, 'status': 'blocked', 'reason_code': 'REPAIR_DISABLED'}
     if run.get('repair_human_decision_required'):

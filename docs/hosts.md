@@ -42,6 +42,9 @@ Acceptance uses the destination's installed helper, rereads both package content
 and atomically transfers ownership under CAS without changing the attempt token.
 Every mismatch leaves the original owner active. Detach/resume checks the last
 owner's release; detaching cannot bypass parity. Matching older releases work.
+An active bounded-repair claim also blocks handoff and mapped task completion.
+Reconcile a stopped native invocation and stop its repair cycle before changing
+ownership; the old owner remains active throughout.
 
 After intentionally aligning installations, reload instructions and explicitly
 refresh the existing attachment with its revision. For a detached binding, use explicit resume with the exact detached revision and

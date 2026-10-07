@@ -52,7 +52,13 @@ flowchart TD
     Accept --> Deliver[Human delivery choice and actual result]
     Proof -->|Failure| Fix[Current implementer reworks]
     Review -->|Changes requested| Fix
-    Accept -->|Required check fails| Fix
+    Accept -->|Configured hardening gate fails| Repair{Opted-in bounded repair eligible?}
+    Repair -->|Yes, explicit command| Claim[Journal one scoped claim]
+    Claim --> Worker[Current implementer native worker]
+    Worker --> Recheck[Rerun configured gate and record delta]
+    Recheck -->|Still failing within limits| Repair
+    Recheck -->|Passes| Review
+    Repair -->|No or limit reached| Fix
     Fix --> Work
     Work -.-> Transfer[Prepare handoff; destination checks release and profile]
     Transfer -.-> Work
@@ -73,7 +79,14 @@ Reviewers use separate invocations and distinct actors, excluding every actor wh
 implemented the run. Item reviews allow four correction waves; branch/acceptance
 allow one, then independent adjudication is needed. Recording request-changes or
 block completes the assessment, but leaves advancement blocked. Feedback goes to
-the current implementer; helpers/hooks do not launch rework agents automatically.
+the current implementer. Optional bounded repair is manual by default and starts
+only with `repair next` after explicit policy configuration. It claims one cycle,
+launches the attached implementer, reruns failed configured hardening gates and
+records remaining failures. Attempt, elapsed-time, cost and no-progress limits
+stop further dispatch. Missing cost estimates or model eligibility block dispatch.
+Interrupted claims require reconciliation and never replay a second worker.
+Review findings and item proofs still require agent-led rework. Hooks never launch
+repair, and independent review must be renewed after source changes.
 
 ## Host task completion
 

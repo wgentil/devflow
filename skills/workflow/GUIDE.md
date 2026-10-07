@@ -59,6 +59,31 @@ df harden configure --root "$CONTROL" --input "$EXAMPLES/structured-gate.json" -
 df harden gate --root "$CONTROL" --input "$EXAMPLES/gate.json" --operation-id structured-gate-v1
 ```
 
+## Optional bounded repair
+
+Existing runs remain manual until a policy is recorded. Copy and adjust
+[bounded-repair.json](../../docs/examples/bounded-repair.json), then configure
+the selected run. `max_estimated_cost` is a numerical cap in the same unit as
+the estimate supplied for each cycle; the caller must provide a known estimate.
+
+```sh
+df repair configure --root "$CONTROL" --run-id greeting-run --input "$EXAMPLES/bounded-repair.json" --operation-id repair-policy-v1
+df repair status --root "$CONTROL" --run-id greeting-run
+df repair next --root "$CONTROL" --run-id greeting-run --operation-id repair-cycle-1 --estimated-cost 0.50
+```
+
+`next` claims exactly one cycle before launching the attached implementer's
+native worker, reruns the failed configured hardening gates, and records the
+remaining failure IDs. It requires native model eligibility; a strict-model
+blocker or unknown price never counts as a pass. Replaying a claimed operation
+does not launch another worker. If interrupted, inspect the native invocation,
+reconcile a stopped orphan through `host model-reconcile`, then explicitly stop
+the repair cycle with `repair stop --reason-code HUMAN_DECISION
+--confirm-stopped-by ACTOR`. Stop preserves remaining failures and is terminal
+for automatic repair on that run. Review findings and item proofs still
+require agent-led rework and fresh validation; independent review is renewed
+after repository edits.
+
 ## Delivery example
 
 After all gates pass, set `REPOSITORIES_JSON` to a JSON object mapping `app` to its

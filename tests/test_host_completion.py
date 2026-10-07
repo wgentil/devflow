@@ -50,6 +50,10 @@ class CompletionTests(unittest.TestCase):
         self.assertEqual(check_completion(self.state,reviewer,'review',False)['status'],'allow')
         self.state['runs']['run']['reviews']['branch'][0]['actor_id']='other'
         self.assertEqual(check_completion(self.state,reviewer,'review',False)['status'],'block')
+    def test_active_repair_blocks_reviewer_completion(self):
+        self.state['runs']['run']['repair_cycles']=[{'cycle_id':'c','status':'claimed'}]
+        self.assertEqual(check_completion(self.state,self.binding,'task',False)['reason_code'],
+                         'REPAIR_LEASE_ACTIVE')
     def test_brief_retains_criteria_and_relevant_context(self):
         run=self.state['runs']['run'];run['plan']['stage']={'required_slices':['architecture']}
         run['plan']['work_items'][0]['acceptance_criteria']=[{'kind':'code-test','text':'target passes'}]

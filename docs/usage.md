@@ -13,6 +13,15 @@ See the [developer walkthrough](developer-cli.md) for explicit shell examples.
 
 The executable for all workflow, build, review, and delivery commands is `<plugin-root>/skills/workflow/scripts/run.py`.
 
+Optional `repair configure --root ROOT --run-id ID --input POLICY.json
+--operation-id ID` records bounded limits. `repair status` reads the current
+failure delta; `repair next --root ROOT --run-id ID --operation-id ID
+--estimated-cost NUMBER` claims one cycle, invokes the attached implementer and
+reruns failed configured hardening gates. A replay does not launch again. A
+missing estimate blocks before claim. `repair stop --reason-code CODE` preserves
+remaining failures; an active claim additionally needs `--confirm-stopped-by
+ACTOR` after native worker stop/reconciliation. See the [workflow guide](../skills/workflow/GUIDE.md#optional-bounded-repair).
+
 ```sh
 python3 skills/workflow/scripts/run.py context set --root "$CONTROL_ROOT" --layer org --file org.json
 python3 skills/workflow/scripts/run.py context set --root "$CONTROL_ROOT" --layer project --file project.json
@@ -79,7 +88,9 @@ Current local helpers cover context, specifications, planning, attempts,
 verification, independent review, requirement acceptance, delivery records,
 ingestion, issues, migration, hardening and reporting. Scoped native dispatch uses the installed host CLI and existing login; reported
 worker usage is recorded when available, while prices remain explicit sourced inputs. Semantic
-spec-gap interviews and automatic rework dispatch remain agent responsibilities.
+spec-gap interviews remain agent responsibilities. Optional bounded repair can
+dispatch the current implementer for failed configured hardening gates through
+an explicit command; other failures still need agent-led rework.
 Claude hooks, explicit attachment and parity-checked sequential handoff are
 implemented. Native Codex installation remains unverified; native model discovery,
 selection probes and workers are documented in [native usage](native-models.md). Never treat unsupported or unavailable gates as passing evidence.

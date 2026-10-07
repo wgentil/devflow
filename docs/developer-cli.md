@@ -236,7 +236,8 @@ citations. A completed review assessment is not automatically a passing gate.
 Configure any required E2E, red-team or other hardening checks with actual argv
 commands using `harden configure`; execute them with `harden gate`. Missing, failed
 or stale required proof blocks delivery. DevFlow enforces only declared/configured
-checks. The agent coordinates fixes; no automatic failure dispatcher exists.
+checks. The agent coordinates fixes; an explicit opted-in bounded repair command
+can launch one scoped native worker and rerun failed configured hardening gates.
 An omitted gate `contract` means `{"kind":"exit-status"}` and preserves the
 legacy command-only behavior. `{"kind":"json-report","version":1}` expects a
 top-level JSON object with a `findings` array of objects, each with a nonempty
@@ -244,6 +245,16 @@ string `id`. Valid empty findings pass; findings, missing output, malformed
 JSON, unsupported versions and reports over 1 MiB fail. The normalized contract
 is part of the configuration hash and the execution proof; replay never
 re-executes the command. See [structured gate example](examples/structured-gate.json).
+
+Optional `repair configure` records explicit limits from
+[bounded-repair.json](examples/bounded-repair.json). `repair status` reads the
+current failure IDs and limits. `repair next --operation-id ID
+--estimated-cost NUMBER` claims one native worker cycle for the attached
+implementer, reruns failed configured hardening gates and journals the new
+failure delta. A repeated ID never launches again. Interrupted claims block
+handoff and need stopped-worker reconciliation before `repair stop
+--reason-code CODE --confirm-stopped-by ACTOR`. Review findings and item
+verification remain agent-led.
 
 Current enforcement is in helper transitions and skill instructions. Claude
 completion hooks are implemented for explicitly mapped tasks; Codex completion

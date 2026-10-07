@@ -49,7 +49,10 @@ complete arguments and the current verifier contracts before configuring tools.
 ## Failure and recovery
 
 Check `passed` and `failure`, not just shell exit status. Fix failed implementation
-and rerun; no automatic rework dispatcher exists. Timeout, changed files or
+and rerun. An opted-in, explicit bounded repair cycle can launch the current
+implementer for failed configured hardening gates and rerun those gates; see
+[workflow repair](../workflow/GUIDE.md#optional-bounded-repair). It does not
+replace item RED/GREEN proof or independent review. Timeout, changed files or
 unsupported reports do not complete the item. If abandoning an attempt, use
 `run abandon --attempt-id "$ATTEMPT"`, then `run retry --item W1`, with root/run
 and distinct operation IDs. A new token needs its own verification.

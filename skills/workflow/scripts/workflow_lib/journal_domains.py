@@ -63,10 +63,12 @@ def _reduce(data, kind, req, version):
             policy = req.get('policy')
             require(isinstance(policy, dict) and set(policy) == {'enabled', 'max_attempts',
                     'max_elapsed_ms', 'max_estimated_cost', 'no_progress_window'}, 'complete repair policy required')
+            import math
             require(type(policy['enabled']) is bool and type(policy['max_attempts']) is int
                     and policy['max_attempts'] > 0 and type(policy['max_elapsed_ms']) is int
                     and policy['max_elapsed_ms'] > 0 and type(policy['no_progress_window']) is int
                     and policy['no_progress_window'] >= 2 and type(policy['max_estimated_cost']) in (int, float)
+                    and math.isfinite(policy['max_estimated_cost'])
                     and policy['max_estimated_cost'] >= 0, 'invalid repair limits')
             require(not cycles, 'repair policy is frozen after first claim')
             run['repair_policy'] = deepcopy(policy)
@@ -102,8 +104,17 @@ def _reduce(data, kind, req, version):
                          worker_ref=req.get('worker_ref'), proof_refs=deepcopy(req.get('proof_refs', [])))
             return deepcopy(cycle)
         if action == 'stop':
-            require(not any(row['status'] == 'claimed' for row in cycles), 'active repair lease must reconcile')
             require(text(req.get('reason_code')), 'stop reason required')
+            active = [row for row in cycles if row['status'] == 'claimed']
+            if active:
+                confirmation = req.get('worker_stop_confirmation')
+                require(isinstance(confirmation, dict) and confirmation.get('approved') is True
+                        and text(confirmation.get('actor_id')), 'human worker-stop confirmation required')
+                require(not any(row.get('status') == 'running' for row in run.get('native_invocations', {}).values()),
+                        'native worker must be stopped and reconciled first')
+                for row in active:
+                    row['status'] = 'stopped'
+                    row['stop_reason_code'] = req['reason_code']
             run['repair_stop'] = {'reason_code': req['reason_code'], 'remaining_failures': failure_delta(run)}
             return deepcopy(run['repair_stop'])
         raise WorkflowError('INVALID_EVENT', f'unsupported repair event: {action}')

@@ -211,8 +211,11 @@ def invocation_scope(binding, run, stage, receipt):
     if stage == 'implementation':
         require(binding['role']=='implementer', 'Implementation invocation needs implementing actor.')
         active=run.get('active_attempt')
-        require(active and active.get('item_id') and active.get('token'), 'Implementation invocation needs active item attempt.')
-        scope.update(item_id=active['item_id'],token=active['token'])
+        repair=next((row for row in run.get('repair_cycles', []) if row.get('status')=='claimed'),None)
+        require(active and active.get('item_id') and active.get('token') or repair,
+                'Implementation invocation needs active item attempt or claimed repair cycle.')
+        if active: scope.update(item_id=active['item_id'],token=active['token'])
+        else: scope['repair_cycle_id']=repair['cycle_id']
     elif stage in {'review','acceptance'}:
         require(binding['role'] != 'implementer' and (stage=='acceptance') == (binding['role']=='acceptance-reviewer'), 'Review invocation stage must match reviewer role.')
         scope.update(package_hash=binding.get('package_hash'),item_id=binding.get('item_id'))
@@ -228,6 +231,9 @@ def receipt_matches_task(receipt, binding, task):
 
 
 def require_no_native_work(run, binding_id):
+    require(not any(row.get('status') == 'claimed' for row in run.get('repair_cycles', [])),
+            'Repair cycle is active; record or reconcile it before changing host ownership.',
+            'REPAIR_LEASE_ACTIVE')
     require(not any(record.get('status')=='running' and record.get('scope',{}).get('binding_id')==binding_id for record in run.get('native_invocations',{}).values()), 'Native worker is active; wait for its result or reconcile a stopped invocation.', 'NATIVE_INVOCATION_ACTIVE')
 
 def apply_native_event(state,kind,req):
