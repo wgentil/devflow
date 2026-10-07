@@ -5,6 +5,10 @@ For complete setup, initialization and everyday usage, start with the
 
 Devflow is a skills-only Codex plugin. Run its helper from any working directory with Python 3.11+ on macOS or Linux. Mutating commands require an explicit `--root`; merely loading a skill does not create state. Repository paths may contain spaces.
 
+These commands are an optional developer reference, not plugin-user onboarding.
+The intended workflow resolves packaged helpers and project paths automatically.
+See the [developer walkthrough](developer-cli.md) for explicit shell examples.
+
 ## Basic sequence
 
 The executable for all workflow, build, review, and delivery commands is `<plugin-root>/skills/workflow/scripts/run.py`.

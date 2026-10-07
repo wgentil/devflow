@@ -4,10 +4,12 @@ DevFlow combines agent skills and a Python helper for guided software developmen
 verification, independent review and recorded delivery.
 
 Start with the **[setup and usage guide](docs/setup-and-usage.md)**. It covers
-prerequisites, project initialization, verified work, resume, recovery and delivery.
+the intended install-and-start experience, initialization, verified work, resume
+and delivery, with current implementation limits clearly identified.
 
 - [All ten skill guides](docs/skills.md)
 - [Examples](docs/examples/README.md)
+- [Optional developer CLI walkthrough](docs/developer-cli.md)
 - [Detailed CLI notes](docs/usage.md)
 - [Proposed Codex/Claude design](docs/superpowers/specs/2026-10-06-devflow-cross-host-design.md)
 

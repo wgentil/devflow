@@ -22,6 +22,12 @@ recovery notes. Start with [workflow](../skills/workflow/GUIDE.md).
 
 ## Shared setup
 
+### Optional developer shell setup
+
+The following is for direct helper use and contributor examples, not plugin-user
+onboarding. The intended plugin workflow resolves these paths automatically.
+See the [developer walkthrough](developer-cli.md) for current direct CLI setup.
+
 Use Python 3.11+ on macOS/Linux (`fcntl` is required). There is no daemon or
 runtime package dependency. From any shell, set absolute paths:
 

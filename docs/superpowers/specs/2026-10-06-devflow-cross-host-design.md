@@ -20,6 +20,9 @@ The user selected:
    automatically launch a rework agent.
 4. Upgrades are user-controlled. Cross-host handoff must detect and enforce
    DevFlow version parity; no automatic installation updates.
+5. Install-and-start user experience. Skills resolve their bundled helpers and
+   initialize/resume the current project without user shell variables, installation
+   paths, CLI functions or manual Python commands.
 
 Assumptions proposed for approval: retain the existing Python 3.11+ macOS/Linux
 support; share a local filesystem control root; do not add remote coordination,
@@ -90,6 +93,50 @@ instructions resolve from the loaded skill directory as they do today.
 
 CLAUDE.md is for maintaining this source repository; it is not assumed to load
 when this repository is installed as a plugin in someone else's project.
+
+## Install-and-start initialization
+
+The normal user flow is install/enable the plugin in the chosen host, open a project,
+and invoke DevFlow's workflow skill. Both host adapters resolve the packaged helper
+from their actual loaded plugin/skill location. No DEVFLOW/CONTROL/APP environment
+variables, shell function, checkout installation path or direct Python invocation
+are required from the user. Direct CLI documentation remains an optional developer
+reference; no project onboarding instructions depend on it.
+
+Automatically locate/check Python 3.11+ on the supported macOS/Linux environment.
+A missing compatible runtime is an explicit installation/runtime diagnostic. Do
+not instruct users to edit PATH or configure environment variables. Bundling Python
+source does not imply bundling its interpreter; runtime provisioning remains outside
+this increment and the guide must disclose that limit. Do not claim full no-setup
+readiness on a machine lacking the required runtime.
+
+On explicit workflow invocation, discover the current repository via the host's
+working directory and Git metadata. Resolve worktree roots correctly; do not select
+an unrelated parent/sibling repository or initialize Git. Ambiguous/no project and
+multiple resumable runs require a concise clarification, not a path questionnaire
+when one project/run is evident.
+
+Default to `.devflow/control/` at the discovered repository/worktree root, with
+`.devflow/hosts/` locators. All files there are runtime state. Before journal creation,
+exclude `.devflow/` using Git's repository-local exclusion mechanism, respecting
+worktree-aware Git paths and preserving existing entries; do not change global Git
+configuration. Exclude it from source ingestion even when scope is the project root.
+Do not place runtime state, input fixtures or command output in the installed plugin
+cache. An advanced external control root can be selected explicitly but is optional.
+
+Initialize missing records and register stable repository identity idempotently.
+Reuse an existing journal instead of resetting it or creating duplicate runs. Skills
+call shared helpers for context, spec approval, planning, run creation and attachment;
+human decisions remain explicit. Setup/attach do not approve specs, tool applies,
+test changes, provider writes or delivery. Merely installing/loading skills outside
+explicit workflow invocation remains inert.
+
+Host project discovery and release validation happen before attachment. Implemented
+onboarding must be tested from unrelated working directories, paths containing
+spaces, Git worktrees, existing records, multiple runs and read-only installed
+plugin roots. Supported package distributions include shared docs/examples so all
+relative references resolve. Maintain one source for user onboarding, with optional
+host-specific install steps only after actual distribution has been verified.
 
 ## Attachment, ownership and handoff
 
@@ -366,13 +413,25 @@ flowchart TD
   attempt and journal history; detached, crashed and legacy adoption paths cannot
   bypass known parity conflicts. Concurrent install changes reject transfer.
 
+- R20: No manual environment setup — installed host workflows locate packaged
+  helpers and runtime, discover the project and initialize/resume without requesting
+  shell variables, CLI functions, installation paths or user Python invocations.
+- R21: Safe default initialization — repo/worktree-local ignored state and stable
+  registry records are created idempotently only on explicit workflow invocation;
+  existing journals/exclusions are preserved and ingestion omits runtime data.
+- R22: Honest installation guidance — both supported hosts have verified install-
+  to-workflow smoke tests, package docs/examples resolve, missing runtime is diagnosed,
+  and unimplemented distribution/runtime support is not presented as available.
+
 ## Validation and delivery
 
 Use reducer/command tests for binding conflicts, CAS races, task scopes, actor
 history, proof freshness and crash recovery. Include version mismatch in both
 directions, stale session after a user upgrade, same-version content drift,
 matching older releases, unsupported schemas, package changes during transfer,
-explicit binding refresh, and detached/crashed resume parity. Protocol fixtures check Claude JSON
+explicit binding refresh, and detached/crashed resume parity. Exercise install-and-
+start without manually set environment variables, repeated initialization, ignored
+runtime state, root ingestion, existing worktrees, and missing-runtime diagnostics. Protocol fixtures check Claude JSON
 input/output separately from policy. Exercise installed/relocated paths, project
 paths containing spaces and read-only plugin caches. Existing full tests and all
 skill metadata/link/example checks must pass.
