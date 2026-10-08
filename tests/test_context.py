@@ -73,8 +73,6 @@ class ContextTests(unittest.TestCase):
                           {"org": "h1", "project": "h2"}, "resolver-2")["cache_hit"])
 
 
-if __name__ == "__main__":
-    unittest.main()
 
 class RepositoryContextTests(unittest.TestCase):
     def test_document_mode_keeps_legacy_slice_values_separate(self):
@@ -89,3 +87,7 @@ class RepositoryContextTests(unittest.TestCase):
             (repo / 'docs/devflow-context.json').write_text(json.dumps({'schema_version': 1, 'documents': []}))
             self.assertEqual(resolve_repository_context(repo)['rules'], {})
             self.assertEqual(resolve_context({}, {'slices': {'platform': {'status': 'answered', 'value': 'terse'}}}, {}, {})['values'], {'platform': 'terse'})
+
+
+if __name__ == "__main__":
+    unittest.main()

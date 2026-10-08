@@ -65,7 +65,8 @@ def _rules(repo: Path, manifest: dict, source: str) -> dict:
         _fail('repository must have a Git HEAD')
     rules = {}
     for entry in manifest['documents']:
-        if not isinstance(entry, dict) or entry.get('category') not in CATEGORIES:
+        if (not isinstance(entry, dict) or not isinstance(entry.get('category'), str)
+                or entry['category'] not in CATEGORIES):
             _fail('unknown document category')
         ids = entry.get('rule_ids')
         sealed = entry.get('sealed_rule_ids', [])
