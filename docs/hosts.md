@@ -1,8 +1,10 @@
 # DevFlow hosts
 
 One package contains `.codex-plugin/plugin.json`, `.claude-plugin/plugin.json`,
-the shared `skills/`, helpers and all guides/examples. Installations are separately
-managed by the user. Upgrades never happen automatically. Release identity hashes
+`.claude-plugin/marketplace.json`, the shared `skills/`, helpers and all
+guides/examples. The marketplace entry selects the repository root as the
+Claude plugin source; it has not been published to GitHub yet. Users manage
+each host installation separately. Upgrades never happen automatically. Release identity hashes
 skills, helpers, adapters, policy and manifests; relocated copies have the same identity.
 
 The package requires an existing Python 3.11+ interpreter on macOS/Linux. It does

@@ -10,8 +10,25 @@ not provision an interpreter. Native Windows is outside current support.
 
 Codex and Claude have separate installations of the same shared package. Users
 choose when to upgrade. Both manifests and one skills/helper tree are included;
-no marketplace has been published by this change. Enable a distribution through
-your host's plugin manager. Host-specific verification and remaining limitations
+the Claude marketplace descriptor is packaged at `.claude-plugin/marketplace.json`.
+No GitHub remote or marketplace release has been published by this change. After
+a maintainer publishes the tagged repository, install it in Claude Code by
+replacing `OWNER/REPO` with the published GitHub location:
+
+```sh
+claude plugin marketplace add OWNER/REPO
+claude plugin install devflow@devflow-marketplace
+claude plugin list
+```
+
+The third-party marketplace does not auto-update by default. To upgrade at a
+time you choose, run `claude plugin update devflow@devflow-marketplace`, then
+start a new session or reload plugins. Align the Codex installation separately
+before a cross-host handoff; DevFlow checks exact installed release parity.
+Until the GitHub release exists, `claude --plugin-dir` loads a local source
+checkout for one session as described in the optional
+[developer guide](developer-cli.md#local-claude-package-check).
+Host-specific verification and remaining limitations
 are recorded in [hosts](hosts.md) and [validation](cross-host-validation.md).
 The [evidence-loop acceptance review](evidence-loops-acceptance.md) separates
 implemented policy from live host behavior and remaining proof limits.

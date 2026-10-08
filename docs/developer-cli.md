@@ -395,6 +395,17 @@ binding, or explicitly resume a compatible detached binding with its revision.
 No automatic installer/updater is included. Claude hooks are implemented; native
 Codex local installation remains unverified. Native model launch/discovery is implemented; see [host contracts](hosts.md) and [requirement review](cross-host-validation.md).
 
+## Local Claude package check
+
+The repository root is both the Claude plugin and marketplace root. Its
+`.claude-plugin/marketplace.json` entry uses `"source": "."`, so a GitHub
+checkout supplies the plugin without a copied skill tree. Validate before
+publishing with `claude plugin validate .`; for one-session source testing,
+start `claude --plugin-dir .` from the package root. This does not install a
+plugin or change a user's marketplace settings. See the
+[GitHub distribution guide](github-distribution.md) for release preparation
+and an isolated installation smoke.
+
 ## Reference and maintenance
 
 - [All ten skill guides](skills.md)

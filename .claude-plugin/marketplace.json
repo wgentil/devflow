@@ -1,0 +1,14 @@
+{
+  "name": "devflow-marketplace",
+  "description": "DevFlow development workflow plugin for Claude Code.",
+  "owner": {
+    "name": "DevFlow maintainers"
+  },
+  "plugins": [
+    {
+      "name": "devflow",
+      "source": ".",
+      "description": "Guided development, verification, review and delivery skills."
+    }
+  ]
+}

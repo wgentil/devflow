@@ -2,11 +2,16 @@
 
 This report distinguishes implemented policy, fixture validation and real host
 execution. No marketplace was published and no global installation was changed.
+The local Claude marketplace descriptor now validates, and an isolated
+`CLAUDE_CONFIG_DIR` smoke successfully added the local checkout, installed
+`devflow@devflow-marketplace` version 0.2.0, and listed it as enabled. This
+does not test GitHub fetch or a published release.
 
 ## Evidence
 
 - Baseline: 158 unittest cases passed before changes.
-- Full current suite: 339 unittest cases PASS after the evidence-loop implementation
+- Full current suite: 340 unittest cases PASS after the GitHub marketplace packaging
+  change and the evidence-loop implementation
   and independent-review fixes. Package/resource, host, hook, native transport,
   recovery, model-policy, evidence-loop and integration checks pass.
 - Claude Code 2.1.284 validated the manifest (warnings: optional author metadata;

@@ -12,6 +12,18 @@ ENTRY = ROOT / "skills/workflow/scripts/run.py"
 
 
 class PackageTests(unittest.TestCase):
+    def test_claude_marketplace_packages_shared_root(self):
+        marketplace = json.loads((ROOT / '.claude-plugin/marketplace.json').read_text())
+        claude = json.loads((ROOT / '.claude-plugin/plugin.json').read_text())
+        codex = json.loads((ROOT / '.codex-plugin/plugin.json').read_text())
+        self.assertEqual(marketplace['name'], 'devflow-marketplace')
+        self.assertEqual(len(marketplace['plugins']), 1)
+        self.assertEqual(marketplace['plugins'][0]['name'], 'devflow')
+        self.assertEqual(marketplace['plugins'][0]['source'], '.')
+        self.assertEqual(claude['name'], codex['name'])
+        self.assertEqual(claude['version'], codex['version'])
+        self.assertTrue((ROOT / claude['hooks']).is_file())
+
     def test_version_from_unrelated_cwd(self):
         result = subprocess.run(
             [sys.executable, str(ENTRY), "version"],

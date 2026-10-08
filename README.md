@@ -11,12 +11,20 @@ and delivery, with current implementation limits clearly identified.
 - [Examples](docs/examples/README.md)
 - [Optional developer CLI walkthrough](docs/developer-cli.md)
 - [Detailed CLI notes](docs/usage.md)
+- [GitHub distribution guide](docs/github-distribution.md)
 - [Proposed Codex/Claude design](docs/superpowers/specs/2026-10-06-devflow-cross-host-design.md)
 
-The current helper runs from a checkout with Python 3.11+ on macOS/Linux. Claude
-completion hooks, attachment and parity-checked handoff are implemented. Native
-Codex installation remains unverified; native model launch/discovery is incomplete.
-Users control upgrades; no automatic installer/updater is bundled.
+The bundled helper requires Python 3.11+ on macOS/Linux. Claude completion
+hooks, attachment, parity-checked handoff and scoped native model workers are
+implemented. Native Codex plugin installation remains unverified. Users control
+upgrades; no automatic installer/updater is bundled.
+
+Claude's GitHub marketplace descriptor is packaged in
+[`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json). It lists
+the repository root as the plugin source, preserving the shared Codex/Claude
+skill tree. See the [setup guide](docs/setup-and-usage.md#installation) for
+install commands after a tagged GitHub release is published. No GitHub remote
+or marketplace release is configured in this local repository yet.
 
 Repository maintenance instructions are in [AGENTS.md](AGENTS.md). Every DevFlow
 change must review and update the affected setup guide, skill guides and examples.
