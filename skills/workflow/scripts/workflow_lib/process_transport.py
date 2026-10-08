@@ -7,6 +7,7 @@ import queue
 import signal
 import subprocess
 import threading
+import time
 
 
 class WindowsJob:
@@ -90,6 +91,7 @@ def spawn(argv, cwd, *, stdin=subprocess.DEVNULL, stderr=subprocess.PIPE):
 
 def bounded_capture(argv: list[str], cwd: str | Path, timeout: float, limit: int) -> subprocess.CompletedProcess:
     process = spawn(argv, cwd)
+    deadline = time.monotonic() + timeout
     buffers = [bytearray(), bytearray()]
     exceeded = threading.Event()
     threads = []
@@ -109,24 +111,19 @@ def bounded_capture(argv: list[str], cwd: str | Path, timeout: float, limit: int
             thread = threading.Thread(target=drain, args=(pipe, target), daemon=True)
             thread.start(); threads.append(thread)
         try:
-            process.wait(timeout=timeout)
+            process.wait(timeout=max(deadline - time.monotonic(), 0))
         except subprocess.TimeoutExpired as exc:
             raise TimeoutError('Native host timed out') from exc
-        # The leader may exit while descendants still hold inherited pipe handles.
-        stop_tree(process)
         for thread in threads:
-            thread.join(timeout=2)
+            thread.join(timeout=max(deadline - time.monotonic(), 0))
         if exceeded.is_set():
             raise ValueError('Native output exceeds the supported bound')
         if any(thread.is_alive() for thread in threads):
-            raise TimeoutError('Native output drain did not finish')
+            raise TimeoutError('Native descendant kept an output pipe open')
         return subprocess.CompletedProcess(argv, process.returncode,
             buffers[0].decode('utf-8', 'replace'), buffers[1].decode('utf-8', 'replace'))
     finally:
-        if os.name == 'nt' and getattr(process, '_devflow_job', None) is not None:
-            stop_tree(process)
-        elif process.poll() is None:
-            stop_tree(process)
+        stop_tree(process)
 
 
 class JsonLineProcess:
