@@ -8,9 +8,10 @@ smoke using the committed `git archive` successfully added the extracted
 package, installed `devflow@devflow-marketplace` version 0.2.0, and discovered
 all ten skills and four hooks. A separate isolated smoke fetched
 `wgentil/devflow` over HTTPS, installed `devflow@devflow-marketplace` version
-0.2.0 and discovered the same ten skills and four hooks. These were 0.2.0
-installation checks, before the `v0.3.0` release; they do not establish native
-Codex installation readiness for the new release.
+0.2.0 and discovered the same ten skills and four hooks. A new isolated GitHub
+marketplace install of the 0.3.0 package succeeded and discovered all ten skills.
+These checks do not establish native Codex installation readiness for the new
+release.
 
 ## Evidence
 
