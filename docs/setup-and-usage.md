@@ -38,8 +38,8 @@ before a cross-host handoff; DevFlow checks exact installed release parity.
 For source development, `claude --plugin-dir` loads a local checkout for one
 session as described in the optional
 [developer guide](developer-cli.md#local-claude-package-check).
-An isolated Codex GitHub marketplace install of 0.3.0 succeeded; 0.3.1 will be
-verified after publication. Host-specific verification and remaining limitations
+Isolated Claude and Codex GitHub marketplace installs of 0.3.1 succeeded.
+Host-specific verification and remaining limitations
 are recorded in [hosts](hosts.md) and [validation](cross-host-validation.md).
 The [evidence-loop acceptance review](evidence-loops-acceptance.md) separates
 implemented policy from live host behavior and remaining proof limits.

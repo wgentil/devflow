@@ -11,8 +11,9 @@ all ten skills and four hooks. A separate isolated smoke fetched
 0.2.0 and discovered the same ten skills and four hooks. A new isolated GitHub
 marketplace install of the 0.3.0 package succeeded and discovered all ten skills.
 An isolated native Codex CLI GitHub marketplace add and plugin install of 0.3.0
-also succeeded and reported version 0.3.0. The new 0.3.1 package requires a
-post-publication GitHub smoke.
+also succeeded and reported version 0.3.0. Isolated GitHub installs of the
+0.3.1 package succeeded for both Claude and Codex and reported enabled version
+0.3.1; regular user configurations were unchanged.
 
 For the 0.3.1 terminal-binding fix, the full suite passed 396 tests. Claude
 marketplace validation passed, and an isolated local Codex marketplace install

@@ -48,7 +48,8 @@ an older host pauses until the user aligns the installations and reloads.
 An isolated native Codex CLI marketplace add and plugin install of version 0.3.0
 succeeded with all ten skills discoverable. The GitHub install smoke used a
 disposable Codex configuration and did not change the regular user installation.
-Repeat both host installation checks for version 0.3.1 after publication.
+Both isolated GitHub checks have now succeeded and reported enabled version
+0.3.1; neither changed the regular user configuration.
 
 Codex users can add this private repository with `codex plugin marketplace add
 wgentil/devflow`, then install `devflow@devflow-marketplace` through the Codex
