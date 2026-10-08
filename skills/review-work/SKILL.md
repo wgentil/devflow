@@ -9,6 +9,10 @@ description: Prepare content-bound review packages and record independent Devflo
 
 ```mermaid
 flowchart TD
+    Inputs["Check spec and applicable governing inputs"] --> Policy{"Changed governing files?"}
+    Policy -->|Yes| Approve["Separate exact-diff human approval"]
+    Policy -->|No| Continue["Continue workflow"]
+    Approve --> Continue
     Item["Verified item"] --> Package["Prepare content-bound package for current role"]
     Package --> Native["Resolve native review model; preserve attached package scope"]
     Native --> Reviewer["Separate invocation with distinct reviewer actor"]
@@ -73,3 +77,22 @@ Before delegated model work, follow the [native invocation guide](../../docs/nat
 Keep the actual actor/stage and item token or review package. Hooks never launch
 workers. Preserve blocked policy decisions and classify interrupted work before
 any replacement. Deterministic operations do not need a model invocation.
+
+
+## Governing-document evidence
+
+Before new plan, build, review, delivery or host handoff work, the runner checks
+repository specification approval and applicable governing inputs together.
+Relevant organization and project rules are always included unless the project
+manifest records an explicit `irrelevance_decisions` entry with `rule_id` and a
+nonempty `reason`. The receipt stores applicable rule IDs, owning repositories,
+paths, Git revisions, content digests and the effective digest. Documents remain
+in their repositories; the receipt does not copy whole documents into briefs.
+
+New or changed applicable governing files require separate human approval of
+an exact proposal. Specification approval and Git commits cannot grant that
+approval. Present the proposal's before/after hashes and exact diff for human
+conflict review, including edits originally authored by the user; never fabricate
+an approval event. Register the organization checkout before resolving inherited
+rules. Unchanged historical files and unrelated edits do not need approval.
+A handoff checks the prepared effective digest before changing ownership.

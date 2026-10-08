@@ -295,3 +295,25 @@ checkout branch. No automatic clone or discovery is implemented. Legacy journal
 slice context remains supported independently. See the
 [project-context schema, diagram and limitations](../skills/project-context/GUIDE.md#git-backed-governing-documents)
 and [manifest examples](examples/devflow-context.json).
+
+
+### Governing-document approval during feature work
+
+Ask DevFlow to review changed governing documents and present their exact diff
+for human approval before feature implementation. This approval is separate from
+specification approval and is scoped to the registered repository that owns the
+files. A commit does not authorize an edit. The first feature preflight accepts
+unchanged files already in Git history; later preflights compare the recorded
+applicable content as well as the working tree, so committing observed drift
+cannot bypass approval. Register the organization checkout when inherited rules
+are configured. A removed governing manifest blocks further work once recorded.
+
+The project manifest may record `irrelevance_decisions`, an array of objects
+containing `rule_id` and a nonempty `reason`. All other effective rules are
+applicable. Changing the manifest itself requires approval. Handoff preserves
+the effective digest and refuses a mismatch before ownership transfer. Journal
+replay reads historical receipts without consulting repository files.
+
+Developer command syntax and a sample manifest are in
+[the governing approval example](examples/governing-approval.md). Plugin users
+can ask DevFlow to perform these actions; no shell setup is required.

@@ -59,3 +59,11 @@ def migrate_legacy_spec(root: Path, repo_id: str, relative_json: str, operation_
     transact(root, state['version'], operation_id, {'kind': 'spec.migrated', 'payload': {
         'spec_pair': pair, 'approval': None, 'spec_approval_invalidated': None}})
     return pair
+
+
+def require_current_inputs(root: Path, state: dict, phase: str) -> dict:
+    """Compose independent specification and governing-document evidence."""
+    from .document_approvals import require_current_governing_inputs
+    spec = require_current_spec(root, state, phase)
+    governing = require_current_governing_inputs(root, read_state(root), phase)
+    return {'spec': spec, 'governing': governing}

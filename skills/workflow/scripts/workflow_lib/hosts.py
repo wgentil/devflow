@@ -193,6 +193,7 @@ def prepare_handoff(state: dict, request: dict) -> dict:
     require(req.get('target_host') in HOSTS and isinstance(req.get('handoff_id'),str) and req['handoff_id'], 'Handoff ID and target host required.')
     require(all(isinstance(req.get(k),str) and req[k] for k in ('target_actor_id',)), 'Target actor required.')
     envelope = {**req,'source_release':deepcopy(source['release']),'run_id':source['run_id']}
+    envelope['governing_input_receipt'] = deepcopy(state.get('governing_input_receipt', {}))
     run = state['runs'][source['run_id']]
     if run.get('goal_bindings', {}).get(source['binding_id']):
         from .goals import goal_handoff_decision
@@ -207,6 +208,7 @@ def accept_handoff(state: dict, envelope: dict, source_release: dict, destinatio
     from .releases import check_release
     prepared = state.get('host_handoffs', {}).get(envelope.get('handoff_id'))
     require(prepared and not prepared.get('accepted'), 'Prepared unaccepted handoff required.')
+    require(prepared.get('governing_input_receipt', {}).get('effective_digest') == state.get('governing_input_receipt', {}).get('effective_digest'), 'Governing inputs differ from prepared handoff; source owner unchanged.', 'GOVERNING_INPUT_DRIFT')
     source = validate_binding(state,prepared['binding_id'],prepared['revision'])
     require_no_native_work(state['runs'][source['run_id']],source['binding_id'])
     for left,right in ((prepared['source_release'],source['release']), (source['release'],source_release), (source_release,destination_release)):

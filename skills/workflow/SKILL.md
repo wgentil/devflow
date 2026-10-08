@@ -14,6 +14,10 @@ hardening gate. Solid arrows below show the agent's process.
 
 ```mermaid
 flowchart TD
+    Inputs["Check spec and applicable governing inputs"] --> Policy{"Changed governing files?"}
+    Policy -->|Yes| Approve["Separate exact-diff human approval"]
+    Policy -->|No| Continue["Continue workflow"]
+    Approve --> Continue
     Init["Discover Git project and initialize/resume"] --> Attach["Explicit host/session binding"]
     Attach --> Context["project-context: resolve scoped context"] --> Spec["specify: create or refine requirements"]
     Sources["ingest: index source evidence"] -.-> Spec
@@ -192,3 +196,22 @@ work, use the shared live specification preflight. Observed pair drift requires
 explicit human reapproval even after restoration. Keep legacy journal flows
 readable; migration creates an unapproved visible candidate and preserves targets.
 See the [guide](GUIDE.md#repository-specification-preflight) for recovery.
+
+
+## Governing-document evidence
+
+Before new plan, build, review, delivery or host handoff work, the runner checks
+repository specification approval and applicable governing inputs together.
+Relevant organization and project rules are always included unless the project
+manifest records an explicit `irrelevance_decisions` entry with `rule_id` and a
+nonempty `reason`. The receipt stores applicable rule IDs, owning repositories,
+paths, Git revisions, content digests and the effective digest. Documents remain
+in their repositories; the receipt does not copy whole documents into briefs.
+
+New or changed applicable governing files require separate human approval of
+an exact proposal. Specification approval and Git commits cannot grant that
+approval. Present the proposal's before/after hashes and exact diff for human
+conflict review, including edits originally authored by the user; never fabricate
+an approval event. Register the organization checkout before resolving inherited
+rules. Unchanged historical files and unrelated edits do not need approval.
+A handoff checks the prepared effective digest before changing ownership.

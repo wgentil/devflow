@@ -156,6 +156,16 @@ def main(argv: list[str] | None = None) -> int:
     register.add_argument("--repo-id", required=True)
     register.add_argument("--location", required=True)
     register.add_argument("--operation-id")
+    document_parser = commands.add_parser('document')
+    document_commands = document_parser.add_subparsers(dest='document_command', required=True)
+    propose = document_commands.add_parser('propose')
+    propose.add_argument('--root', required=True)
+    propose.add_argument('--repo-id', required=True)
+    propose.add_argument('--paths', nargs='+', required=True)
+    approve = document_commands.add_parser('approve')
+    approve.add_argument('--root', required=True)
+    approve.add_argument('--proposal-hash', required=True)
+    approve.add_argument('--actor-id', required=True)
     spec_parser = commands.add_parser("spec")
     spec_commands = spec_parser.add_subparsers(dest="spec_command")
     for name in ("validate", "gaps", "render"):
@@ -317,14 +327,24 @@ def main(argv: list[str] | None = None) -> int:
         # Replay above deliberately returns historical receipts without filesystem reads.
         phase = None
         if getattr(parsed, 'plan_command', None) in {'validate', 'ready'}: phase = 'plan-validation'
-        if run_command == 'start': phase = 'run-start'
+        if run_command in {'start', 'next', 'retry'}: phase = 'run-' + run_command
+        if getattr(parsed, 'build_command', None): phase = 'build'
+        if getattr(parsed, 'review_command', None): phase = 'review'
         if getattr(parsed, 'delivery_command', None): phase = 'delivery'
         if phase and getattr(parsed, 'root', None):
             gate_state = read_state(Path(parsed.root))
-            if gate_state['data'].get('spec_pair'):
-                from workflow_lib.repo_input_gate import require_current_spec
-                require_current_spec(Path(parsed.root), gate_state, phase)
-        if parsed.command == "version":
+            if (gate_state['data'].get('spec_pair')
+                    and not (run_command in {'next', 'retry'} and parsed.operation_id in gate_state['operations'])):
+                from workflow_lib.repo_input_gate import require_current_inputs
+                require_current_inputs(Path(parsed.root), gate_state, phase)
+                initial_state = read_state(Path(parsed.root))
+        if parsed.command == 'document':
+            from workflow_lib.document_approvals import propose_document_change, approve_document_change
+            if parsed.document_command == 'propose':
+                result = propose_document_change(Path(parsed.root), parsed.repo_id, parsed.paths)
+            else:
+                result = approve_document_change(Path(parsed.root), parsed.proposal_hash, parsed.actor_id)
+        elif parsed.command == "version":
             from workflow_lib.releases import release_descriptor
             result = release_descriptor()
         elif parsed.command == "context" and parsed.context_command == "resolve":

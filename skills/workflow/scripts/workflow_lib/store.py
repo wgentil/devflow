@@ -35,6 +35,29 @@ def _apply_event(state: dict, event: dict) -> None:
     """Materialize generic patches and compact run deltas from journal events."""
     kind, payload = event["kind"], deepcopy(event["payload"])
     data = state["data"]
+    if kind == 'document.proposed':
+        proposal = payload.get('proposal', {})
+        if not all(proposal.get(k) for k in ('proposal_hash', 'repo_id', 'files', 'diff_digest')):
+            raise WorkflowError('INVALID_EVENT', 'invalid governing proposal')
+        proposals = data.setdefault('document_proposals', {})
+        if proposal['proposal_hash'] in proposals and proposals[proposal['proposal_hash']] != proposal:
+            raise WorkflowError('INVALID_EVENT', 'immutable proposal conflict')
+        proposals[proposal['proposal_hash']] = proposal
+        return
+    if kind == 'document.approved':
+        approval = payload.get('approval', {})
+        proposal = data.get('document_proposals', {}).get(approval.get('proposal_hash'))
+        if (not proposal or not isinstance(approval.get('actor_id'), str) or not approval['actor_id'].strip()
+                or any(approval.get(k) != proposal[k] for k in ('repo_id', 'diff_digest'))):
+            raise WorkflowError('INVALID_EVENT', 'approval must name owning repository and exact proposal')
+        approvals = data.setdefault('document_approvals', {})
+        if approval['proposal_hash'] in approvals and approvals[approval['proposal_hash']] != approval:
+            raise WorkflowError('INVALID_EVENT', 'immutable approval conflict')
+        approvals[approval['proposal_hash']] = approval
+        return
+    if kind == 'governing.inputs.recorded':
+        data['governing_input_receipt'] = payload['receipt']
+        return
     if event.get('host_binding'):
         from .hosts import validate_binding
         guard = event['host_binding']

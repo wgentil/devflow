@@ -52,3 +52,10 @@ class HandoffTests(unittest.TestCase):
         with self.assertRaises(WorkflowError) as caught:self.accept()
         self.assertEqual(caught.exception.code,'REPAIR_LEASE_ACTIVE')
         self.assertEqual(self.state['host_bindings']['b1']['status'],'active')
+
+    def test_governing_digest_mismatch_preserves_owner(self):
+        self.state['governing_input_receipt'] = {'effective_digest': 'first'}
+        self.state['host_handoffs']['h1']['governing_input_receipt'] = {'effective_digest': 'first'}
+        self.state['governing_input_receipt'] = {'effective_digest': 'changed'}
+        with self.assertRaises(WorkflowError): self.accept()
+        self.assertEqual(self.state['host_bindings']['b1']['status'], 'active')
