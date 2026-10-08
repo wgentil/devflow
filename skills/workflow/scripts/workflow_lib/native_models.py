@@ -13,6 +13,7 @@ import uuid
 from .store import WorkflowError, _atomic_json
 from .model_discovery import discovery_key, cached_discovery, store_discovery
 from .host_models import delegated_configuration
+from .releases import PACKAGE_ROOT
 
 MAX_OUTPUT=2*1024*1024
 
@@ -87,7 +88,8 @@ class RPC:
         self.selector=selectors.DefaultSelector();self.selector.register(self.process.stdout,selectors.EVENT_READ)
         self.buffer=bytearray();self.sequence=0;self.notifications=[];self.total=0
         try:
-            self.request('initialize',{'clientInfo':{'name':'devflow','title':'DevFlow','version':'0.2.0'}})
+            version=json.loads((PACKAGE_ROOT/'plugin.json').read_text())['version']
+            self.request('initialize',{'clientInfo':{'name':'devflow','title':'DevFlow','version':version}})
             self.send({'method':'initialized','params':{}})
         except BaseException:self.close();raise
     def send(self,value,deadline=None):

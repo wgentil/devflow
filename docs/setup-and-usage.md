@@ -10,6 +10,7 @@ not provision an interpreter. Native Windows is outside current support.
 
 Codex and Claude have separate installations of the same shared package. Users
 choose when to upgrade. Both manifests and one skills/helper tree are included;
+the current package release is `v0.3.0`;
 the Claude marketplace descriptor is packaged at `.claude-plugin/marketplace.json`.
 The private GitHub repository `wgentil/devflow` serves the marketplace from
 `main`. Claude Code CLI users with access to that repository can install it:

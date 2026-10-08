@@ -24,8 +24,8 @@ Claude's GitHub marketplace descriptor is packaged in
 the repository root as the plugin source, preserving the shared Codex/Claude
 skill tree. See the [setup guide](docs/setup-and-usage.md#installation) for
 install commands. The private GitHub repository
-`wgentil/devflow` now serves the marketplace from `main`; no release tag has
-been created.
+`wgentil/devflow` serves the marketplace from `main`. The current release is
+[`v0.3.0`](docs/releases/v0.3.0.md); users choose when to upgrade each host.
 
 Repository maintenance instructions are in [AGENTS.md](AGENTS.md). Every DevFlow
 change must review and update the affected setup guide, skill guides and examples.
