@@ -24,3 +24,14 @@ class ProcessTransportTests(unittest.TestCase):
         with JsonLineProcess([sys.executable, '-c', code], Path.cwd(), 1024) as process:
             process.send({'id': 1}, 5)
             self.assertEqual(process.next(5), {'id': 1})
+
+class CleanupTests(unittest.TestCase):
+    def test_exited_windows_process_does_not_call_taskkill_on_reused_pid(self):
+        from unittest.mock import Mock, patch
+        from skills.workflow.scripts.workflow_lib import process_transport
+        process = Mock(pid=1234)
+        process.poll.return_value = 0
+        with patch.object(process_transport.os, 'name', 'nt'):
+            with patch.object(process_transport.subprocess, 'run') as command:
+                process_transport.stop_tree(process)
+        command.assert_not_called()

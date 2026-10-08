@@ -12,6 +12,9 @@ import threading
 def stop_tree(process: subprocess.Popen) -> None:
     """Stop the spawned process group/tree, or report uncertain cleanup."""
     if os.name == 'nt':
+        if process.poll() is not None:
+            process.wait(timeout=5)
+            return
         result = subprocess.run(['taskkill', '/PID', str(process.pid), '/T', '/F'],
                                 capture_output=True, timeout=5, check=False)
         if result.returncode and process.poll() is None:
