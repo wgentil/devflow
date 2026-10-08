@@ -27,3 +27,17 @@ Before delegated model work, follow the [native invocation guide](../../docs/nat
 Keep the actual actor/stage and item token or review package. Hooks never launch
 workers. Preserve blocked policy decisions and classify interrupted work before
 any replacement. Deterministic operations do not need a model invocation.
+
+Before planning, starting runs, transferring hosts or delivering repository-backed
+work, use the shared live specification preflight. Observed pair drift requires
+explicit human reapproval even after restoration. Keep legacy journal flows
+readable; migration creates an unapproved visible candidate and preserves targets.
+See the [guide](GUIDE.md#repository-specification-preflight) for recovery.
+
+```mermaid
+flowchart TD
+    Approval[Approved specification] --> Gate{Live repository pair matches?}
+    Gate -->|Yes or legacy journal approval| Plan[Validate coverage and dependencies]
+    Gate -->|Drift observed| Repair[Repair/store and explicitly reapprove]
+    Repair --> Approval
+```

@@ -165,6 +165,11 @@ def main(argv: list[str] | None = None) -> int:
     store_spec.add_argument("--operation-id")
     store_spec.add_argument("--repo-id")
     store_spec.add_argument("--path", help="Repository-relative JSON path; requires --repo-id")
+    migrate_spec = spec_commands.add_parser("migrate")
+    migrate_spec.add_argument("--root", required=True, help="Source legacy journal control root")
+    migrate_spec.add_argument("--repo-id", required=True, help="Registered target repository")
+    migrate_spec.add_argument("--path", required=True, help="New repository-relative JSON target")
+    migrate_spec.add_argument("--operation-id", required=True)
     approve_spec = spec_commands.add_parser("approve")
     approve_spec.add_argument("--root", required=True)
     approve_spec.add_argument("--confirm-hash", required=True)
@@ -306,6 +311,18 @@ def main(argv: list[str] | None = None) -> int:
             previous = initial_state["operations"].get(parsed.operation_id)
             if previous is not None:
                 raise _OperationReplay(_replay_result(initial_state, previous))
+        # One live preflight for all approval-consuming command transitions.
+        # Replay above deliberately returns historical receipts without filesystem reads.
+        phase = None
+        if getattr(parsed, 'plan_command', None) in {'validate', 'ready'}: phase = 'plan-validation'
+        if run_command == 'start': phase = 'run-start'
+        if getattr(parsed, 'host_command', None) in {'handoff-prepare', 'handoff-accept'}: phase = 'handoff'
+        if getattr(parsed, 'delivery_command', None): phase = 'delivery'
+        if phase and getattr(parsed, 'root', None):
+            gate_state = read_state(Path(parsed.root))
+            if gate_state['data'].get('spec_pair'):
+                from workflow_lib.repo_input_gate import require_current_spec
+                require_current_spec(Path(parsed.root), gate_state, phase)
         if parsed.command == "version":
             from workflow_lib.releases import release_descriptor
             result = release_descriptor()
@@ -367,6 +384,9 @@ def main(argv: list[str] | None = None) -> int:
                 result = {"gaps": find_gaps(specification)}
             else:
                 result = {"markdown": render_spec(specification)}
+        elif parsed.command == "spec" and parsed.spec_command == "migrate":
+            from workflow_lib.repo_input_gate import migrate_legacy_spec
+            result = migrate_legacy_spec(Path(parsed.root), parsed.repo_id, parsed.path, parsed.operation_id)
         elif parsed.command == "spec" and parsed.spec_command == "store":
             root = Path(parsed.root).expanduser().resolve()
             specification = _json_file(parsed.file)
@@ -403,11 +423,11 @@ def main(argv: list[str] | None = None) -> int:
             if pair:
                 approval.update(pair)
             approval["actor_id"] = parsed.actor_id
-            if state["data"].get("approval") == approval:
+            if state["data"].get("approval") == approval and not state["data"].get("spec_approval_invalidated"):
                 result = {"approval": approval, "unchanged": True, "state_version": state["version"]}
             else:
                 receipt = _commit(root, state["version"], _operation_id(parsed, uuid4().hex),
-                                  {"kind": "spec.approved", "payload": {"approval": approval}})
+                                  {"kind": "spec.approved", "payload": {"approval": approval, "spec_approval_invalidated": None}})
                 result = {"approval": approval, **receipt}
         elif parsed.command == "plan" and parsed.plan_command == "validate":
             root = Path(parsed.root).expanduser().resolve()

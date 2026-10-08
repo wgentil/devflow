@@ -57,3 +57,6 @@ is only for a stopped orphan after human confirmation. Follow
 [native usage](../native-models.md); fixture identities do not grant ownership.
 
 The [spec.json](spec.json) example can be stored in a registered `app` repository with `spec store --repo-id app --path docs/specs/0063-ios-safari-suite.json` (plus the control root and source file options). This creates the companion Markdown for review; rerun store to repair an interrupted pair.
+
+[Specification migration](spec-migration.md) documents explicit legacy source/target,
+idempotent candidate creation and required human reapproval.

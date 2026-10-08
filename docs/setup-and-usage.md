@@ -260,3 +260,19 @@ An interrupted pair write must be repaired by storing the pair again.
 Existing journal-only specifications remain available as legacy behavior. Optional
 CLI details are in the [specify guide](../skills/specify/GUIDE.md); plugin users
 need no shell variables or manual installation paths.
+
+## Specification drift and legacy upgrades
+
+For repository-backed work, DevFlow checks the visible specification pair before
+planning, run start, host handoff and delivery. Observed drift persists as a
+blocker even after restoration; ask the agent to repair/store the pair and obtain
+a fresh human approval. Journal inspection and replay remain available without
+repository files. A temporary change restored between checks is unobservable.
+
+Existing journal-backed specifications remain compatible. Ask “Migrate the legacy
+specification from this control root to `docs/specs/0063-ios-safari-suite.json` in
+the registered repository.” The agent requires explicit source and target, uses
+a stable operation ID, preserves the recorded JSON content hash, and refuses to
+overwrite either companion. Migration creates a candidate requiring new human
+approval. See the [workflow guide](../skills/workflow/GUIDE.md#repository-specification-preflight)
+and [developer migration example](examples/spec-migration.md).

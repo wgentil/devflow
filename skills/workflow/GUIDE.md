@@ -198,3 +198,27 @@ For model work, see [native worker usage and examples](../../docs/native-models.
 Example: “Use my permitted model for this stage as an advisory choice; show the
 actual observed model and preserve my spending cap.” Selection never promotes a
 new model to a capability-validated default.
+
+## Repository specification preflight
+
+Repository-backed specifications use one live file gate before plan validation
+and readiness, run start, host handoff preparation/acceptance, and delivery
+preparation/verification/recording. Both visible JSON and deterministic Markdown
+must match the approved receipt. Observed drift records an invalidation: restoring
+matching files does not revive approval. Repair and store the pair when necessary,
+then ask the human to approve it explicitly with a new operation ID. Historical
+receipts remain readable; journal replay does not read repository files. Changes
+that occur and are restored between checks cannot be detected.
+
+Legacy journal-backed specifications remain usable under their existing approval
+checks. To move one to visible files, ask the agent to migrate the specification
+from the explicit control root into a registered repository and a new relative
+JSON path (for example `docs/specs/0063-ios-safari-suite.json`). The agent uses
+`spec migrate --root <source-control-root> --repo-id <target-repo-id>
+--path <relative-json-target> --operation-id <stable-migration-id>`. It copies the
+actual recorded JSON, preserves its content hash, creates the Markdown companion,
+and never overwrites either target. It does not reconstruct absent JSON from a
+hash. Retrying the same operation ID returns the recorded candidate receipt; a
+different target needs a different ID. Migration creates no approval: human
+reapproval is required before new work uses the candidate. Installed plugin
+files and `.devflow` are never specification targets.

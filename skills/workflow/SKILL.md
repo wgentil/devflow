@@ -23,7 +23,10 @@ flowchart TD
     Gaps -->|Yes| Interview["Ask unresolved questions and revise spec"]
     Interview --> Spec
     Gaps -->|No| Approval["Human reviews and approves exact spec hash"]
-    Approval --> Plan["plan-work: validate coverage and dependencies"]
+    Approval --> SpecGate{"Live pair matches approval?"}
+    SpecGate -->|No| Reapprove["Repair/store pair and explicitly reapprove"]
+    Reapprove --> Approval
+    SpecGate -->|Yes| Plan["plan-work: validate coverage and dependencies"]
     Plan --> Next["run next: eligible item and attempt token"]
     Next --> Model["Discover and resolve stage; launch eligible scoped worker"]
     Model --> Build["build-work: implement and verify"]
@@ -33,7 +36,8 @@ flowchart TD
     More -->|No| Branch["Independent branch review"]
     Branch --> Accept["Independent acceptance review and requirement verdicts"]
     Accept --> Harden["Run and validate configured hardening gates"]
-    Harden --> Manifest["Prepare and verify exact delivery manifest"]
+    Harden --> DeliverySpecGate["Check live approved pair before delivery"]
+    DeliverySpecGate --> Manifest["Prepare and verify exact delivery manifest"]
     Manifest --> Choice["Human chooses merge, PR or retained branch"]
     Choice --> Delivered["Execute authorized delivery and record actual result"]
     Delivered -.-> Reconcile["issues: scoped authorization and durable outbox"]
@@ -182,3 +186,9 @@ Before delegated model work, follow the [native invocation guide](../../docs/nat
 Keep the actual actor/stage and item token or review package. Hooks never launch
 workers. Preserve blocked policy decisions and classify interrupted work before
 any replacement. Deterministic operations do not need a model invocation.
+
+Before planning, starting runs, transferring hosts or delivering repository-backed
+work, use the shared live specification preflight. Observed pair drift requires
+explicit human reapproval even after restoration. Keep legacy journal flows
+readable; migration creates an unapproved visible candidate and preserves targets.
+See the [guide](GUIDE.md#repository-specification-preflight) for recovery.

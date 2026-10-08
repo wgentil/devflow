@@ -62,12 +62,13 @@ def read_spec_pair(repo: Path, relative_json: str) -> dict:
     return {'spec': spec, **_receipt(repo, json_path, md_path, spec, markdown)}
 
 
-def write_spec_pair(repo: Path, relative_json: str, spec: dict) -> dict:
+def write_spec_pair(repo: Path, relative_json: str, spec: dict, *, overwrite: bool = True) -> dict:
     repo = Path(repo).resolve()
     validate_spec(spec)
     json_path, md_path = _paths(repo, relative_json)
     contents = (json.dumps(spec, ensure_ascii=False, sort_keys=True, indent=2) + '\n', render_spec(spec))
     temporary = []
+    created = []
     try:
         for target, content in zip((json_path, md_path), contents):
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -79,7 +80,16 @@ def write_spec_pair(repo: Path, relative_json: str, spec: dict) -> dict:
                 os.fsync(handle.fileno())
         _paths(repo, relative_json)
         for name, target in zip(temporary, (json_path, md_path)):
-            os.replace(name, target)
+            if overwrite:
+                os.replace(name, target)
+            else:
+                try:
+                    os.link(name, target)
+                except FileExistsError as exc:
+                    for owned in created:
+                        owned.unlink()
+                    raise WorkflowError('SPEC_TARGET_EXISTS', 'migration target already exists') from exc
+                created.append(target)
         result = read_spec_pair(repo, relative_json)
         return {key: value for key, value in result.items() if key != 'spec'}
     finally:
