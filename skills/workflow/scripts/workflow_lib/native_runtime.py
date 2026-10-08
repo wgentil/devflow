@@ -27,7 +27,7 @@ def _native_lease(path):
 
 
 
-def policy():return json.loads((PACKAGE_ROOT/'definitions/model-policy.json').read_text())
+def policy():return json.loads((PACKAGE_ROOT/'definitions/model-policy.json').read_text(encoding='utf-8'))
 
 def pointer_path(root,binding):
     name=hashlib.sha256((binding['host']+':'+binding['binding_id']).encode()).hexdigest()
@@ -36,7 +36,7 @@ def pointer_path(root,binding):
 
 def cached_context(root,binding):
     if root is None:return None
-    try:pointer=json.loads(pointer_path(root,binding).read_text())
+    try:pointer=json.loads(pointer_path(root,binding).read_text(encoding='utf-8'))
     except (OSError,ValueError):return None
     if not isinstance(pointer,dict) or pointer.get('binding_revision')!=binding.get('revision'):return None
     return NativeCache(root).get(binding['host'],pointer.get('account_key'),policy()['version'],release_descriptor()['fingerprint'],time.time())

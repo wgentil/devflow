@@ -7,7 +7,8 @@ checkout CRLF is normalized for governing-document comparison so an unchanged
 Git text file does not appear as an unapproved policy edit; this changes the
 receipt to canonical LF bytes on Windows and needs real-host parity checks. Launcher
 liveness now uses a Windows process handle so reconciliation never signals a
-running process while checking it. CI validation is in progress; these source
+running process while checking it. Package and runtime JSON files are decoded as
+UTF-8 independent of the Windows console code page. CI validation is in progress; these source
 changes alone do not establish Windows support.
 
 | Gate | macOS | Linux | WSL2 Linux filesystem | Native Windows |

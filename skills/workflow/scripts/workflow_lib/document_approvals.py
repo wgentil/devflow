@@ -93,7 +93,7 @@ def require_current_governing_inputs(root: Path, state: dict, phase: str) -> dic
             raise WorkflowError('GOVERNING_INPUT_DRIFT', 'governing manifest was removed')
         return {}
     try:
-        manifest = json.loads((project / 'docs/devflow-context.json').read_text())
+        manifest = json.loads((project / 'docs/devflow-context.json').read_text(encoding='utf-8'))
     except (OSError, ValueError) as exc:
         raise WorkflowError('INVALID_GOVERNING_DOCS', 'cannot read project governing manifest') from exc
     if not isinstance(manifest, dict):

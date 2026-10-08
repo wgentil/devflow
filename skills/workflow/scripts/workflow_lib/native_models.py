@@ -100,7 +100,7 @@ class RPC:
             self.process = self.transport.process
             self.sequence=0;self.notifications=[];self.total=0
             try:
-                version=json.loads((PACKAGE_ROOT/'plugin.json').read_text())['version']
+                version=json.loads((PACKAGE_ROOT/'plugin.json').read_text(encoding='utf-8'))['version']
                 self.request('initialize',{'clientInfo':{'name':'devflow','title':'DevFlow','version':version}})
                 self.send({'method':'initialized','params':{}})
             except BaseException:self.close();raise
@@ -111,7 +111,7 @@ class RPC:
         self.selector=selectors.DefaultSelector();self.selector.register(self.process.stdout,selectors.EVENT_READ)
         self.buffer=bytearray();self.sequence=0;self.notifications=[];self.total=0
         try:
-            version=json.loads((PACKAGE_ROOT/'plugin.json').read_text())['version']
+            version=json.loads((PACKAGE_ROOT/'plugin.json').read_text(encoding='utf-8'))['version']
             self.request('initialize',{'clientInfo':{'name':'devflow','title':'DevFlow','version':version}})
             self.send({'method':'initialized','params':{}})
         except BaseException:self.close();raise
@@ -278,7 +278,7 @@ class ClaudeBackend:
 class NativeCache:
     def __init__(self,root):self.path=Path(root)/'native-model-discovery.json'
     def read(self):
-        try:value=json.loads(self.path.read_text());return value if isinstance(value,dict) else {}
+        try:value=json.loads(self.path.read_text(encoding='utf-8'));return value if isinstance(value,dict) else {}
         except (OSError,ValueError):return {}
     def key(self,host,account,policy,release):return discovery_key(host,account,policy+':'+release)
     def put(self,host,account,policy,release,result,now,ttl=900):
