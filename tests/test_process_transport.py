@@ -29,6 +29,7 @@ class ProcessTransportTests(unittest.TestCase):
         code = "import sys;sys.stdout.write(''.join('{\"id\":%d}\\n'%i for i in range(200)));sys.stdout.flush()"
         with JsonLineProcess([sys.executable, '-c', code], Path.cwd(), 1024) as process:
             self.assertEqual([process.next(5)['id'] for _ in range(200)], list(range(200)))
+            self.assertEqual(process.process.wait(timeout=5), 0)
 
     def test_json_line_process_caps_cumulative_output(self):
         code = "import sys;sys.stdout.write('{\"id\":1}\\n'*300);sys.stdout.flush()"
