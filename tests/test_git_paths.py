@@ -1,4 +1,5 @@
 import subprocess
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -11,10 +12,12 @@ class GitPathsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             repo = Path(directory)
             subprocess.run(['git', 'init', '-q', str(repo)], check=True)
-            for name in ['space name.txt', 'line\nbreak.txt', 'café.txt']:
+            names = ['space name.txt', 'café.txt']
+            if os.name != 'nt':
+                names.append('line\nbreak.txt')
+            for name in names:
                 (repo / name).write_text('content')
-            self.assertEqual(set(git_paths(repo, 'ls-files', '--others', '--exclude-standard')),
-                             {'space name.txt', 'line\nbreak.txt', 'café.txt'})
+            self.assertEqual(set(git_paths(repo, 'ls-files', '--others', '--exclude-standard')), set(names))
 
     def test_resolve_rejects_drive_relative_and_parent_escape(self):
         with tempfile.TemporaryDirectory() as directory:
