@@ -49,6 +49,28 @@ An active bounded-repair claim also blocks handoff and mapped task completion.
 Reconcile a stopped native invocation and stop its repair cycle before changing
 ownership; the old owner remains active throughout.
 
+For a new handoff preparation or acceptance, the helper rereads the approved
+repository specification pair and applicable project and organization governing
+documents. The organization checkout must be registered under its manifest ID,
+reachable at its Git URL and at the source's current HEAD. An edited applicable
+policy returns `DOCUMENT_APPROVAL_REQUIRED` for the owning repository and path;
+the source host keeps ownership. Ask DevFlow to present the exact before/after
+diff and hashes, obtain a separate human document approval, then reassess the
+handoff with a new operation ID. Specification approval and a Git commit do not
+authorize a policy edit. If the source HEAD has moved, preserve local checkout
+work and select or explicitly update a current checkout before retrying; fetch
+alone does not move its checked-out HEAD. Unreachable or local-only organization
+URLs must be made reachable to the destination. See the
+[governing approval sequence](examples/governing-approval.md) and
+[setup recovery](setup-and-usage.md#recovering-a-stale-organization-checkout).
+
+Preparation records the effective governing digest. Acceptance checks it again
+before ownership transfers, so a policy change after preparation requires
+reassessment. A retry of an already committed handoff validates the original
+request hash and returns its recorded receipt before the live input check. It
+does not transfer ownership again; changing that request with the same operation
+ID returns `OPERATION_CONFLICT`.
+
 ## Optional Goals
 
 `host goal-status` returns the current journal-derived completion contract and
