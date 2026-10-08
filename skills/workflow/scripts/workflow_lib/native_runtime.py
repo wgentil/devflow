@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import time
 from .platform_lock import exclusive_file
+from .process_liveness import process_alive
 from contextlib import contextmanager
 from .store import WorkflowError, read_state, transact, HOST_CONTEXT, _atomic_json
 from .hosts import validate_binding, invocation_scope
@@ -242,8 +243,6 @@ def reconcile(root,request,operation_id):
     with _native_lease(lease) as lock:
         pid=record.get('launcher_pid')
         if isinstance(pid,int) and pid>0:
-            try:os.kill(pid,0)
-            except ProcessLookupError:pass
-            except PermissionError:raise WorkflowError('NATIVE_INVOCATION_ACTIVE','Launcher liveness cannot be disproved.')
-            else:raise WorkflowError('NATIVE_INVOCATION_ACTIVE','Recorded launcher is still alive; PID reuse also fails closed.')
+            if process_alive(pid) is not False:
+                raise WorkflowError('NATIVE_INVOCATION_ACTIVE','Recorded launcher is alive or its liveness cannot be disproved; PID reuse also fails closed.')
         return _commit(root,operation_id,'native-finish',finish,binding)
