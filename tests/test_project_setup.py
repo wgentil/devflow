@@ -60,3 +60,22 @@ class ProjectSetupTests(unittest.TestCase):
         result=subprocess.run([sys.executable,str(runner),'setup','inspect','--project-dir',str(self.repo)],capture_output=True,text=True)
         self.assertEqual(result.returncode,0,result.stdout+result.stderr)
         self.assertIn('project-only',result.stdout)
+
+    def test_org_update_blocks_stale_runtime_checkout(self):
+        org=Path(self.temp.name)/'team'
+        first=initialize_project_documents(self.repo,{'mode':'create-org','name':'Team','target_dir':str(org)},'one')
+        checkout=Path(first['org_checkout'])
+        before=subprocess.check_output(['git','-C',str(checkout),'rev-parse','HEAD'])
+        manifest=self.repo/'docs/devflow-context.json';original=manifest.read_bytes()
+        (org/'docs/new-policy.md').write_text('## NEW-1: New sealed policy\nRequired.\n')
+        import json
+        org_manifest=json.loads((org/'docs/devflow-org.json').read_text())
+        org_manifest['documents']=[{'category':'coding-standards','path':'docs/new-policy.md','rule_ids':['NEW-1'],'sealed_rule_ids':['NEW-1']}]
+        (org/'docs/devflow-org.json').write_text(json.dumps(org_manifest))
+        subprocess.run(['git','-C',str(org),'add','.'],check=True)
+        subprocess.run(['git','-C',str(org),'-c','user.name=Test','-c','user.email=test@example.com','commit','-qm','New sealed policy'],check=True)
+        with self.assertRaises(WorkflowError) as error:
+            initialize_project_documents(self.repo,{'mode':'attach-org','url':str(org)},'two')
+        self.assertEqual(error.exception.code,'GOVERNING_SOURCE_STALE')
+        self.assertEqual(manifest.read_bytes(),original)
+        self.assertEqual(subprocess.check_output(['git','-C',str(checkout),'rev-parse','HEAD']),before)

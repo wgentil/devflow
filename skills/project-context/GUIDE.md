@@ -90,7 +90,8 @@ working-tree files, including uncommitted edits, and reports each rule's source,
 path, Git HEAD and whole-document SHA-256. The effective digest hashes selected
 rule content/category/sealing, excluding unrelated files and commit metadata.
 Document mode returns a read-only result and does not replace legacy journal slices.
-No automatic clone, discovery or journal-to-document conversion is implemented.
+Explicit context resolution does not clone or discover sources; guided setup creates
+the runtime organization checkout. No journal-to-document conversion is implemented.
 
 Optional developer command: `context resolve --project-repo <project-checkout>
 --org-repo <org-checkout>` via the workflow helper. Do not combine document flags
@@ -146,5 +147,20 @@ flowchart TD
     Create --> Adopt
     Project --> Adopt
     Adopt --> Manifest[Create or preserve visible manifest]
-    Manifest --> Human[Human policy review and approval]
+    Manifest --> Fresh{Organization HEAD current?}
+    Fresh -->|No| Recover[Block stale checkout; explicit recovery]
+    Fresh -->|Yes| Human[Human policy review and approval]
 ```
+
+### Recovering a stale organization checkout
+
+Setup and governing-document resolution verify that the selected organization
+checkout HEAD matches the Git source's advertised HEAD. A mismatch returns
+`GOVERNING_SOURCE_STALE` before reading effective organization policy. Fetching
+updates remote references but does not move the checkout. DevFlow never silently
+resets or checks out a user repository. Ask the agent to select an up-to-date clone,
+or explicitly authorize updating the chosen checkout after preserving local work.
+For a stale generated `.devflow/org/` checkout, ask the agent to preserve or remove
+that runtime clone and rerun guided setup to clone the source anew. Retry context
+resolution and policy review afterward. Source HEAD must be advertised and reachable;
+custom pinned older revisions are not currently supported.

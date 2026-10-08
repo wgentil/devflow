@@ -44,3 +44,8 @@ creation at an explicit chosen directory. Use the workflow setup helpers; do not
 plugin users to prepare folders or run shell commands. Adopt existing documents at
 approved paths without rewriting them. Local-only organizations carry portability
 limits; unavailable sources block handoff, and setup never approves generated policy.
+
+Organization checkout HEAD must match the source's advertised HEAD. On
+`GOVERNING_SOURCE_STALE`, block policy resolution and select a current clone or
+request explicit recovery authorization; do not reset or switch a user checkout.
+See the companion guide for stale runtime clone recovery.

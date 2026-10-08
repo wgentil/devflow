@@ -101,6 +101,19 @@ def _rules(repo: Path, manifest: dict, source: str) -> dict:
     return rules
 
 
+def require_current_org_head(checkout: Path, url: str) -> None:
+    """Block stale policy without moving or resetting the selected checkout."""
+    advertised = _git(checkout, 'ls-remote', '--', url, 'HEAD')
+    heads = [line.split()[0] for line in advertised.stdout.splitlines()
+             if len(line.split()) == 2 and line.split()[1] == 'HEAD']
+    selected = _git(checkout, 'rev-parse', 'HEAD')
+    if advertised.returncode or len(heads) != 1 or selected.returncode:
+        raise WorkflowError('GOVERNING_SOURCE_UNAVAILABLE', 'Organization source HEAD cannot be verified')
+    if selected.stdout.strip() != heads[0]:
+        raise WorkflowError('GOVERNING_SOURCE_STALE',
+                            'Organization checkout HEAD differs from source HEAD; select an up-to-date checkout and retry')
+
+
 def resolve_governing_docs(project_repo: Path, org_repo: Path | None) -> dict:
     """Explicit resolution verifies source reachability; never fall back to cached org rules."""
     project_repo = Path(project_repo).resolve()
@@ -122,6 +135,7 @@ def resolve_governing_docs(project_repo: Path, org_repo: Path | None) -> dict:
                 raise WorkflowError('GOVERNING_SOURCE_UNAVAILABLE', 'organization checkout identity does not match URL')
             if _git(org_repo, 'fetch', 'origin').returncode:
                 raise WorkflowError('GOVERNING_SOURCE_UNAVAILABLE', 'organization fetch failed')
+        require_current_org_head(org_repo, org['url'])
         manifest = load_org_manifest(org_repo)
         if manifest.get('id') != org['id']:
             _fail('organization stable ID does not match manifest')

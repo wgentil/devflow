@@ -233,3 +233,8 @@ for read-only discovery and `setup initialize` with the selected choice. The age
 runs these helpers; plugin users need no folders, shell variables, or Python commands.
 Adopt existing documents by explicit category, path and rule IDs. Never infer that
 setup approves policy. An unavailable organization source blocks recovery/handoff.
+
+Organization checkout HEAD must match the source's advertised HEAD. On
+`GOVERNING_SOURCE_STALE`, block policy resolution and select a current clone or
+request explicit recovery authorization; do not reset or switch a user checkout.
+See the companion guide for stale runtime clone recovery.

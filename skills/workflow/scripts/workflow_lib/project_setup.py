@@ -2,11 +2,12 @@
 from __future__ import annotations
 import hashlib
 import json
+import os
 import shutil
 import tempfile
 from pathlib import Path
 from .bootstrap import discover_project, exclude_runtime
-from .governing_docs import _git, _path, _rules, load_project_manifest, load_org_manifest, resolve_governing_docs
+from .governing_docs import _git, _path, _rules, load_project_manifest, load_org_manifest, resolve_governing_docs, require_current_org_head
 from .store import WorkflowError
 
 
@@ -14,10 +15,15 @@ def inspect_project_setup(project_dir: Path) -> dict:
     project = discover_project(project_dir)
     path = project/'docs/devflow-context.json'
     manifest = load_project_manifest(project) if path.exists() else None
-    docs = sorted(str(p.relative_to(project)) for p in project.rglob('*')
-                  if p.is_file() and p.suffix.lower() in {'.md','.json'}
-                  and not any(part in {'.git','.devflow'} for part in p.relative_to(project).parts)
-                  and not p.is_symlink())
+    docs = []
+    for directory, subdirs, files in os.walk(project, followlinks=False):
+        subdirs[:] = [name for name in subdirs if name not in {'.git', '.devflow'}
+                      and not (Path(directory)/name).is_symlink()]
+        for name in files:
+            path=Path(directory)/name
+            if path.suffix.lower() in {'.md','.json'} and not path.is_symlink():
+                docs.append(str(path.relative_to(project)))
+    docs.sort()
     return {'project_dir':str(project), 'manifest':manifest, 'existing_documents':docs,
             'candidate_org_sources':[manifest['org']] if manifest and manifest.get('org') else [],
             'choices':['project-only','attach-org','create-org'], 'default':'project-only'}
@@ -132,6 +138,7 @@ def _result(project: Path, manifest: dict, unchanged: bool) -> dict:
             checkout.parent.mkdir(parents=True,exist_ok=True)
             if _git(project,'clone','--',url,str(checkout)).returncode:
                 raise WorkflowError('GOVERNING_SOURCE_UNAVAILABLE','Organization checkout unavailable')
+        require_current_org_head(checkout,url)
     local=bool(url and (Path(url).is_absolute() or url.startswith('file://')))
     return {'project_dir':str(project),'manifest':manifest,'unchanged':unchanged,
             'portability':'local-only' if local else 'portable', 'approval_required':True, 'org_checkout':str(checkout) if checkout else None,

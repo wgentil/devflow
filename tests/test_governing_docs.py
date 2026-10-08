@@ -101,15 +101,17 @@ class GoverningDocsTests(unittest.TestCase):
         subprocess.run(['git', 'clone', '-q', str(self.org), str(clone)], check=True)
         return clone
 
-    def test_matching_origin_fetches_remote_refs_without_changing_checkout(self):
+    def test_stale_clone_blocks_without_changing_checkout(self):
         clone = self.org_clone()
         before = subprocess.check_output(['git', '-C', str(clone), 'rev-parse', 'HEAD'], text=True).strip()
         self.write(self.org, 'unrelated.md', 'new commit')
         subprocess.run(['git', '-C', str(self.org), 'add', '.'], check=True)
         subprocess.run(['git', '-C', str(self.org), '-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '-qm', 'advance remote'], check=True)
         remote_head = subprocess.check_output(['git', '-C', str(self.org), 'rev-parse', 'HEAD'], text=True).strip()
-        result = gd.resolve_governing_docs(self.project, clone)
-        self.assertEqual(result['rules']['A']['provenance']['git_head'], before)
+        with self.assertRaises(WorkflowError) as error:
+            gd.resolve_governing_docs(self.project, clone)
+        self.assertEqual(error.exception.code, 'GOVERNING_SOURCE_STALE')
+        self.assertEqual(subprocess.check_output(['git', '-C', str(clone), 'rev-parse', 'HEAD'], text=True).strip(), before)
         self.assertEqual(subprocess.check_output(['git', '-C', str(clone), 'rev-parse', 'refs/remotes/origin/HEAD'], text=True).strip(), remote_head)
 
     def test_mismatched_clone_origin_blocks_resolution(self):

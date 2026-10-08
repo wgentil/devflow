@@ -300,5 +300,20 @@ flowchart TD
     Create --> Adopt
     Project --> Adopt
     Adopt --> Manifest[Create or preserve visible manifest]
-    Manifest --> Human[Human policy review and approval]
+    Manifest --> Fresh{Organization HEAD current?}
+    Fresh -->|No| Recover[Block stale checkout; explicit recovery]
+    Fresh -->|Yes| Human[Human policy review and approval]
 ```
+
+### Recovering a stale organization checkout
+
+Setup and governing-document resolution verify that the selected organization
+checkout HEAD matches the Git source's advertised HEAD. A mismatch returns
+`GOVERNING_SOURCE_STALE` before reading effective organization policy. Fetching
+updates remote references but does not move the checkout. DevFlow never silently
+resets or checks out a user repository. Ask the agent to select an up-to-date clone,
+or explicitly authorize updating the chosen checkout after preserving local work.
+For a stale generated `.devflow/org/` checkout, ask the agent to preserve or remove
+that runtime clone and rerun guided setup to clone the source anew. Retry context
+resolution and policy review afterward. Source HEAD must be advertised and reachable;
+custom pinned older revisions are not currently supported.
