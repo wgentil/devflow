@@ -67,3 +67,9 @@ For model work, see [native worker usage and examples](../../docs/native-models.
 Example: “Use my permitted model for this stage as an advisory choice; show the
 actual observed model and preserve my spending cap.” Selection never promotes a
 new model to a capability-validated default.
+
+Include relevant repository `application-contracts` rules (API, data and events)
+in requirements alongside architecture, standards, testing and design rules.
+Preserve machine-readable contract formats and stable rule IDs. Separate policy
+approval from specification approval; a mid-run change also needs plan and
+verification reassessment before a fresh run can proceed.

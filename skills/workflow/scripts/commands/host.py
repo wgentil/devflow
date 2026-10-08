@@ -135,7 +135,11 @@ def dispatch(parsed):
         gate_state = read_state(Path(parsed.root))
         if gate_state['data'].get('spec_pair'):
             from workflow_lib.repo_input_gate import require_current_inputs
-            require_current_inputs(Path(parsed.root), gate_state, 'handoff')
+            data = gate_state['data']
+            binding = data.get('host_bindings', {}).get(request.get('binding_id'), {})
+            envelope = data.get('host_handoffs', {}).get(request.get('handoff_id'), {})
+            run_id = binding.get('run_id') or envelope.get('run_id')
+            require_current_inputs(Path(parsed.root), gate_state, 'handoff', run_id)
     request['client_request_hash']=client_hash
 
     if parsed.host_command in {'attach','handoff-accept','legacy-adopt'}:

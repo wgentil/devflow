@@ -2,7 +2,37 @@
   "schema_version": 1,
   "id": "example-org",
   "documents": [
-    {"category": "coding-standards", "path": "docs/org-coding.md", "rule_ids": ["CODE-1", "CODE-2"], "sealed_rule_ids": ["CODE-2"]},
-    {"category": "design-system", "path": "docs/design-tokens.json", "rule_ids": ["UI-TOKENS"]}
+    {
+      "category": "coding-standards",
+      "path": "docs/org-coding.md",
+      "rule_ids": [
+        "CODE-1",
+        "CODE-2"
+      ],
+      "sealed_rule_ids": [
+        "CODE-2"
+      ]
+    },
+    {
+      "category": "design-system",
+      "path": "docs/design-tokens.json",
+      "rule_ids": [
+        "UI-TOKENS"
+      ]
+    },
+    {
+      "category": "application-contracts",
+      "path": "docs/contracts/openapi.yaml",
+      "rule_ids": [
+        "API"
+      ]
+    },
+    {
+      "category": "application-contracts",
+      "path": "docs/contracts/event.schema.json",
+      "rule_ids": [
+        "EVENT"
+      ]
+    }
   ]
 }

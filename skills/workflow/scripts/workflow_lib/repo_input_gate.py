@@ -61,9 +61,14 @@ def migrate_legacy_spec(root: Path, repo_id: str, relative_json: str, operation_
     return pair
 
 
-def require_current_inputs(root: Path, state: dict, phase: str) -> dict:
+def require_current_inputs(root: Path, state: dict, phase: str, run_id: str | None = None) -> dict:
     """Compose independent specification and governing-document evidence."""
     from .document_approvals import require_current_governing_inputs
     spec = require_current_spec(root, state, phase)
     governing = require_current_governing_inputs(root, read_state(root), phase)
+    if run_id and governing:
+        run = read_state(root)['data'].get('runs', {}).get(run_id)
+        if run and run.get('governing_digest') != governing['effective_digest']:
+            raise WorkflowError('RUN_GOVERNING_INPUTS_STALE',
+                                'this run uses prior governing inputs; preserve it for audit and start a fresh run from the reassessed plan')
     return {'spec': spec, 'governing': governing}

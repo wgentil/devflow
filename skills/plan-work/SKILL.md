@@ -37,7 +37,26 @@ See the [guide](GUIDE.md#repository-specification-preflight) for recovery.
 ```mermaid
 flowchart TD
     Approval[Approved specification] --> Gate{Live repository pair matches?}
-    Gate -->|Yes or legacy journal approval| Plan[Validate coverage and dependencies]
+    Gate -->|Yes or legacy journal approval| Policy{Governing inputs changed?}
+    Policy -->|Yes| Reassess[Approve exact diff; record impact assessment]
+    Policy -->|No| Plan[Validate plan and bind governing digest]
+    Reassess --> Plan
+    Plan --> Fresh[Start fresh run if prior run digest differs]
     Gate -->|Drift observed| Repair[Repair/store and explicitly reapprove]
     Repair --> Approval
 ```
+
+## Governing input reassessment
+
+Plan validation records the effective governing digest. An applicable policy
+change after validation leaves a persistent `GOVERNING_REASSESSMENT_REQUIRED`
+blocker, even after exact-diff approval or a repeated preflight. Reassess the
+plan and verification impact, then explicitly validate the plan with a recorded
+assessment. The helper checks that the assessment is nonempty; the agent and
+human remain responsible for its substance and any required plan edits.
+
+Runs retain their original governing digest. A run with an older digest remains
+blocked with `RUN_GOVERNING_INPUTS_STALE` after plan revalidation. Preserve that
+run and its evidence for audit and start a fresh run from the revalidated plan;
+previous verification and review evidence are not carried forward. Discarding an
+old run is a separate, explicit user-directed action, never automatic recovery.

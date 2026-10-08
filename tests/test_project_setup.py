@@ -79,3 +79,13 @@ class ProjectSetupTests(unittest.TestCase):
         self.assertEqual(error.exception.code,'GOVERNING_SOURCE_STALE')
         self.assertEqual(manifest.read_bytes(),original)
         self.assertEqual(subprocess.check_output(['git','-C',str(checkout),'rev-parse','HEAD']),before)
+
+    def test_inspect_and_adopt_existing_openapi_yaml_without_rewriting(self):
+        path = self.repo / 'existing-api.yaml'
+        raw = 'openapi: 3.1.0\ninfo: {title: Example, version: "1"}\npaths: {}\n'
+        path.write_text(raw)
+        self.assertIn('existing-api.yaml', inspect_project_setup(self.repo)['existing_documents'])
+        result = initialize_project_documents(self.repo, {'mode': 'project-only', 'documents': [
+            {'category': 'application-contracts', 'path': 'existing-api.yaml', 'rule_ids': ['API']} ]}, 'adopt-api')
+        self.assertEqual(result['manifest']['documents'][0]['path'], 'existing-api.yaml')
+        self.assertEqual(path.read_text(), raw)

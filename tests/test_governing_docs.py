@@ -121,3 +121,29 @@ class GoverningDocsTests(unittest.TestCase):
         with self.assertRaises(WorkflowError) as error:
             gd.resolve_governing_docs(self.project, clone)
         self.assertEqual(error.exception.code, 'GOVERNING_SOURCE_UNAVAILABLE')
+
+    def test_application_contract_formats_inheritance_and_scoped_override(self):
+        api = 'openapi: 3.1.0\ninfo: {title: Example, version: "1"}\npaths: {}\n'
+        schema = '{"type":"object","properties":{"id":{"type":"string"}}}\n'
+        self.write(self.org, 'contracts/api.yaml', api)
+        self.write(self.org, 'contracts/event.schema.json', schema)
+        self.org_manifest['documents'] = [
+            {'category': 'application-contracts', 'path': 'contracts/api.yaml', 'rule_ids': ['API']},
+            {'category': 'application-contracts', 'path': 'contracts/event.schema.json', 'rule_ids': ['EVENT']}]
+        self.manifests()
+        inherited = self.resolve()
+        self.assertEqual(inherited['rules']['API']['content'], api)
+        self.assertEqual(inherited['rules']['EVENT']['content'], schema)
+        local = '{"type":"object","required":["id"]}\n'
+        self.write(self.project, 'existing/event.json', local)
+        self.project_manifest['documents'] = [{'category': 'application-contracts', 'path': 'existing/event.json', 'rule_ids': ['EVENT']}]
+        self.project_manifest['overrides'] = {'EVENT': 'existing/event.json'}
+        self.manifests()
+        resolved = self.resolve()
+        self.assertEqual(resolved['rules']['API'], inherited['rules']['API'])
+        self.assertEqual(resolved['rules']['EVENT']['content'], local)
+        self.assertEqual((self.org / 'contracts/api.yaml').read_text(), api)
+        self.org_manifest['documents'][1]['sealed_rule_ids'] = ['EVENT']
+        self.manifests()
+        with self.assertRaises(WorkflowError) as error: self.resolve()
+        self.assertEqual(error.exception.code, 'GOVERNING_RULE_SEALED')

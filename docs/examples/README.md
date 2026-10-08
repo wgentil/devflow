@@ -71,3 +71,12 @@ runtime checkout path; register that checkout under the organization ID before
 inherited policy is checked. Review the new project manifest and approve its
 exact diff separately from the visible specification pair. See the
 [governing approval sequence](governing-approval.md).
+
+Application contract examples: [OpenAPI YAML](openapi.yaml),
+[event JSON Schema](event.schema.json), and
+[project event override](project-event.schema.json). The manifest templates use
+`application-contracts`: copy the first two to the org paths and the third to the
+project path declared in those manifests. The project replaces only `EVENT`;
+`API` remains inherited. The coding and token examples still need their referenced
+files authored, and the organization URL must be replaced. Contract formats and
+existing repository paths may be retained. These fixtures are not approval evidence.

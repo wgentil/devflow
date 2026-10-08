@@ -81,3 +81,18 @@ hash. Retrying the same operation ID returns the recorded candidate receipt; a
 different target needs a different ID. Migration creates no approval: human
 reapproval is required before new work uses the candidate. Installed plugin
 files and `.devflow` are never specification targets.
+
+## Governing input reassessment
+
+Plan validation records the effective governing digest. An applicable policy
+change after validation leaves a persistent `GOVERNING_REASSESSMENT_REQUIRED`
+blocker, even after exact-diff approval or a repeated preflight. Reassess the
+plan and verification impact, then explicitly validate the plan with a recorded
+assessment. The helper checks that the assessment is nonempty; the agent and
+human remain responsible for its substance and any required plan edits.
+
+Runs retain their original governing digest. A run with an older digest remains
+blocked with `RUN_GOVERNING_INPUTS_STALE` after plan revalidation. Preserve that
+run and its evidence for audit and start a fresh run from the revalidated plan;
+previous verification and review evidence are not carried forward. Discarding an
+old run is a separate, explicit user-directed action, never automatic recovery.

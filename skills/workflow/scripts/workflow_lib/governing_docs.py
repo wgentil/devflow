@@ -8,7 +8,7 @@ import re
 import subprocess
 from .store import WorkflowError
 
-CATEGORIES = {'platform', 'coding-standards', 'architecture', 'test-strategy', 'release-process', 'design-system'}
+CATEGORIES = {'platform', 'coding-standards', 'architecture', 'test-strategy', 'release-process', 'design-system', 'application-contracts'}
 
 
 def _git(repo: Path, *args: str) -> subprocess.CompletedProcess:

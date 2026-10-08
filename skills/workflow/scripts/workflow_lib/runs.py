@@ -23,6 +23,9 @@ def start_run(state: dict, run_id: str, plan: dict) -> dict:
         raise WorkflowError("PLAN_NOT_VALIDATED", "run requires the currently stored validated plan")
     if state.get("plan_validation", {}).get("spec_hash") != plan.get("spec_hash"):
         raise WorkflowError("PLAN_STALE", "plan validation does not match the plan specification hash")
+    governing_digest = state.get('governing_input_receipt', {}).get('effective_digest')
+    if state.get('governing_reassessment_required') or state.get('plan_validation', {}).get('governing_digest') != governing_digest:
+        raise WorkflowError('GOVERNING_REASSESSMENT_REQUIRED', 'revalidate the plan against current governing inputs')
     specification, approval = state.get("spec"), state.get("approval")
     if (specification is None or not approval or approval.get("confirmed") is not True
             or approval.get("content_hash") != content_hash(specification)
@@ -35,6 +38,7 @@ def start_run(state: dict, run_id: str, plan: dict) -> dict:
         "id": run_id,
         "status": "active",
         "plan": deepcopy(plan),
+        "governing_digest": governing_digest,
         "repositories": deepcopy(state.get("repositories", {})),
         "host_protocol_version": 1,
         "state_version": 0,

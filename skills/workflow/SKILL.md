@@ -17,7 +17,9 @@ flowchart TD
     Inputs["Check spec and applicable governing inputs"] --> Policy{"Changed governing files?"}
     Policy -->|Yes| Approve["Separate exact-diff human approval"]
     Policy -->|No| Plan
-    Approve --> Plan
+    Approve --> Reassess["Record plan and verification reassessment"]
+    Reassess --> Fresh["Fresh run when governing digest changed"]
+    Fresh --> Plan
     Init["Discover Git project and initialize/resume"] --> Attach["Explicit host/session binding"]
     Attach --> Context["project-context: resolve scoped context"] --> Spec["specify: create or refine requirements"]
     Sources["ingest: index source evidence"] -.-> Spec
@@ -238,3 +240,18 @@ Organization checkout HEAD must match the source's advertised HEAD. On
 `GOVERNING_SOURCE_STALE`, block policy resolution and select a current clone or
 request explicit recovery authorization; do not reset or switch a user checkout.
 See the companion guide for stale runtime clone recovery.
+
+## Governing input reassessment
+
+Plan validation records the effective governing digest. An applicable policy
+change after validation leaves a persistent `GOVERNING_REASSESSMENT_REQUIRED`
+blocker, even after exact-diff approval or a repeated preflight. Reassess the
+plan and verification impact, then explicitly validate the plan with a recorded
+assessment. The helper checks that the assessment is nonempty; the agent and
+human remain responsible for its substance and any required plan edits.
+
+Runs retain their original governing digest. A run with an older digest remains
+blocked with `RUN_GOVERNING_INPUTS_STALE` after plan revalidation. Preserve that
+run and its evidence for audit and start a fresh run from the revalidated plan;
+previous verification and review evidence are not carried forward. Discarding an
+old run is a separate, explicit user-directed action, never automatic recovery.

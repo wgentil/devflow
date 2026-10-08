@@ -63,7 +63,9 @@ flowchart TD
     Init --> Docs[Select project and organization documents]
     Docs --> Spec[Clarify and approve visible specification pair]
     Spec --> Policy[Review and approve exact governing diffs separately]
-    Policy --> Plan[Validate covered plan and dependencies]
+    Policy --> Impact[Record plan and verification reassessment after changes]
+    Impact --> Fresh[Revalidate plan; start a fresh run for changed digest]
+    Fresh --> Plan[Validate covered plan and dependencies]
     Spec -.-> Migration[Optional ordered migration increments]
     Migration --> Pilot[Run declared legacy and replacement pilot on hashed fixtures]
     Pilot -.-> Accept
@@ -397,3 +399,25 @@ For a stale generated `.devflow/org/` checkout, ask the agent to preserve or rem
 that runtime clone and rerun guided setup to clone the source anew. Retry context
 resolution and policy review afterward. Source HEAD must be advertised and reachable;
 custom pinned older revisions are not currently supported.
+
+## Governing input reassessment
+
+Plan validation records the effective governing digest. An applicable policy
+change after validation leaves a persistent `GOVERNING_REASSESSMENT_REQUIRED`
+blocker, even after exact-diff approval or a repeated preflight. Reassess the
+plan and verification impact, then explicitly validate the plan with a recorded
+assessment. The helper checks that the assessment is nonempty; the agent and
+human remain responsible for its substance and any required plan edits.
+
+Runs retain their original governing digest. A run with an older digest remains
+blocked with `RUN_GOVERNING_INPUTS_STALE` after plan revalidation. Preserve that
+run and its evidence for audit and start a fresh run from the revalidated plan;
+previous verification and review evidence are not carried forward. Discarding an
+old run is a separate, explicit user-directed action, never automatic recovery.
+
+Use the repository-document category `application-contracts` for application API,
+data and event contracts. Existing OpenAPI YAML/JSON and JSON Schema files retain
+their formats and paths, with one declared rule ID per machine-readable file.
+Inheritance, explicit overrides, sealing and exact-diff approvals apply normally.
+JSON syntax is checked; contract semantic/schema validation uses the project's
+own tools. These documents are distinct from DevFlow host/verification contracts.

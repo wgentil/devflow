@@ -201,6 +201,7 @@ def main(argv: list[str] | None = None) -> int:
     validate_work.add_argument("--root", required=True)
     validate_work.add_argument("--file", required=True)
     validate_work.add_argument("--operation-id")
+    validate_work.add_argument("--governing-reassessment", help="record reassessed plan and verification impact after policy changes")
     ready_work = plan_commands.add_parser("ready")
     ready_work.add_argument("--root", required=True)
     ready_work.add_argument("--completed", default="[]")
@@ -334,8 +335,9 @@ def main(argv: list[str] | None = None) -> int:
         # One live preflight for all approval-consuming command transitions.
         # Replay above deliberately returns historical receipts without filesystem reads.
         phase = None
-        if getattr(parsed, 'plan_command', None) in {'validate', 'ready'}: phase = 'plan-validation'
-        if run_command in {'start', 'next', 'retry'}: phase = 'run-' + run_command
+        if getattr(parsed, 'plan_command', None) == 'validate': phase = 'plan-validation'
+        if getattr(parsed, 'plan_command', None) == 'ready': phase = 'plan-ready'
+        if run_command in {'start', 'next', 'retry', 'result', 'accept'}: phase = 'run-' + run_command
         if getattr(parsed, 'build_command', None): phase = 'build'
         if getattr(parsed, 'review_command', None): phase = 'review'
         if getattr(parsed, 'delivery_command', None): phase = 'delivery'
@@ -344,7 +346,7 @@ def main(argv: list[str] | None = None) -> int:
             if (gate_state['data'].get('spec_pair')
                     and not (run_command in {'next', 'retry'} and parsed.operation_id in gate_state['operations'])):
                 from workflow_lib.repo_input_gate import require_current_inputs
-                require_current_inputs(Path(parsed.root), gate_state, phase)
+                require_current_inputs(Path(parsed.root), gate_state, phase, getattr(parsed, 'run_id', None))
                 initial_state = read_state(Path(parsed.root))
         if parsed.command == 'document':
             from workflow_lib.document_approvals import propose_document_change, approve_document_change
@@ -473,6 +475,13 @@ def main(argv: list[str] | None = None) -> int:
             specification = {**specification, "approval": state["data"].get("approval")}
             work_plan = _json_file(parsed.file)
             validation = validate_plan(specification, work_plan)
+            governing = state['data'].get('governing_input_receipt')
+            if governing:
+                validation['governing_digest'] = governing['effective_digest']
+            if state['data'].get('governing_reassessment_required') and not (parsed.governing_reassessment or '').strip():
+                raise WorkflowError('GOVERNING_REASSESSMENT_REQUIRED', 'provide --governing-reassessment with the plan and verification impact')
+            if parsed.governing_reassessment:
+                validation['governing_reassessment'] = parsed.governing_reassessment
             if state["data"].get("plan") == work_plan and state["data"].get("plan_validation") == validation:
                 result = {"validation": validation, "unchanged": True, "state_version": state["version"]}
             else:

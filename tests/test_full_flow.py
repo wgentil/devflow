@@ -54,6 +54,8 @@ class RepositoryEvidenceFlowTests(unittest.TestCase):
    self.assertIn('validation',call('plan','validate','--root',root,'--file',plan_file,'--operation-id','plan-approved'))
    self.assertEqual(read_state(root)['data']['governing_input_receipt']['applicable_rule_ids'],['CODE-1'])
    call('run','start','--root',root,'--run-id','run-1','--operation-id','run-start')
+   first=call('run','next','--root',root,'--run-id','run-1','--operation-id','first-attempt')
+   call('run','abandon','--root',root,'--run-id','run-1','--attempt-id',first['attempt_id'],'--operation-id','abandon-first')
    release=source('release.json',call('version'))
    owner={'binding_id':'owner','host':'codex','session_id':'source-session','actor_id':'implementer','role':'implementer','run_id':'run-1','project_dir':str(project)}
    call('host','attach','--root',root,'--file',source('owner.json',owner),'--loaded-release',release,'--operation-id','attach-owner')
@@ -63,6 +65,22 @@ class RepositoryEvidenceFlowTests(unittest.TestCase):
    self.assertEqual(blocked['error'],'DOCUMENT_APPROVAL_REQUIRED')
    self.assertEqual(blocked['repo_id'],'team')
    self.assertEqual(read_state(root)['data']['host_bindings']['owner']['status'],'active')
+   proposal=call('document','propose','--root',root,'--repo-id','team','--paths','docs/policy.md')
+   call('document','approve','--root',root,'--proposal-hash',proposal['proposal_hash'],'--actor-id','human-policy')
+   original_run=read_state(root)['data']['runs']['run-1']
+   for attempt in range(2):
+    blocked=call('run','next','--root',root,'--run-id','run-1','--operation-id',f'next-stale-{attempt}',expected=2)
+    self.assertEqual(blocked['error'],'GOVERNING_REASSESSMENT_REQUIRED')
+   self.assertTrue(read_state(root)['data']['governing_reassessment_required'])
+   self.assertEqual(call('plan','validate','--root',root,'--file',plan_file,'--operation-id','missing-assessment',expected=2)['error'],'GOVERNING_REASSESSMENT_REQUIRED')
+   reassessed=call('plan','validate','--root',root,'--file',plan_file,'--governing-reassessment','Reviewed policy: require two reviewers and rerun verification.','--operation-id','reassess')
+   self.assertEqual(reassessed['validation']['governing_digest'],read_state(root)['data']['governing_input_receipt']['effective_digest'])
+   self.assertEqual(call('run','next','--root',root,'--run-id','run-1','--operation-id','old-run',expected=2)['error'],'RUN_GOVERNING_INPUTS_STALE')
+   self.assertEqual(call('host','handoff-prepare','--root',root,'--file',source('handoff.json',handoff),'--operation-id','old-handoff',expected=2)['error'],'RUN_GOVERNING_INPUTS_STALE')
+   self.assertEqual(read_state(root)['data']['runs']['run-1'],original_run)
+   call('run','start','--root',root,'--run-id','run-2','--operation-id','fresh-run')
+   call('run','next','--root',root,'--run-id','run-2','--operation-id','fresh-attempt')
+   self.assertIsNotNone(read_state(root)['data']['runs']['run-2']['active_attempt'])
 class FullFlowTests(unittest.TestCase):
  def test_full_workflow_reporting(self):
   u=import_usage([{'source_id':'s','event_id':'e','provider':'p','model':'m','input_tokens':10,'cached_tokens':0,'output_tokens':2}],'v1',{})

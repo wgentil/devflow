@@ -12,7 +12,9 @@ flowchart TD
     Inputs["Check spec and applicable governing inputs"] --> Policy{"Changed governing files?"}
     Policy -->|Yes| Approve["Separate exact-diff human approval"]
     Policy -->|No| Attempt
-    Approve --> Attempt
+    Approve --> Reassess["Reassess plan and verification; revalidate"]
+    Reassess --> Fresh["Start fresh run for changed governing digest"]
+    Fresh --> Attempt
     Attempt["Active item and attempt token"] --> Kind{"Work-item kind"}
     Kind -->|Code| Red["Record target RED failure with locked test hashes"]
     Red --> Native["Resolve native implementation model and immutable invocation scope"]
@@ -110,3 +112,18 @@ An approval authorizes that exact before/after change; a historical approval for
 the same after image cannot authorize restoration from a different baseline.
 Committing an already accepted edit preserves its approval. A legacy receipt
 without recoverable baseline bytes fails closed if its Git baseline differs.
+
+## Governing input reassessment
+
+Plan validation records the effective governing digest. An applicable policy
+change after validation leaves a persistent `GOVERNING_REASSESSMENT_REQUIRED`
+blocker, even after exact-diff approval or a repeated preflight. Reassess the
+plan and verification impact, then explicitly validate the plan with a recorded
+assessment. The helper checks that the assessment is nonempty; the agent and
+human remain responsible for its substance and any required plan edits.
+
+Runs retain their original governing digest. A run with an older digest remains
+blocked with `RUN_GOVERNING_INPUTS_STALE` after plan revalidation. Preserve that
+run and its evidence for audit and start a fresh run from the revalidated plan;
+previous verification and review evidence are not carried forward. Discarding an
+old run is a separate, explicit user-directed action, never automatic recovery.

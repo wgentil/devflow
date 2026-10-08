@@ -49,3 +49,13 @@ Organization checkout HEAD must match the source's advertised HEAD. On
 `GOVERNING_SOURCE_STALE`, block policy resolution and select a current clone or
 request explicit recovery authorization; do not reset or switch a user checkout.
 See the companion guide for stale runtime clone recovery.
+
+Application API, data and event contracts use the `application-contracts`
+repository-document category. Preserve existing OpenAPI YAML/JSON and JSON
+Schema paths and bytes; one machine-readable file declares one stable rule ID.
+These rules use the same inheritance, explicit same-category overrides, sealing,
+exact-diff approval and drift gates as other governing documents. JSON receives
+syntax validation; YAML/OpenAPI semantics and JSON Schema conformance are not
+validated by this helper. Setup inspection includes `.yaml` and `.yml` files.
+This category does not add a legacy journal context slice and does not describe
+DevFlow's operational verification or host contracts.

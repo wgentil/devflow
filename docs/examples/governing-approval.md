@@ -21,8 +21,9 @@ manifest as `DOCUMENT_APPROVAL_REQUIRED`. Propose and approve
 `docs/devflow-context.json` in the project repository before retrying the plan
 with a new operation ID. If an applicable organization rule changes later,
 propose its path using the organization repository ID. A new handoff remains
-blocked and leaves the source host active until the exact changed policy is
-approved. If the organization URL cannot be reached or its checkout HEAD differs
+blocked and leaves the source host active. Exact policy approval must be
+followed by recorded plan/verification reassessment and a fresh run when the
+governing digest changed. If the organization URL cannot be reached or its checkout HEAD differs
 from the source HEAD, restore that source or select a current checkout first;
 DevFlow does not silently replace the checkout.
 
@@ -34,3 +35,16 @@ A project manifest can explicitly exclude a rule for the feature:
 
 The referenced rule must exist in the resolved organization/project rules.
 A complete manifest must still declare its documents and any organization source.
+
+After a mid-run policy change, the optional developer recovery command is:
+
+```text
+run.py plan validate --root /path/to/control --file /path/to/plan.json --governing-reassessment "Reviewed changed API requirements; updated tests and review criteria" --operation-id reassess-policy-v2
+run.py run start --root /path/to/control --run-id feature-v2 --operation-id start-feature-v2
+```
+
+Use a new operation ID for new decisions. Keep the prior run and evidence for
+audit; discard only when the user explicitly directs it. A repeated committed
+`document approve` call with the same proposal and actor returns its historical
+receipt even if the baseline advanced or a file disappeared. A changed actor
+conflicts, and new dependent work still checks current files.

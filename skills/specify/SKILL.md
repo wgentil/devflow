@@ -9,7 +9,7 @@ description: Create or extend requirements, record assumptions and source citati
 
 ```mermaid
 flowchart TD
-    Input["New intent, existing spec or migration sources"] --> Native["Resolve specification profile for optional scoped native worker"]
+    Input["Intent, specification sources and applicable application contracts"] --> Native["Resolve specification profile for optional scoped native worker"]
     Native --> Draft["Create or extend requirements with provenance"]
     Draft --> Inspect["Agent checks scope, contradictions and missing decisions"]
     Inspect --> Gaps{"Unresolved questions?"}
@@ -53,3 +53,9 @@ Before delegated model work, follow the [native invocation guide](../../docs/nat
 Keep the actual actor/stage and item token or review package. Hooks never launch
 workers. Preserve blocked policy decisions and classify interrupted work before
 any replacement. Deterministic operations do not need a model invocation.
+
+Include relevant repository `application-contracts` rules (API, data and events)
+in requirements alongside architecture, standards, testing and design rules.
+Preserve machine-readable contract formats and stable rule IDs. Separate policy
+approval from specification approval; a mid-run change also needs plan and
+verification reassessment before a fresh run can proceed.

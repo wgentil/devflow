@@ -55,6 +55,9 @@ def _apply_event(state: dict, event: dict) -> None:
             raise WorkflowError('INVALID_EVENT', 'immutable approval conflict')
         approvals[approval['proposal_hash']] = approval
         return
+    if kind == 'governing.reassessment.required':
+        data['governing_reassessment_required'] = payload
+        return
     if kind == 'governing.inputs.recorded':
         data['governing_input_receipt'] = payload['receipt']
         return
@@ -62,6 +65,19 @@ def _apply_event(state: dict, event: dict) -> None:
         from .hosts import validate_binding
         guard = event['host_binding']
         validate_binding(data,guard['binding_id'],guard['revision'])
+    if kind == 'plan.validated':
+        digest = data.get('governing_input_receipt', {}).get('effective_digest')
+        validation = payload.get('plan_validation', {})
+        # Old journal validations lacked a digest; replay them, then block live use.
+        if digest and 'governing_digest' in validation and validation['governing_digest'] != digest:
+            raise WorkflowError('GOVERNING_REASSESSMENT_REQUIRED', 'plan validation must bind current governing inputs')
+        if data.get('governing_reassessment_required'):
+            reason = validation.get('governing_reassessment')
+            if not isinstance(reason, str) or not reason.strip():
+                raise WorkflowError('GOVERNING_REASSESSMENT_REQUIRED', 'record the plan and verification impact assessment')
+        data.update(payload)
+        data['governing_reassessment_required'] = None
+        return
     if kind in {'run.attempt.issued','run.attempt.abandoned','run.result.recorded','run.item.amended','run.discarded','review.package.prepared'}:
         run = data.get('runs', {}).get(payload.get('run_id'), {})
         if any(record.get('status') == 'running' for record in run.get('native_invocations', {}).values()):

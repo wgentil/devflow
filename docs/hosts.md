@@ -195,3 +195,9 @@ Native discovery, selected-model probes and scoped launch are integrated. Hooks
 and portable read-only resolution never launch workers or contact providers.
 No representative capability-validated automatic mappings ship in this release.
 Native Codex plugin installation remains a separately unverified requirement.
+
+Governing policy approval alone does not resume a paused repository-backed run.
+Record plan and verification impact through explicit plan revalidation; a run
+whose original governing digest differs still blocks handoff preparation and
+acceptance. Retain it for audit and attach a fresh run from the revalidated plan.
+The source host stays active when a handoff is rejected.

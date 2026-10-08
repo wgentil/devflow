@@ -92,3 +92,40 @@ class DocumentApprovalTests(unittest.TestCase):
         self.assertIn('-C\n', proposal['files']['rules.md']['diff'])
         approve_document_change(self.root, proposal['proposal_hash'], 'human')
         self.gate()
+
+    def test_committed_approval_retry_survives_baseline_advance_and_missing_file(self):
+        self.gate()
+        self.write('rules.md', '## A: Rule\nB\n')
+        proposal = propose_document_change(self.root, 'p', ['rules.md'])
+        approved = approve_document_change(self.root, proposal['proposal_hash'], 'human')
+        self.gate()
+        version = read_state(self.root)['version']
+        self.assertEqual(approve_document_change(self.root, proposal['proposal_hash'], 'human'), approved)
+        (self.repo / 'rules.md').unlink()
+        self.assertEqual(approve_document_change(self.root, proposal['proposal_hash'], 'human'), approved)
+        self.assertEqual(read_state(self.root)['version'], version)
+        with self.assertRaises(WorkflowError) as error:
+            approve_document_change(self.root, proposal['proposal_hash'], 'another-human')
+        self.assertEqual(error.exception.code, 'OPERATION_CONFLICT')
+
+    def test_application_contract_requires_exact_approval_and_detects_drift(self):
+        self.write('api.yaml', 'openapi: 3.1.0\ninfo: {title: Example, version: "1"}\npaths: {}\n')
+        self.write('docs/devflow-context.json', json.dumps({'schema_version': 1, 'documents': [
+            {'category': 'application-contracts', 'path': 'api.yaml', 'rule_ids': ['API']}]}))
+        self.commit()
+        before = self.gate()
+        self.write('api.yaml', 'openapi: 3.1.0\ninfo: {title: Example, version: "2"}\npaths: {}\n')
+        with self.assertRaises(WorkflowError) as error: self.gate()
+        self.assertEqual(error.exception.code, 'DOCUMENT_APPROVAL_REQUIRED')
+        proposal = propose_document_change(self.root, 'p', ['api.yaml'])
+        approve_document_change(self.root, proposal['proposal_hash'], 'human')
+        self.assertNotEqual(before['effective_digest'], self.gate()['effective_digest'])
+
+    def test_legacy_plan_event_replays_but_requires_governing_revalidation(self):
+        self.gate()
+        state = read_state(self.root)
+        transact(self.root, state['version'], 'legacy-plan', {'kind': 'plan.validated', 'payload': {
+            'plan': {'work_items': []}, 'plan_validation': {'valid': True, 'spec_hash': 'legacy'}}})
+        self.assertTrue(read_state(self.root)['data']['plan_validation']['valid'])
+        with self.assertRaises(WorkflowError) as error: self.gate()
+        self.assertEqual(error.exception.code, 'GOVERNING_REASSESSMENT_REQUIRED')

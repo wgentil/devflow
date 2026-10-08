@@ -21,7 +21,7 @@ def inspect_project_setup(project_dir: Path) -> dict:
                       and not (Path(directory)/name).is_symlink()]
         for name in files:
             path=Path(directory)/name
-            if path.suffix.lower() in {'.md','.json'} and not path.is_symlink():
+            if path.suffix.lower() in {'.md','.json','.yaml','.yml'} and not path.is_symlink():
                 docs.append(str(path.relative_to(project)))
     docs.sort()
     return {'project_dir':str(project), 'manifest':manifest, 'existing_documents':docs,

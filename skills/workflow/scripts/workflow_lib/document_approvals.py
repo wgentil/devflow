@@ -62,13 +62,20 @@ def propose_document_change(root: Path, repo_id: str, paths: list[str]) -> dict:
 def approve_document_change(root: Path, proposal_hash: str, actor_id: str) -> dict:
     state = read_state(root)
     proposal = state['data'].get('document_proposals', {}).get(proposal_hash)
-    if not proposal or not isinstance(actor_id, str) or not actor_id.strip():
+    if not proposal:
         raise WorkflowError('DOCUMENT_APPROVAL_REQUIRED', 'existing exact proposal and human actor are required')
+    approval = {'proposal_hash': proposal_hash, 'repo_id': proposal['repo_id'], 'actor_id': actor_id,
+                'diff_digest': proposal['diff_digest']}
+    previous = state['operations'].get('document-approval:' + proposal_hash)
+    if previous is not None:
+        if previous['kind'] != 'document.approved' or previous['payload'] != {'approval': approval}:
+            raise WorkflowError('OPERATION_CONFLICT', 'document approval retry differs from the committed request')
+        return approval
+    if not isinstance(actor_id, str) or not actor_id.strip():
+        raise WorkflowError('DOCUMENT_APPROVAL_REQUIRED', 'human actor is required')
     current = _snapshot(_repository(state['data'], proposal['repo_id']), list(proposal['files']), state['data'], proposal['repo_id'])
     if current != proposal['files']:
         raise WorkflowError('DOCUMENT_PROPOSAL_STALE', 'review a new exact diff before approval')
-    approval = {'proposal_hash': proposal_hash, 'repo_id': proposal['repo_id'], 'actor_id': actor_id,
-                'diff_digest': proposal['diff_digest']}
     transact(root, state['version'], 'document-approval:' + proposal_hash,
              {'kind': 'document.approved', 'payload': {'approval': approval}})
     return approval
@@ -114,6 +121,12 @@ def require_current_governing_inputs(root: Path, state: dict, phase: str) -> dic
     applicable = {k: v for k, v in resolved['rules'].items() if k not in excluded}
     semantic = {k: {field: v[field] for field in ('category', 'content', 'sealed')} for k, v in applicable.items()}
     effective_digest = _digest(json.dumps(semantic, sort_keys=True, ensure_ascii=False, separators=(',', ':')).encode())
+    validated_digest = data.get('plan_validation', {}).get('governing_digest')
+    if data.get('plan_validation') and validated_digest != effective_digest and not data.get('governing_reassessment_required'):
+        latest = read_state(root)
+        transact(root, latest['version'], 'governing-reassessment:' + uuid4().hex,
+                 {'kind': 'governing.reassessment.required', 'payload': {
+                     'previous_digest': validated_digest, 'effective_digest': effective_digest}})
     sources = {project_id: (project, {'docs/devflow-context.json'})}
     if org_id:
         sources[org_id] = (org_repo, {'docs/devflow-org.json'})
@@ -144,4 +157,8 @@ def require_current_governing_inputs(root: Path, state: dict, phase: str) -> dic
         latest = read_state(root)
         transact(root, latest['version'], 'governing-input:' + uuid4().hex,
                  {'kind': 'governing.inputs.recorded', 'payload': {'receipt': receipt}})
+    latest = read_state(root)['data']
+    if latest.get('governing_reassessment_required') and phase != 'plan-validation':
+        raise WorkflowError('GOVERNING_REASSESSMENT_REQUIRED',
+                            'approve changed documents, reassess plan and verification impact, then explicitly revalidate the plan')
     return receipt

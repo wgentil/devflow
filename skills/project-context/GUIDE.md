@@ -74,7 +74,7 @@ Omit `org` and use an empty overrides object for project-only mode.
 
 Each document declares `category`, repository-relative `path`, and nonempty
 `rule_ids`. Categories are platform, coding-standards, architecture, test-strategy,
-release-process, and design-system. Markdown rules use `## CODE-1: Title` headings;
+release-process, design-system, and application-contracts. Markdown rules use `## CODE-1: Title` headings;
 headings and declared IDs must match exactly. Other UTF-8 machine-readable files
 represent one named rule (JSON files are syntax-validated). Org entries may declare
 `sealed_rule_ids`. The project `overrides` object maps inherited IDs to project
@@ -100,7 +100,7 @@ or unreachable sources; `GOVERNING_RULE_SEALED` blocks prohibited overrides.
 
 ```mermaid
 flowchart TD
-    P[Project manifest and documents] --> V[Validate paths, categories and IDs]
+    P[Project manifest and documents] --> V[Validate paths, application contracts and other categories, IDs]
     O[Org Git URL and supplied checkout] --> R[Verify reachability and identity; fetch origin]
     R --> V
     V --> I[Inherit org rules; apply explicit project rule-ID overrides]
@@ -164,3 +164,13 @@ For a stale generated `.devflow/org/` checkout, ask the agent to preserve or rem
 that runtime clone and rerun guided setup to clone the source anew. Retry context
 resolution and policy review afterward. Source HEAD must be advertised and reachable;
 custom pinned older revisions are not currently supported.
+
+Application API, data and event contracts use the `application-contracts`
+repository-document category. Preserve existing OpenAPI YAML/JSON and JSON
+Schema paths and bytes; one machine-readable file declares one stable rule ID.
+These rules use the same inheritance, explicit same-category overrides, sealing,
+exact-diff approval and drift gates as other governing documents. JSON receives
+syntax validation; YAML/OpenAPI semantics and JSON Schema conformance are not
+validated by this helper. Setup inspection includes `.yaml` and `.yml` files.
+This category does not add a legacy journal context slice and does not describe
+DevFlow's operational verification or host contracts.

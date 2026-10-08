@@ -522,3 +522,19 @@ organization policy requires the same proposal and approval process in the
 organization repository before a new handoff; the current host keeps ownership
 while blocked. An unreachable URL or stale organization HEAD must be recovered
 first. A local path or `file://` URL is local-only.
+
+## Governing reassessment after policy changes
+
+`plan validate --root <control> --file <plan.json> --governing-reassessment
+"<plan and verification impact>" --operation-id <new-operation-id>` records the
+current effective governing digest and the explicit assessment. Approve exact
+changed document diffs first. A normal validation without the assessment cannot
+clear `GOVERNING_REASSESSMENT_REQUIRED`. `plan ready` cannot clear it either.
+A run whose recorded digest differs fails with `RUN_GOVERNING_INPUTS_STALE`;
+start a new run ID after revalidation, retaining the old run for audit. Do not
+automatically discard old runs or copy their verification evidence.
+
+An exact `document approve` retry returns its committed approval before reading
+files, even after baseline advancement or file removal. Changing its actor
+returns `OPERATION_CONFLICT`; this historical receipt does not authorize current
+drift. New approvals still require a current exact proposal.
