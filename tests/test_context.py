@@ -75,3 +75,17 @@ class ContextTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class RepositoryContextTests(unittest.TestCase):
+    def test_document_mode_keeps_legacy_slice_values_separate(self):
+        import json
+        import subprocess
+        from workflow_lib.context import resolve_repository_context
+        with tempfile.TemporaryDirectory() as directory:
+            repo = Path(directory)
+            subprocess.run(['git', 'init', '-q', str(repo)], check=True)
+            subprocess.run(['git', '-C', str(repo), '-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '--allow-empty', '-qm', 'initial'], check=True)
+            (repo / 'docs').mkdir()
+            (repo / 'docs/devflow-context.json').write_text(json.dumps({'schema_version': 1, 'documents': []}))
+            self.assertEqual(resolve_repository_context(repo)['rules'], {})
+            self.assertEqual(resolve_context({}, {'slices': {'platform': {'status': 'answered', 'value': 'terse'}}}, {}, {})['values'], {'platform': 'terse'})

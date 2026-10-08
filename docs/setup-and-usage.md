@@ -282,3 +282,16 @@ returns its recorded receipt before checking live specification files. Changed o
 missing files cannot alter that read-only retry. A changed request with the same
 operation ID reports an operation conflict. New handoff operations still require
 the live pair gate.
+
+## Repository governing context
+
+Invoke `project-context` to resolve Git-backed organization/project documents.
+Use `docs/devflow-context.json` in the project and `docs/devflow-org.json` in the
+organization checkout. The agent runs explicit resolution with existing checkout
+paths; no shell setup is required for plugin users. Organization ID and URL must
+match the supplied source. Unreachable sources block even with a local cached clone.
+Fetch verifies availability and updates remote refs; the user maintains the selected
+checkout branch. No automatic clone or discovery is implemented. Legacy journal
+slice context remains supported independently. See the
+[project-context schema, diagram and limitations](../skills/project-context/GUIDE.md#git-backed-governing-documents)
+and [manifest examples](examples/devflow-context.json).

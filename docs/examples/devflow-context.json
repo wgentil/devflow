@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "org": {"id": "example-org", "url": "https://example.com/example-org.git"},
+  "documents": [
+    {"category": "coding-standards", "path": "docs/project-coding.md", "rule_ids": ["CODE-1"]}
+  ],
+  "overrides": {"CODE-1": "docs/project-coding.md"}
+}

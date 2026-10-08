@@ -91,3 +91,5 @@ launch are implemented. See [native usage](native-models.md) and the
 All ten skills share [host ownership, completion and model contracts](hosts.md).
 See [setup and initialization](setup-and-usage.md) and the
 [installed-host validation report](cross-host-validation.md).
+
+Git-backed rule inheritance, manifest examples and its process diagram are documented in the [project-context guide](../skills/project-context/GUIDE.md#git-backed-governing-documents).

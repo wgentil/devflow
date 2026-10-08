@@ -1,6 +1,6 @@
 ---
 name: project-context
-description: Resolve organization and project context, record repository locations, and track provenance and budget estimates.
+description: Resolve organization and project context, record repository locations, and resolve Git-backed governing documents with rule-ID inheritance and provenance.
 ---
 
 # Project context
@@ -27,3 +27,12 @@ Before delegated model work, follow the [native invocation guide](../../docs/nat
 Keep the actual actor/stage and item token or review package. Hooks never launch
 workers. Preserve blocked policy decisions and classify interrupted work before
 any replacement. Deterministic operations do not need a model invocation.
+
+## Governing documents
+
+When a project has `docs/devflow-context.json`, explicitly resolve its repository
+and the organization checkout with document mode. Files are authoritative; do not
+convert terse journal slice answers into documents. Use stable rule IDs for
+project overrides and preserve unrelated organization rules. Stop on sealed rule
+conflicts, unavailable organization sources, or invalid manifest paths. Include
+`design-system` inputs when working on UI. See the guide for schema and limitations.

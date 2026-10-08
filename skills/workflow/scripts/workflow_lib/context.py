@@ -150,3 +150,9 @@ def resolve_context_cached(org: dict, project: dict, user_overrides: dict, budge
     resolved = resolve_context(org, project, user_overrides, budgets)
     cache[key] = deepcopy(resolved)
     return {"key": key, "cache_hit": False, "resolved": resolved}
+
+
+def resolve_repository_context(project_repo: Path, org_repo: Path | None = None) -> dict:
+    """Explicit document mode; legacy slices remain handled by resolve_context."""
+    from .governing_docs import resolve_governing_docs
+    return resolve_governing_docs(project_repo, org_repo)

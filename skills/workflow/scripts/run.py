@@ -15,7 +15,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
 from workflow_lib import STATE_SCHEMA_VERSION  # noqa: E402
-from workflow_lib.context import register_repo, resolve_context, validate_context_layer  # noqa: E402
+from workflow_lib.context import register_repo, resolve_context, resolve_repository_context, validate_context_layer  # noqa: E402
 from workflow_lib.context import resolve_context_cached, context_sources_hash  # noqa: E402
 from workflow_lib.briefs import assemble_brief  # noqa: E402
 from workflow_lib.repo_specs import write_spec_pair, assert_repo_spec_approval
@@ -138,6 +138,8 @@ def main(argv: list[str] | None = None) -> int:
     context_commands = context.add_subparsers(dest="context_command")
     resolve = context_commands.add_parser("resolve")
     resolve.add_argument("--root")
+    resolve.add_argument("--project-repo")
+    resolve.add_argument("--org-repo")
     resolve.add_argument("--org")
     resolve.add_argument("--project")
     resolve.add_argument("--overrides")
@@ -326,7 +328,13 @@ def main(argv: list[str] | None = None) -> int:
             from workflow_lib.releases import release_descriptor
             result = release_descriptor()
         elif parsed.command == "context" and parsed.context_command == "resolve":
-            if parsed.root:
+            if parsed.project_repo:
+                if any((parsed.root, parsed.org, parsed.project, parsed.overrides, parsed.budgets)):
+                    raise WorkflowError("INVALID_CONTEXT", "repository document mode cannot be combined with slice inputs or root")
+                result = resolve_repository_context(Path(parsed.project_repo), Path(parsed.org_repo) if parsed.org_repo else None)
+            elif parsed.org_repo:
+                raise WorkflowError("INVALID_CONTEXT", "--org-repo requires --project-repo")
+            elif parsed.root:
                 root = Path(parsed.root).expanduser().resolve()
                 state = initial_state if initial_state is not None else read_state(root)
                 layers = state["data"].get("context", {})
