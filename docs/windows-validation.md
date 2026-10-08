@@ -8,12 +8,13 @@ Git text file does not appear as an unapproved policy edit; this changes the
 receipt to canonical LF bytes on Windows and needs real-host parity checks. Launcher
 liveness now uses a Windows process handle so reconciliation never signals a
 running process while checking it. Package and runtime JSON files are decoded as
-UTF-8 independent of the Windows console code page. CI validation is in progress; these source
-changes alone do not establish Windows support.
+UTF-8 independent of the Windows console code page. The full Python suite passed
+on [macOS, Ubuntu, and native Windows CI](https://github.com/wgentil/devflow/actions/runs/37855308773)
+at commit `6403d04` (416 tests per runner). Installed-host checks remain open.
 
 | Gate | macOS | Linux | WSL2 Linux filesystem | Native Windows |
 | --- | --- | --- | --- | --- |
-| Full Python suite | Pass on implementation branch | Not run for this branch | Not run | Not run |
+| Full Python suite | Pass, CI Python 3.11 | Pass, CI Python 3.11 | Not run | Pass, CI Python 3.11.9 and Git for Windows 2.55.0 |
 | Isolated Codex plugin install | Prior 0.3.2 release only | Not run | Not run | Not run |
 | Isolated Claude plugin and hooks | Prior 0.3.2 release only | Not run | Not run | Not run |
 | Real native workers and cleanup | Not run for this branch | Not run | Not run | Not run |
@@ -22,8 +23,8 @@ changes alone do not establish Windows support.
 Claude hooks now use a shell-free Python command and plugin-root argument, but
 installed Windows hook behavior and cross-OS repository relocation still need
 real-host tests. Windows process-tree termination now uses a Windows Job Object instead of console
-commands; native descendant cleanup and installed worker tests must pass before
-claiming it reliable. A WSL2 test must use a repository in the Linux filesystem;
+commands; the subprocess-grandchild cleanup fixture passed on Windows CI, while
+installed worker tests are still needed. A WSL2 test must use a repository in the Linux filesystem;
 results cannot be generalized to `/mnt/c`.
 
 Run the [WSL2 plan](superpowers/plans/2026-10-08-wsl2-validation.md) and the
