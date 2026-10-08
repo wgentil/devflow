@@ -35,6 +35,7 @@ class DirectorySyncTests(unittest.TestCase):
     def test_windows_directory_sync_is_skipped_after_file_fsync(self):
         from unittest.mock import patch
         from skills.workflow.scripts.workflow_lib import platform_lock
+        directory = Path('unused')
         with patch.object(platform_lock.os, 'name', 'nt'):
             with patch.object(platform_lock.os, 'open', side_effect=AssertionError('directory opened')):
-                platform_lock.sync_directory(Path('unused'))
+                platform_lock.sync_directory(directory)
