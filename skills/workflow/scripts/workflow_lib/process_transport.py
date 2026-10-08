@@ -9,16 +9,48 @@ import subprocess
 import threading
 
 
+class WindowsJob:
+    """Own a Windows process tree without signaling the caller's console."""
+    def __init__(self, process: subprocess.Popen, api=None):
+        if api is None:
+            import ctypes
+            api = ctypes.WinDLL('kernel32', use_last_error=True)
+            api.CreateJobObjectW.restype = ctypes.c_void_p
+            api.CreateJobObjectW.argtypes = [ctypes.c_void_p, ctypes.c_wchar_p]
+            api.AssignProcessToJobObject.restype = ctypes.c_int
+            api.AssignProcessToJobObject.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+            api.TerminateJobObject.restype = ctypes.c_int
+            api.TerminateJobObject.argtypes = [ctypes.c_void_p, ctypes.c_uint]
+            api.CloseHandle.restype = ctypes.c_int
+            api.CloseHandle.argtypes = [ctypes.c_void_p]
+        self.api = api
+        self.handle = api.CreateJobObjectW(None, None)
+        if not self.handle:
+            raise OSError('CreateJobObjectW failed')
+        if not api.AssignProcessToJobObject(self.handle, int(process._handle)):
+            api.CloseHandle(self.handle)
+            self.handle = None
+            raise OSError('AssignProcessToJobObject failed')
+
+    def stop(self):
+        if self.handle is None:
+            return
+        try:
+            if not self.api.TerminateJobObject(self.handle, 1):
+                raise OSError('TerminateJobObject failed')
+        finally:
+            self.api.CloseHandle(self.handle)
+            self.handle = None
+
+
 def stop_tree(process: subprocess.Popen) -> None:
     """Stop the spawned process group/tree, or report uncertain cleanup."""
     if os.name == 'nt':
-        if process.poll() is not None:
-            process.wait(timeout=5)
-            return
-        result = subprocess.run(['taskkill', '/PID', str(process.pid), '/T', '/F'],
-                                capture_output=True, timeout=5, check=False)
-        if result.returncode and process.poll() is None:
-            raise RuntimeError('Windows process tree cleanup could not be confirmed')
+        job = getattr(process, '_devflow_job', None)
+        if job is not None:
+            job.stop()
+        elif process.poll() is None:
+            raise RuntimeError('Windows process has no attached job; tree cleanup is unconfirmed')
     else:
         try:
             os.killpg(process.pid, signal.SIGTERM)
@@ -43,9 +75,17 @@ def stop_tree(process: subprocess.Popen) -> None:
 
 def spawn(argv, cwd, *, stdin=subprocess.DEVNULL, stderr=subprocess.PIPE):
     flags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0
-    return subprocess.Popen(argv, cwd=cwd, stdin=stdin, stdout=subprocess.PIPE,
+    process = subprocess.Popen(argv, cwd=cwd, stdin=stdin, stdout=subprocess.PIPE,
                             stderr=stderr, creationflags=flags,
                             start_new_session=os.name != 'nt')
+    if os.name == 'nt':
+        try:
+            process._devflow_job = WindowsJob(process)
+        except OSError:
+            process.kill()
+            process.wait(timeout=5)
+            raise
+    return process
 
 
 def bounded_capture(argv: list[str], cwd: str | Path, timeout: float, limit: int) -> subprocess.CompletedProcess:

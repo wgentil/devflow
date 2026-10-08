@@ -18,8 +18,8 @@ have passed macOS Python tests only; they do not prove Windows compatibility.
 
 Claude hooks now use a shell-free Python command and plugin-root argument, but
 installed Windows hook behavior and cross-OS repository relocation still need
-real-host tests. Windows process-tree termination uses
-the system `taskkill` command; a real descendant cleanup test is required before
+real-host tests. Windows process-tree termination now uses a Windows Job Object instead of console
+commands; native descendant cleanup and installed worker tests must pass before
 claiming it reliable. A WSL2 test must use a repository in the Linux filesystem;
 results cannot be generalized to `/mnt/c`.
 
