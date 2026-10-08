@@ -316,7 +316,6 @@ def main(argv: list[str] | None = None) -> int:
         phase = None
         if getattr(parsed, 'plan_command', None) in {'validate', 'ready'}: phase = 'plan-validation'
         if run_command == 'start': phase = 'run-start'
-        if getattr(parsed, 'host_command', None) in {'handoff-prepare', 'handoff-accept'}: phase = 'handoff'
         if getattr(parsed, 'delivery_command', None): phase = 'delivery'
         if phase and getattr(parsed, 'root', None):
             gate_state = read_state(Path(parsed.root))

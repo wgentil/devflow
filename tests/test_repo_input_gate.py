@@ -84,3 +84,35 @@ class RepoInputGateTests(unittest.TestCase):
         self.assertEqual(json.loads(first.stdout)['content_hash'], content_hash(self.spec))
         with self.assertRaises(WorkflowError) as caught: migrate_legacy_spec(self.root, 'r', 'docs/other.json', 'cli-migration')
         self.assertEqual(caught.exception.code, 'OPERATION_CONFLICT')
+
+    def test_committed_handoff_retry_is_read_only_with_changed_or_missing_pair(self):
+        from test_hosts import host_state, attachment
+        from workflow_lib.hosts import apply_host_event
+        data = host_state(str(self.repo))
+        data['repositories']['r'] = {'location': str(self.repo)}
+        apply_host_event(data, 'attach', attachment(project=str(self.repo)))
+        self.write(data)
+        request = {'binding_id': 'b1', 'revision': 1, 'handoff_id': 'h1',
+                   'target_host': 'claude', 'target_session_id': 's2', 'target_actor_id': 'a2'}
+        f = self.repo / 'handoff.json'; f.write_text(json.dumps(request))
+        script = Path(__file__).resolve().parents[1] / 'skills/workflow/scripts/run.py'
+        args = [sys.executable, str(script), 'host', 'handoff-prepare', '--root', str(self.root),
+                '--file', str(f), '--operation-id', 'successful-handoff']
+        first = subprocess.run(args, capture_output=True, text=True)
+        self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
+        baseline = read_state(self.root)
+        events = {p.name: p.read_bytes() for p in (self.root / 'events').iterdir()}
+        md = self.repo / self.pair['markdown_path']
+        for missing in (False, True):
+            if missing: md.unlink()
+            else: md.write_text('drift')
+            replay = subprocess.run(args, capture_output=True, text=True)
+            self.assertEqual(replay.returncode, 0, replay.stdout + replay.stderr)
+            self.assertTrue(json.loads(replay.stdout)['replayed'])
+            self.assertEqual(json.loads(replay.stdout)['handoff_id'], 'h1')
+            self.assertEqual(read_state(self.root), baseline)
+            self.assertEqual({p.name: p.read_bytes() for p in (self.root / 'events').iterdir()}, events)
+        f.write_text(json.dumps({**request, 'target_actor_id': 'different'}))
+        conflict = subprocess.run(args, capture_output=True, text=True)
+        self.assertEqual(json.loads(conflict.stdout)['error'], 'OPERATION_CONFLICT')
+        self.assertEqual(read_state(self.root), baseline)

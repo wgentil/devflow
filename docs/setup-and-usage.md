@@ -276,3 +276,9 @@ a stable operation ID, preserves the recorded JSON content hash, and refuses to
 overwrite either companion. Migration creates a candidate requiring new human
 approval. See the [workflow guide](../skills/workflow/GUIDE.md#repository-specification-preflight)
 and [developer migration example](examples/spec-migration.md).
+
+A retry of a committed host handoff first validates the original request hash and
+returns its recorded receipt before checking live specification files. Changed or
+missing files cannot alter that read-only retry. A changed request with the same
+operation ID reports an operation conflict. New handoff operations still require
+the live pair gate.

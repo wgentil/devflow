@@ -1,5 +1,7 @@
 import json
 import tempfile
+import io
+from contextlib import redirect_stderr
 import unittest
 from pathlib import Path
 import sys
@@ -42,7 +44,10 @@ class TelemetryTests(unittest.TestCase):
             measurement = {"operation_id": "lost", "operation": "read", "duration_ms": 1,
                            "result": "ok", "input_bytes": 0, "output_bytes": 2}
             before = dict(measurement)
-            outcome = record_offload(root, measurement)
+            warning = io.StringIO()
+            with redirect_stderr(warning):
+                outcome = record_offload(root, measurement)
+            self.assertIn('offload telemetry gap', warning.getvalue())
             self.assertFalse(outcome["recorded"])
             self.assertTrue(outcome["gap"])
             self.assertEqual(measurement, before)

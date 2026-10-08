@@ -228,3 +228,9 @@ interruption between those steps can leave a candidate without a receipt. Inspec
 and recover those files explicitly; retrying does not overwrite them. The live
 specification check is a command preflight, not an atomic filesystem snapshot
 with the subsequent journal commit.
+
+A retry of a committed host handoff first validates the original request hash and
+returns its recorded receipt before checking live specification files. Changed or
+missing files cannot alter that read-only retry. A changed request with the same
+operation ID reports an operation conflict. New handoff operations still require
+the live pair gate.

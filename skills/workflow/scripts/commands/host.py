@@ -129,6 +129,13 @@ def dispatch(parsed):
             if parsed.host_command == 'task-bind':
                 _repair_task_index(prior_state['data'],result,Path(parsed.root))
             return result
+    # Committed retry lookup and request-hash validation above are read-only;
+    # live specification preflight applies only to a new handoff operation.
+    if parsed.host_command in {'handoff-prepare', 'handoff-accept'} and parsed.root:
+        gate_state = read_state(Path(parsed.root))
+        if gate_state['data'].get('spec_pair'):
+            from workflow_lib.repo_input_gate import require_current_spec
+            require_current_spec(Path(parsed.root), gate_state, 'handoff')
     request['client_request_hash']=client_hash
 
     if parsed.host_command in {'attach','handoff-accept','legacy-adopt'}:
