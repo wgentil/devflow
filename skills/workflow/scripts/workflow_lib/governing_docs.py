@@ -11,8 +11,12 @@ from .store import WorkflowError
 CATEGORIES = {'platform', 'coding-standards', 'architecture', 'test-strategy', 'release-process', 'design-system', 'application-contracts'}
 
 
-def canonical_document_bytes(raw: bytes, *, windows: bool | None = None) -> bytes:
-    """Use stable LF bytes for Git-backed textual governing documents."""
+def canonical_document_bytes(raw: bytes, *, windows: bool | None = None, baseline: bytes | None = None) -> bytes:
+    """Ignore Windows checkout conversion without changing tracked CRLF content."""
+    if windows is None:
+        windows = os.name == 'nt'
+    if not windows or baseline is not None and b'\r\n' in baseline:
+        return raw
     return raw.replace(b'\r\n', b'\n')
 
 
@@ -80,7 +84,13 @@ def _rules(repo: Path, manifest: dict, source: str) -> dict:
             _fail('invalid, duplicate or sealed rule IDs')
         target = _path(repo, entry.get('path'))
         try:
-            raw = canonical_document_bytes(target.read_bytes())
+            baseline = None
+            if os.name == 'nt':
+                previous = subprocess.run(['git', '-C', str(repo), 'show', f"HEAD:{entry['path']}"],
+                                          capture_output=True, timeout=30)
+                if previous.returncode == 0:
+                    baseline = previous.stdout
+            raw = canonical_document_bytes(target.read_bytes(), baseline=baseline)
             content = raw.decode('utf-8')
         except (OSError, UnicodeError) as exc:
             raise WorkflowError('INVALID_GOVERNING_DOCS', 'document cannot be read') from exc

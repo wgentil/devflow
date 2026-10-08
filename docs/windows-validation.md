@@ -3,9 +3,8 @@
 Native Windows and WSL2 are not yet supported releases. The shared source now
 contains platform locking, threaded pipe transport for native Windows, and
 NUL-delimited Git pathname parsing in review and evidence paths. Windows
-checkout CRLF is normalized to LF for governing-document comparison on every
-host, including tracked CRLF files. Existing approvals for CRLF documents may
-need renewal because their content digest changes. Launcher
+checkout CRLF is normalized against LF Git blobs, while tracked CRLF documents
+retain their prior content hashes. Launcher
 liveness now uses a Windows process handle so reconciliation never signals a
 running process while checking it. Package and runtime JSON files are decoded as
 UTF-8 independent of the Windows console code page. The full Python suite passed
