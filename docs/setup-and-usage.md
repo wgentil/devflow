@@ -245,3 +245,18 @@ fixture verification from installed-host readiness.
 If a project moves, ask DevFlow to repair repository/binding references explicitly.
 Existing local records with a different location produce a relocation diagnostic
 rather than a duplicate repository identity. Preserve the original journal.
+
+### Repository-backed specifications
+
+Ask DevFlow to store the specification in the selected registered repository as a
+visible JSON/Markdown pair, for example `docs/specs/0063-ios-safari-suite.json`
+and `.md`, and review the rendered file before confirming its exact content hash.
+The helper records the repository ID, relative paths and both hashes. Approval
+rereads both files immediately before journaling; changed or missing files require
+repair and renewed review. Ignored paths, `.devflow`, and paths escaping the
+repository cannot hold the pair. Repository files are authoritative for this flow.
+An interrupted pair write must be repaired by storing the pair again.
+
+Existing journal-only specifications remain available as legacy behavior. Optional
+CLI details are in the [specify guide](../skills/specify/GUIDE.md); plugin users
+need no shell variables or manual installation paths.

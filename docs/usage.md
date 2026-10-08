@@ -61,7 +61,7 @@ python3 skills/workflow/scripts/run.py context set --root "$CONTROL_ROOT" --laye
 python3 skills/workflow/scripts/run.py context set --root "$CONTROL_ROOT" --layer project --file project.json
 python3 skills/workflow/scripts/run.py context resolve --root "$CONTROL_ROOT"
 python3 skills/workflow/scripts/run.py repo register --root "$CONTROL_ROOT" --repo-id service --location "$REPO_CHECKOUT"
-python3 skills/workflow/scripts/run.py spec store --root "$CONTROL_ROOT" --file spec.json
+python3 skills/workflow/scripts/run.py spec store --root "$CONTROL_ROOT" --file spec.json --repo-id service --path docs/specs/0063-ios-safari-suite.json
 python3 skills/workflow/scripts/run.py spec validate --file spec.json
 python3 skills/workflow/scripts/run.py spec gaps --file spec.json
 python3 skills/workflow/scripts/run.py spec render --file spec.json
@@ -151,3 +151,5 @@ records; explicit adoption is required before assigning a first host binding.
 Host retry, compatible detached resume, scoped receipts and field-preserving model
 preferences are described in [host recovery](hosts.md#review-fixes-and-remaining-model-scope)
 and the [optional CLI reference](developer-cli.md#scoped-routing-and-compatible-detached-resume).
+
+Repository-backed `spec store` requires a registered `--repo-id` and repository-relative `--path`. It writes and records a visible JSON/Markdown pair; approval rechecks both hashes. Omitting both options retains the explicit legacy journal-only flow.

@@ -17,9 +17,10 @@ flowchart TD
     Ask --> Revise["Record answers and revise requirements and criteria"]
     Revise --> Inspect
     Gaps -->|No| Validate["spec validate and spec render"]
-    Validate --> Human{"Human approves rendered content?"}
+    Validate --> Store["Store visible repository JSON/Markdown pair"]
+    Store --> Human{"Human approves rendered content?"}
     Human -->|Changes requested| Revise
-    Human -->|Yes| Approve["spec store and approve exact current hash"]
+    Human -->|Yes| Approve["Recheck pair and approve exact current hash"]
     Approve --> Plan["plan-work"]
 ```
 
@@ -27,6 +28,8 @@ The agent performs discovery and interviews. `spec gaps` only lists gaps already
 recorded in the specification; it does not detect semantic omissions. The helper
 validates structure and binds approval to content, but currently permits approval
 with unanswered recorded gaps. Any content change requires renewed approval.
+
+New approvals use a selected registered repository and visible JSON/Markdown pair, typically `docs/specs/0063-ios-safari-suite.json` and `.md`. The repository files are authoritative: approval checks deterministic Markdown and both recorded hashes immediately before journaling. Ignored paths, `.devflow`, and paths escaping the repository are rejected. Existing journal-only flows remain supported as explicit legacy behavior.
 
 Use `new`, `extend`, or `migrate` mode. Preserve authored, derived, and assumed provenance; cite path, commit, and line range for derived facts. Ask only unresolved gap questions. Review the rendered specification with the user before recording approval. Approval must include the exact content hash and becomes stale when content changes.
 

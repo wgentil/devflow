@@ -18,6 +18,7 @@ from workflow_lib import STATE_SCHEMA_VERSION  # noqa: E402
 from workflow_lib.context import register_repo, resolve_context, validate_context_layer  # noqa: E402
 from workflow_lib.context import resolve_context_cached, context_sources_hash  # noqa: E402
 from workflow_lib.briefs import assemble_brief  # noqa: E402
+from workflow_lib.repo_specs import write_spec_pair, assert_repo_spec_approval
 from workflow_lib.specs import approval_record, content_hash, find_gaps, render_spec, validate_spec  # noqa: E402
 from workflow_lib.plans import ready_items, validate_plan  # noqa: E402
 from workflow_lib.runs import (abandon_attempt, issue_attempt, record_result, run_summary,
@@ -162,6 +163,8 @@ def main(argv: list[str] | None = None) -> int:
     store_spec.add_argument("--root", required=True)
     store_spec.add_argument("--file", required=True)
     store_spec.add_argument("--operation-id")
+    store_spec.add_argument("--repo-id")
+    store_spec.add_argument("--path", help="Repository-relative JSON path; requires --repo-id")
     approve_spec = spec_commands.add_parser("approve")
     approve_spec.add_argument("--root", required=True)
     approve_spec.add_argument("--confirm-hash", required=True)
@@ -369,20 +372,36 @@ def main(argv: list[str] | None = None) -> int:
             specification = _json_file(parsed.file)
             validation = validate_spec(specification)
             state = initial_state if initial_state is not None else read_state(root)
-            if state["data"].get("spec") == specification:
+            pair = None
+            if parsed.repo_id or parsed.path:
+                if not parsed.repo_id or not parsed.path:
+                    raise WorkflowError("SPEC_REPO_REQUIRED", "repository storage requires --repo-id and --path")
+                registered = state["data"].get("repositories", {}).get(parsed.repo_id)
+                if not registered:
+                    raise WorkflowError("REPO_NOT_FOUND", "register the selected repository before storing a specification")
+                pair = {"repo_id": parsed.repo_id, **write_spec_pair(Path(registered["location"]), parsed.path, specification)}
+            if state["data"].get("spec") == specification and state["data"].get("spec_pair") == pair:
                 result = {"stored": True, "unchanged": True, "content_hash": validation["content_hash"],
-                          "state_version": state["version"]}
+                          "spec_pair": pair, "state_version": state["version"]}
             else:
                 receipt = _commit(root, state["version"], _operation_id(parsed, uuid4().hex),
-                                  {"kind": "spec.stored", "payload": {"spec": specification}})
-                result = {"stored": True, "content_hash": validation["content_hash"], **receipt}
+                                  {"kind": "spec.stored", "payload": {"spec": specification, "spec_pair": pair}})
+                result = {"stored": True, "content_hash": validation["content_hash"], "spec_pair": pair, **receipt}
         elif parsed.command == "spec" and parsed.spec_command == "approve":
             root = Path(parsed.root).expanduser().resolve()
             state = initial_state if initial_state is not None else read_state(root)
             specification = state["data"].get("spec")
             if specification is None:
                 raise WorkflowError("SPEC_NOT_FOUND", "store a specification before approving it")
+            pair = state["data"].get("spec_pair")
+            if pair:
+                registered = state["data"].get("repositories", {}).get(pair["repo_id"])
+                if not registered:
+                    raise WorkflowError("REPO_NOT_FOUND", "specification repository is no longer registered")
+                specification = assert_repo_spec_approval(Path(registered["location"]), pair)["spec"]
             approval = approval_record(specification, parsed.confirm_hash)
+            if pair:
+                approval.update(pair)
             approval["actor_id"] = parsed.actor_id
             if state["data"].get("approval") == approval:
                 result = {"approval": approval, "unchanged": True, "state_version": state["version"]}

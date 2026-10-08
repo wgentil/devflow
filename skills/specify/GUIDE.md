@@ -1,7 +1,7 @@
 # specify usage guide
 
 Read the [shared setup and conventions](../../docs/skills.md#shared-setup) first.
-Commands below use its `df` function and path variables.
+For plugin use, ask DevFlow to refine the requirements, store the pair in the selected registered repository, and show both files for approval. No shell setup is required. The commands below are optional developer examples using the conventions in [developer CLI](../../docs/developer-cli.md).
 
 ## Purpose and prerequisites
 
@@ -26,7 +26,8 @@ material gaps before asking for approval, even though the helper does not enforc
 that condition. `spec render` returns a `markdown` string in its JSON response.
 
 ```sh
-df spec store --root "$CONTROL" --file spec.json --operation-id greeting-spec-v1
+df repo register --root "$CONTROL" --repo-id app --location "$APP"
+df spec store --root "$CONTROL" --file spec.json --repo-id app --path docs/specs/0063-ios-safari-suite.json --operation-id greeting-spec-v1
 HASH=$(df spec validate --file spec.json | python3 -c 'import sys,json; print(json.load(sys.stdin)["content_hash"])')
 # After the human approves the rendered specification:
 df spec approve --root "$CONTROL" --confirm-hash "$HASH" --actor-id human-1 --operation-id approve-greeting-v1
@@ -40,6 +41,10 @@ are Unicode strings"}`. Derived: `{"kind":"derived","sources":[{"path":"greeting
 and keep inferred assumptions distinct from observed facts.
 
 ## Outputs and revisions
+
+Validation returns requirement count and content hash. Repository storage returns `spec_pair` with `repo_id`, relative `json_path` and `markdown_path`, `content_hash`, and `markdown_hash`. Register the selected repository first. Both files must be visible to Git and remain within that repository. JSON uses the existing canonical content hash; Markdown must exactly match deterministic rendering. An interrupted replacement leaves an invalid pair until the store operation repairs it. Approval rereads the repository pair and rejects missing or changed files without appending an approval event.
+
+Omitting both `--repo-id` and `--path` preserves the legacy journal-only flow; it does not create repository files.
 
 Validation returns requirement count and content hash. Approval binds the exact
 hash; any change needs a new store operation and renewed human approval. For

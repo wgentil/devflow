@@ -128,7 +128,7 @@ cp "$EXAMPLES/spec.json" "$WORK/spec.json"
 df spec validate --file "$WORK/spec.json"
 df spec gaps --file "$WORK/spec.json"
 df spec render --file "$WORK/spec.json"
-df spec store --root "$CONTROL" --file "$WORK/spec.json" --operation-id spec-v1
+df spec store --root "$CONTROL" --file "$WORK/spec.json" --repo-id app --path docs/specs/0063-ios-safari-suite.json --operation-id spec-v1
 SPEC_HASH=$(df spec validate --file "$WORK/spec.json" | python3 -c 'import json,sys; print(json.load(sys.stdin)["content_hash"])')
 ```
 
@@ -496,3 +496,5 @@ a now-stale precondition. They return the original committed response without
 reapplying it. Changed input requires a new operation ID. `host profile-resolve`
 uses cached native context without provider I/O. Native commands and JSON inputs
 are documented in [native model command reference](native-models.md#developer-command-reference).
+
+Repository-backed `spec store` requires a registered `--repo-id` and repository-relative `--path`. It writes and records a visible JSON/Markdown pair; approval rechecks both hashes. Omitting both options retains the explicit legacy journal-only flow.

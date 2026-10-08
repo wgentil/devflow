@@ -42,6 +42,31 @@ class FoundationFlowTests(unittest.TestCase):
         path.write_text(json.dumps(value))
         return path
 
+    def test_repository_spec_approval_rechecks_pair_without_events(self):
+        subprocess.run(['git', 'init', '-q', str(self.repo)], check=True)
+        self.cli('repo', 'register', '--root', self.control, '--repo-id', 'app', '--location', self.repo)
+        specification = {'mode': 'new', 'requirements': []}
+        source = self.put_json('spec.json', specification)
+        stored = self.cli('spec', 'store', '--root', self.control, '--file', source,
+                          '--repo-id', 'app', '--path', 'docs/specs/0063-ios-safari-suite.json')
+        digest = stored['content_hash']
+        version = read_state(self.control)['version']
+        rejected = self.cli('spec', 'approve', '--root', self.control, '--confirm-hash', 'wrong',
+                            '--actor-id', 'owner', ok=False)
+        self.assertIn('EXPLICIT_CONFIRMATION_REQUIRED', rejected.stdout)
+        self.assertEqual(read_state(self.control)['version'], version)
+        (self.repo / 'docs/specs/0063-ios-safari-suite.md').write_text('changed')
+        rejected = self.cli('spec', 'approve', '--root', self.control, '--confirm-hash', digest,
+                            '--actor-id', 'owner', ok=False)
+        self.assertIn('SPEC_PAIR_MISMATCH', rejected.stdout)
+        self.assertEqual(read_state(self.control)['version'], version)
+        self.cli('spec', 'store', '--root', self.control, '--file', source,
+                 '--repo-id', 'app', '--path', 'docs/specs/0063-ios-safari-suite.json')
+        approved = self.cli('spec', 'approve', '--root', self.control, '--confirm-hash', digest,
+                            '--actor-id', 'owner')
+        self.assertEqual(approved['approval']['repo_id'], 'app')
+        self.assertIn('markdown_hash', approved['approval'])
+
     def test_next_brief_resume_atomic_result_retry_and_state_location(self):
         self.cli("repo", "register", "--root", self.control, "--repo-id", "backend", "--location", self.repo)
         self.put_json("org.json", {"slices": {"architecture": {"status": "answered", "value": "hexagonal"}}})

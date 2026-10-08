@@ -1,4 +1,7 @@
-"""Requirement validation, gap listing, deterministic rendering, and approval binding."""
+"""Requirement validation and rendering; repo_specs adds repository pair binding.
+
+The legacy JSON content hash deliberately excludes approval and remains unchanged.
+"""
 
 from __future__ import annotations
 

@@ -618,6 +618,16 @@ def transact(root: Path, expected_version: int, operation_id: str, event: dict) 
             return {"state": state, "event": previous, "replayed": True}
         if expected_version != state["version"]:
             raise WorkflowError("STALE_STATE", f"expected state version {expected_version}, current version is {state['version']}")
+        if event["kind"] == "spec.approved" and state["data"].get("spec_pair"):
+            from .repo_specs import assert_repo_spec_approval
+            pair = state["data"]["spec_pair"]
+            registered = state["data"].get("repositories", {}).get(pair["repo_id"])
+            if not registered:
+                raise WorkflowError("REPO_NOT_FOUND", "specification repository is no longer registered")
+            assert_repo_spec_approval(Path(registered["location"]), pair)
+            approval = event["payload"]["approval"]
+            if any(approval.get(key) != value for key, value in pair.items()) or approval.get("confirmed") is not True:
+                raise WorkflowError("SPEC_APPROVAL_STALE", "approval must bind the repository specification receipt")
         committed = {
             "schema_version": STATE_SCHEMA_VERSION,
             "sequence": state["version"] + 1,
