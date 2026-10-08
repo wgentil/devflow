@@ -175,3 +175,7 @@ syntax validation; YAML/OpenAPI semantics and JSON Schema conformance are not
 validated by this helper. Setup inspection includes `.yaml` and `.yml` files.
 This category does not add a legacy journal context slice and does not describe
 DevFlow's operational verification or host contracts.
+
+On native Windows, governing-document comparisons canonicalize checkout CRLF to LF
+to avoid a false approval request after Git text conversion. Native host parity
+and installed plugin behavior remain unverified; see [validation](../../docs/windows-validation.md).

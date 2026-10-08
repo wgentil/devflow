@@ -31,7 +31,8 @@ any replacement. Deterministic operations do not need a model invocation.
 ## Governing documents
 
 When a project has `docs/devflow-context.json`, explicitly resolve its repository
-and the organization checkout with document mode. Files are authoritative; do not
+and the organization checkout with document mode. Files are authoritative; Windows checkout CRLF is normalized to LF for
+governing comparison, pending native host validation. Do not
 convert terse journal slice answers into documents. Use stable rule IDs for
 project overrides and preserve unrelated organization rules. Stop on sealed rule
 conflicts, unavailable organization sources, or invalid manifest paths. Include

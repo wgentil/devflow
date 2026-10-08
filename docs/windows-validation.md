@@ -2,7 +2,10 @@
 
 Native Windows and WSL2 are not yet supported releases. The shared source now
 contains platform locking, threaded pipe transport for native Windows, and
-NUL-delimited Git pathname parsing in review and evidence paths. These changes
+NUL-delimited Git pathname parsing in review and evidence paths. Windows
+checkout CRLF is normalized for governing-document comparison so an unchanged
+Git text file does not appear as an unapproved policy edit; this changes the
+receipt to canonical LF bytes on Windows and needs real-host parity checks. These changes
 have passed macOS Python tests only; they do not prove Windows compatibility.
 
 | Gate | macOS | Linux | WSL2 Linux filesystem | Native Windows |

@@ -11,6 +11,13 @@ from .store import WorkflowError
 CATEGORIES = {'platform', 'coding-standards', 'architecture', 'test-strategy', 'release-process', 'design-system', 'application-contracts'}
 
 
+def canonical_document_bytes(raw: bytes, *, windows: bool | None = None) -> bytes:
+    """Compare Git text on Windows without checkout newline conversion noise."""
+    if windows is None:
+        windows = os.name == 'nt'
+    return raw.replace(b'\r\n', b'\n') if windows else raw
+
+
 def _git(repo: Path, *args: str) -> subprocess.CompletedProcess:
     try:
         return subprocess.run(['git', '-C', str(repo), *args], capture_output=True, text=True, timeout=30,
@@ -75,7 +82,7 @@ def _rules(repo: Path, manifest: dict, source: str) -> dict:
             _fail('invalid, duplicate or sealed rule IDs')
         target = _path(repo, entry.get('path'))
         try:
-            raw = target.read_bytes()
+            raw = canonical_document_bytes(target.read_bytes())
             content = raw.decode('utf-8')
         except (OSError, UnicodeError) as exc:
             raise WorkflowError('INVALID_GOVERNING_DOCS', 'document cannot be read') from exc

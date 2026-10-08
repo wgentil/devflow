@@ -7,7 +7,7 @@ import json
 import subprocess
 from uuid import uuid4
 
-from .governing_docs import _git, _path, resolve_governing_docs
+from .governing_docs import _git, _path, resolve_governing_docs, canonical_document_bytes
 from .store import WorkflowError, read_state, transact
 
 
@@ -26,7 +26,7 @@ def _snapshot(repo, paths, data=None, repo_id=None):
     records = {}
     for path in sorted(set(paths)):
         target = _path(repo, path)
-        after = target.read_bytes() if target.exists() else b''
+        after = canonical_document_bytes(target.read_bytes()) if target.exists() else b''
         previous = subprocess.run(['git', '-C', str(repo), 'show', f'HEAD:{path}'], capture_output=True, timeout=30)
         before = previous.stdout if previous.returncode == 0 else b''
         accepted = (data or {}).get('governing_input_receipt', {}).get('files', {}).get(str(repo_id) + ':' + path)
