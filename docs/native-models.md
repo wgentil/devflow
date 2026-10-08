@@ -6,7 +6,9 @@ variables, Python commands, installation paths or API keys. Python 3.11+ and the
 selected host CLI must already be available; Claude provider identity is supported
 only for first-party authentication in this adapter; missing executables/authentication
 produce diagnostics. Native workers are new scoped conversations; they do not
-change the current parent conversation.
+change the current parent conversation. A threaded pipe transport is present for
+Windows, but process-tree cleanup, installed-host behavior and native Windows
+acceptance have not been verified; Windows support is not yet released.
 
 Say “Use my permitted model for implementation, advisory with unvalidated
 suitability explicitly allowed; preserve the spending cap and show actual settings.”

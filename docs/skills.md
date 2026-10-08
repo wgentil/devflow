@@ -28,7 +28,8 @@ The following is for direct helper use and contributor examples, not plugin-user
 onboarding. The intended plugin workflow resolves these paths automatically.
 See the [developer walkthrough](developer-cli.md) for current direct CLI setup.
 
-Use Python 3.11+ on macOS/Linux (`fcntl` is required). There is no daemon or
+Use Python 3.11+ on macOS/Linux. The lock implementation is platform-aware,
+but native Windows remains unsupported until its host validation passes. There is no daemon or
 runtime package dependency. From any shell, set absolute paths:
 
 ```sh
