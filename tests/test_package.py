@@ -77,7 +77,7 @@ class HostResourceTests(unittest.TestCase):
         import re
         files=list((ROOT/'skills').glob('*/SKILL.md'))+list((ROOT/'skills').glob('*/GUIDE.md'))+[ROOT/'docs/setup-and-usage.md',ROOT/'docs/hosts.md',ROOT/'docs/skills.md']
         for file in files:
-            for target in re.findall(r'\[[^\]]+\]\(([^)]+)\)',file.read_text()):
+            for target in re.findall(r'\[[^\]]+\]\(([^)]+)\)',file.read_text(encoding='utf-8')):
                 if '://' in target or target.startswith('#'):continue
                 path=(file.parent/target.split('#')[0]).resolve()
                 self.assertTrue(path.exists(),f'{file.relative_to(ROOT)}: {target}')
