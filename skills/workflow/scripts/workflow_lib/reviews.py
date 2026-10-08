@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 import re
 import subprocess
+from .git_paths import git_paths, resolve_repo_path
 
 ROLES = {"item", "branch", "acceptance"}
 
@@ -30,7 +31,7 @@ def _commit_records(repo: Path, base: str, head: str) -> tuple[list[dict], list[
     for commit in commits:
         message = _git(repo, "show", "-s", "--format=%B", commit)
         work_items = sorted(set(re.findall(r"(?m)^Work-Item:\s*(\S+)\s*$", message)))
-        files = sorted(_git(repo, "diff-tree", "--no-commit-id", "--name-only", "-r", commit).splitlines())
+        files = sorted(git_paths(repo, "diff-tree", "--no-commit-id", "--name-only", "-r", commit))
         records.append({"sha": commit, "subject": _git(repo, "show", "-s", "--format=%s", commit).strip(),
                         "work_item_ids": work_items, "files": files,
                         "diff": _git(repo, "show", "--format=", "--binary", commit)})
@@ -53,10 +54,10 @@ def prepare_review(run: dict, role: str, repo_heads: dict,
         commits, unattributed = _commit_records(repo, source["base"], source["head"])
         status = _git(repo, "status", "--porcelain", "--untracked-files=all")
         diff = _git(repo, "diff", "--binary", "HEAD")
-        untracked_names = _git(repo, "ls-files", "--others", "--exclude-standard").splitlines()
+        untracked_names = git_paths(repo, "ls-files", "--others", "--exclude-standard")
         untracked = {}
         for name in sorted(untracked_names):
-            path = (repo / name).resolve()
+            path = resolve_repo_path(repo, name)
             if not path.is_relative_to(repo) or not path.is_file():
                 raise ValueError("untracked review input escapes the repository")
             content = path.read_bytes()
@@ -110,8 +111,8 @@ def record_review(run: dict, package_hash: str, reviewer: dict, report: dict) ->
                 or _git(location, "diff", "--binary", "HEAD") != repo["worktree_diff"]):
             raise ValueError("review inputs changed after package preparation")
         current = {}
-        for name in _git(location, "ls-files", "--others", "--exclude-standard").splitlines():
-            current[name] = hashlib.sha256((location / name).read_bytes()).hexdigest()
+        for name in git_paths(location, "ls-files", "--others", "--exclude-standard"):
+            current[name] = hashlib.sha256(resolve_repo_path(location, name).read_bytes()).hexdigest()
         if current != repo["untracked_hashes"]:
             raise ValueError("review untracked inputs changed after package preparation")
     if report.get("package_hash") != package_hash or report.get("verdict") not in {"pass", "request-changes", "block"}:

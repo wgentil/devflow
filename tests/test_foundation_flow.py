@@ -29,7 +29,7 @@ class FoundationFlowTests(unittest.TestCase):
         self.temp.cleanup()
 
     def cli(self, *args, ok=True):
-        result = subprocess.run([sys.executable, str(ENTRY), *map(str, args)], cwd="/tmp",
+        result = subprocess.run([sys.executable, str(ENTRY), *map(str, args)], cwd=tempfile.gettempdir(),
                                 env=self.env, text=True, capture_output=True)
         if ok:
             self.assertEqual(result.returncode, 0, result.stderr + result.stdout)

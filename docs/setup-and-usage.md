@@ -6,7 +6,8 @@ No shell variables, CLI function, installation paths or Python commands are user
 setup steps. Existing Python 3.11+ on macOS/Linux is required; this package does
 not provision an interpreter. Native Windows is outside current support. The source tree now has a
 portable lock boundary, but native process transport, installed hooks and
-Windows-host validation remain incomplete.
+Windows-host validation remain incomplete. See the
+[platform validation matrix](windows-validation.md) for observed results.
 
 ## Installation
 

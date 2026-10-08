@@ -19,7 +19,7 @@ class NativeModelTests(unittest.TestCase):
         Backend=self.backend()
         from unittest.mock import Mock
         rpc=Mock();rpc.request.side_effect=[{'account':{'type':'chatgpt','email':'private@example.test','planType':'pro'}},{'data':[{'model':'candidate','supportedReasoningEfforts':[{'reasoningEffort':'high'}]}],'nextCursor':'more'},{'data':[{'model':'other','supportedReasoningEfforts':[{'reasoningEffort':'low'}]}],'nextCursor':None}]
-        backend=Backend('/tmp',rpc=rpc);identity=backend.identity();context=backend.discover()
+        backend=Backend(tempfile.gettempdir(),rpc=rpc);identity=backend.identity();context=backend.discover()
         self.assertNotIn('private@example.test',json.dumps(identity));self.assertEqual(len(identity['account_key']),64)
         self.assertEqual(context['capabilities']['model_efforts']['candidate'],['high']);self.assertEqual(context['discovery']['models']['other'],'available')
         self.assertEqual(rpc.request.call_args_list[-1].args[1]['cursor'],'more')
@@ -30,13 +30,13 @@ class NativeModelTests(unittest.TestCase):
                                               'supportedReasoningEfforts': [{'reasoningEffort': 'high'}]}],
                                     'nextCursor': None}
         with patch('workflow_lib.native_models._cli_version', return_value='1.2.3'):
-            context = self.backend()('/tmp', rpc=rpc).discover()
+            context = self.backend()(tempfile.gettempdir(), rpc=rpc).discover()
         self.assertEqual(context['discovery']['host_version'], '1.2.3')
         self.assertNotIn('alias', context['discovery']['model_revisions'])
     def test_codex_configuration_uses_effective_host_response(self):
         Backend=self.backend();from unittest.mock import Mock
         rpc=Mock();rpc.request.return_value={'model':'substitute','modelProvider':'openai','reasoningEffort':'low','thread':{'id':'actual-thread','sessionId':'actual-session'}}
-        backend=Backend('/tmp',rpc=rpc);result=backend.configure({'provider':'openai','model':'candidate','effort':'high'},'bounded context','read-only')
+        backend=Backend(tempfile.gettempdir(),rpc=rpc);result=backend.configure({'provider':'openai','model':'candidate','effort':'high'},'bounded context','read-only')
         self.assertEqual(result['observed']['model'],'substitute');self.assertEqual(result['observed']['effort'],'low');self.assertEqual(result['invocation_ref'],'codex://actual-thread')
         self.assertEqual(rpc.request.call_args.args[1]['config']['model_reasoning_effort'],'high')
         self.assertEqual(rpc.request.call_args.args[1]['sandbox'],'read-only')
@@ -45,7 +45,7 @@ class NativeModelTests(unittest.TestCase):
         from unittest.mock import Mock
         result=Mock(returncode=0,stdout=json.dumps({'session_id':'actual-session','result':'done','modelUsage':{'claude-fixture':{}}}),stderr='')
         with patch('workflow_lib.native_models.run_bounded',return_value=result) as runner:
-            backend=ClaudeBackend('/tmp');output=backend.invoke({'provider':'anthropic','model':'claude-fixture','effort':'medium'},'Return a bounded review.','actor;$(echo nope)','read-only',30)
+            backend=ClaudeBackend(tempfile.gettempdir());output=backend.invoke({'provider':'anthropic','model':'claude-fixture','effort':'medium'},'Return a bounded review.','actor;$(echo nope)','read-only',30)
         argv=runner.call_args.args[0];self.assertEqual(argv[0],'claude');self.assertIn('--agents',argv);self.assertIn('--agent',argv)
         self.assertEqual(output['observed']['model'],'claude-fixture');self.assertIsNone(output['observed']['effort']);self.assertEqual(output['observation_source'],'host-invocation-metadata')
         self.assertFalse(runner.call_args.kwargs.get('shell',False));self.assertNotIn('Bash',argv[argv.index('--tools')+1])
@@ -193,7 +193,7 @@ class NativeModelTests(unittest.TestCase):
         from workflow_lib.native_models import CodexBackend
         from unittest.mock import Mock
         rpc=Mock();rpc.notifications=[{'method':'model/rerouted','params':{'threadId':'thread','fromModel':'chosen','toModel':'substitute','turnId':'turn'}},{'method':'turn/completed','params':{'threadId':'thread','turn':{'status':'completed'}}}]
-        backend=CodexBackend('/tmp',rpc);backend.configured={'thread_id':'thread','observed':{'provider':'openai','model':'chosen','effort':'high'},'observation_source':'host-effective-configuration'}
+        backend=CodexBackend(tempfile.gettempdir(),rpc);backend.configured={'thread_id':'thread','observed':{'provider':'openai','model':'chosen','effort':'high'},'observation_source':'host-effective-configuration'}
         result=backend.invoke({'model':'chosen'},'bounded prompt','actor')
         self.assertEqual(result['status'],'interrupted');self.assertEqual(result['observed']['model'],'substitute')
     def test_rpc_send_obeys_deadline_when_host_stops_reading(self):
@@ -230,7 +230,7 @@ class NativeModelTests(unittest.TestCase):
         target=attachment();target.update(binding_id='b2',host='claude',actor_id='next',session_id='next')
         context={'capabilities':{'configure':True,'observe':False,'models':['candidate'],'efforts':['medium'],'model_efforts':{'candidate':['medium']}},'discovery':{'models':{'candidate':'available'}}}
         with patch('workflow_lib.native_runtime.discover',return_value=context),patch('workflow_lib.native_runtime.probe',return_value={'status':'block','reason_code':'NATIVE_QUOTA'}) as probe:
-            result=handoff_preflight('/tmp',state,target)
+            result=handoff_preflight(tempfile.gettempdir(),state,target)
         self.assertEqual(result['reason_code'],'NATIVE_QUOTA');probe.assert_called_once();self.assertEqual(state['host_bindings']['b1']['status'],'active')
     def test_candidate_probe_cannot_bypass_unknown_cost(self):
         from workflow_lib.native_runtime import candidate_intent

@@ -53,11 +53,11 @@ def repository_fingerprint(location: Path) -> dict:
                                 check=True, capture_output=True, text=True, timeout=10).stdout
         changed = subprocess.run(["git", "diff", "--binary", "HEAD"], cwd=repo, check=True,
                                  capture_output=True, timeout=10).stdout
-        untracked = subprocess.run(["git", "ls-files", "--others", "--exclude-standard"], cwd=repo,
-                                   check=True, capture_output=True, text=True, timeout=10).stdout.splitlines()
+        from .git_paths import git_paths, resolve_repo_path
+        untracked = git_paths(repo, "ls-files", "--others", "--exclude-standard")
         digest = hashlib.sha256(status.encode("utf-8") + changed)
         for name in sorted(untracked):
-            path = (repo / name).resolve()
+            path = resolve_repo_path(repo, name)
             if not path.is_relative_to(repo) or not path.is_file():
                 raise WorkflowError("INVALID_REPOSITORY_PATH", "untracked path leaves the repository")
             digest.update(name.encode("utf-8"))

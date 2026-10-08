@@ -27,7 +27,7 @@ class PackageTests(unittest.TestCase):
     def test_version_from_unrelated_cwd(self):
         result = subprocess.run(
             [sys.executable, str(ENTRY), "version"],
-            cwd=Path("/tmp"), text=True, capture_output=True, check=False,
+            cwd=Path(tempfile.gettempdir()), text=True, capture_output=True, check=False,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         descriptor = json.loads(result.stdout)
@@ -58,12 +58,12 @@ class PackageTests(unittest.TestCase):
             layer = Path(temp_name) / "org.json"
             layer.write_text(json.dumps({"slices": {"architecture": {"status": "answered", "value": "ports"}}}))
             original = subprocess.run([sys.executable, str(ENTRY), "context", "set", "--root", str(control),
-                "--layer", "org", "--file", str(layer)], cwd="/tmp", capture_output=True, text=True, check=False)
+                "--layer", "org", "--file", str(layer)], cwd=tempfile.gettempdir(), capture_output=True, text=True, check=False)
             self.assertEqual(original.returncode, 0, original.stderr + original.stdout)
             first_event = (control / "events/00000001.json").read_bytes()
             relocated_entry = relocated / "skills/workflow/scripts/run.py"
             result = subprocess.run([sys.executable, str(relocated_entry), "context", "resolve", "--root", str(control)],
-                cwd="/tmp", capture_output=True, text=True, check=False)
+                cwd=tempfile.gettempdir(), capture_output=True, text=True, check=False)
             self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
             self.assertEqual((control / "events/00000001.json").read_bytes(), first_event)
             self.assertIn('"version":2', (control / "state.json").read_text())
