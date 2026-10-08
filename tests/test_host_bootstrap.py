@@ -22,6 +22,8 @@ class BootstrapTests(unittest.TestCase):
         self.assertEqual(first['repo_id'], second['repo_id'])
         self.assertEqual(read_state(Path(first['control_root']))['version'], 1)
         self.assertEqual(second['resumable_runs'], [])
+        self.assertEqual(second['document_setup']['default'], 'project-only')
+        self.assertFalse((self.repo/'docs').exists())
         self.assertEqual(subprocess.check_output(['git','status','--porcelain'],cwd=self.repo), b'')
     def test_no_project_rejected(self):
         with self.assertRaises(WorkflowError): discover_project(Path(self.temp.name))

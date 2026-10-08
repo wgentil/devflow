@@ -60,3 +60,6 @@ The [spec.json](spec.json) example can be stored in a registered `app` repositor
 
 [Specification migration](spec-migration.md) documents explicit legacy source/target,
 idempotent candidate creation and required human reapproval.
+
+`setup-project-only.json` is the default guided document setup choice. Use the agent
+workflow for plugin onboarding; helper commands are in the optional developer CLI guide.

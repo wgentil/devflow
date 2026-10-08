@@ -1,0 +1,62 @@
+import sys
+import tempfile
+import subprocess
+import unittest
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'skills/workflow/scripts'))
+from workflow_lib.project_setup import inspect_project_setup, initialize_project_documents
+from workflow_lib.store import WorkflowError
+
+class ProjectSetupTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
+        self.repo = Path(self.temp.name).resolve()/'project'; self.repo.mkdir()
+        subprocess.run(['git','init','-q',str(self.repo)],check=True)
+    def test_nested_inspection_read_only(self):
+        nested=self.repo/'src';nested.mkdir()
+        result=inspect_project_setup(nested)
+        self.assertEqual(result['project_dir'],str(self.repo))
+        self.assertEqual(result['choices'],['project-only','attach-org','create-org'])
+        self.assertFalse((self.repo/'docs').exists())
+        self.assertFalse((self.repo/'.devflow').exists())
+    def test_idempotent_project_only(self):
+        first=initialize_project_documents(self.repo,{'mode':'project-only'},'one')
+        manifest=self.repo/'docs/devflow-context.json'; before=manifest.read_bytes()
+        second=initialize_project_documents(self.repo,{'mode':'project-only'},'two')
+        self.assertEqual(manifest.read_bytes(),before);self.assertTrue(second['unchanged'])
+        self.assertIsNone(first['manifest']['org'])
+    def test_invalid_url_no_manifest(self):
+        with self.assertRaises(WorkflowError): initialize_project_documents(self.repo,{'mode':'attach-org','url':str(self.repo/'missing')},'one')
+        self.assertFalse((self.repo/'docs/devflow-context.json').exists())
+    def test_create_requires_location(self):
+        with self.assertRaises(WorkflowError): initialize_project_documents(self.repo,{'mode':'create-org','name':'Team'},'one')
+    def test_attach_and_local_portability(self):
+        org=Path(self.temp.name)/'team'
+        created=initialize_project_documents(self.repo,{'mode':'create-org','name':'Team','target_dir':str(org)},'one')
+        self.assertEqual(created['portability'],'local-only')
+        other=Path(self.temp.name)/'other';other.mkdir();subprocess.run(['git','init','-q',str(other)],check=True)
+        attached=initialize_project_documents(other,{'mode':'attach-org','url':str(org)},'two')
+        self.assertEqual(attached['manifest']['org']['id'],created['manifest']['org']['id'])
+        org.rename(org.with_name('moved'))
+        with self.assertRaises(WorkflowError): initialize_project_documents(other,{'mode':'attach-org','url':str(org)},'three')
+    def test_adopt_existing_document(self):
+        path=self.repo/'rules.md';path.write_text('## CODE-1: Existing rule\nKeep this.\n')
+        result=initialize_project_documents(self.repo,{'mode':'project-only','documents':[{'category':'coding-standards','path':'rules.md','rule_ids':['CODE-1']}]},'one')
+        self.assertEqual(result['manifest']['documents'][0]['path'],'rules.md')
+        self.assertEqual(path.read_text(),'## CODE-1: Existing rule\nKeep this.\n')
+    def test_non_git_rejected(self):
+        with self.assertRaises(WorkflowError): inspect_project_setup(Path(self.temp.name))
+
+    def test_invalid_document_does_not_write_manifest(self):
+        (self.repo/'rules.md').write_text('Unidentified policy')
+        with self.assertRaises(WorkflowError):
+            initialize_project_documents(self.repo,{'mode':'project-only','documents':[{'category':'coding-standards','path':'rules.md','rule_ids':['CODE-1']}]},'one')
+        self.assertFalse((self.repo/'docs/devflow-context.json').exists())
+    def test_missing_operation_leaves_no_files(self):
+        with self.assertRaises(WorkflowError): initialize_project_documents(self.repo,{'mode':'project-only'},'')
+        self.assertFalse((self.repo/'docs').exists())
+    def test_cli_inspect(self):
+        runner=Path(__file__).resolve().parents[1]/'skills/workflow/scripts/run.py'
+        result=subprocess.run([sys.executable,str(runner),'setup','inspect','--project-dir',str(self.repo)],capture_output=True,text=True)
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        self.assertIn('project-only',result.stdout)

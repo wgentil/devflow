@@ -328,3 +328,44 @@ remains allowed. If an older receipt lacks the original bytes and Git HEAD no
 longer matches its digest, DevFlow reports `GOVERNING_BASELINE_UNAVAILABLE`
 instead of approving an empty diff; restore the recorded baseline from trusted
 history before proposing the change.
+
+## Guided organization and project setup
+
+Open an existing Git project and invoke workflow or project-context. The agent
+inspects the repository without writing documents, including from nested directories.
+Choose project-only (the default), attach an accessible organization Git URL, or
+create a local organization with a name and an explicit absolute directory outside
+the project. DevFlow creates necessary folders and a visible `docs/devflow-context.json`.
+Existing documents are adopted through explicit category, path and rule IDs; their
+contents are preserved. Repeating setup preserves an existing manifest and validates
+its organization source. Change an existing manifest through the document proposal
+and approval workflow rather than rerunning setup with another choice.
+
+Attachment validates reachability, remote identity, the organization manifest and
+rule documents before writing a project manifest. It creates an excluded runtime
+checkout under `.devflow/org/`; use the returned `org_checkout` when resolving context.
+Local organization creation writes and locally commits an empty organization manifest;
+it creates no remote repository and publishes nothing. Optional remote URLs must
+already contain an accessible organization with the same stable identity. Prefer
+attachment for an existing remote. No policy text is generated or automatically approved.
+
+Local paths and file URLs are labeled local-only. Another host must resolve the same
+source; missing or inaccessible organization sources block setup recovery and handoff.
+Do not silently substitute cached organization policy. Newly created empty manifests
+supply no policy until humans author and approve governing documents.
+
+```mermaid
+flowchart TD
+    Open[Open existing Git project] --> Inspect[Read-only document inspection]
+    Inspect --> Choice{Choose setup}
+    Choice --> Project[Project-only default]
+    Choice --> Attach[Validate existing organization Git URL]
+    Choice --> Create[Explicit local organization directory]
+    Attach --> Valid{Reachable and valid?}
+    Valid -->|No| Block[Block without project manifest]
+    Valid -->|Yes| Adopt[Adopt existing documents]
+    Create --> Adopt
+    Project --> Adopt
+    Adopt --> Manifest[Create or preserve visible manifest]
+    Manifest --> Human[Human policy review and approval]
+```

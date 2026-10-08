@@ -498,3 +498,12 @@ uses cached native context without provider I/O. Native commands and JSON inputs
 are documented in [native model command reference](native-models.md#developer-command-reference).
 
 Repository-backed `spec store` requires a registered `--repo-id` and repository-relative `--path`. It writes and records a visible JSON/Markdown pair; approval rechecks both hashes. Omitting both options retains the explicit legacy journal-only flow.
+
+### Guided setup helpers (optional developer reference)
+
+`python3 skills/workflow/scripts/run.py setup inspect --project-dir .` is read-only.
+`python3 skills/workflow/scripts/run.py setup initialize --project-dir . --choice docs/examples/setup-project-only.json --operation-id setup-1`
+creates/adopts project documents. Choice JSON uses `mode` (`project-only`, `attach-org`,
+`create-org`), optional explicit `documents` and `overrides`; attachment requires `url`,
+creation requires `name` and absolute `target_dir` with optional `remote_url`.
+Plugin users invoke the skill; the agent supplies these arguments.

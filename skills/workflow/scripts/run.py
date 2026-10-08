@@ -134,6 +134,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument('--binding-revision', type=int)
     commands = parser.add_subparsers(dest="command")
     commands.add_parser("version")
+    setup = commands.add_parser('setup')
+    setup_commands = setup.add_subparsers(dest='setup_command', required=True)
+    setup_inspect = setup_commands.add_parser('inspect')
+    setup_inspect.add_argument('--project-dir', default='.')
+    setup_initialize = setup_commands.add_parser('initialize')
+    setup_initialize.add_argument('--project-dir', default='.')
+    setup_initialize.add_argument('--choice', required=True, help='JSON setup choice file')
+    setup_initialize.add_argument('--operation-id', required=True)
     context = commands.add_parser("context")
     context_commands = context.add_subparsers(dest="context_command")
     resolve = context_commands.add_parser("resolve")
@@ -710,6 +718,10 @@ def main(argv: list[str] | None = None) -> int:
                 {"kind": "finding.resolved", "payload": {"run_id": parsed.run_id,
                  "finding_id": parsed.finding_id, "resolution": resolution}})
             result = {"finding_id": parsed.finding_id, "status": "resolved", "state_version": receipt["state"]["version"]}
+        elif parsed.command == 'setup':
+            from workflow_lib.project_setup import inspect_project_setup, initialize_project_documents
+            result = (inspect_project_setup(Path(parsed.project_dir)) if parsed.setup_command == 'inspect'
+                      else initialize_project_documents(Path(parsed.project_dir), _json_file(parsed.choice), parsed.operation_id))
         elif parsed.command == "build":
             result = dispatch_command_group(parsed)
         elif parsed.command in {"review", "delivery", "issues", "migrate", "stats", "ingest", "docs", "harden", "host", "repair", "improve"}:

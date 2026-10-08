@@ -36,3 +36,11 @@ convert terse journal slice answers into documents. Use stable rule IDs for
 project overrides and preserve unrelated organization rules. Stop on sealed rule
 conflicts, unavailable organization sources, or invalid manifest paths. Include
 `design-system` inputs when working on UI. See the guide for schema and limitations.
+
+### First-use document setup
+Inspect the opened Git project (nested working directories are supported). Offer
+project-only by default, an existing organization Git URL, or local organization
+creation at an explicit chosen directory. Use the workflow setup helpers; do not ask
+plugin users to prepare folders or run shell commands. Adopt existing documents at
+approved paths without rewriting them. Local-only organizations carry portability
+limits; unavailable sources block handoff, and setup never approves generated policy.

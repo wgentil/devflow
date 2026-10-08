@@ -68,5 +68,7 @@ def initialize_project(project_dir: Path, control_root: Path | None, operation_i
                      expected_version=expected_version), 'domain.host.init', request) if not prior or operation_id in state['operations'] else {'state_version':state['version'], 'unchanged':True}
     runs = [key for key, run in read_state(root)['data'].get('runs', {}).items()
             if run.get('status') not in {'delivered','discarded'} and identifier in run.get('repositories', {})]
-    return {**receipt, 'project_dir':str(project), 'control_root':str(root), 'repo_id':identifier,
+    from .project_setup import inspect_project_setup
+    setup = inspect_project_setup(project)
+    return {**receipt, 'document_setup':setup, 'project_dir':str(project), 'control_root':str(root), 'repo_id':identifier,
             'resumable_runs':runs, 'selection_required':len(runs)>1}

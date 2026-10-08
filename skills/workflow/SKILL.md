@@ -224,3 +224,12 @@ An approval authorizes that exact before/after change; a historical approval for
 the same after image cannot authorize restoration from a different baseline.
 Committing an already accepted edit preserves its approval. A legacy receipt
 without recoverable baseline bytes fails closed if its Git baseline differs.
+
+### Guided document setup
+After host initialization, inspect the `document_setup` result. Offer project-only
+(the default), attach an existing organization Git URL, or create a local organization
+at an explicit user-chosen absolute directory outside the project. Use `setup inspect`
+for read-only discovery and `setup initialize` with the selected choice. The agent
+runs these helpers; plugin users need no folders, shell variables, or Python commands.
+Adopt existing documents by explicit category, path and rule IDs. Never infer that
+setup approves policy. An unavailable organization source blocks recovery/handoff.
