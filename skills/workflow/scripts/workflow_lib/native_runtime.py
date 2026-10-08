@@ -1,11 +1,12 @@
 """Production native discovery and scoped invocation coordinator; hooks never call it."""
 from copy import deepcopy
-import fcntl
 import hashlib
 import json
 import os
 from pathlib import Path
 import time
+from .platform_lock import exclusive_file
+from contextlib import contextmanager
 from .store import WorkflowError, read_state, transact, HOST_CONTEXT, _atomic_json
 from .hosts import validate_binding, invocation_scope
 from .releases import PACKAGE_ROOT, release_descriptor, check_release
@@ -13,6 +14,16 @@ from .model_policy import effective_preferences, resolve_profile
 from .native_models import NativeCache, CodexBackend, ClaudeBackend, NativeError
 from .host_completion import host_brief
 from .evidence import _blob
+
+@contextmanager
+def _native_lease(path):
+    with path.open('a+b') as handle:
+        try:
+            with exclusive_file(handle, blocking=False):
+                yield handle
+        except BlockingIOError as exc:
+            raise WorkflowError('NATIVE_INVOCATION_ACTIVE', 'Native invocation lease is held.') from exc
+
 
 
 def policy():return json.loads((PACKAGE_ROOT/'definitions/model-policy.json').read_text())
@@ -142,9 +153,7 @@ def invoke(root,request,operation_id):
     if type(timeout) not in (int,float) or not 1<=timeout<=3600:raise WorkflowError('NATIVE_TIMEOUT_INVALID','Native timeout must be between 1 and 3600 seconds.')
     backend=None;context=None;started=False;result=None
     lease=root/'native-invocations'/hashlib.sha256((binding['run_id']+':'+identifier).encode()).hexdigest();lease.parent.mkdir(parents=True,exist_ok=True)
-    with lease.open('a+b') as lock:
-        try:fcntl.flock(lock.fileno(),fcntl.LOCK_EX|fcntl.LOCK_NB)
-        except BlockingIOError as exc:raise WorkflowError('NATIVE_INVOCATION_ACTIVE','Native invocation is running.') from exc
+    with _native_lease(lease) as lock:
         # Another launcher may have completed between the initial read and lease acquisition.
         data=read_state(root)['data'];run=data['runs'][binding['run_id']]
         prior=run.get('native_invocations',{}).get(identifier)
@@ -230,9 +239,7 @@ def reconcile(root,request,operation_id):
     if not isinstance(confirmation,dict) or confirmation.get('approved') is not True or not isinstance(confirmation.get('actor_id'),str) or not confirmation['actor_id']:
         raise WorkflowError('NATIVE_STOP_CONFIRMATION_REQUIRED','After inspecting and stopping the native process and its children, record the human actor confirming they stopped.')
     lease=root/'native-invocations'/hashlib.sha256((binding['run_id']+':'+identifier).encode()).hexdigest();lease.parent.mkdir(parents=True,exist_ok=True)
-    with lease.open('a+b') as lock:
-        try:fcntl.flock(lock.fileno(),fcntl.LOCK_EX|fcntl.LOCK_NB)
-        except BlockingIOError as exc:raise WorkflowError('NATIVE_INVOCATION_ACTIVE','Launcher still holds the invocation lease.') from exc
+    with _native_lease(lease) as lock:
         pid=record.get('launcher_pid')
         if isinstance(pid,int) and pid>0:
             try:os.kill(pid,0)
