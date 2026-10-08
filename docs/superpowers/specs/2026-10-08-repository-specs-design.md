@@ -102,6 +102,38 @@ The excluded organization/project context slices remain compatibility inputs
 for existing runs. Migration can propose documents from them, but those terse
 values do not become approved repo policy automatically.
 
+## Guided initialization from the current project
+
+Extend the existing `workflow` entry point with a guided initialization step,
+backed by one deterministic initialization command. Do not require a separate
+plugin installation, shell setup or pre-created directory tree; a dedicated
+`initialize` skill would duplicate the entry point and fragment onboarding.
+Starting in a directory such as `/Users/wayne/src/song-capture`, DevFlow
+discovers the containing Git repository. It does not infer organization
+membership from a path name or create a Git repository in a non-Git directory.
+
+If `docs/devflow-context.json` exists, validate it, locate the organization
+source and resume. If absent, inventory existing project documents and known
+organization sources, then ask the user to choose: attach an existing
+organization repository, create a new organization repository, or begin with
+project-only documents. The project-only path is the low-friction default and
+can later be promoted or attached without rewriting feature specs. Existing
+docs are adopted in place; DevFlow does not duplicate them into its default
+folders. It creates the committed project manifest and only document files
+needed for current work, not empty folder scaffolding.
+
+Attaching an organization records its stable Git identity in the project
+manifest. Creating one is an explicit guided choice: the user supplies or
+accepts a proposed name and repository location, DevFlow creates the separate
+Git repository and needed initial documents, and the agent interviews for
+unresolved shared policy before proposing content. A portable remote URL is
+recorded when available. Until the organization source has a portable locator,
+local-only use is labeled as such and cross-machine/cross-host handoff that
+cannot resolve it is blocked. No organization document is deemed approved just
+because initialization created it; changed content follows the exact-diff
+approval rule before feature implementation. Initialization itself creates no
+feature approval or permission for external publication.
+
 ## Grounding and interview
 
 For an existing repo, the agent first inventories relevant organization and
@@ -218,6 +250,9 @@ non-Git project follows the existing focused project-selection/error behavior.
 9. Project overrides replace only declared matching rule IDs; inherited rules
    remain effective, and non-overrideable org rules reject conflicts. A missing
    org source or changed source revision blocks dependent work until reconciled.
+10. Starting from an existing Git project with no DevFlow files offers guided
+    org attachment, org creation or project-only setup without manual folder
+    preparation; rerunning initialization resumes without duplicate sources.
 
 ## Documentation and rollout
 
