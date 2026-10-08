@@ -93,3 +93,7 @@ See [setup and initialization](setup-and-usage.md) and the
 [installed-host validation report](cross-host-validation.md).
 
 Git-backed rule inheritance, manifest examples and its process diagram are documented in the [project-context guide](../skills/project-context/GUIDE.md#git-backed-governing-documents).
+The [primary setup guide](setup-and-usage.md#governing-document-approval-during-feature-work)
+shows the separate specification and governing-document approvals; the
+[example catalog](examples/README.md) includes project-only and organization
+attachment choices.

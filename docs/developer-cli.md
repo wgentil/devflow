@@ -507,3 +507,18 @@ creates/adopts project documents. Choice JSON uses `mode` (`project-only`, `atta
 `create-org`), optional explicit `documents` and `overrides`; attachment requires `url`,
 creation requires `name` and absolute `target_dir` with optional `remote_url`.
 Plugin users invoke the skill; the agent supplies these arguments.
+
+For an existing organization source, copy
+[setup-attach-org.json](examples/setup-attach-org.json), replace its URL, and run
+`setup initialize` with that choice. The response contains `manifest.org.id` and
+`org_checkout`. Register the project and that checkout as separate repositories
+before storing the visible spec pair. After a human reviews the pair, `spec approve`
+records its exact hash. The first `plan validate` can then report
+`DOCUMENT_APPROVAL_REQUIRED` for `docs/devflow-context.json`. Use `document propose`
+on the project repository and that path, show the returned diff and before/after
+hashes to the human, then `document approve` with its `proposal_hash` and actor ID.
+Retry plan validation with a fresh operation ID. A later change to an applicable
+organization policy requires the same proposal and approval process in the
+organization repository before a new handoff; the current host keeps ownership
+while blocked. An unreachable URL or stale organization HEAD must be recovered
+first. A local path or `file://` URL is local-only.

@@ -153,3 +153,15 @@ preferences are described in [host recovery](hosts.md#review-fixes-and-remaining
 and the [optional CLI reference](developer-cli.md#scoped-routing-and-compatible-detached-resume).
 
 Repository-backed `spec store` requires a registered `--repo-id` and repository-relative `--path`. It writes and records a visible JSON/Markdown pair; approval rechecks both hashes. Omitting both options retains the explicit legacy journal-only flow.
+
+Guided setup can begin from the current Git directory with `setup inspect` and
+`setup initialize`; the [primary guide](setup-and-usage.md#guided-organization-and-project-setup)
+explains project-only setup, organization URL attachment and local-only sources.
+For an attached organization, register the returned `org_checkout` under its
+manifest ID. A new project manifest needs an exact `document propose` and
+`document approve` after spec approval and before plan validation succeeds.
+Plan, work, handoff and delivery check applicable policy again. Changed policy
+blocks a new handoff without transferring ownership; see the
+[governing approval example](examples/governing-approval.md). Legacy journal
+specifications remain usable; `spec migrate` creates a visible unapproved pair
+and requires renewed spec approval.

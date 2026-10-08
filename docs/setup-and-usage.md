@@ -60,8 +60,10 @@ so the agent must resolve material questions before proceeding.
 ```mermaid
 flowchart TD
     Invoke[Invoke workflow] --> Init[Discover project and initialize or resume]
-    Init --> Spec[Clarify and approve specification]
-    Spec --> Plan[Validate covered plan and dependencies]
+    Init --> Docs[Select project and organization documents]
+    Docs --> Spec[Clarify and approve visible specification pair]
+    Spec --> Policy[Review and approve exact governing diffs separately]
+    Policy --> Plan[Validate covered plan and dependencies]
     Spec -.-> Migration[Optional ordered migration increments]
     Migration --> Pilot[Run declared legacy and replacement pilot on hashed fixtures]
     Pilot -.-> Accept
@@ -318,6 +320,16 @@ replay reads historical receipts without consulting repository files.
 Developer command syntax and a sample manifest are in
 [the governing approval example](examples/governing-approval.md). Plugin users
 can ask DevFlow to perform these actions; no shell setup is required.
+
+In a clean project attached to an organization URL, the first plan validation
+stops until the visible specification pair is approved. It then names the new
+project manifest as `DOCUMENT_APPROVAL_REQUIRED`. After a human reviews and
+approves that exact manifest diff separately, plan validation can proceed with
+the inherited organization rules. A later edit to an applicable organization
+policy blocks a new handoff at the owning organization repository; the current
+host remains the owner. Review the new policy diff, approve it separately and
+retry the handoff with a new operation ID. An organization source whose HEAD has
+moved also needs explicit checkout recovery before policy can be trusted.
 
 
 Accepted governing receipts retain file bytes for reconstructing exact changes.

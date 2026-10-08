@@ -7,6 +7,7 @@ human approval, independent review, provider receipt or authoritative price.
 | Files | Used by | Adaptation |
 | --- | --- | --- |
 | [org.json](org.json), [project.json](project.json) | project-context | Replace values with actual organization/project answers |
+| [setup-project-only.json](setup-project-only.json), [setup-attach-org.json](setup-attach-org.json), [devflow-org.json](devflow-org.json), [devflow-context.json](devflow-context.json) | project-context, workflow | Choose the current Git project, replace the organization URL, and create referenced policy files before attachment |
 | [spec.json](spec.json) | specify | One authored requirement; add real criteria and unresolved questions |
 | [plan.json](plan.json) | plan-work | Replace specification hash; register app repository |
 | [greeting.py](greeting.py), [test_greeting.py](test_greeting.py), [test_runner.py](test_runner.py) | build-work | Put test in tests/; start with a failing implementation for RED |
@@ -63,3 +64,10 @@ idempotent candidate creation and required human reapproval.
 
 `setup-project-only.json` is the default guided document setup choice. Use the agent
 workflow for plugin onboarding; helper commands are in the optional developer CLI guide.
+`setup-attach-org.json` requires a reachable Git URL with a committed
+`docs/devflow-org.json` and its declared documents. A filesystem path or `file://`
+URL is local-only and must be reachable on another host. Setup returns an excluded
+runtime checkout path; register that checkout under the organization ID before
+inherited policy is checked. Review the new project manifest and approve its
+exact diff separately from the visible specification pair. See the
+[governing approval sequence](governing-approval.md).

@@ -14,6 +14,18 @@ stale if the files or accepted input baseline change before approval. A commit
 does not replace the accepted baseline; the proposal retains the accepted before
 image. Approvals for an earlier baseline cannot authorize a later restoration.
 
+For a newly attached organization, first register the `org_checkout` returned by
+setup under its manifest ID. Store and approve the visible project specification
+JSON/Markdown pair. A plan validation then identifies the uncommitted project
+manifest as `DOCUMENT_APPROVAL_REQUIRED`. Propose and approve
+`docs/devflow-context.json` in the project repository before retrying the plan
+with a new operation ID. If an applicable organization rule changes later,
+propose its path using the organization repository ID. A new handoff remains
+blocked and leaves the source host active until the exact changed policy is
+approved. If the organization URL cannot be reached or its checkout HEAD differs
+from the source HEAD, restore that source or select a current checkout first;
+DevFlow does not silently replace the checkout.
+
 A project manifest can explicitly exclude a rule for the feature:
 
 ```json
