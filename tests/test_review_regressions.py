@@ -188,7 +188,7 @@ class ReviewRegressions(unittest.TestCase):
             # Isolate home expansion without writing to or changing the real home.
             original = Path.expanduser
             def expand(value):
-                return root if str(value) == '~/control' else original(value)
+                return root if value.parts == ('~', 'control') else original(value)
             with patch.object(Path, 'expanduser', expand), redirect_stdout(stdout):
                 code = dispatcher.main(['context', 'set', '--root', '~/control',
                                         '--layer', 'org', '--file', str(path)])
