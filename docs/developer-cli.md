@@ -428,6 +428,11 @@ records an explicit attachment. Request fields: binding_id, host (claude/codex),
 session_id, actor_id, role, run_id, project_dir; reviewers also package_hash and
 item reviewers item_id. Capture version when loading skill instructions.
 `host status --root <control> --host <host> --session-id <session>` is read-only.
+For a new run in the same session after delivery or discard, use `host attach`
+with a new binding ID and the new active run ID. It retires the terminal binding
+and clears its task mappings atomically, then repairs the locator and task index.
+Retry the same operation ID if cache writing was interrupted. Active native work
+or a claimed repair cycle must be resolved before this transition.
 `host detach` and `host task-bind` use `--file`, `--root`, `--operation-id` and
 optional `--expected-version`. Task requests name binding_id/revision/task_id and
 scope item/delivery/review; items require item_id/token, reviews package_hash.

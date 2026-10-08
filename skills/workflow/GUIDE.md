@@ -190,6 +190,11 @@ See [setup](../../docs/setup-and-usage.md) and [host examples](../../docs/hosts.
 After an upgrade, ask “Resume my detached DevFlow binding using its current
 revision.” The agent checks compatible protocol/schema and unchanged identity,
 retains release history and remaps work. Exact mutation retries remain read-only.
+After delivering a run, ask “Attach this session to my new DevFlow run.” The
+agent uses a new binding ID and the new active run ID. DevFlow detaches the
+terminal run's binding in the same journal event and clears its old task
+mappings. An active worker or repair cycle must be resolved first; a live prior
+run still requires ordinary detach or handoff.
 A planning-only preference change keeps existing caps/allowlists unless you
 explicitly remove them. Native workers apply model controls to new invocations;
 manual parent selection and advisory recommendations remain available.

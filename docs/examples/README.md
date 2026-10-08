@@ -39,6 +39,10 @@ as GREEN. Run it with `python3 -B test_runner.py` from the application root.
 Host templates: [attachment](host-attach.json), [task mapping](host-task.json) and
 [handoff preparation](host-handoff.json). The agent fills actual host/session/task,
 project/run/item/token values; placeholders are not evidence or runnable identities.
+To switch the same session from a delivered or discarded run, adapt the attachment
+template with a new binding ID and the new active run ID. The old terminal
+binding and its task mappings retire in that attach operation; retry its exact
+operation ID to repair the locator and task index after interruption.
 See [host contracts](../hosts.md) and [developer syntax](../developer-cli.md).
 The unittest JSON runner imports project modules from its actual working directory,
 including when its bundled script is invoked by absolute path.

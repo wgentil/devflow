@@ -30,6 +30,30 @@ class HostTests(unittest.TestCase):
         self.state['runs']['run']['review_packages']={'pkg':{'role':'item','package_hash':'pkg'}}
         apply_host_event(self.state,'attach',attachment(binding_id='review',session_id='rs',actor_id='reviewer',role='item-reviewer',item_id='W1',package_hash='pkg'))
         self.assertEqual(len(self.state['host_bindings']),2)
+    def test_new_run_retires_delivered_session_binding(self):
+        prior=apply_host_event(self.state,'attach',attachment())
+        apply_host_event(self.state,'task-bind',{'binding_id':'b1','revision':1,'task_id':'task','scope':'item','item_id':'W1','token':'t'})
+        self.state['runs']['run']['status']='delivered'
+        self.state['runs']['next']={**copy.deepcopy(self.state['runs']['run']),'id':'next','status':'active'}
+        current=apply_host_event(self.state,'attach',attachment(binding_id='b2',run_id='next'))
+        self.assertEqual((prior['revision'],current['revision']),(1,1))
+        self.assertEqual(self.state['host_bindings']['b1']['status'],'detached')
+        self.assertEqual(self.state['host_bindings']['b1']['revision'],2)
+        self.assertEqual(binding_for_session(self.state,'codex','s1')['binding_id'],'b2')
+        self.assertEqual(self.state['runs']['run']['status'],'delivered')
+        self.assertFalse(self.state.get('host_tasks'))
+        mapped=apply_host_event(self.state,'task-bind',{'binding_id':'b2','revision':1,'task_id':'task','scope':'item','item_id':'W1','token':'t'})
+        self.assertEqual(mapped['run_id'],'next')
+    def test_terminal_switch_blocks_running_worker_without_retiring_binding(self):
+        apply_host_event(self.state,'attach',attachment())
+        self.state['runs']['run']['status']='delivered'
+        self.state['runs']['run']['native_invocations']={'work':{'status':'running','scope':{'binding_id':'b1'}}}
+        self.state['runs']['next']={**copy.deepcopy(self.state['runs']['run']),'id':'next','status':'active'}
+        with self.assertRaises(WorkflowError) as caught:
+            apply_host_event(self.state,'attach',attachment(binding_id='b2',run_id='next'))
+        self.assertEqual(caught.exception.code,'NATIVE_INVOCATION_ACTIVE')
+        self.assertEqual(self.state['host_bindings']['b1']['status'],'active')
+        self.assertNotIn('b2',self.state['host_bindings'])
     def test_old_implementer_cannot_review(self):
         self.state['runs']['run']['review_packages']={'pkg':{'role':'item'}}
         with self.assertRaises(WorkflowError): apply_host_event(self.state,'attach',attachment(role='item-reviewer',actor_id='original',item_id='W1',package_hash='pkg'))

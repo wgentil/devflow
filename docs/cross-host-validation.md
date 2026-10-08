@@ -10,8 +10,14 @@ all ten skills and four hooks. A separate isolated smoke fetched
 `wgentil/devflow` over HTTPS, installed `devflow@devflow-marketplace` version
 0.2.0 and discovered the same ten skills and four hooks. A new isolated GitHub
 marketplace install of the 0.3.0 package succeeded and discovered all ten skills.
-These checks do not establish native Codex installation readiness for the new
-release.
+An isolated native Codex CLI GitHub marketplace add and plugin install of 0.3.0
+also succeeded and reported version 0.3.0. The new 0.3.1 package requires a
+post-publication GitHub smoke.
+
+For the 0.3.1 terminal-binding fix, the full suite passed 396 tests. Claude
+marketplace validation passed, and an isolated local Codex marketplace install
+reported the enabled 0.3.1 package. The new cross-project cache test covers an
+exact retry after another control root has taken over the old project locator.
 
 ## Evidence
 

@@ -115,10 +115,14 @@ def apply_host_event(state: dict, kind: str, request: dict) -> dict:
         require(run.get('host_protocol_version') == 1 or req.get('adopt_legacy') is True or any(b['run_id']==run['id'] for b in bindings.values()), 'Pre-binding legacy run requires explicit legacy adoption.', 'LEGACY_ADOPTION_REQUIRED')
         require(any(repo.get('location') == req['project_dir'] for repo in run.get('repositories', {}).values()), 'Project does not match run repository.')
         existing = binding_for_session(state,req['host'],req['session_id'])
+        terminal_prior = (existing if existing and existing['run_id'] != req['run_id']
+                          and state['runs'][existing['run_id']]['status'] in {'delivered','discarded'}
+                          and not req.get('refresh') and not req.get('resume') else None)
         history = run.setdefault('implementer_actors', [])
         original = run.get('actors', {}).get('implementer')
         if original and original not in history: history.append(original)
-        require(existing is None or req.get('refresh') is True and existing['binding_id'] == req['binding_id'], 'Session already attached; detach or explicitly refresh.')
+        require(existing is None or terminal_prior is not None or req.get('refresh') is True and existing['binding_id'] == req['binding_id'], 'Session already attached; detach or explicitly refresh.')
+        if terminal_prior:require_no_native_work(state['runs'][terminal_prior['run_id']],terminal_prior['binding_id'])
         prior = bindings.get(req['binding_id'])
         if prior and (req.get('resume') or req.get('refresh')):require_no_native_work(run,prior['binding_id'])
         if req.get('resume'):
@@ -146,6 +150,12 @@ def apply_host_event(state: dict, kind: str, request: dict) -> dict:
             require(package and package.get('role') == role, 'Matching review package required.')
             require(req['actor_id'] not in history, 'Every implementing actor is excluded from independent review.')
             if role == 'item': require(req.get('item_id') in run.get('items', {}), 'Planned item required.')
+        if terminal_prior:
+            terminal_prior['status']='detached';terminal_prior['revision']+=1
+            tasks=state.get('host_tasks',{})
+            for key,task in list(tasks.items()):
+                if task.get('binding_id') == terminal_prior['binding_id']:
+                    del tasks[key]
         record = {**req, 'revision':prior['revision']+1 if prior else 1,'status':'active'}
         record.pop('refresh',None);record.pop('resume',None)
         record['release_history'] = deepcopy(prior.get('release_history', [prior['release']]))+[req['release']] if prior else [req['release']]

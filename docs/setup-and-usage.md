@@ -10,10 +10,18 @@ not provision an interpreter. Native Windows is outside current support.
 
 Codex and Claude have separate installations of the same shared package. Users
 choose when to upgrade. Both manifests and one skills/helper tree are included;
-the current package release is `v0.3.0`;
+the package version is `0.3.1`;
 the Claude marketplace descriptor is packaged at `.claude-plugin/marketplace.json`.
 The private GitHub repository `wgentil/devflow` serves the marketplace from
-`main`. Claude Code CLI users with access to that repository can install it:
+`main`. Codex users with access to that repository can install it:
+
+```sh
+codex plugin marketplace add wgentil/devflow
+codex plugin add devflow@devflow-marketplace
+codex plugin list
+```
+
+Claude Code CLI users can install it separately:
 
 ```sh
 claude plugin marketplace add wgentil/devflow
@@ -21,14 +29,17 @@ claude plugin install devflow@devflow-marketplace
 claude plugin list
 ```
 
-The third-party marketplace does not auto-update by default. To upgrade at a
+The third-party Claude marketplace does not auto-update by default. To upgrade at a
 time you choose, run `claude plugin update devflow@devflow-marketplace`, then
-start a new session or reload plugins. Align the Codex installation separately
+start a new session or reload plugins. For Codex, run `codex plugin marketplace
+upgrade devflow-marketplace` and select the new version in the plugin browser
+or run `codex plugin add devflow@devflow-marketplace`. Align the installations
 before a cross-host handoff; DevFlow checks exact installed release parity.
 For source development, `claude --plugin-dir` loads a local checkout for one
 session as described in the optional
 [developer guide](developer-cli.md#local-claude-package-check).
-Host-specific verification and remaining limitations
+An isolated Codex GitHub marketplace install of 0.3.0 succeeded; 0.3.1 will be
+verified after publication. Host-specific verification and remaining limitations
 are recorded in [hosts](hosts.md) and [validation](cross-host-validation.md).
 The [evidence-loop acceptance review](evidence-loops-acceptance.md) separates
 implemented policy from live host behavior and remaining proof limits.
@@ -221,6 +232,14 @@ be bypassed by detaching or pretending the run is legacy. Lost locators are repa
 through explicit attachment retry; they never grant authority. Known mapped tasks
 block if their locator points at the wrong root or binding. An exact committed
 retry returns its original receipt even after detach/refresh/transfer.
+
+When a session starts a new active run after its previous run was delivered or
+discarded, attach with a new binding ID and the new run ID. The journal detaches
+the terminal binding and removes its session task mappings atomically. The host
+locator and task index are then rebuilt for the new binding, including on an
+exact attach retry. Active native work or a claimed repair cycle blocks the
+switch until resolved. A nonterminal run still needs the normal detach or
+handoff path.
 
 ## Delivery and optional workflows
 

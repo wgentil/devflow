@@ -97,6 +97,14 @@ Compatible refresh/resume preserves
 attempts and immutable release history. Unsupported journal contracts require a
 separate migration; DevFlow never installs or chooses an upgrade.
 
+A session bound to a delivered or discarded run can attach to a different active
+run using a new binding ID. One journal event detaches the terminal binding and
+clears its old task mappings, then activates the new binding. The CLI rewrites
+the locator and task index; retry the same attach operation ID to repair those
+caches after an interruption. A running native worker or claimed repair cycle
+blocks this transition. Refresh remains limited to the same run, and an active
+prior run still requires detach or handoff.
+
 ## Model profiles and lifecycle
 
 Specification/planning/debugging/review/acceptance/security request deep-reasoning

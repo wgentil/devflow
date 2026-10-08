@@ -151,6 +151,9 @@ records; explicit adoption is required before assigning a first host binding.
 Host retry, compatible detached resume, scoped receipts and field-preserving model
 preferences are described in [host recovery](hosts.md#review-fixes-and-remaining-model-scope)
 and the [optional CLI reference](developer-cli.md#scoped-routing-and-compatible-detached-resume).
+An attach to a new active run also retires the same session's binding to a
+delivered or discarded run and clears its old task mappings in one journal
+event. The attach retry repairs the host locator and task index.
 
 Repository-backed `spec store` requires a registered `--repo-id` and repository-relative `--path`. It writes and records a visible JSON/Markdown pair; approval rechecks both hashes. Omitting both options retains the explicit legacy journal-only flow.
 

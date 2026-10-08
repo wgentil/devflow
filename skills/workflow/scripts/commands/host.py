@@ -126,6 +126,8 @@ def dispatch(parsed):
                 if current.get('status')=='active' and current.get('revision')==result.get('revision'):
                     from workflow_lib.host_locators import write_locator
                     write_locator(Path(current['project_dir']),current['host'],current['session_id'],Path(parsed.root),current['binding_id'])
+                    _repair_task_index(prior_state['data'],current,Path(parsed.root))
+                    _repair_retired_task_indexes(prior_state['data'],current,Path(parsed.root))
             if parsed.host_command == 'task-bind':
                 _repair_task_index(prior_state['data'],result,Path(parsed.root))
             return result
@@ -205,6 +207,9 @@ def dispatch(parsed):
     if parsed.host_command in {'attach','handoff-accept','legacy-adopt'}:
         from workflow_lib.host_locators import write_locator
         write_locator(Path(result['project_dir']),result['host'],result['session_id'],Path(parsed.root),result['binding_id'])
+        current_data=read_state(Path(parsed.root))['data']
+        _repair_task_index(current_data,result,Path(parsed.root))
+        _repair_retired_task_indexes(current_data,result,Path(parsed.root))
     if parsed.host_command == 'task-bind':
         _repair_task_index(read_state(Path(parsed.root))['data'],result,Path(parsed.root))
     return result
@@ -219,5 +224,22 @@ def _repair_task_index(data, result, root):
     from workflow_lib.host_locators import write_task_index
     binding=data.get('host_bindings',{}).get(result['binding_id'],{})
     if binding.get('status')!='active' or binding.get('revision')!=result.get('revision'):return
-    tasks=[t['task_id'] for t in data.get('host_tasks',{}).values() if t['host']==binding['host'] and t['session_id']==binding['session_id']]
+    tasks=[t['task_id'] for t in data.get('host_tasks',{}).values() if t.get('binding_id')==binding['binding_id'] and t['host']==binding['host'] and t['session_id']==binding['session_id']]
     write_task_index(Path(binding['project_dir']),binding['host'],binding['session_id'],root,tasks)
+
+
+def _repair_retired_task_indexes(data, current, root):
+    from workflow_lib.host_locators import read_locator, write_task_index
+    from workflow_lib.store import WorkflowError
+    for binding in data.get('host_bindings',{}).values():
+        if (binding['binding_id'] == current['binding_id'] or binding['host'] != current['host']
+                or binding['session_id'] != current['session_id'] or binding['status'] != 'detached'
+                or binding['project_dir'] == current['project_dir']
+                or data['runs'][binding['run_id']]['status'] not in {'delivered','discarded'}):
+            continue
+        project=Path(binding['project_dir'])
+        if not project.is_dir():continue
+        try:locator=read_locator(project,binding['host'],binding['session_id'])
+        except WorkflowError:continue
+        if locator and locator['binding_id']==binding['binding_id'] and Path(locator['control_root']).resolve()==Path(root).resolve():
+            write_task_index(project,binding['host'],binding['session_id'],root,[])

@@ -47,6 +47,9 @@ flowchart TD
     DeliverySpecGate --> Manifest["Prepare and verify exact delivery manifest"]
     Manifest --> Choice["Human chooses merge, PR or retained branch"]
     Choice --> Delivered["Execute authorized delivery and record actual result"]
+    Delivered --> NewRun{"Start another run in this session?"}
+    NewRun -->|Yes| Retire["Attach new run; retire terminal binding and clear old task mappings"]
+    Retire --> Attach
     Delivered -.-> Reconcile["issues: scoped authorization and durable outbox"]
     Delivered -.-> Stats["stats: import usage and freeze outcome reports"]
     Stats -.-> OptIn["Optional trace opt-in and redacted run projection"]
@@ -188,6 +191,10 @@ explicit `clear` for removal. Known mapped tasks with inconsistent locators bloc
 After a compatible upgrade, refresh an active binding or explicitly resume the
 exact detached revision without changing identity, then remap tasks. See the
 [recovery contracts](../../docs/hosts.md#review-fixes-and-remaining-model-scope).
+To attach this session to a new active run after its prior run is delivered or
+discarded, use a new binding ID and the new run ID. Attachment atomically detaches
+the terminal binding and clears its task mappings; a running worker or repair
+cycle blocks the switch. Do not refresh the old binding with a different run ID.
 
 Before delegated model work, follow the [native invocation guide](../../docs/native-models.md).
 Keep the actual actor/stage and item token or review package. Hooks never launch

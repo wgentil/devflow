@@ -40,6 +40,64 @@ class IntegrationTests(unittest.TestCase):
                 with self.assertRaises(WorkflowError):transact(root,3,'stale',{'kind':'fixture','payload':{'changed':True}})
             finally:HOST_CONTEXT.reset(token)
             self.assertNotIn('changed',read_state(root)['data'])
+    def test_cli_new_run_attachment_replaces_terminal_locator_and_task_index(self):
+        from workflow_lib.host_locators import write_locator, write_task_index, read_locator, read_task_index
+        with tempfile.TemporaryDirectory() as temp:
+            project=Path(temp)/'project';project.mkdir();subprocess.run(['git','init','-q',str(project)],check=True)
+            root=project/'.devflow/control'
+            state=host_state(str(project.resolve()))
+            apply_host_event(state,'attach',attachment(str(project.resolve()),host='claude'))
+            apply_host_event(state,'task-bind',{'binding_id':'b1','revision':1,'task_id':'old-task','scope':'item','item_id':'W1','token':'t'})
+            state['runs']['run']['status']='delivered'
+            state['runs']['next']={**json.loads(json.dumps(state['runs']['run'])),'id':'next','status':'active'}
+            transact(root,0,'seed',{'kind':'fixture','payload':state})
+            write_locator(project,'claude','s1',root,'b1')
+            write_task_index(project,'claude','s1',root,['old-task'])
+            request=attachment(str(project.resolve()),host='claude',binding_id='b2',run_id='next')
+            request.pop('release')
+            payload=project/'attach.json';payload.write_text(json.dumps(request))
+            loaded=project/'loaded.json';loaded.write_text(json.dumps(release_descriptor()))
+            result=subprocess.run([sys.executable,'-B',str(ROOT/'skills/workflow/scripts/run.py'),'host','attach','--root',str(root),'--file',str(payload),'--loaded-release',str(loaded),'--operation-id','next-attach'],capture_output=True,text=True)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            self.assertEqual(read_locator(project,'claude','s1')['binding_id'],'b2')
+            self.assertEqual(read_task_index(project,'claude','s1')['task_ids'],[])
+            self.assertEqual(read_state(root)['data']['host_bindings']['b1']['status'],'detached')
+            retry=subprocess.run([sys.executable,'-B',str(ROOT/'skills/workflow/scripts/run.py'),'host','attach','--root',str(root),'--file',str(payload),'--loaded-release',str(loaded),'--operation-id','next-attach'],capture_output=True,text=True)
+            self.assertEqual(retry.returncode,0,retry.stdout+retry.stderr)
+            self.assertEqual(read_task_index(project,'claude','s1')['task_ids'],[])
+    def test_cli_terminal_switch_clears_old_project_task_cache(self):
+        from workflow_lib.host_locators import write_locator, write_task_index, read_task_index
+        with tempfile.TemporaryDirectory() as temp:
+            old=Path(temp)/'old';new=Path(temp)/'new'
+            for project in (old,new):
+                project.mkdir();subprocess.run(['git','init','-q',str(project)],check=True)
+            root=Path(temp)/'control'
+            state=host_state(str(old.resolve()))
+            apply_host_event(state,'attach',attachment(str(old.resolve()),host='claude'))
+            apply_host_event(state,'task-bind',{'binding_id':'b1','revision':1,'task_id':'old-task','scope':'item','item_id':'W1','token':'t'})
+            state['runs']['run']['status']='delivered'
+            state['runs']['next']={**json.loads(json.dumps(state['runs']['run'])),'id':'next','status':'active','repositories':{'repo':{'location':str(new.resolve())}}}
+            transact(root,0,'seed',{'kind':'fixture','payload':state})
+            write_locator(old,'claude','s1',root,'b1')
+            write_task_index(old,'claude','s1',root,['old-task'])
+            request=attachment(str(new.resolve()),host='claude',binding_id='b2',run_id='next')
+            request.pop('release')
+            payload=new/'attach.json';payload.write_text(json.dumps(request))
+            loaded=new/'loaded.json';loaded.write_text(json.dumps(release_descriptor()))
+            args=[sys.executable,'-B',str(ROOT/'skills/workflow/scripts/run.py'),'host','attach','--root',str(root),'--file',str(payload),'--loaded-release',str(loaded),'--operation-id','switch-project']
+            result=subprocess.run(args,capture_output=True,text=True)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            self.assertEqual(read_task_index(old,'claude','s1')['task_ids'],[])
+            retry=subprocess.run(args,capture_output=True,text=True)
+            self.assertEqual(retry.returncode,0,retry.stdout+retry.stderr)
+            self.assertEqual(read_task_index(old,'claude','s1')['task_ids'],[])
+            newer_root=Path(temp)/'other-control'
+            write_locator(old,'claude','s1',newer_root,'newer-binding')
+            write_task_index(old,'claude','s1',newer_root,['new-task'])
+            retry=subprocess.run(args,capture_output=True,text=True)
+            self.assertEqual(retry.returncode,0,retry.stdout+retry.stderr)
+            self.assertEqual(read_task_index(old,'claude','s1')['control_root'],str(newer_root.resolve()))
+            self.assertEqual(read_task_index(old,'claude','s1')['task_ids'],['new-task'])
     def test_reviewer_cannot_mutate_implementation(self):
         state=host_state();state['runs']['run']['review_packages']={'pkg':{'role':'branch'}}
         apply_host_event(state,'attach',attachment(binding_id='rb',role='branch-reviewer',actor_id='ra',package_hash='pkg'))
