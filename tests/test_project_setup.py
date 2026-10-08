@@ -17,6 +17,8 @@ class ProjectSetupTests(unittest.TestCase):
         result=inspect_project_setup(nested)
         self.assertEqual(result['project_dir'],str(self.repo))
         self.assertEqual(result['choices'],['project-only','attach-org','create-org'])
+        self.assertTrue(result['ground_interview']['required'])
+        self.assertFalse(result['ground_interview']['ready'])
         self.assertFalse((self.repo/'docs').exists())
         self.assertFalse((self.repo/'.devflow').exists())
     def test_idempotent_project_only(self):

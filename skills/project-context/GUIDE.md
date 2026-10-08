@@ -147,7 +147,8 @@ flowchart TD
     Create --> Adopt
     Project --> Adopt
     Adopt --> Manifest[Create or preserve visible manifest]
-    Manifest --> Fresh{Organization HEAD current?}
+    Manifest --> Ground[Inspect ground interview readiness]
+    Ground --> Fresh{Organization HEAD current?}
     Fresh -->|No| Recover[Block stale checkout; explicit recovery]
     Fresh -->|Yes| Human[Human policy review and approval]
 ```

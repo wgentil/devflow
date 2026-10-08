@@ -9,8 +9,8 @@ recovery notes. Start with [workflow](../skills/workflow/GUIDE.md).
 
 | Skill | Usage guide | Purpose |
 | --- | --- | --- |
-| workflow | [Guide](../skills/workflow/GUIDE.md) | Coordinate and resume the complete process |
-| project-context | [Guide](../skills/project-context/GUIDE.md) | Resolve context and register repositories |
+| workflow | [Guide](../skills/workflow/GUIDE.md) | Coordinate the process and first-use ground interview |
+| project-context | [Guide](../skills/project-context/GUIDE.md) | Resolve context, register repositories and inspect interview readiness |
 | specify | [Guide](../skills/specify/GUIDE.md) | Refine and approve requirements |
 | plan-work | [Guide](../skills/plan-work/GUIDE.md) | Map requirements to dependent work items |
 | build-work | [Guide](../skills/build-work/GUIDE.md) | Record verification and handle rework |

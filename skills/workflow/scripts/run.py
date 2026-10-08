@@ -138,6 +138,8 @@ def main(argv: list[str] | None = None) -> int:
     setup_commands = setup.add_subparsers(dest='setup_command', required=True)
     setup_inspect = setup_commands.add_parser('inspect')
     setup_inspect.add_argument('--project-dir', default='.')
+    setup_ground = setup_commands.add_parser('ground-check')
+    setup_ground.add_argument('--project-dir', default='.')
     setup_initialize = setup_commands.add_parser('initialize')
     setup_initialize.add_argument('--project-dir', default='.')
     setup_initialize.add_argument('--choice', required=True, help='JSON setup choice file')
@@ -729,8 +731,13 @@ def main(argv: list[str] | None = None) -> int:
             result = {"finding_id": parsed.finding_id, "status": "resolved", "state_version": receipt["state"]["version"]}
         elif parsed.command == 'setup':
             from workflow_lib.project_setup import inspect_project_setup, initialize_project_documents
-            result = (inspect_project_setup(Path(parsed.project_dir)) if parsed.setup_command == 'inspect'
-                      else initialize_project_documents(Path(parsed.project_dir), _json_file(parsed.choice), parsed.operation_id))
+            if parsed.setup_command == 'inspect':
+                result = inspect_project_setup(Path(parsed.project_dir))
+            elif parsed.setup_command == 'ground-check':
+                from workflow_lib.ground_interview import inspect_ground_interview
+                result = inspect_ground_interview(Path(parsed.project_dir))
+            else:
+                result = initialize_project_documents(Path(parsed.project_dir), _json_file(parsed.choice), parsed.operation_id)
         elif parsed.command == "build":
             result = dispatch_command_group(parsed)
         elif parsed.command in {"review", "delivery", "issues", "migrate", "stats", "ingest", "docs", "harden", "host", "repair", "improve"}:

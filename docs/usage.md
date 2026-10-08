@@ -158,7 +158,7 @@ event. The attach retry repairs the host locator and task index.
 Repository-backed `spec store` requires a registered `--repo-id` and repository-relative `--path`. It writes and records a visible JSON/Markdown pair; approval rechecks both hashes. Omitting both options retains the explicit legacy journal-only flow.
 
 Guided setup can begin from the current Git directory with `setup inspect` and
-`setup initialize`; the [primary guide](setup-and-usage.md#guided-organization-and-project-setup)
+`setup initialize`; `setup ground-check --project-dir .` reports interview readiness. The [primary guide](setup-and-usage.md#guided-organization-and-project-setup)
 explains project-only setup, organization URL attachment and local-only sources.
 For an attached organization, register the returned `org_checkout` under its
 manifest ID. A new project manifest needs an exact `document propose` and

@@ -64,7 +64,21 @@ Ordinary host work stays inert until explicit attachment and task mapping.
 
 Describe the intended outcome. The agent gathers relevant context, interviews
 unresolved requirements and shows a written specification for exact-content
-approval. Changes require renewed approval. Semantic gap discovery remains
+approval. For a newly initialized project, DevFlow first conducts a ground
+interview in Git-trackable `docs/devflow-ground-interview.json`. It covers product
+and users, constraints, architecture, languages, coding and lint standards, data
+and database, API and UI frameworks, design system, accessibility and
+localization, security and privacy, integrations, testing, performance and
+reliability, release, operations, and team conventions. The agent inspects code
+and inherited organization rules, then asks only for missing choices. Each topic
+is answered, established with source references, deferred with a reason, or
+not applicable with a reason. Material deferrals block repository-backed planning
+and work. The helper checks the inventory; the agent judges answer quality and
+materiality. Older manifests without an interview declaration retain legacy
+behavior. See the [workflow guide](../skills/workflow/GUIDE.md#first-use-ground-interview).
+Feature-specific gaps still belong in the spec. If the baseline changes, reassess
+affected specifications, plans, verification and governing documents. Changes
+require renewed approval. Semantic gap discovery remains
 agent-led; the helper validates structure and lists recorded gaps, rather than
 proving semantic completeness. Approval currently permits recorded unanswered gaps,
 so the agent must resolve material questions before proceeding.
@@ -73,7 +87,8 @@ so the agent must resolve material questions before proceeding.
 flowchart TD
     Invoke[Invoke workflow] --> Init[Discover project and initialize or resume]
     Init --> Docs[Select project and organization documents]
-    Docs --> Spec[Clarify and approve visible specification pair]
+    Docs --> Ground[First-use ground interview; resolve material choices]
+    Ground --> Spec[Clarify and approve visible specification pair]
     Spec --> Policy[Review and approve exact governing diffs separately]
     Policy --> Impact[Record plan and verification reassessment after changes]
     Impact --> Fresh[Revalidate plan; start a fresh run for changed digest]

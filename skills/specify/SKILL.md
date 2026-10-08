@@ -9,7 +9,7 @@ description: Create or extend requirements, record assumptions and source citati
 
 ```mermaid
 flowchart TD
-    Input["Intent, specification sources and applicable application contracts"] --> Native["Resolve specification profile for optional scoped native worker"]
+    Input["Intent, ground interview decisions, specification sources and applicable contracts"] --> Native["Resolve specification profile for optional scoped native worker"]
     Native --> Draft["Create or extend requirements with provenance"]
     Draft --> Inspect["Agent checks scope, contradictions and missing decisions"]
     Inspect --> Gaps{"Unresolved questions?"}
@@ -32,6 +32,10 @@ with unanswered recorded gaps. Any content change requires renewed approval.
 New approvals use a selected registered repository and visible JSON/Markdown pair, typically `docs/specs/0063-ios-safari-suite.json` and `.md`. The repository files are authoritative: approval checks deterministic Markdown and both recorded hashes immediately before journaling. Ignored paths, `.devflow`, and paths escaping the repository are rejected. Existing journal-only flows remain supported as explicit legacy behavior.
 
 Use `new`, `extend`, or `migrate` mode. Preserve authored, derived, and assumed provenance; cite path, commit, and line range for derived facts. Ask only unresolved gap questions. Review the rendered specification with the user before recording approval. Approval must include the exact content hash and becomes stale when content changes.
+Before the first feature spec in a new project, complete the project-context
+ground interview. Reuse its decisions and applicable governing rules for later
+specs, then interview feature-specific gaps dynamically. A ready checklist is
+structural evidence, not proof that all semantic gaps were found.
 
 ## Documentation
 

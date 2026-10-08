@@ -66,9 +66,17 @@ def require_current_inputs(root: Path, state: dict, phase: str, run_id: str | No
     from .document_approvals import require_current_governing_inputs
     spec = require_current_spec(root, state, phase)
     governing = require_current_governing_inputs(root, read_state(root), phase)
+    data = read_state(root)['data']
+    pair = data.get('spec_pair')
+    grounding = {}
+    if pair:
+        registered = data.get('repositories', {}).get(pair['repo_id'])
+        if registered and (Path(registered['location']) / 'docs/devflow-context.json').is_file():
+            from .ground_interview import require_ground_interview
+            grounding = require_ground_interview(Path(registered['location']))
     if run_id and governing:
         run = read_state(root)['data'].get('runs', {}).get(run_id)
         if run and run.get('governing_digest') != governing['effective_digest']:
             raise WorkflowError('RUN_GOVERNING_INPUTS_STALE',
                                 'this run uses prior governing inputs; preserve it for audit and start a fresh run from the reassessed plan')
-    return {'spec': spec, 'governing': governing}
+    return {'spec': spec, 'governing': governing, 'grounding': grounding}

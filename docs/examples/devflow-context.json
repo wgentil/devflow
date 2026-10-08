@@ -23,5 +23,8 @@
   "overrides": {
     "CODE-1": "docs/project-coding.md",
     "EVENT": "docs/contracts/project-event.schema.json"
+  },
+  "ground_interview": {
+    "path": "docs/devflow-ground-interview.json"
   }
 }

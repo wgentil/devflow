@@ -5,6 +5,7 @@ from workflow_lib.usage import import_usage
 from workflow_lib.pricing import store_prices,price_usage
 from workflow_lib.reporting import rollup
 from workflow_lib.store import read_state
+from workflow_lib.ground_interview import TOPICS
 
 SCRIPT = Path(__file__).resolve().parents[1] / 'skills/workflow/scripts/run.py'
 
@@ -35,6 +36,9 @@ class RepositoryEvidenceFlowTests(unittest.TestCase):
    setup=call('setup','initialize','--project-dir',project,'--choice',source('setup.json',{'mode':'attach-org','url':str(org)}),'--operation-id','setup')
    self.assertEqual(setup['portability'],'local-only')
    self.assertEqual(setup['manifest']['org']['id'],'team')
+   (project/'docs/devflow-ground-interview.json').write_text(json.dumps({
+    'schema_version':1,'topics':{name:{'status':'answered','material':True,'decision':'Fixture decision for '+name}
+                                 for name in TOPICS}})+'\n')
    self.assertFalse(subprocess.run(['git','-C',str(project),'check-ignore','-q','.devflow/control'],check=False).returncode)
    call('repo','register','--root',root,'--repo-id','app','--location',project,'--operation-id','register-app')
    call('repo','register','--root',root,'--repo-id','team','--location',setup['org_checkout'],'--operation-id','register-team')

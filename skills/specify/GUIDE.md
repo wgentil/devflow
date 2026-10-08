@@ -8,6 +8,10 @@ For plugin use, ask DevFlow to refine the requirements, store the pair in the se
 Create requirements in `new`, `extend` or `migrate` mode. Each requirement needs a
 stable ID, text, acceptance criteria and authored/derived/assumed provenance.
 Use project context and source indexes when grounding existing behavior.
+For newly initialized projects, consult the ground interview and inherited rules
+before a feature specification. Resolve material baseline deferrals first. Ask
+feature-specific questions here and record them in spec gaps. An interview
+answer is context, not feature specification approval.
 
 ## Validate, refine and approve example
 

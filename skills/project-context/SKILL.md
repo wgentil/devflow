@@ -50,6 +50,24 @@ Organization checkout HEAD must match the source's advertised HEAD. On
 request explicit recovery authorization; do not reset or switch a user checkout.
 See the companion guide for stale runtime clone recovery.
 
+## Ground interview checkpoint
+
+For a new project, inspect repository files and inherited organization rules
+before asking questions. Use `setup ground-check` to see the required topic
+inventory and current status. Cover product/users, constraints, architecture,
+languages, standards and linting, data/database/API, UI and design system,
+accessibility/localization, security/privacy, integrations, testing,
+performance/reliability, deployment/release, operations and team conventions.
+Ask only unresolved material decisions. Record every topic in the visible
+`docs/devflow-ground-interview.json` using established (with source references),
+answered (with the decision), deferred (with reason and materiality), or
+not-applicable (with reason) status. Recheck with `setup ground-check`; a material
+deferral blocks plan and implementation preflights for new manifests. The helper
+checks completeness and shape, while the agent and user judge relevance, truth
+and materiality. Use organization/project governing documents for durable rules;
+this inventory does not approve or override them. Existing manifests without the
+ground interview declaration are compatible and can adopt it by reviewed change.
+
 Application API, data and event contracts use the `application-contracts`
 repository-document category. Preserve existing OpenAPI YAML/JSON and JSON
 Schema paths and bytes; one machine-readable file declares one stable rule ID.

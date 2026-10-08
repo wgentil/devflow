@@ -24,7 +24,9 @@ def inspect_project_setup(project_dir: Path) -> dict:
             if path.suffix.lower() in {'.md','.json','.yaml','.yml'} and not path.is_symlink():
                 docs.append(str(path.relative_to(project)))
     docs.sort()
+    from .ground_interview import inspect_ground_interview
     return {'project_dir':str(project), 'manifest':manifest, 'existing_documents':docs,
+            'ground_interview':inspect_ground_interview(project),
             'candidate_org_sources':[manifest['org']] if manifest and manifest.get('org') else [],
             'choices':['project-only','attach-org','create-org'], 'default':'project-only'}
 
@@ -84,7 +86,8 @@ def initialize_project_documents(project_dir: Path, choice: dict, operation_id: 
         result = _result(project,existing,True)
         _validate_documents(project,existing,Path(result['org_checkout']) if result['org_checkout'] else None,effective=True)
         return result
-    manifest={'schema_version':1,'org':None,'documents':choice.get('documents',[]),'overrides':choice.get('overrides',{})}
+    manifest={'schema_version':1,'org':None,'documents':choice.get('documents',[]),'overrides':choice.get('overrides',{}),
+              'ground_interview':{'path':'docs/devflow-ground-interview.json'}}
     if not isinstance(manifest['documents'],list) or not isinstance(manifest['overrides'],dict):
         raise WorkflowError('INVALID_GOVERNING_DOCS','documents array and overrides object are required')
     _validate_documents(project,manifest)

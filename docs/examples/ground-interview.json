@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "topics": {
+    "product-users": {
+      "status": "answered",
+      "material": true,
+      "decision": "Example decision for product-users; replace with the project-specific answer before use."
+    },
+    "constraints": {
+      "status": "answered",
+      "material": true,
+      "decision": "Example decision for constraints; replace with the project-specific answer before use."
+    },
+    "architecture": {
+      "status": "answered",
+      "material": true,
+      "decision": "Example decision for architecture; replace with the project-specific answer before use."
+    },
+    "languages": {
+      "status": "established",
+      "material": true,
+      "decision": "Python 3.11 or later.",
+      "sources": [
+        "pyproject.toml:requires-python"
+      ]
+    },
+    "coding-standards": {
+      "status": "answered",
+      "material": true,
+      "decision": "Example decision for coding-standards; replace with the project-specific answer before use."
+    },
+    "lint-format": {
+      "status": "answered",
+      "material": true,
+      "decision": "Example decision for lint-format; replace with the project-specific answer before use."
+    },
+    "data": {
+      "status": "answered",
+      "material": true,
+      "decision": "Example decision for data; replace with the project-specific answer before use."
+    },
+    "database": {
+      "status": "not-applicable",
+      "material": false,
+      "reason": "Example command-line utility has no persistent database or user interface; replace after project review."
+    },
+    "api-layer": {
+      "status": "answered",
+      "material": true,
+      "decision": "Example decision for api-layer; replace with the project-specific answer before use."
+    },
+    "ui-framework": {
+      "status": "not-applicable",
+      "material": false,
+      "reason": "Example command-line utility has no persistent database or user interface; replace after project review."
+    },
+    "design-system": {
+      "status": "not-applicable",
+      "material": false,
+      "reason": "Example command-line utility has no persistent database or user interface; replace after project review."
+    },
+    "accessibility-localization": {
+      "status": "not-applicable",
+      "material": false,
+      "reason": "Example command-line utility has no persistent database or user interface; replace after project review."
+    },
+    "security-privacy": {
+      "status": "answered",
+      "material": true,
+      "decision": "Example decision for security-privacy; replace with the project-specific answer before use."
+    },
+    "integrations": {
+      "status": "answered",
+      "material": true,
+      "decision": "Example decision for integrations; replace with the project-specific answer before use."
+    },
+    "testing": {
+      "status": "answered",
+      "material": true,
+      "decision": "Example decision for testing; replace with the project-specific answer before use."
+    },
+    "performance-reliability": {
+      "status": "answered",
+      "material": true,
+      "decision": "Example decision for performance-reliability; replace with the project-specific answer before use."
+    },
+    "deployment-release": {
+      "status": "answered",
+      "material": true,
+      "decision": "Example decision for deployment-release; replace with the project-specific answer before use."
+    },
+    "operations": {
+      "status": "answered",
+      "material": true,
+      "decision": "Example decision for operations; replace with the project-specific answer before use."
+    },
+    "team-conventions": {
+      "status": "answered",
+      "material": true,
+      "decision": "Example decision for team-conventions; replace with the project-specific answer before use."
+    }
+  }
+}

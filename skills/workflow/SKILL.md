@@ -21,7 +21,8 @@ flowchart TD
     Reassess --> Fresh["Fresh run when governing digest changed"]
     Fresh --> Plan
     Init["Discover Git project and initialize/resume"] --> Attach["Explicit host/session binding"]
-    Attach --> Context["project-context: resolve scoped context"] --> Spec["specify: create or refine requirements"]
+    Attach --> Context["project-context: resolve scoped context"] --> Ground["First-use ground interview: inspect evidence, close material decisions"]
+    Ground --> Spec["specify: create or refine requirements"]
     Sources["ingest: index source evidence"] -.-> Spec
     Issues["issues: capture and group complete snapshot"] -.-> Spec
     Migration["migrate: map parity and increment dependencies"] -.-> Spec
@@ -242,6 +243,21 @@ for read-only discovery and `setup initialize` with the selected choice. The age
 runs these helpers; plugin users need no folders, shell variables, or Python commands.
 Adopt existing documents by explicit category, path and rule IDs. Never infer that
 setup approves policy. An unavailable organization source blocks recovery/handoff.
+
+### First-use ground interview
+After setup and organization resolution, inspect the project, inherited rules and
+existing decisions. Use the `project-context` ground interview checklist before
+drafting the first feature specification. Ask only material decisions that the
+sources do not settle; record each topic as established, answered, deferred, or
+not applicable in visible `docs/devflow-ground-interview.json`. Record evidence
+for established decisions and reasons for deferrals or exclusions. A material
+deferral blocks new plan and implementation preflights. Do not claim that the
+helper can determine whether a decision is material or whether an answer is
+semantically sound; make those judgments with the user. Existing projects without
+the new manifest field retain legacy behavior until they explicitly adopt the
+ground interview. Reuse the record for later features, asking new questions only
+when scope or evidence changes. Governing documents and their approvals remain
+separate from this decision inventory.
 
 Organization checkout HEAD must match the source's advertised HEAD. On
 `GOVERNING_SOURCE_STALE`, block policy resolution and select a current clone or

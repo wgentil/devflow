@@ -11,6 +11,22 @@ Coordinate the whole process shown in [SKILL.md](SKILL.md). Begin with registere
 repositories, resolved context, a human-approved specification and a validated
 plan. Preparation is covered by the context, specification and planning guides.
 
+## First-use ground interview
+
+After guided setup, inspect existing code, repository documents and inherited
+organization rules. Record the project baseline in
+`docs/devflow-ground-interview.json` using the
+[complete example](../../docs/examples/ground-interview.json). Ask focused
+questions only for decisions that evidence cannot establish. Record each topic
+as `answered`, `established` with source references, `deferred` with a reason,
+or `not-applicable` with a reason. Mark material choices explicitly; material
+deferrals block repository-backed planning and work. The agent checks the quality
+of decisions and whether each choice is material. Revisit the baseline when
+project choices change and reassess affected feature work. Older manifests
+without the declaration are compatible and are not retroactively gated.
+The [project-context guide](../project-context/GUIDE.md) covers setup; the
+[specify guide](../specify/GUIDE.md) covers feature-specific gaps.
+
 ## Start, inspect and resume
 
 ```sh
@@ -305,7 +321,8 @@ flowchart TD
     Create --> Adopt
     Project --> Adopt
     Adopt --> Manifest[Create or preserve visible manifest]
-    Manifest --> Fresh{Organization HEAD current?}
+    Manifest --> Ground[Ground interview: establish or ask missing choices]
+    Ground --> Fresh{Organization HEAD current?}
     Fresh -->|No| Recover[Block stale checkout; explicit recovery]
     Fresh -->|Yes| Human[Human policy review and approval]
 ```

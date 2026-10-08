@@ -507,6 +507,8 @@ Repository-backed `spec store` requires a registered `--repo-id` and repository-
 ### Guided setup helpers (optional developer reference)
 
 `python3 skills/workflow/scripts/run.py setup inspect --project-dir .` is read-only.
+`python3 skills/workflow/scripts/run.py setup ground-check --project-dir .` is also
+read-only and reports missing topics and material deferrals.
 `python3 skills/workflow/scripts/run.py setup initialize --project-dir . --choice docs/examples/setup-project-only.json --operation-id setup-1`
 creates/adopts project documents. Choice JSON uses `mode` (`project-only`, `attach-org`,
 `create-org`), optional explicit `documents` and `overrides`; attachment requires `url`,
