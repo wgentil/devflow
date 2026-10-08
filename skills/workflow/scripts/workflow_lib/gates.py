@@ -215,9 +215,10 @@ def accept_requirements(run: dict, report: dict, repository_snapshots: dict) -> 
         if supplied.get("head") != value.get("head") or Path(supplied.get("location", "")).expanduser().resolve() != Path(value["location"]).resolve():
             raise ValueError("acceptance repository snapshots differ from the reviewed heads")
         location = Path(value["location"])
-        changed = set(_git_text(location, "diff", "--name-only", f"{value['base']}..{value['head']}").splitlines())
-        changed.update(_git_text(location, "diff", "--name-only", "HEAD").splitlines())
-        changed.update(_git_text(location, "ls-files", "--others", "--exclude-standard").splitlines())
+        from .git_paths import git_paths
+        changed = set(git_paths(location, "diff", "--name-only", f"{value['base']}..{value['head']}"))
+        changed.update(git_paths(location, "diff", "--name-only", "HEAD"))
+        changed.update(git_paths(location, "ls-files", "--others", "--exclude-standard"))
         verified_snapshots[repo_id] = {"location": str(location), "head": value["head"],
                                        "changed_paths": sorted(changed)}
     required = {rid for item in run.get("plan", {}).get("work_items", []) for rid in item.get("requirement_ids", [])}

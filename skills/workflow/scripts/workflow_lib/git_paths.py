@@ -4,7 +4,7 @@ import subprocess
 
 
 def git_paths(repo: Path, *args: str) -> list[str]:
-    if not args or args[0] not in {'ls-files', 'diff-tree'}:
+    if not args or args[0] not in {'ls-files', 'diff-tree', 'diff'}:
         raise ValueError('unsupported Git pathname command')
     result = subprocess.run(['git', args[0], '-z', *args[1:]], cwd=repo,
                             capture_output=True, check=True, timeout=10)

@@ -1,6 +1,7 @@
 """Cross-process exclusive locks on persistent one-byte lock files."""
 from contextlib import contextmanager
 import os
+import time
 
 
 @contextmanager
@@ -16,13 +17,17 @@ def exclusive_file(handle, *, blocking: bool = True):
             handle.write(b'\0' if 'b' in handle.mode else '\0')
             handle.flush()
         handle.seek(0)
-        mode = msvcrt.LK_LOCK if blocking else msvcrt.LK_NBLCK
-        try:
-            msvcrt.locking(handle.fileno(), mode, 1)
-        except OSError as exc:
-            if not blocking and (getattr(exc, 'winerror', None) in (33, 36) or exc.errno in (13, 36)):
-                raise BlockingIOError('lock is held by another process') from exc
-            raise
+        while True:
+            try:
+                msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+                break
+            except OSError as exc:
+                contended = getattr(exc, 'winerror', None) in (33, 36) or exc.errno in (13, 36)
+                if not contended:
+                    raise
+                if not blocking:
+                    raise BlockingIOError('lock is held by another process') from exc
+                time.sleep(0.05)
         try:
             yield
         finally:

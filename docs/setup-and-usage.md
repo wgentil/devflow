@@ -350,6 +350,8 @@ unchanged files already in Git history; later preflights compare the recorded
 applicable content as well as the working tree, so committing observed drift
 cannot bypass approval. Register the organization checkout when inherited rules
 are configured. A removed governing manifest blocks further work once recorded.
+Governing document comparisons use LF line endings on all hosts; an existing
+approval of CRLF content may require renewal after this change.
 
 The project manifest may record `irrelevance_decisions`, an array of objects
 containing `rule_id` and a nonempty `reason`. All other effective rules are

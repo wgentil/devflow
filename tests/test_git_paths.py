@@ -25,3 +25,16 @@ class GitPathsTests(unittest.TestCase):
             with self.assertRaises(ValueError): resolve_repo_path(repo, '../escape')
             with self.assertRaises(ValueError): resolve_repo_path(repo, 'C:escape')
             self.assertEqual(resolve_repo_path(repo, 'some file.txt'), (repo / 'some file.txt').resolve())
+
+    @unittest.skipIf(os.name == 'nt', 'newline is not a valid Windows filename')
+    def test_diff_paths_preserve_newline(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo = Path(directory)
+            subprocess.run(['git', 'init', '-q', str(repo)], check=True)
+            path = repo / 'line\nbreak.txt'
+            path.write_text('before', encoding='utf-8')
+            subprocess.run(['git', 'add', '.'], cwd=repo, check=True)
+            subprocess.run(['git', '-c', 'user.name=DevFlow', '-c', 'user.email=devflow@example.invalid',
+                            'commit', '-qm', 'base'], cwd=repo, check=True)
+            path.write_text('after', encoding='utf-8')
+            self.assertEqual(git_paths(repo, 'diff', '--name-only', 'HEAD'), ['line\nbreak.txt'])

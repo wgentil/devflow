@@ -25,6 +25,18 @@ class ProcessTransportTests(unittest.TestCase):
             process.send({'id': 1}, 5)
             self.assertEqual(process.next(5), {'id': 1})
 
+    def test_json_line_process_accepts_burst_of_short_lines(self):
+        code = "import sys;sys.stdout.write(''.join('{\"id\":%d}\\n'%i for i in range(200)));sys.stdout.flush()"
+        with JsonLineProcess([sys.executable, '-c', code], Path.cwd(), 1024) as process:
+            self.assertEqual([process.next(5)['id'] for _ in range(200)], list(range(200)))
+
+    def test_json_line_process_caps_cumulative_output(self):
+        code = "import sys;sys.stdout.write('{\"id\":1}\\n'*300);sys.stdout.flush()"
+        with JsonLineProcess([sys.executable, '-c', code], Path.cwd(), 64) as process:
+            with self.assertRaisesRegex(ValueError, 'cumulative'):
+                for _ in range(300):
+                    process.next(5)
+
 class CleanupTests(unittest.TestCase):
     def test_exited_windows_process_does_not_call_taskkill_on_reused_pid(self):
         from unittest.mock import Mock, patch

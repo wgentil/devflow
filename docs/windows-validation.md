@@ -3,9 +3,9 @@
 Native Windows and WSL2 are not yet supported releases. The shared source now
 contains platform locking, threaded pipe transport for native Windows, and
 NUL-delimited Git pathname parsing in review and evidence paths. Windows
-checkout CRLF is normalized for governing-document comparison so an unchanged
-Git text file does not appear as an unapproved policy edit; this changes the
-receipt to canonical LF bytes on Windows and needs real-host parity checks. Launcher
+checkout CRLF is normalized to LF for governing-document comparison on every
+host, including tracked CRLF files. Existing approvals for CRLF documents may
+need renewal because their content digest changes. Launcher
 liveness now uses a Windows process handle so reconciliation never signals a
 running process while checking it. Package and runtime JSON files are decoded as
 UTF-8 independent of the Windows console code page. The full Python suite passed
@@ -23,7 +23,8 @@ at commit `6403d04` (416 tests per runner). Installed-host checks remain open.
 Claude hooks now use a shell-free Python command and plugin-root argument, but
 installed Windows hook behavior and cross-OS repository relocation still need
 real-host tests. Windows process-tree termination now uses a Windows Job Object instead of console
-commands; the subprocess-grandchild cleanup fixture passed on Windows CI, while
+commands; new workers start suspended and join the Job before resuming, closing
+the process-start assignment race. The subprocess-grandchild cleanup fixture passed on Windows CI, while
 installed worker tests are still needed. A WSL2 test must use a repository in the Linux filesystem;
 results cannot be generalized to `/mnt/c`.
 

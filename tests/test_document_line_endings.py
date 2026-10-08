@@ -7,6 +7,6 @@ class DocumentLineEndingTests(unittest.TestCase):
         raw = b'openapi: 3.1.0\r\npaths: {}\r\n'
         self.assertEqual(canonical_document_bytes(raw, windows=True), b'openapi: 3.1.0\npaths: {}\n')
 
-    def test_unix_bytes_remain_exact(self):
+    def test_tracked_crlf_document_uses_same_hash_on_both_hosts(self):
         raw = b'a\r\nb\n'
-        self.assertEqual(canonical_document_bytes(raw, windows=False), raw)
+        self.assertEqual(canonical_document_bytes(raw, windows=False), b'a\nb\n')

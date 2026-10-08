@@ -12,10 +12,8 @@ CATEGORIES = {'platform', 'coding-standards', 'architecture', 'test-strategy', '
 
 
 def canonical_document_bytes(raw: bytes, *, windows: bool | None = None) -> bytes:
-    """Compare Git text on Windows without checkout newline conversion noise."""
-    if windows is None:
-        windows = os.name == 'nt'
-    return raw.replace(b'\r\n', b'\n') if windows else raw
+    """Use stable LF bytes for Git-backed textual governing documents."""
+    return raw.replace(b'\r\n', b'\n')
 
 
 def _git(repo: Path, *args: str) -> subprocess.CompletedProcess:

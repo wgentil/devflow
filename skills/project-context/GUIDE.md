@@ -80,6 +80,8 @@ represent one named rule (JSON files are syntax-validated). Org entries may decl
 `sealed_rule_ids`. The project `overrides` object maps inherited IDs to project
 entry paths; overriding a sealed rule blocks resolution. Categories must agree.
 Duplicate IDs, absent IDs, ignored paths, symlinks and escaping paths block.
+Governing text uses canonical LF bytes on all hosts for comparisons and approval
+hashes; existing approvals of CRLF content can require renewal.
 
 Explicit resolution verifies the org URL with Git and fetches origin when using
 a separate matching checkout. It requires a supplied existing checkout and matching

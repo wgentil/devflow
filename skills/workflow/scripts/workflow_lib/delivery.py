@@ -10,6 +10,7 @@ import subprocess
 
 from .evidence import repository_fingerprint
 from .gates import gate_status
+from .git_paths import git_paths
 
 OUTCOMES = {"local-merge", "pull-request", "retained-branch"}
 
@@ -38,7 +39,7 @@ def _repo_fingerprint(repo_id: str, source: dict) -> dict:
     if status:
         raise ValueError(f"repository {repo_id} has uncommitted or untracked files")
     fingerprint = repository_fingerprint(location)
-    changed = sorted(set(_git(location, "diff", "--name-only", f"{source['base']}..{source['head']}").splitlines()))
+    changed = sorted(set(git_paths(location, "diff", "--name-only", f"{source['base']}..{source['head']}")))
     return {"location": str(location), "base": source["base"], "head": source["head"],
             "repository_head": fingerprint["head"], "worktree_digest": fingerprint["worktree_digest"],
             "status": status, "changed_paths": changed}
