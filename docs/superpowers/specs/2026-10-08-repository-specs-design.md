@@ -1,6 +1,6 @@
 # Repository-owned DevFlow specifications
 
-Status: revised design for user review. This changes where project specifications
+Status: approved design (2026-10-08). This changes where project specifications
 and governing documents are authored, reviewed and retained; it does not describe
 current behavior.
 
