@@ -8,8 +8,9 @@ retain their prior content hashes. Launcher
 liveness now uses a Windows process handle so reconciliation never signals a
 running process while checking it. Package and runtime JSON files are decoded as
 UTF-8 independent of the Windows console code page. The full Python suite passed
-on [macOS, Ubuntu, and native Windows CI](https://github.com/wgentil/devflow/actions/runs/37855308773)
-at commit `6403d04` (416 tests per runner). Installed-host checks remain open.
+on [macOS, Ubuntu, and native Windows CI](https://github.com/wgentil/devflow/actions/runs/37856121674)
+at commit `89285be` (420 tests per runner, with one Windows-only lock test).
+Installed-host checks remain open.
 
 | Gate | macOS | Linux | WSL2 Linux filesystem | Native Windows |
 | --- | --- | --- | --- | --- |
