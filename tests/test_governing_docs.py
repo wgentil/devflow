@@ -142,7 +142,7 @@ class GoverningDocsTests(unittest.TestCase):
         resolved = self.resolve()
         self.assertEqual(resolved['rules']['API'], inherited['rules']['API'])
         self.assertEqual(resolved['rules']['EVENT']['content'], local)
-        self.assertEqual((self.org / 'contracts/api.yaml').read_text(), api)
+        self.assertEqual((self.org / 'contracts/api.yaml').read_text(encoding='utf-8'), api)
         self.org_manifest['documents'][1]['sealed_rule_ids'] = ['EVENT']
         self.manifests()
         with self.assertRaises(WorkflowError) as error: self.resolve()

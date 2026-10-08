@@ -59,13 +59,13 @@ class NativeModelTests(unittest.TestCase):
             cache.invalidate('codex','account','policy','release');self.assertIsNone(cache.get('codex','account','policy','release',120))
     def test_runtime_candidate_selection_is_honestly_unvalidated(self):
         from workflow_lib.model_policy import resolve_profile
-        policy=json.loads((ROOT/'definitions/model-policy.json').read_text())
+        policy=json.loads((ROOT/'definitions/model-policy.json').read_text(encoding='utf-8'))
         cap={'configure':True,'observe':False,'models':['new-model'],'efforts':['medium'],'model_efforts':{'new-model':['medium']}}
         result=resolve_profile(policy,{'host':'codex','stage':'implementation','pin':'new-model','allow_unvalidated':True},cap,{'models':{'new-model':'available'}},None)
         self.assertEqual(result['reason_code'],'UNVALIDATED_ADVISORY');self.assertFalse(result['capability_validated']);self.assertIsNone(result['validation_ref'])
     def test_model_effort_is_checked_for_selected_model(self):
         from workflow_lib.model_policy import resolve_profile
-        policy=json.loads((ROOT/'definitions/model-policy.json').read_text())
+        policy=json.loads((ROOT/'definitions/model-policy.json').read_text(encoding='utf-8'))
         cap={'configure':True,'observe':False,'models':['new-model'],'efforts':['high','medium'],'model_efforts':{'new-model':['high']}}
         result=resolve_profile(policy,{'host':'codex','stage':'implementation','pin':'new-model','allow_unvalidated':True},cap,{'models':{'new-model':'available'}},None)
         self.assertEqual(result['status'],'block')
@@ -95,7 +95,7 @@ class NativeModelTests(unittest.TestCase):
             with patch('workflow_lib.native_runtime.CodexBackend',return_value=backend):
                 result=invoke(root,request,'native');retry=invoke(root,request,'native')
             self.assertEqual(result['status'],'allow');self.assertEqual(result['scope']['token'],'t');self.assertEqual(result['observed']['effort'],'medium');self.assertTrue(retry['replayed']);backend.invoke.assert_called_once()
-            self.assertEqual((root/result['output_ref']).read_text(),'real bounded result');self.assertEqual(read_state(root)['data']['runs']['run']['active_attempt']['token'],'t')
+            self.assertEqual((root/result['output_ref']).read_text(encoding='utf-8'),'real bounded result');self.assertEqual(read_state(root)['data']['runs']['run']['active_attempt']['token'],'t')
     def test_transport_limits_output_and_timeout(self):
         from workflow_lib.native_models import run_bounded,NativeError
         with self.assertRaises(NativeError):run_bounded([sys.executable,'-c','import time; time.sleep(2)'],str(ROOT),.02)
@@ -120,7 +120,7 @@ class NativeModelTests(unittest.TestCase):
         run=state['runs']['run'];self.assertNotIn('pin',effective_preferences(run,'implementation','codex'));self.assertEqual(effective_preferences(run,'implementation','claude')['pin'],'claude-choice');self.assertEqual(effective_preferences(run,'implementation','claude')['max_cost'],1)
     def test_empty_allowlist_blocks_advisory_selection(self):
         from workflow_lib.model_policy import resolve_profile
-        policy=json.loads((ROOT/'definitions/model-policy.json').read_text())
+        policy=json.loads((ROOT/'definitions/model-policy.json').read_text(encoding='utf-8'))
         decision=resolve_profile(policy,{'host':'codex','stage':'scan','allowed_models':[]},{'models':[],'efforts':[]},{},None)
         self.assertEqual(decision['status'],'block')
     def test_native_cache_corrupt_entry_is_only_a_miss(self):

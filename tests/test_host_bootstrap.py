@@ -33,8 +33,8 @@ class BootstrapTests(unittest.TestCase):
         subprocess.run(['git','worktree','add','-qb','linked',str(work)],cwd=self.repo,check=True)
         exclude = self.repo / '.git/info/exclude'; exclude.write_text('custom-entry\n')
         initialize_project(work, None, 'linked-init', None)
-        self.assertIn('custom-entry', exclude.read_text())
-        self.assertIn('/.devflow/', exclude.read_text())
+        self.assertIn('custom-entry', exclude.read_text(encoding='utf-8'))
+        self.assertIn('/.devflow/', exclude.read_text(encoding='utf-8'))
         self.assertEqual(subprocess.check_output(['git','status','--porcelain'],cwd=work),b'')
     def test_runtime_not_ingested_even_root_scope(self):
         runtime=self.repo/'.devflow'; runtime.mkdir(); (runtime/'secret.json').write_text('{}')

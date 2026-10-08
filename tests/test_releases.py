@@ -28,7 +28,7 @@ class ReleaseTests(unittest.TestCase):
         self.assertEqual(check_release(release, release, 999)['status'], 'block')
     def test_distributions_resolve_shared_resources(self):
         for host in ('claude', 'codex'):
-            manifest = json.loads((ROOT / f'.{host}-plugin/plugin.json').read_text())
+            manifest = json.loads((ROOT / f'.{host}-plugin/plugin.json').read_text(encoding='utf-8'))
             self.assertEqual(manifest['version'], release_descriptor(ROOT)['plugin_version'])
             self.assertTrue((ROOT / 'docs/setup-and-usage.md').is_file())
         self.assertEqual(release_descriptor(ROOT)['host_protocol_version'], 1)

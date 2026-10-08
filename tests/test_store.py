@@ -104,7 +104,7 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(errors, [])
         events = sorted((self.root / "events").glob("[0-9]*.json"))
         self.assertEqual(len(events), 12)
-        self.assertEqual([json.loads(p.read_text())["sequence"] for p in events], list(range(1, 13)))
+        self.assertEqual([json.loads(p.read_text(encoding='utf-8'))["sequence"] for p in events], list(range(1, 13)))
 
 
 if __name__ == "__main__":

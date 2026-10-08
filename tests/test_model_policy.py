@@ -19,7 +19,7 @@ class ModelPolicyTests(unittest.TestCase):
         self.req={'host':'codex','stage':'planning','mode':'advisory'}
     def resolve(self,**changes):return resolve_profile(self.policy,{**self.req,**changes},self.cap,self.discovery,None)
     def test_profiles_and_deterministic_helpers(self):
-        policy=json.loads((ROOT/'definitions/model-policy.json').read_text())
+        policy=json.loads((ROOT/'definitions/model-policy.json').read_text(encoding='utf-8'))
         self.assertEqual(policy['stages']['planning'],'deep-reasoning')
         self.assertEqual(policy['stages']['implementation'],'efficient-coding')
         self.assertEqual(self.resolve(stage='tests')['dispatch'],False)

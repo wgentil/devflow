@@ -19,7 +19,7 @@ class ParityRunnerTests(unittest.TestCase):
 
     def pilot(self, legacy=None, replacement=None, comparator=None):
         digest = hashlib.sha256((self.repo / 'fixture.txt').read_bytes()).hexdigest()
-        command = [sys.executable, '-c', "from pathlib import Path; Path('out.txt').write_text(Path('fixture.txt').read_text())"]
+        command = [sys.executable, '-c', "from pathlib import Path; Path('out.txt').write_text(Path('fixture.txt').read_text(encoding='utf-8'))"]
         return {'fixtures': [{'path': 'fixture.txt', 'sha256': digest}],
                 'legacy_argv': legacy or command, 'replacement_argv': replacement or command,
                 'legacy_output_path': 'out.txt', 'replacement_output_path': 'out.txt',

@@ -167,7 +167,7 @@ class MigrationPilotIntegrationTests(unittest.TestCase):
         import hashlib
         digest = hashlib.sha256(b'same').hexdigest()
         command = [sys.executable, '-c',
-                   "from pathlib import Path; Path('out.txt').write_text(Path('fixture.txt').read_text())"]
+                   "from pathlib import Path; Path('out.txt').write_text(Path('fixture.txt').read_text(encoding='utf-8'))"]
         return {'run_id': 'r', 'increment_id': 'greetings', 'criterion_id': 'P1',
                 'item_id': 'W1', 'repo_id': 'app', 'pilot': {
                 'fixtures': [{'path': 'fixture.txt', 'sha256': digest}],
@@ -292,25 +292,25 @@ class ExecutionIntegrationTests(unittest.TestCase):
     def test_hardening_proofs_are_journaled_and_replay_does_not_execute(self):
         self.seed_repo()
         counter=Path(self.temp.name)/'count'
-        command=[sys.executable,'-c',f"from pathlib import Path; p=Path({str(counter)!r}); p.write_text(str(int(p.read_text())+1) if p.exists() else '1')"]
+        command=[sys.executable,'-c',f"from pathlib import Path; p=Path({str(counter)!r}); p.write_text(str(int(p.read_text(encoding='utf-8'))+1) if p.exists() else '1')"]
         self.cli('harden','configure',{'run_id':'run','actor_id':'human','gates':{'security':{'repo_id':'r','command':command}}},'config')
         result=self.cli('harden','gate',{'run_id':'run','gate_id':'security'},'gate')
         self.assertTrue(result['proof']['passed'])
         self.cli('harden','gate',{'run_id':'run','gate_id':'security'},'gate')
-        self.assertEqual(counter.read_text(),'1')
+        self.assertEqual(counter.read_text(encoding='utf-8'),'1')
         state=read_state(self.root)
         self.assertTrue(state['data']['runs']['run']['hardening_proofs']['security']['passed'])
     def test_structured_gate_replay_does_not_execute(self):
         self.seed_repo()
         counter=Path(self.temp.name)/'count'
-        command=[sys.executable,'-c',f"from pathlib import Path; p=Path({str(counter)!r}); p.write_text(str(int(p.read_text())+1) if p.exists() else '1'); print('{{\"findings\":[]}}')"]
+        command=[sys.executable,'-c',f"from pathlib import Path; p=Path({str(counter)!r}); p.write_text(str(int(p.read_text(encoding='utf-8'))+1) if p.exists() else '1'); print('{{\"findings\":[]}}')"]
         self.cli('harden','configure',{'run_id':'run','actor_id':'human','gates':{'security':{
             'repo_id':'r','command':command,'contract':{'kind':'json-report','version':1}}}},'config')
         first=self.cli('harden','gate',{'run_id':'run','gate_id':'security'},'gate')
         second=self.cli('harden','gate',{'run_id':'run','gate_id':'security'},'gate')
         self.assertTrue(first['proof']['passed'])
         self.assertTrue(second['replayed'])
-        self.assertEqual(counter.read_text(),'1')
+        self.assertEqual(counter.read_text(encoding='utf-8'),'1')
         attempt=next(iter(read_state(self.root)['data']['runs']['run']['hardening_attempts'].values()))
         self.assertEqual(first['proof']['contract_hash'],attempt['contract_hash'])
     def test_legacy_gate_config_remains_valid(self):

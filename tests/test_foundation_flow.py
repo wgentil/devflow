@@ -140,7 +140,7 @@ class FoundationFlowTests(unittest.TestCase):
         issued_event = next(event for event in events if event["kind"] == "run.attempt.issued")
         self.assertNotIn("runs", issued_event["payload"])
         self.assertEqual(issued_event["payload"]["attempt"]["item_id"], "W1")
-        telemetry = [json.loads(line) for line in (self.control / "offload.jsonl").read_text().splitlines()]
+        telemetry = [json.loads(line) for line in (self.control / "offload.jsonl").read_text(encoding='utf-8').splitlines()]
         self.assertTrue(all(row["output_bytes"] > 0 for row in telemetry))
         self.assertTrue(any(row["operation"] == "run.brief" for row in telemetry))
         self.assertTrue(any(row.get("run_id") == "flow-1" for row in telemetry))

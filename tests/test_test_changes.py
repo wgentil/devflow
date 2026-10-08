@@ -56,7 +56,7 @@ index 0000000..0000000 100644
             propose(self.run, "W1", unlocked, "test was wrong", self.repo)
         with self.assertRaises(ValueError):
             propose(self.run, "W1", structural, "replace the test", self.repo)
-        self.assertEqual(self.source.read_text(), "def test_locked():\n    assert 1 == 1\n")
+        self.assertEqual(self.source.read_text(encoding='utf-8'), "def test_locked():\n    assert 1 == 1\n")
 
     def test_exact_approval_precedes_patch_application_and_records_hashes(self):
         propose, approve, apply = self.module()
@@ -67,7 +67,7 @@ index 0000000..0000000 100644
         approval = approve(proposal, proposal["proposal_hash"], "human-1")
         result = apply(self.repo, proposal, approval)
 
-        self.assertEqual(self.source.read_text(), "def test_locked():\n    assert 1 == 2\n")
+        self.assertEqual(self.source.read_text(encoding='utf-8'), "def test_locked():\n    assert 1 == 2\n")
         self.assertEqual(proposal["before_hashes"], {"tests/test_locked.py": self.before})
         self.assertEqual(len(result["after_hashes"]["tests/test_locked.py"]), 64)
         replay = apply(self.repo, proposal, approval)
@@ -81,7 +81,7 @@ index 0000000..0000000 100644
 
         with self.assertRaises(ValueError):
             apply(self.repo, proposal, approval)
-        self.assertIn("assert 1 == 3", self.source.read_text())
+        self.assertIn("assert 1 == 3", self.source.read_text(encoding='utf-8'))
 
     def test_applied_change_marks_every_dependent_green_proof_stale(self):
         propose, approve, apply = self.module()
