@@ -112,6 +112,8 @@ def bounded_capture(argv: list[str], cwd: str | Path, timeout: float, limit: int
             process.wait(timeout=timeout)
         except subprocess.TimeoutExpired as exc:
             raise TimeoutError('Native host timed out') from exc
+        # The leader may exit while descendants still hold inherited pipe handles.
+        stop_tree(process)
         for thread in threads:
             thread.join(timeout=2)
         if exceeded.is_set():
@@ -121,7 +123,9 @@ def bounded_capture(argv: list[str], cwd: str | Path, timeout: float, limit: int
         return subprocess.CompletedProcess(argv, process.returncode,
             buffers[0].decode('utf-8', 'replace'), buffers[1].decode('utf-8', 'replace'))
     finally:
-        if process.poll() is None:
+        if os.name == 'nt' and getattr(process, '_devflow_job', None) is not None:
+            stop_tree(process)
+        elif process.poll() is None:
             stop_tree(process)
 
 
