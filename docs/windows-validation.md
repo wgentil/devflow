@@ -16,8 +16,9 @@ have passed macOS Python tests only; they do not prove Windows compatibility.
 | Real native workers and cleanup | Not run for this branch | Not run | Not run | Not run |
 | Cross-host handoff and parity | Not run for this branch | Not run | Not run | Not run |
 
-The native Windows hook launcher and cross-OS repository relocation still need
-host-specific design confirmation and tests. Windows process-tree termination uses
+Claude hooks now use a shell-free Python command and plugin-root argument, but
+installed Windows hook behavior and cross-OS repository relocation still need
+real-host tests. Windows process-tree termination uses
 the system `taskkill` command; a real descendant cleanup test is required before
 claiming it reliable. A WSL2 test must use a repository in the Linux filesystem;
 results cannot be generalized to `/mnt/c`.

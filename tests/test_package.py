@@ -92,3 +92,11 @@ class HostResourceTests(unittest.TestCase):
         self.assertEqual(task['binding_id'],attach['binding_id'])
         self.assertEqual(handoff['binding_id'],attach['binding_id'])
         self.assertEqual(task['scope'],'item')
+
+class PortableHookTests(unittest.TestCase):
+    def test_claude_hooks_use_shell_free_python_launcher(self):
+        hooks=json.loads((ROOT/'adapters/claude-code/hooks.json').read_text())['hooks']
+        for event in ('SessionStart','UserPromptSubmit','TaskCompleted','Stop'):
+            handler=hooks[event][0]['hooks'][0]
+            self.assertEqual(handler['command'],'python')
+            self.assertEqual(handler['args'],['-B','${CLAUDE_PLUGIN_ROOT}/adapters/claude-code/hook.py'])

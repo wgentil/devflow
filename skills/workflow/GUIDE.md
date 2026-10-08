@@ -1,6 +1,6 @@
 # workflow usage guide
 
-Start with the [complete setup and initialization guide](../../docs/setup-and-usage.md). Native Windows remains unsupported pending process, hook and real-host validation; the journal lock now uses a platform boundary.
+Start with the [complete setup and initialization guide](../../docs/setup-and-usage.md). Native Windows remains unsupported pending installed-hook, worker and real-host validation; the journal lock and pipe transport now use platform boundaries.
 
 Read the [shared setup and conventions](../../docs/skills.md#shared-setup) first.
 Commands below use its `df` function and path variables.

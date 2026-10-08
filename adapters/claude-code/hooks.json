@@ -5,8 +5,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/adapters/claude-code/launch-hook.sh\"",
-            "timeout": 10
+            "command": "python",
+            "timeout": 10,
+            "args": [
+              "-B",
+              "${CLAUDE_PLUGIN_ROOT}/adapters/claude-code/hook.py"
+            ]
           }
         ]
       }
@@ -16,8 +20,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/adapters/claude-code/launch-hook.sh\"",
-            "timeout": 10
+            "command": "python",
+            "timeout": 10,
+            "args": [
+              "-B",
+              "${CLAUDE_PLUGIN_ROOT}/adapters/claude-code/hook.py"
+            ]
           }
         ]
       }
@@ -27,8 +35,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/adapters/claude-code/launch-hook.sh\"",
-            "timeout": 10
+            "command": "python",
+            "timeout": 10,
+            "args": [
+              "-B",
+              "${CLAUDE_PLUGIN_ROOT}/adapters/claude-code/hook.py"
+            ]
           }
         ]
       }
@@ -38,8 +50,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/adapters/claude-code/launch-hook.sh\"",
-            "timeout": 10
+            "command": "python",
+            "timeout": 10,
+            "args": [
+              "-B",
+              "${CLAUDE_PLUGIN_ROOT}/adapters/claude-code/hook.py"
+            ]
           }
         ]
       }
