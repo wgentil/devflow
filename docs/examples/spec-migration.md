@@ -16,3 +16,9 @@ result contains `repo_id`, `json_path`, `markdown_path`, `content_hash` and
 new operation ID. Retrying migration with the same operation ID returns the same
 receipt. Existing targets are preserved, including a lone Markdown companion.
 Do not substitute a historical content hash for missing source JSON.
+
+Migration writes visible files before recording the journal receipt. An external
+interruption between those steps can leave a candidate without a receipt. Inspect
+and recover those files explicitly; retrying does not overwrite them. The live
+specification check is a command preflight, not an atomic filesystem snapshot
+with the subsequent journal commit.

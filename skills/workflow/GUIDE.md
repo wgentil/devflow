@@ -222,3 +222,9 @@ hash. Retrying the same operation ID returns the recorded candidate receipt; a
 different target needs a different ID. Migration creates no approval: human
 reapproval is required before new work uses the candidate. Installed plugin
 files and `.devflow` are never specification targets.
+
+Migration writes visible files before recording the journal receipt. An external
+interruption between those steps can leave a candidate without a receipt. Inspect
+and recover those files explicitly; retrying does not overwrite them. The live
+specification check is a command preflight, not an atomic filesystem snapshot
+with the subsequent journal commit.
