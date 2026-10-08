@@ -42,7 +42,7 @@ and keep inferred assumptions distinct from observed facts.
 
 ## Outputs and revisions
 
-Validation returns requirement count and content hash. Repository storage returns `spec_pair` with `repo_id`, relative `json_path` and `markdown_path`, `content_hash`, and `markdown_hash`. Register the selected repository first. Both files must be visible to Git and remain within that repository. JSON uses the existing canonical content hash; Markdown must exactly match deterministic rendering. An interrupted replacement leaves an invalid pair until the store operation repairs it. Approval rereads the repository pair and rejects missing or changed files without appending an approval event.
+Validation returns requirement count and content hash. Repository storage returns `spec_pair` with `repo_id`, relative `json_path` and `markdown_path`, `content_hash`, and `markdown_hash`. Register the selected repository first. Both files must be visible to Git and remain within that repository. These checks cover both the requested paths and resolved symlink targets; a visible symlink cannot authorize an ignored or excluded target. JSON uses the existing canonical content hash; Markdown must exactly match deterministic rendering. An interrupted replacement leaves an invalid pair until the store operation repairs it. Approval rereads the repository pair and rejects missing or changed files without appending an approval event.
 
 Omitting both `--repo-id` and `--path` preserves the legacy journal-only flow; it does not create repository files.
 

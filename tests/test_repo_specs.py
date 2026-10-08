@@ -59,3 +59,39 @@ class RepoSpecTests(unittest.TestCase):
         (self.repo / '.gitignore').write_text('docs/specs/\n')
         self.error('SPEC_PATH_IGNORED', write_spec_pair, self.repo, self.path, self.spec)
         self.assertFalse((self.repo / self.path).exists())
+
+    def test_read_and_approval_reject_pair_symlinked_into_excluded_directory(self):
+        for directory in ('.devflow', '.git'):
+            with self.subTest(directory=directory):
+                receipt = write_spec_pair(self.repo, self.path, self.spec)
+                hidden = self.repo / directory / 'hidden-spec'
+                hidden.mkdir(parents=True, exist_ok=True)
+                for key in ('json_path', 'markdown_path'):
+                    visible = self.repo / receipt[key]
+                    target = hidden / visible.name
+                    visible.replace(target)
+                    visible.symlink_to(target)
+                self.error('SPEC_PATH_ESCAPE', read_spec_pair, self.repo, self.path)
+                self.error('SPEC_PATH_ESCAPE', assert_repo_spec_approval, self.repo, receipt)
+                for key in ('json_path', 'markdown_path'):
+                    (self.repo / receipt[key]).unlink()
+
+    def test_resolved_ignored_target_and_ignored_markdown_companion(self):
+        receipt = write_spec_pair(self.repo, self.path, self.spec)
+        hidden = self.repo / 'private'
+        hidden.mkdir()
+        visible = self.repo / receipt['markdown_path']
+        target = hidden / visible.name
+        visible.replace(target)
+        visible.symlink_to(target)
+        (self.repo / '.gitignore').write_text('private/\n')
+        self.error('SPEC_PATH_IGNORED', read_spec_pair, self.repo, self.path)
+        self.error('SPEC_PATH_IGNORED', assert_repo_spec_approval, self.repo, receipt)
+        visible.unlink()
+        (self.repo / '.gitignore').write_text('docs/specs/*.md\n')
+        self.error('SPEC_PATH_IGNORED', write_spec_pair, self.repo, self.path, self.spec)
+
+    def test_absolute_and_excluded_paths_are_rejected(self):
+        for path in (str(self.repo / 'absolute.json'), '.devflow/spec.json', '.git/spec.json'):
+            with self.subTest(path=path):
+                self.error('SPEC_PATH_ESCAPE', write_spec_pair, self.repo, path, self.spec)

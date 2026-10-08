@@ -19,15 +19,20 @@ def _paths(repo: Path, relative_json: str) -> tuple[Path, Path]:
         raise WorkflowError('SPEC_PATH_ESCAPE', 'specification must use a relative .json path within the repository')
     paths = (repo / path, repo / path.with_suffix('.md'))
     for target in paths:
-        if not target.resolve().is_relative_to(repo) or any(part in {'.git', '.devflow'} for part in path.parts):
+        resolved = target.resolve()
+        if not resolved.is_relative_to(repo):
             raise WorkflowError('SPEC_PATH_ESCAPE', 'specification path escapes the visible repository')
-        relative = target.relative_to(repo).as_posix()
-        checked = subprocess.run(['git', '-C', str(repo), 'check-ignore', '--no-index', '--', relative],
-                                 capture_output=True, text=True)
-        if checked.returncode == 0:
-            raise WorkflowError('SPEC_PATH_IGNORED', f'specification path is ignored: {relative}')
-        if checked.returncode != 1:
-            raise WorkflowError('SPEC_REPO_INVALID', 'specification repository must be a Git working tree')
+        relative_paths = {target.relative_to(repo), resolved.relative_to(repo)}
+        for relative_path in relative_paths:
+            if any(part in {'.git', '.devflow'} for part in relative_path.parts):
+                raise WorkflowError('SPEC_PATH_ESCAPE', 'specification path escapes the visible repository')
+            relative = relative_path.as_posix()
+            checked = subprocess.run(['git', '-C', str(repo), 'check-ignore', '--no-index', '--', relative],
+                                     capture_output=True, text=True)
+            if checked.returncode == 0:
+                raise WorkflowError('SPEC_PATH_IGNORED', f'specification path is ignored: {relative}')
+            if checked.returncode != 1:
+                raise WorkflowError('SPEC_REPO_INVALID', 'specification repository must be a Git working tree')
     return paths
 
 
