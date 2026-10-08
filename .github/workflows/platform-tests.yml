@@ -16,5 +16,8 @@ jobs:
         with:
           python-version: '3.11'
       - if: runner.os == 'Windows'
+        working-directory: tests
+        run: python -m unittest test_native_models.NativeModelTests.test_rpc_send_obeys_deadline_when_host_stops_reading -v
+      - if: runner.os == 'Windows'
         run: python -m unittest discover -s tests -p test_native_models.py -f -v
       - run: python -m unittest discover -s tests -f -v
