@@ -16,8 +16,8 @@ hardening gate. Solid arrows below show the agent's process.
 flowchart TD
     Inputs["Check spec and applicable governing inputs"] --> Policy{"Changed governing files?"}
     Policy -->|Yes| Approve["Separate exact-diff human approval"]
-    Policy -->|No| Continue["Continue workflow"]
-    Approve --> Continue
+    Policy -->|No| Plan
+    Approve --> Plan
     Init["Discover Git project and initialize/resume"] --> Attach["Explicit host/session binding"]
     Attach --> Context["project-context: resolve scoped context"] --> Spec["specify: create or refine requirements"]
     Sources["ingest: index source evidence"] -.-> Spec
@@ -30,7 +30,8 @@ flowchart TD
     Approval --> SpecGate{"Live pair matches approval?"}
     SpecGate -->|No| Reapprove["Repair/store pair and explicitly reapprove"]
     Reapprove --> Approval
-    SpecGate -->|Yes| Plan["plan-work: validate coverage and dependencies"]
+    SpecGate -->|Yes| Inputs
+    Plan["plan-work: validate coverage and dependencies"]
     Plan --> Next["run next: eligible item and attempt token"]
     Next --> Model["Discover and resolve stage; launch eligible scoped worker"]
     Model --> Build["build-work: implement and verify"]
@@ -215,3 +216,11 @@ conflict review, including edits originally authored by the user; never fabricat
 an approval event. Register the organization checkout before resolving inherited
 rules. Unchanged historical files and unrelated edits do not need approval.
 A handoff checks the prepared effective digest before changing ownership.
+
+
+The accepted input receipt preserves file bytes for exact before-image recovery.
+Proposals compare edits against this accepted baseline even after a Git commit.
+An approval authorizes that exact before/after change; a historical approval for
+the same after image cannot authorize restoration from a different baseline.
+Committing an already accepted edit preserves its approval. A legacy receipt
+without recoverable baseline bytes fails closed if its Git baseline differs.

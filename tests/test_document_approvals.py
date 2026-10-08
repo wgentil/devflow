@@ -68,3 +68,27 @@ class DocumentApprovalTests(unittest.TestCase):
         proposal=propose_document_change(self.root,'other',['rules.md'])
         approve_document_change(self.root,proposal['proposal_hash'],'human')
         with self.assertRaises(WorkflowError): self.gate()
+
+    def test_committed_drift_proposal_preserves_accepted_before_image(self):
+        self.gate()
+        self.write('rules.md', '## A: Rule\ncommitted change\n'); self.commit()
+        with self.assertRaises(WorkflowError): self.gate()
+        proposal = propose_document_change(self.root, 'p', ['rules.md'])
+        self.assertIn('-original\n', proposal['files']['rules.md']['diff'])
+        self.assertIn('+committed change\n', proposal['files']['rules.md']['diff'])
+        approve_document_change(self.root, proposal['proposal_hash'], 'human')
+        self.gate()
+
+    def test_old_after_image_approval_cannot_authorize_restoration(self):
+        self.gate()
+        for content in ('B', 'C'):
+            self.write('rules.md', '## A: Rule\n' + content + '\n')
+            proposal = propose_document_change(self.root, 'p', ['rules.md'])
+            approve_document_change(self.root, proposal['proposal_hash'], 'human')
+            self.gate(); self.commit(); self.gate()
+        self.write('rules.md', '## A: Rule\nB\n')
+        with self.assertRaises(WorkflowError): self.gate()
+        proposal = propose_document_change(self.root, 'p', ['rules.md'])
+        self.assertIn('-C\n', proposal['files']['rules.md']['diff'])
+        approve_document_change(self.root, proposal['proposal_hash'], 'human')
+        self.gate()

@@ -253,3 +253,11 @@ conflict review, including edits originally authored by the user; never fabricat
 an approval event. Register the organization checkout before resolving inherited
 rules. Unchanged historical files and unrelated edits do not need approval.
 A handoff checks the prepared effective digest before changing ownership.
+
+
+The accepted input receipt preserves file bytes for exact before-image recovery.
+Proposals compare edits against this accepted baseline even after a Git commit.
+An approval authorizes that exact before/after change; a historical approval for
+the same after image cannot authorize restoration from a different baseline.
+Committing an already accepted edit preserves its approval. A legacy receipt
+without recoverable baseline bytes fails closed if its Git baseline differs.

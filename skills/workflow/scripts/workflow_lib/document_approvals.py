@@ -1,5 +1,6 @@
 """Live policy preflight and exact-diff human evidence; replay is filesystem free."""
 from pathlib import Path
+import base64
 import difflib
 import hashlib
 import json
@@ -21,17 +22,27 @@ def _repository(data, repo_id):
     return Path(registered['location']).resolve()
 
 
-def _snapshot(repo, paths):
+def _snapshot(repo, paths, data=None, repo_id=None):
     records = {}
     for path in sorted(set(paths)):
         target = _path(repo, path)
         after = target.read_bytes() if target.exists() else b''
         previous = subprocess.run(['git', '-C', str(repo), 'show', f'HEAD:{path}'], capture_output=True, timeout=30)
         before = previous.stdout if previous.returncode == 0 else b''
+        accepted = (data or {}).get('governing_input_receipt', {}).get('files', {}).get(str(repo_id) + ':' + path)
+        before_exists = previous.returncode == 0
+        if accepted:
+            if 'content_base64' in accepted:
+                before = base64.b64decode(accepted['content_base64'])
+                before_exists = accepted.get('exists', True)
+            elif _digest(before) != accepted['content_digest']:
+                raise WorkflowError('GOVERNING_BASELINE_UNAVAILABLE', 'accepted before image is unavailable; do not approve an empty replacement diff')
         diff = ''.join(difflib.unified_diff(before.decode('utf-8', errors='surrogateescape').splitlines(True), after.decode('utf-8', errors='surrogateescape').splitlines(True),
                                           fromfile='a/' + path, tofile='b/' + path))
         records[path] = {'before_hash': _digest(before), 'after_hash': _digest(after),
-                         'before_exists': previous.returncode == 0, 'after_exists': target.exists(), 'diff': diff}
+                         'before_exists': before_exists, 'after_exists': target.exists(), 'diff': diff,
+                         'before_content_base64': base64.b64encode(before).decode('ascii'),
+                         'after_content_base64': base64.b64encode(after).decode('ascii')}
     return records
 
 
@@ -39,7 +50,7 @@ def propose_document_change(root: Path, repo_id: str, paths: list[str]) -> dict:
     state = read_state(root)
     if not isinstance(paths, list) or not paths or any(not isinstance(p, str) for p in paths):
         raise WorkflowError('INVALID_DOCUMENT_PROPOSAL', 'nonempty document paths are required')
-    records = _snapshot(_repository(state['data'], repo_id), paths)
+    records = _snapshot(_repository(state['data'], repo_id), paths, state['data'], repo_id)
     proposal = {'repo_id': repo_id, 'files': records,
                 'diff_digest': _digest(json.dumps(records, sort_keys=True).encode())}
     proposal['proposal_hash'] = _digest(json.dumps(proposal, sort_keys=True).encode())
@@ -53,7 +64,7 @@ def approve_document_change(root: Path, proposal_hash: str, actor_id: str) -> di
     proposal = state['data'].get('document_proposals', {}).get(proposal_hash)
     if not proposal or not isinstance(actor_id, str) or not actor_id.strip():
         raise WorkflowError('DOCUMENT_APPROVAL_REQUIRED', 'existing exact proposal and human actor are required')
-    current = _snapshot(_repository(state['data'], proposal['repo_id']), list(proposal['files']))
+    current = _snapshot(_repository(state['data'], proposal['repo_id']), list(proposal['files']), state['data'], proposal['repo_id'])
     if current != proposal['files']:
         raise WorkflowError('DOCUMENT_PROPOSAL_STALE', 'review a new exact diff before approval')
     approval = {'proposal_hash': proposal_hash, 'repo_id': proposal['repo_id'], 'actor_id': actor_id,
@@ -111,17 +122,17 @@ def require_current_governing_inputs(root: Path, state: dict, phase: str) -> dic
         owner = org_id if provenance['source'] == 'org' else project_id
         sources[owner][1].add(provenance['path'])
     files = {}
-    previous = data.get('governing_input_receipt', {}).get('files', {})
     for owner, (repo, paths) in sources.items():
-        for path, record in _snapshot(repo, list(paths)).items():
+        for path, record in _snapshot(repo, list(paths), data, owner).items():
             key = owner + ':' + path
             files[key] = {'repo_id': owner, 'path': path, 'content_digest': record['after_hash'],
-                          'git_head': _git(repo, 'rev-parse', 'HEAD').stdout.strip()}
-            changed = (record['before_hash'] != record['after_hash'] or not record['before_exists']
-                       or key in previous and previous[key]['content_digest'] != record['after_hash'])
+                          'git_head': _git(repo, 'rev-parse', 'HEAD').stdout.strip(),
+                          'content_base64': record['after_content_base64'], 'exists': record['after_exists']}
+            changed = (record['before_hash'] != record['after_hash']
+                       or record['before_exists'] != record['after_exists'])
             if changed:
                 approved = any(p['repo_id'] == owner and path in p['files']
-                    and p['files'][path]['after_hash'] == record['after_hash']
+                    and p['files'][path] == record
                     and p['proposal_hash'] in data.get('document_approvals', {})
                     for p in data.get('document_proposals', {}).values())
                 if not approved:

@@ -317,3 +317,14 @@ replay reads historical receipts without consulting repository files.
 Developer command syntax and a sample manifest are in
 [the governing approval example](examples/governing-approval.md). Plugin users
 can ask DevFlow to perform these actions; no shell setup is required.
+
+
+Accepted governing receipts retain file bytes for reconstructing exact changes.
+Committing an unapproved edit cannot turn its proposal into an empty diff:
+the proposal still compares against the accepted feature input. Approval applies
+only to that exact before/after change; restoring an older approved version from
+a newer baseline requires a new proposal. Committing an already accepted edit
+remains allowed. If an older receipt lacks the original bytes and Git HEAD no
+longer matches its digest, DevFlow reports `GOVERNING_BASELINE_UNAVAILABLE`
+instead of approving an empty diff; restore the recorded baseline from trusted
+history before proposing the change.

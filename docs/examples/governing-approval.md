@@ -10,7 +10,9 @@ run.py document approve --root /path/to/control --proposal-hash <returned-hash> 
 
 Review the returned exact diff and before/after hashes before the second command.
 Do not infer approval from a commit or specification approval. The proposal is
-stale if the files or their Git baseline change before approval.
+stale if the files or accepted input baseline change before approval. A commit
+does not replace the accepted baseline; the proposal retains the accepted before
+image. Approvals for an earlier baseline cannot authorize a later restoration.
 
 A project manifest can explicitly exclude a rule for the feature:
 
