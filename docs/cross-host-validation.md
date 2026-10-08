@@ -2,10 +2,11 @@
 
 This report distinguishes implemented policy, fixture validation and real host
 execution. No marketplace was published and no global installation was changed.
-The local Claude marketplace descriptor now validates, and an isolated
-`CLAUDE_CONFIG_DIR` smoke successfully added the local checkout, installed
-`devflow@devflow-marketplace` version 0.2.0, and listed it as enabled. This
-does not test GitHub fetch or a published release.
+The Claude marketplace descriptor validates. An isolated `CLAUDE_CONFIG_DIR`
+smoke using the committed `git archive` successfully added the extracted
+package, installed `devflow@devflow-marketplace` version 0.2.0, and discovered
+all ten skills and four hooks. This does not test GitHub fetch or a published
+release.
 
 ## Evidence
 
