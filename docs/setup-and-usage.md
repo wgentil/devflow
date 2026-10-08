@@ -11,12 +11,11 @@ not provision an interpreter. Native Windows is outside current support.
 Codex and Claude have separate installations of the same shared package. Users
 choose when to upgrade. Both manifests and one skills/helper tree are included;
 the Claude marketplace descriptor is packaged at `.claude-plugin/marketplace.json`.
-No GitHub remote or marketplace release has been published by this change. After
-a maintainer publishes the tagged repository, install it in Claude Code by
-replacing `OWNER/REPO` with the published GitHub location:
+The private GitHub repository `wgentil/devflow` serves the marketplace from
+`main`. Claude Code CLI users with access to that repository can install it:
 
 ```sh
-claude plugin marketplace add OWNER/REPO
+claude plugin marketplace add wgentil/devflow
 claude plugin install devflow@devflow-marketplace
 claude plugin list
 ```
@@ -25,8 +24,8 @@ The third-party marketplace does not auto-update by default. To upgrade at a
 time you choose, run `claude plugin update devflow@devflow-marketplace`, then
 start a new session or reload plugins. Align the Codex installation separately
 before a cross-host handoff; DevFlow checks exact installed release parity.
-Until the GitHub release exists, `claude --plugin-dir` loads a local source
-checkout for one session as described in the optional
+For source development, `claude --plugin-dir` loads a local checkout for one
+session as described in the optional
 [developer guide](developer-cli.md#local-claude-package-check).
 Host-specific verification and remaining limitations
 are recorded in [hosts](hosts.md) and [validation](cross-host-validation.md).

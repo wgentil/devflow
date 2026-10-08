@@ -23,8 +23,9 @@ Claude's GitHub marketplace descriptor is packaged in
 [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json). It lists
 the repository root as the plugin source, preserving the shared Codex/Claude
 skill tree. See the [setup guide](docs/setup-and-usage.md#installation) for
-install commands after a tagged GitHub release is published. No GitHub remote
-or marketplace release is configured in this local repository yet.
+install commands. The private GitHub repository
+`wgentil/devflow` now serves the marketplace from `main`; no release tag has
+been created.
 
 Repository maintenance instructions are in [AGENTS.md](AGENTS.md). Every DevFlow
 change must review and update the affected setup guide, skill guides and examples.

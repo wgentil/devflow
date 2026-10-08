@@ -6,20 +6,23 @@ uses `"source": "."`; [Claude's marketplace reference](https://code.claude.com/d
 defines `"."` as the marketplace root. The shared `skills/` and helper tree
 remain at the repository root for both Claude and Codex.
 
+The marketplace is available from the private GitHub repository
+`wgentil/devflow` on `main`. An isolated Claude installation from GitHub
+verified the fetch, version 0.2.0, all ten skills and all four hooks. No release
+tag exists yet, and access requires Git credentials for the private repository.
+
 ## Prepare a release
 
-1. Choose a GitHub repository accessible to intended users. This local checkout
-   currently has no GitHub remote; packaging alone has not published anything.
-2. Keep the versions in `plugin.json`, `.codex-plugin/plugin.json`, and
+1. Keep the versions in `plugin.json`, `.codex-plugin/plugin.json`, and
    `.claude-plugin/plugin.json` aligned. Commit the exact reviewed source and
    create a release tag for it. Do not tag a dirty checkout.
-3. Run `claude plugin validate .` and the repository test suite. In a disposable
+2. Run `claude plugin validate .` and the repository test suite. In a disposable
    Claude configuration, add the local checkout as a marketplace and install
    `devflow@devflow-marketplace`; inspect `claude plugin list` and the installed
    skill inventory. A local check validates the layout, while a GitHub install
    after push validates remote fetch and permissions.
-4. Publish the tag and marketplace repository. Test `claude plugin marketplace
-   add OWNER/REPO` and `claude plugin install devflow@devflow-marketplace`
+3. Publish the tag to `wgentil/devflow`. Test `claude plugin marketplace
+   add wgentil/devflow` and `claude plugin install devflow@devflow-marketplace`
    from an account with the intended access. Private repositories require
    working Git credentials on the installing machine.
 
@@ -33,7 +36,7 @@ path to the checkout; these commands are not part of user onboarding.
 
 ## User installation and upgrades
 
-After publication, [setup and usage](setup-and-usage.md#installation) gives
+The [setup and usage guide](setup-and-usage.md#installation) gives
 the Claude CLI install commands. A third-party marketplace has auto-update
 off by default; users choose when to run `claude plugin update
 devflow@devflow-marketplace`. Codex installation is separate. During a
@@ -41,6 +44,6 @@ cross-host handoff, DevFlow checks exact loaded and installed package identity;
 an older host pauses until the user aligns the installations and reloads.
 
 Native Codex plugin discovery remains unverified, so a successful Claude
-GitHub installation does not establish Codex installation readiness. No
-GitHub release, marketplace registration, or global plugin install was made
-by adding this descriptor.
+GitHub installation does not establish Codex installation readiness. The
+GitHub install smoke used a disposable Claude configuration and did not
+change the regular user installation.

@@ -1,12 +1,14 @@
 # Cross-host validation
 
 This report distinguishes implemented policy, fixture validation and real host
-execution. No marketplace was published and no global installation was changed.
+execution. The Claude marketplace is published in the private GitHub repository;
+no regular user installation was changed by this validation.
 The Claude marketplace descriptor validates. An isolated `CLAUDE_CONFIG_DIR`
 smoke using the committed `git archive` successfully added the extracted
 package, installed `devflow@devflow-marketplace` version 0.2.0, and discovered
-all ten skills and four hooks. This does not test GitHub fetch or a published
-release.
+all ten skills and four hooks. A separate isolated smoke fetched
+`wgentil/devflow` over HTTPS, installed `devflow@devflow-marketplace` version
+0.2.0 and discovered the same ten skills and four hooks. No release tag exists.
 
 ## Evidence
 
@@ -68,7 +70,7 @@ fixture-generated host identities or model names were real provider invocations.
 | R19 recovery/parity | MET | Explicit refresh and exact-revision detached resume preserve history and compatibility, detached baseline and pre-binding-only legacy adoption; transfer rereads before locked commit. `tests/test_host_handoff.py:41`; `tests/test_host_integration.py:65`; `commands/host.py:1`. |
 | R20 no shell onboarding | MET | Workflow resolves bundled helpers and invokes initialization; interpreter detection diagnoses absence. `skills/workflow/SKILL.md:90`; `bootstrap.py:11`; `docs/setup-and-usage.md:1`. |
 | R21 safe initialization | MET | Local Git/worktree excludes, stable identity, preservation and root ingestion exclusion. `bootstrap.py:48`; `tests/test_host_bootstrap.py:16`. |
-| R22 install readiness | CANNOT VERIFY | Claude local load/protocol verified, Codex native local discovery not established; no published marketplace/runtime provisioning claimed. `docs/setup-and-usage.md:9`; `tests/test_package.py:60`. |
+| R22 install readiness | CANNOT VERIFY | Claude local load/protocol and private GitHub marketplace install verified; Codex native local discovery remains unverified. `docs/setup-and-usage.md:9`; `tests/test_package.py:60`. |
 | R23 profiles | MET | Stage/effort policy and deterministic no-dispatch. `definitions/model-policy.json:1`; `tests/test_model_policy.py:21`. |
 | R24 supported controls/honesty | MET | Bundled native discovery/probe/run applies supported controls and records host observations. Claude effort stays unknown and strict blocks. `skills/workflow/scripts/workflow_lib/native_models.py:133`; `skills/workflow/scripts/workflow_lib/native_runtime.py:124`; `tests/test_native_models.py:23`. |
 | R25 new models | MET | Account-scoped runtime access, explicit advisory candidate selection and honest unvalidated receipts; no automatic suitability promotion. `skills/workflow/scripts/workflow_lib/native_runtime.py:33`; `skills/workflow/scripts/workflow_lib/native_runtime.py:57`; `tests/test_native_models.py:42`. |

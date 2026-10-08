@@ -3,7 +3,8 @@
 One package contains `.codex-plugin/plugin.json`, `.claude-plugin/plugin.json`,
 `.claude-plugin/marketplace.json`, the shared `skills/`, helpers and all
 guides/examples. The marketplace entry selects the repository root as the
-Claude plugin source; it has not been published to GitHub yet. Users manage
+Claude plugin source; the private `wgentil/devflow` repository now serves it
+from `main`. Users manage
 each host installation separately. Upgrades never happen automatically. Release identity hashes
 skills, helpers, adapters, policy and manifests; relocated copies have the same identity.
 
