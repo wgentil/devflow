@@ -7,13 +7,14 @@ from skills.workflow.scripts.workflow_lib.pr_reporting import publish_pr_review,
 class FakeClient:
     def __init__(self):
         self.comments = []
+        self.inline = []
         self.statuses = [{'context': 'devflow/pr-review', 'state': 'pending'}]
         self.posts = []
     def api(self, method, path, body=None):
         if method == 'GET' and '/issues/1/comments' in path:
             return self.comments
         if method == 'GET' and '/pulls/1/comments' in path:
-            return []
+            return self.inline
         if method == 'GET' and '/statuses' in path:
             return list(reversed(self.statuses))
         if method == 'POST':
@@ -21,6 +22,10 @@ class FakeClient:
             if '/issues/1/comments' in path:
                 row = {'id': len(self.comments) + 1, 'body': body['body'], 'html_url': 'https://github.com/o/r/pull/1#issuecomment-1'}
                 self.comments.append(row)
+                return row
+            if '/pulls/1/comments' in path:
+                row = {'id': len(self.inline) + 1, 'body': body['body']}
+                self.inline.append(row)
                 return row
             if '/statuses/' in path:
                 row = {'id': len(self.statuses) + 1, **body, 'url': 'https://api.github.com/status/1'}
@@ -49,6 +54,28 @@ class PrReportingTests(unittest.TestCase):
         self.review['verdict'] = 'human-decision-required'
         receipt = publish_pr_review(self.client, self.package, self.review, [])
         self.assertNotEqual(receipt['state'], 'success')
+
+    def test_rejected_human_choice_publishes_failure(self):
+        self.review['verdict'] = 'human-decision-required'
+        receipt = publish_pr_review(self.client, self.package, self.review,
+                                    [{'package_hash': 'pkg', 'effect': 'reject'}])
+        self.assertEqual(receipt['state'], 'failure')
+
+    def test_deleted_line_uses_left_side_and_binary_falls_back_to_summary(self):
+        self.package['snapshot'] = {'files': [
+            {'filename': 'a.py', 'patch': '@@ -1 +0,0 @@\n-old'},
+            {'filename': 'binary.bin'}]}
+        self.review['verdict'] = 'changes-requested'
+        self.review['findings'] = [
+            {'id': 'deleted', 'severity': 'important', 'path': 'a.py', 'line': 1,
+             'reason': 'Keep behavior', 'acceptance_condition': 'Restore it'},
+            {'id': 'binary', 'severity': 'important', 'path': 'binary.bin', 'line': 1,
+             'reason': 'Invalid bytes', 'acceptance_condition': 'Replace asset'}]
+        receipt = publish_pr_review(self.client, self.package, self.review, [])
+        self.assertEqual(receipt['state'], 'failure')
+        inline_posts = [body for path, body in self.client.posts if '/pulls/1/comments' in path]
+        self.assertEqual(len(inline_posts), 1)
+        self.assertEqual(inline_posts[0]['side'], 'LEFT')
 
     def test_terminal_gate_requires_confirmed_status(self):
         run = {'id': 'run', 'status': 'active', 'pending_pr': {'pr_id': '123', 'head_sha': 'a' * 40,

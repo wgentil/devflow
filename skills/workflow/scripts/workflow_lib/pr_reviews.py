@@ -178,10 +178,10 @@ def read_pr_snapshot(client, pending: dict, governing_digest: str) -> dict:
         if context and context not in seen_contexts and context != 'devflow/pr-review':
             seen_contexts.add(context)
             latest_statuses.append(status)
-    checks = [{'name': row.get('name'), 'status': row.get('status'),
+    checks = [{'kind': 'check-run', 'name': row.get('name'), 'status': row.get('status'),
                'conclusion': row.get('conclusion'), 'id': row.get('id')}
               for row in check_rows if row.get('name') != 'devflow/pr-review']
-    checks.extend({'name': row['context'], 'status': 'completed',
+    checks.extend({'kind': 'status', 'name': row['context'], 'status': 'completed',
                    'conclusion': 'success' if row.get('state') == 'success' else row.get('state'),
                    'id': row.get('id')} for row in latest_statuses)
     return {'pr_id': str(pr['id']), 'pr_number': pr['number'], 'owner': owner, 'repo': repo,
@@ -234,6 +234,8 @@ def record_pr_review(run: dict, package_hash: str, reviewer: dict, report: dict)
                 or any(not isinstance(option, dict) or not isinstance(option.get('choice'), str)
                        or not option['choice'].strip() or not isinstance(option.get('consequence'), str)
                        or not option['consequence'].strip() for option in finding['options'])
+                or any(option.get('effect') not in {'accept', 'request-changes', 'reject'}
+                       for option in finding['options'])
                 or len({option['choice'] for option in finding['options']}) != len(finding['options'])):
             raise ValueError('human decision needs distinct choices and consequences')
     if report['verdict'] in {'changes-requested', 'human-decision-required'} and not findings:
@@ -246,30 +248,30 @@ def record_pr_review(run: dict, package_hash: str, reviewer: dict, report: dict)
             or report['verdict'] == 'blocked' and not blockers):
         raise ValueError('blocked PR verdict needs reason and next action')
     if report['verdict'] == 'pass':
+        if run.get('pr_rejected'):
+            raise ValueError('human rejected this PR delivery; start a fresh run')
         if blockers:
             raise ValueError('passing PR review cannot have unresolved blockers')
-        decisions = {(row.get('package_hash'), row.get('finding_id'))
+        decisions = {(row.get('package_hash'), row.get('finding_id')): row.get('effect')
                      for row in run.get('pr_human_decisions', [])}
         unresolved = [finding.get('id')
                       for prior_review in run.get('reviews', {}).get('pr', [])
                       if prior_review.get('package_hash') == package_hash
                       and prior_review.get('verdict') == 'human-decision-required'
                       for finding in prior_review.get('findings', [])
-                      if (package_hash, finding.get('id')) not in decisions]
+                      if decisions.get((package_hash, finding.get('id'))) != 'accept']
         if unresolved:
-            raise ValueError('human-required PR findings need recorded decisions before pass')
+            raise ValueError('human-required PR findings need accepting decisions before pass')
         checks = package.get('snapshot', {}).get('checks', [])
-        if not checks or any(row.get('status') != 'completed' or row.get('conclusion') != 'success'
+        if not checks or any(row.get('status') != 'completed'
+                             or row.get('conclusion') not in ({'success'} if row.get('kind') == 'status'
+                                                              else {'success', 'neutral', 'skipped'})
                              for row in checks):
             raise ValueError('PR CI must be complete and successful before pass')
         if package.get('snapshot', {}).get('mergeable') is not True:
             raise ValueError('PR mergeability is unknown or blocked')
         if any(row.get('severity') in {'critical', 'important'} for row in findings):
             raise ValueError('pass cannot contain unresolved blocking findings')
-    corrections = sum(row.get('verdict') == 'changes-requested'
-                      for row in run.get('reviews', {}).get('pr', []))
-    if report['verdict'] == 'changes-requested' and corrections >= 2:
-        raise ValueError('PR correction limit reached; human direction or adjudication required')
     body = {'schema_version': 1, 'package_hash': package_hash, 'role': 'pr',
             'actor_id': actor, 'invocation_ref': reviewer['invocation_ref'],
             'verdict': report['verdict'], 'findings': findings, 'blockers': blockers,
@@ -291,7 +293,8 @@ def record_pr_human_decision(run: dict, package_hash: str, actor_id: str,
                    or review.get('verdict') != 'human-decision-required'):
         review = None
     finding = next((row for row in review.get('findings', []) if row.get('id') == finding_id), None) if review else None
-    if not finding or choice not in [row.get('choice') for row in finding.get('options', [])]:
+    option = next((row for row in finding.get('options', []) if row.get('choice') == choice), None) if finding else None
+    if not option:
         raise ValueError('human choice must answer a current review finding option')
     actors = set(run.get('actors', {}).values()) | set(run.get('implementer_actors', []))
     actors.update(row.get('actor_id') for row in run.get('reviews', {}).get('pr', []))
@@ -307,6 +310,7 @@ def record_pr_human_decision(run: dict, package_hash: str, actor_id: str,
     body = {'schema_version': 1, 'package_hash': package_hash, 'review_id': review['review_id'],
             'pr_id': package['pr_id'], 'head_sha': package['head_sha'],
             'finding_id': finding_id, 'actor_id': actor_id, 'choice': choice,
+            'effect': option['effect'],
             'rationale': rationale.strip()}
     body['id'] = _hash(body)
     return body

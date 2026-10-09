@@ -63,6 +63,8 @@ def dispatch(parsed: argparse.Namespace) -> dict:
         pending = run.get('pending_pr')
         if not pending:
             raise WorkflowError('PR_NOT_OPEN', 'a pending GitHub PR is required')
+        if run.get('pr_rejected'):
+            raise WorkflowError('PR_REJECTED', 'human rejected this PR delivery; start a fresh run')
         from workflow_lib.specs import content_hash
         approved = state['data'].get('approval', {})
         specification = state['data'].get('spec')

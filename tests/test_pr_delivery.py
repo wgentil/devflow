@@ -24,6 +24,15 @@ class FakePrGithub:
         self.writes = []
 
     def api(self, method, path, body=None):
+        if method == 'GET' and path.startswith('/repos/acme/app/rulesets?'):
+            return [{'id': 2, 'name': 'DevFlow PR review', 'source_type': 'Repository'}]
+        if method == 'GET' and path == '/repos/acme/app/rulesets/2':
+            return {'id': 2, 'name': 'DevFlow PR review', 'target': 'branch',
+                    'enforcement': 'active', 'bypass_actors': [],
+                    'conditions': {'ref_name': {'include': ['refs/heads/main'], 'exclude': []}},
+                    'rules': [{'type': 'required_status_checks', 'parameters': {
+                        'strict_required_status_checks_policy': True,
+                        'required_status_checks': [{'context': 'devflow/pr-review'}]}}]}
         if path.startswith('/repos/acme/app/pulls?'):
             return [self.pr] if self.pr else []
         if path == '/repos/acme/app/pulls' and method == 'POST':

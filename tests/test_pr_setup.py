@@ -23,7 +23,7 @@ class FakeGithub:
     def api(self, method, path, body=None):
         if path == '/users/wayne':
             return {'id': 17, 'login': 'wayne'}
-        if path == '/repos/acme/app/rulesets':
+        if path == '/repos/acme/app/rulesets' or path.startswith('/repos/acme/app/rulesets?'):
             if method == 'GET':
                 return [{'id': rule['id'], 'name': rule['name']} for rule in self.rules]
             self.writes.append((method, path, body))
@@ -52,7 +52,7 @@ class PrSetupTests(unittest.TestCase):
         self.assertEqual(rule['conditions']['ref_name']['include'], ['refs/heads/main'])
         self.assertEqual(rule['bypass_actors'], [{'actor_id': 17, 'actor_type': 'User', 'bypass_mode': 'always'}])
         self.assertEqual(rule['rules'], [{'type': 'required_status_checks', 'parameters': {
-            'strict_required_status_checks': True,
+            'strict_required_status_checks_policy': True,
             'required_status_checks': [{'context': 'devflow/pr-review'}]}}])
         self.assertEqual(configure_pr_setup(client, 'acme', 'app', 'main', selected), result)
         self.assertEqual(len(client.writes), 1)

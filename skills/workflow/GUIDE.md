@@ -181,7 +181,9 @@ distinct `pr-reviewer`, record its every-file verdict, then `pr publish` and
 After a published changes-requested report, `pr rework` reopens all item proofs,
 reviews, acceptance and hardening. The implementer repairs, renews these gates,
 pushes a new head, and uses `pr refresh` with a newly verified manifest before
-another package. A human decision is scoped to an exact finding and never waives CI.
+another package. After two automatic correction rounds, a later rework needs
+independent human direction. A human decision is scoped to an exact finding;
+only an accepting choice can precede a pass, and no choice waives CI.
 For a PR changed externally, `pr sync` reopens those gates before the same
 refresh sequence; DevFlow has no background watcher.
 Historical PR delivery records remain readable. The helper never merges a PR.

@@ -35,6 +35,13 @@ class PrDecisionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'CI'):
             record_pr_review(self.run, 'pkg', self.reviewer, self.report)
 
+    def test_neutral_and_skipped_check_runs_are_acceptable(self):
+        self.package['snapshot']['checks'] = [
+            {'kind': 'check-run', 'name': 'optional', 'status': 'completed', 'conclusion': 'skipped'},
+            {'kind': 'check-run', 'name': 'analysis', 'status': 'completed', 'conclusion': 'neutral'},
+            {'kind': 'status', 'name': 'unit', 'status': 'completed', 'conclusion': 'success'}]
+        self.assertEqual(record_pr_review(self.run, 'pkg', self.reviewer, self.report)['verdict'], 'pass')
+
     def test_blocked_requires_next_action(self):
         self.report['verdict'] = 'blocked'
         with self.assertRaisesRegex(ValueError, 'next action'):
@@ -47,13 +54,14 @@ class PrDecisionTests(unittest.TestCase):
             'id': 'f1', 'severity': 'important', 'path': 'a.py', 'line': 1,
             'reason': 'Ambiguous rule', 'acceptance_condition': 'Choose behavior',
             'question': 'Which rule applies?', 'options': [
-                {'choice': 'A', 'consequence': 'Users see A'},
-                {'choice': 'B', 'consequence': 'Users see B'}],
+                {'choice': 'A', 'consequence': 'Users see A', 'effect': 'accept'},
+                {'choice': 'B', 'consequence': 'Users see B', 'effect': 'request-changes'}],
             'impact': 'Wrong user result', 'recommendation': 'A', 'owner': 'owner-1'}])
         review = record_pr_review(self.run, 'pkg', self.reviewer, self.report)
         self.run['reviews']['pr'] = [review]
         decision = record_pr_human_decision(self.run, 'pkg', 'owner-1', 'f1', 'A', 'Reason')
         self.assertEqual(decision['choice'], 'A')
+        self.assertEqual(decision['effect'], 'accept')
         with self.assertRaisesRegex(ValueError, 'distinct'):
             record_pr_human_decision(self.run, 'pkg', 'fresh', 'f1', 'A', 'Reason')
 
@@ -64,10 +72,18 @@ class PrDecisionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'human-required'):
             record_pr_review(self.run, 'pkg', self.reviewer, self.report)
 
-    def test_two_round_limit(self):
+    def test_third_changes_report_remains_recordable_for_human_direction(self):
         self.report.update(verdict='changes-requested', findings=[{
             'id': 'f1', 'severity': 'important', 'path': 'a.py', 'line': 1,
             'reason': 'Wrong', 'acceptance_condition': 'Correct result'}])
         self.run['reviews']['pr'] = [{'verdict': 'changes-requested'}, {'verdict': 'changes-requested'}]
-        with self.assertRaisesRegex(ValueError, 'correction limit'):
+        self.assertEqual(record_pr_review(self.run, 'pkg', self.reviewer, self.report)['verdict'],
+                         'changes-requested')
+
+    def test_reject_choice_cannot_become_pass(self):
+        self.run['reviews']['pr'] = [{'review_id': 'review-1', 'package_hash': 'pkg',
+            'verdict': 'human-decision-required', 'actor_id': 'prior-pr',
+            'findings': [{'id': 'f1'}]}]
+        self.run['pr_human_decisions'] = [{'package_hash': 'pkg', 'finding_id': 'f1', 'effect': 'reject'}]
+        with self.assertRaisesRegex(ValueError, 'accepting decisions'):
             record_pr_review(self.run, 'pkg', self.reviewer, self.report)

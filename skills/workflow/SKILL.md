@@ -56,7 +56,9 @@ flowchart TD
     PRRefresh --> PRPackage
     PendingPR -.->|External PR update: pr sync| PRFix
     PRReview -->|Human decision required| PRHuman["Human answers exact finding; fresh review"]
-    PRHuman --> PRPackage
+    PRHuman -->|Accept| PRPackage
+    PRHuman -->|Request changes| PRFix
+    PRHuman -->|Reject| PRBlocked
     PRReview -->|Pass| PRStatus["Publish concise report and exact-head required status"]
     PRStatus -->|Confirmed success| Delivered
     PRReview -->|Blocked| PRBlocked["Keep PR check non-passing"]

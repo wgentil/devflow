@@ -121,7 +121,9 @@ flowchart TD
     PRRefresh --> PRPackage
     PendingPR -.->|External PR update: pr sync| PRRework
     PRReview -->|Human decision required| HumanPR[Human chooses exact finding option]
-    HumanPR --> PRPackage
+    HumanPR -->|Accept| PRPackage
+    HumanPR -->|Request changes| PRRework
+    HumanPR -->|Reject| PRBlocked[Keep PR non-passing]
     PRReview -->|Pass with current CI| PRStatus[Publish report and required status]
     PRStatus -->|Confirmed success| PRDelivered[Record ready-to-merge PR delivery]
     Proof -->|Failure| Fix[Current implementer reworks]
@@ -287,7 +289,9 @@ Missing remote makes PR unavailable, without preventing local implementation.
 The optional GitHub PR ruleset setup helper can currently inspect and configure
 the dedicated `devflow/pr-review` required status with named direct-push bypass
 actors. It requires authenticated GitHub CLI access and repository ruleset
-permission. The `pr open` command can create or find one exact-head GitHub PR and
+permission. PR opening, publication, refresh and completion recheck the live
+ruleset; a stale setup receipt cannot silently remove the required gate.
+The `pr open` command can create or find one exact-head GitHub PR and
 post an initial pending status after explicit authorization. It leaves the run
 active. `review pr-package` gathers complete hosted and local diff evidence;
 a distinct PR reviewer records every-file coverage. `pr publish` writes a
@@ -297,6 +301,8 @@ The helper does not merge the PR. While delivery is pending, use `pr sync`
 after an external PR change, renew the gates and `pr refresh`, then rerun the
 review. After PR delivery is recorded, start a fresh run for a later update;
 there is no webhook watcher. A fork's exact commits must be locally available.
+An explicit human rejection also closes this run's PR path; a later attempt
+needs a fresh run.
 If CI is missing, GitHub pages are truncated, or the PR changes, the gate
 stays closed. The setup receipt alone does not create or review a PR. See the
 [full review guide](../skills/review-work/GUIDE.md#github-pr-full-review) for

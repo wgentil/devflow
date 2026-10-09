@@ -26,10 +26,15 @@ def _branch(base: str) -> str:
 
 def _rulesets(client, owner: str, repo: str) -> tuple[str, list[dict]]:
     path = _repo_path(owner, repo) + '/rulesets'
-    listed = client.api('GET', path)
-    if not isinstance(listed, list):
-        raise WorkflowError('GITHUB_RESPONSE_INVALID', 'ruleset listing must be an array')
-    if len(listed) >= 100:
+    listed = []
+    for page in range(1, 101):
+        batch = client.api('GET', f'{path}?per_page=100&page={page}')
+        if not isinstance(batch, list):
+            raise WorkflowError('GITHUB_RESPONSE_INVALID', 'ruleset listing must be an array')
+        listed.extend(batch)
+        if len(batch) < 100:
+            break
+    else:
         raise WorkflowError('PR_RULESET_LIST_INCOMPLETE', 'ruleset listing may be incomplete')
     matches = [rule for rule in listed if isinstance(rule, dict) and rule.get('name') == RULESET_NAME
                and rule.get('source_type', 'Repository') == 'Repository']
@@ -66,7 +71,7 @@ def _resolve_actors(client, owner: str, actors: list[dict]) -> list[dict]:
 
 def _required_rule() -> dict:
     return {'type': 'required_status_checks', 'parameters': {
-        'strict_required_status_checks': True,
+        'strict_required_status_checks_policy': True,
         'required_status_checks': [{'context': STATUS_CONTEXT}]}}
 
 

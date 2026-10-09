@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from urllib.parse import quote
 
 
@@ -34,6 +35,35 @@ def _pages(client, path: str) -> list:
     raise ValueError('GitHub PR report history pagination is incomplete')
 
 
+def _side_for_finding(package: dict, finding: dict) -> str | None:
+    """Only place inline comments on lines GitHub exposes in its text patch."""
+    file = next((row for row in package.get('snapshot', {}).get('files', [])
+                 if row.get('filename') == finding.get('path')), None)
+    patch = file.get('patch') if file else None
+    if not isinstance(patch, str) or not patch:
+        return None
+    old_line = new_line = None
+    old_hits, new_hits = set(), set()
+    for line in patch.splitlines():
+        header = re.match(r'^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@', line)
+        if header:
+            old_line, new_line = int(header.group(1)), int(header.group(2))
+        elif old_line is not None and line.startswith('+'):
+            new_hits.add(new_line)
+            new_line += 1
+        elif old_line is not None and line.startswith('-'):
+            old_hits.add(old_line)
+            old_line += 1
+        elif old_line is not None and line.startswith(' '):
+            old_line += 1
+            new_line += 1
+    if finding.get('line') in new_hits:
+        return 'RIGHT'
+    if finding.get('line') in old_hits:
+        return 'LEFT'
+    return None
+
+
 def publish_pr_review(client, package: dict, verdict: dict, decisions: list[dict]) -> dict:
     if verdict.get('package_hash') != package.get('package_hash') or not verdict.get('review_id'):
         raise ValueError('PR verdict does not bind the review package')
@@ -42,7 +72,9 @@ def publish_pr_review(client, package: dict, verdict: dict, decisions: list[dict
             raise ValueError('unresolved human decision blocks success')
         state = 'success'
     elif verdict.get('verdict') == 'human-decision-required':
-        state = 'pending'
+        effects = {row.get('effect') for row in decisions
+                   if row.get('package_hash') == package['package_hash']}
+        state = 'failure' if effects.intersection({'request-changes', 'reject'}) else 'pending'
     elif verdict.get('verdict') in {'changes-requested', 'blocked'}:
         state = 'failure'
     else:
@@ -72,13 +104,16 @@ def publish_pr_review(client, package: dict, verdict: dict, decisions: list[dict
     for finding in verdict.get('findings', []):
         if finding.get('path') == 'PR' or finding.get('severity') not in {'critical', 'important'}:
             continue
+        side = _side_for_finding(package, finding)
+        if side is None:
+            continue
         finding_marker = f'<!-- devflow-finding:{package["package_hash"]}:{finding["id"]} -->'
         if any(finding_marker in row.get('body', '') for row in inline):
             continue
         body = f'{finding_marker}\n{finding["reason"]}\nAcceptance: {finding["acceptance_condition"]}'
         row = client.api('POST', f'{pull}/comments', {'body': body,
             'commit_id': package['head_sha'], 'path': finding['path'],
-            'line': finding['line'], 'side': 'RIGHT'})
+            'line': finding['line'], 'side': side})
         if finding_marker not in row.get('body', ''):
             raise ValueError('GitHub PR inline comment write was not confirmed')
         inline.append(row)
@@ -98,7 +133,7 @@ def publish_pr_review(client, package: dict, verdict: dict, decisions: list[dict
 
 def complete_pr_delivery(run: dict, package: dict, verdict: dict, receipt: dict) -> dict:
     pending = run.get('pending_pr', {})
-    if run.get('status') != 'active' or not pending:
+    if run.get('status') != 'active' or not pending or run.get('pr_rejected'):
         raise ValueError('active pending PR delivery is required')
     if (receipt.get('state') != 'success' or verdict.get('verdict') != 'pass'
             or not receipt.get('status_url') or receipt.get('package_hash') != package.get('package_hash')

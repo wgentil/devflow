@@ -11,7 +11,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'skills/workflow/scripts'))
 from commands import pr as pr_commands, review as review_commands
 from workflow_lib.specs import content_hash
-from workflow_lib.store import read_state, transact
+from workflow_lib.store import read_state, transact, WorkflowError as CliWorkflowError
 from workflow_lib.delivery import prepare_delivery, verify_delivery
 
 from skills.workflow.scripts.workflow_lib.journal_domains import reduce_event
@@ -81,6 +81,30 @@ class PrFlowTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'gates'):
                 prepare_delivery(self.run, repositories, 'local-merge')
 
+    def test_two_automatic_repairs_then_human_direction(self):
+        self.run['pr_rework_history'] = [
+            {'reason': 'changes-requested', 'direction': None},
+            {'reason': 'changes-requested', 'direction': None}]
+        with self.assertRaisesRegex(WorkflowError, 'human direction'):
+            reduce_event(self.data, 'domain.pr.rework', {'request': {
+                'run_id': 'run', 'review_id': 'rev'}}, 1)
+        direction = {'review_id': 'rev', 'choice': 'continue', 'actor_id': 'human',
+                     'rationale': 'Repair this issue', 'cost_if_wrong': 'Delay'}
+        result = reduce_event(self.data, 'domain.pr.rework', {'request': {
+            'run_id': 'run', 'review_id': 'rev', 'direction': direction}}, 1)
+        self.assertEqual(result['direction'], direction)
+
+    def test_human_request_changes_can_rework_but_reject_cannot(self):
+        self.run['reviews']['pr'][-1]['verdict'] = 'human-decision-required'
+        self.run['pr_human_decisions'] = [{'package_hash': 'pkg', 'effect': 'reject'}]
+        with self.assertRaisesRegex(WorkflowError, 'human owner'):
+            reduce_event(self.data, 'domain.pr.rework', {'request': {
+                'run_id': 'run', 'review_id': 'rev'}}, 1)
+        self.run['pr_human_decisions'][0]['effect'] = 'request-changes'
+        result = reduce_event(self.data, 'domain.pr.rework', {'request': {
+            'run_id': 'run', 'review_id': 'rev'}}, 1)
+        self.assertEqual(result['reason'], 'human-requested-changes')
+
 
 class FullPrCommandFlowTests(unittest.TestCase):
     def setUp(self):
@@ -105,23 +129,39 @@ class FullPrCommandFlowTests(unittest.TestCase):
                'pending_pr': {'status': 'pending-review', 'pr_id': '123', 'pr_number': 1,
                               'owner': 'o', 'repo': 'r', 'base_branch': 'main',
                               'base_sha': self.base, 'head_sha': self.head,
-                              'manifest_hash': 'manifest', 'url': 'https://github.com/o/r/pull/1'}}
+                              'manifest_hash': 'manifest', 'url': 'https://github.com/o/r/pull/1',
+                              'setup_operation_id': 'setup-1'}}
         for i, event in enumerate([
             {'kind': 'spec.created', 'payload': {'spec': self.spec}},
             {'kind': 'spec.approved', 'payload': {'approval': {
                 'actor_id': 'human', 'confirmed': True, 'content_hash': content_hash(self.spec)}}},
             {'kind': 'governing.inputs.recorded', 'payload': {'receipt': self.receipt}},
+            {'kind': 'setup.seeded', 'payload': {'pr_setup': {'setup-1': {
+                'status': 'verified', 'receipt': {'verified': True, 'ruleset_id': 2,
+                    'owner': 'o', 'repo': 'r', 'base': 'main', 'context': 'devflow/pr-review',
+                    'bypass_actors': []}}}}},
             {'kind': 'run.started', 'payload': {'run': run}},
         ]):
             transact(self.root, i, f'seed-{i}', event)
         self.comments = []
         self.statuses = [{'context': 'devflow/pr-review', 'state': 'pending', 'description': 'pending'}]
         self.hosted_head = self.head
+        self.ruleset_enabled = True
 
     def tearDown(self):
         self.tmp.cleanup()
 
     def api(self, method, path, body=None):
+        if method == 'GET' and path.startswith('/repos/o/r/rulesets?'):
+            return [{'id': 2, 'name': 'DevFlow PR review', 'source_type': 'Repository'}]
+        if method == 'GET' and path == '/repos/o/r/rulesets/2':
+            return {'id': 2, 'name': 'DevFlow PR review', 'target': 'branch',
+                    'enforcement': 'active' if self.ruleset_enabled else 'disabled',
+                    'bypass_actors': [],
+                    'conditions': {'ref_name': {'include': ['refs/heads/main'], 'exclude': []}},
+                    'rules': [{'type': 'required_status_checks', 'parameters': {
+                        'strict_required_status_checks_policy': True,
+                        'required_status_checks': [{'context': 'devflow/pr-review'}]}}]}
         if method == 'GET' and path.endswith('/pulls/1'):
             return {'id': 123, 'number': 1, 'state': 'open', 'title': 'Change', 'body': 'Reason',
                     'head': {'sha': self.hosted_head}, 'base': {'ref': 'main', 'sha': self.base},
@@ -190,3 +230,22 @@ class FullPrCommandFlowTests(unittest.TestCase):
                     package_hash=package['package_hash'], actor_id='fresh-reviewer',
                     invocation_ref='inv-1', tool_available=True, report_json=json.dumps(report),
                     operation_id='review-1', operation_id_explicit=True))
+
+    def test_deleted_ruleset_blocks_publication(self):
+        with patch.object(review_commands, 'GithubClient', return_value=self), \
+             patch.object(pr_commands, 'GithubClient', return_value=self):
+            package = review_commands.dispatch(argparse.Namespace(
+                root=str(self.root), run_id='run', review_command='pr-package',
+                repository=str(self.repo), operation_id='package-1'))['package']
+            report = {'package_hash': package['package_hash'], 'verdict': 'pass',
+                      'reviewed_files': ['a.txt'], 'findings': []}
+            review = review_commands.dispatch(argparse.Namespace(
+                root=str(self.root), run_id='run', review_command='record',
+                package_hash=package['package_hash'], actor_id='fresh-reviewer',
+                invocation_ref='inv-1', tool_available=True, report_json=json.dumps(report),
+                operation_id='review-1', operation_id_explicit=True))
+            self.ruleset_enabled = False
+            with self.assertRaisesRegex(CliWorkflowError, 'policy'):
+                pr_commands.dispatch(argparse.Namespace(
+                    root=str(self.root), run_id='run', pr_command='publish',
+                    review_id=review['review_id'], operation_id='publish-1'))

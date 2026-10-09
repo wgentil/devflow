@@ -165,7 +165,7 @@ def reconcile_pr_delivery(run: dict, verified_manifest: dict, request: dict, cli
 def refresh_pr_delivery(run: dict, verified_manifest: dict, client) -> dict:
     """Bind a repaired, reverified branch to the already-authorized PR."""
     pending = run.get('pending_pr', {})
-    if not pending or not run.get('pr_rework') or run.get('status') != 'active':
+    if not pending or not run.get('pr_rework') or run.get('status') != 'active' or run.get('pr_rejected'):
         raise ValueError('published changes-requested review and active PR rework are required')
     manifest = verified_manifest
     gate_run = {key: value for key, value in run.items()

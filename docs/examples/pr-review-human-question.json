@@ -13,8 +13,9 @@
       "acceptance_condition": "Record the chosen behavior and verify it.",
       "question": "Which behavior is intended?",
       "options": [
-        {"choice": "A", "consequence": "Existing users retain the old behavior."},
-        {"choice": "B", "consequence": "All users receive the new behavior."}
+        {"choice": "A", "consequence": "Existing users retain the old behavior.", "effect": "accept"},
+        {"choice": "B", "consequence": "All users receive the new behavior.", "effect": "request-changes"},
+        {"choice": "Stop", "consequence": "Do not deliver this PR.", "effect": "reject"}
       ],
       "impact": "The wrong choice changes user-visible results.",
       "recommendation": "A",

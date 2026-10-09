@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 
 from workflow_lib.github_pr import GithubClient
-from workflow_lib.pr_setup import configure_pr_setup, inspect_pr_setup, verify_pr_setup
+from workflow_lib.pr_setup import configure_pr_setup, inspect_pr_setup, verify_pr_setup, _matches
 from workflow_lib.pr_delivery import open_pr_delivery, reconcile_pr_delivery, refresh_pr_delivery
 from workflow_lib.pr_reviews import (read_pr_snapshot, validate_pr_snapshot,
                                      current_pr_inputs, _hash as review_hash)
@@ -36,6 +36,7 @@ def register_commands(parser: argparse.ArgumentParser) -> None:
     rework.add_argument('--root', required=True)
     rework.add_argument('--run-id', required=True)
     rework.add_argument('--review-id', required=True)
+    rework.add_argument('--direction-file')
     rework.add_argument('--operation-id', required=True)
     sync = actions.add_parser('sync')
     sync.add_argument('--root', required=True)
@@ -69,6 +70,18 @@ def _hash(value: dict) -> str:
                                      separators=(',', ':')).encode()).hexdigest()
 
 
+def _verify_live_policy(client: GithubClient, state_data: dict, setup_id: str | None) -> dict:
+    setup = state_data.get('pr_setup', {}).get(setup_id, {})
+    receipt = setup.get('receipt', {})
+    if setup.get('status') != 'verified' or not isinstance(receipt, dict):
+        raise WorkflowError('PR_SETUP_REQUIRED', 'verified GitHub PR setup is required')
+    observed = inspect_pr_setup(client, receipt.get('owner'), receipt.get('repo'), receipt.get('base'))
+    if (not observed.get('configured') or observed.get('ruleset_id') != receipt.get('ruleset_id')
+            or not _matches(observed.get('ruleset'), receipt['base'], receipt.get('bypass_actors', []))):
+        raise WorkflowError('PR_SETUP_STALE', 'GitHub required PR status policy changed; reconcile setup')
+    return receipt
+
+
 def dispatch(parsed: argparse.Namespace) -> dict:
     client = GithubClient()
     if parsed.pr_command == 'sync':
@@ -76,9 +89,11 @@ def dispatch(parsed: argparse.Namespace) -> dict:
     if parsed.pr_command == 'rework':
         root = Path(parsed.root).expanduser().resolve()
         state = read_state(root)
+        direction = _request(parsed.direction_file) if parsed.direction_file else None
         response = transact(root, state['version'], parsed.operation_id,
             {'kind': 'domain.pr.rework', 'payload': {'request': {
-                'run_id': parsed.run_id, 'review_id': parsed.review_id}}})
+                'run_id': parsed.run_id, 'review_id': parsed.review_id,
+                'direction': direction}}})
         return {**response['state']['data']['domain_receipts'][parsed.operation_id],
                 'state_version': response['state']['version'], 'replayed': response['replayed']}
     if parsed.pr_command == 'refresh':
@@ -138,7 +153,7 @@ def _sync(parsed: argparse.Namespace, client: GithubClient) -> dict:
     state = read_state(root)
     run = state['data'].get('runs', {}).get(parsed.run_id)
     pending = run.get('pending_pr') if run else None
-    if not pending or run.get('status') != 'active' or run.get('pr_rework'):
+    if not pending or run.get('status') != 'active' or run.get('pr_rework') or run.get('pr_rejected'):
         raise WorkflowError('PR_SYNC_UNAVAILABLE', 'active pending PR outside rework is required')
     previous = state['operations'].get(parsed.operation_id)
     if previous:
@@ -168,6 +183,7 @@ def _refresh(parsed: argparse.Namespace, client: GithubClient) -> dict:
     run = state['data'].get('runs', {}).get(parsed.run_id)
     if not run:
         raise WorkflowError('RUN_NOT_FOUND', 'PR refresh needs an active run')
+    _verify_live_policy(client, state['data'], run.get('pending_pr', {}).get('setup_operation_id'))
     try:
         manifest = json.loads(Path(parsed.manifest_file).read_text(encoding='utf-8'))
     except (OSError, json.JSONDecodeError) as exc:
@@ -203,6 +219,7 @@ def _review_delivery(parsed: argparse.Namespace, client: GithubClient) -> dict:
                 or result.get('review_id') != parsed.review_id):
             raise WorkflowError('OPERATION_CONFLICT', 'PR operation ID belongs to different input')
         return {**result, 'replayed': True}
+    _verify_live_policy(client, state['data'], run['pending_pr'].get('setup_operation_id'))
     review = next((row for row in run.get('reviews', {}).get('pr', [])
                    if row.get('review_id') == parsed.review_id), None)
     if not review:
@@ -255,6 +272,7 @@ def _open(parsed: argparse.Namespace, request: dict, client: GithubClient) -> di
     setup = state['data'].get('pr_setup', {}).get(request.get('setup_operation_id'), {})
     if setup.get('status') != 'verified' or not isinstance(setup.get('receipt'), dict):
         raise WorkflowError('PR_SETUP_REQUIRED', 'verified GitHub ruleset setup is required')
+    _verify_live_policy(client, state['data'], request.get('setup_operation_id'))
     request_hash = _hash(request)
     prior = run.get('pr_open')
     if prior and prior['status'] == 'failed' and prior.get('operation_id') != parsed.operation_id:
@@ -290,6 +308,7 @@ def _open(parsed: argparse.Namespace, request: dict, client: GithubClient) -> di
                          'request_hash': request_hash, 'status': status, 'error_code': code}}})
         raise
     latest = read_state(root)
+    result['setup_operation_id'] = request['setup_operation_id']
     transact(root, latest['version'], f'pr-open-verified:{parsed.operation_id}',
              {'kind': 'domain.pr.open-finish', 'payload': {'request': {
                  'run_id': parsed.run_id, 'operation_id': parsed.operation_id,

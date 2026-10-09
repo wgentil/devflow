@@ -78,7 +78,10 @@ shape example. `reviewed_files` must enumerate every changed path. `pass`
 requires successful CI and mergeability. Findings need a reason and acceptance
 condition; human questions also need options, impact, recommendation and owner.
 Each human option states its consequence and the recorded actor must be the
-named owner. A blocked report lists a reason and next action.
+named owner. Options have an `accept`, `request-changes`, or `reject` effect.
+Only an accepted choice can precede a later passing review. A blocked report
+lists a reason and next action. GitHub treats completed neutral and skipped
+check runs as acceptable; a failed or pending check blocks a pass.
 The helper can validate the report shape and actor IDs; the coordinator must
 ensure the invocation was genuinely separate and the review substantive.
 
@@ -99,14 +102,27 @@ For `changes-requested`, publish the failure report, then use `pr rework` to
 reopen all item proofs, reviews, acceptance and hardening. The implementer
 repairs code and renews those gates. Prepare and verify a new delivery manifest,
 push the repaired branch, then use `pr refresh` to bind its new hosted head and
-pending status before preparing a new PR package. After two
-correction rounds, get human direction or independent adjudication. For
+pending status before preparing a new PR package. After two automatic
+correction rounds, record independent human direction before another rework. For
 `human-decision-required`, use `review pr-human-decision` with the exact package,
-finding, selected option, actor and rationale, then obtain a fresh PR review.
+finding, selected option, actor and rationale. An accepted option needs a fresh
+PR review; a request-changes option can enter rework, while rejection keeps
+delivery closed for that run. A later attempt needs a fresh run. Beyond two
+automatic correction rounds, `pr rework` needs a
+`--direction-file` containing an independent human's `review_id`,
+`choice: continue`, `actor_id`, `rationale`, and `cost_if_wrong`.
+The [direction example](../../docs/examples/pr-rework-direction.json) shows the
+file shape; pass it only for that later round.
+A status update after a recorded human choice uses a new `pr publish` operation
+ID; an exact retry of an earlier publication returns its historical receipt.
 A human choice cannot waive failed CI or make a nonpassing verdict pass.
 `pr publish` posts a concise GitHub summary, actionable inline findings and a
 required status. `pr complete` records PR delivery only after confirmed success
 on the exact head. The helper does not merge the PR or watch external updates.
+Inline comments are placed only on changed text lines GitHub exposes, using
+the left side for deleted lines; binary and out-of-diff findings remain in the
+summary. Opening, publishing, refreshing and completing also recheck the live
+required ruleset.
 While delivery is pending, `pr sync` detects an external GitHub PR head or base
 change and reopens the same gates. After renewing them, `pr refresh` binds the
 new verified head. The old verdict and status do not transfer. After terminal
@@ -115,8 +131,15 @@ PR delivery, use a fresh run for a later update to the same PR.
 ```sh
 df pr rework --root "$CONTROL" --run-id greeting-run \
   --review-id "$PR_REVIEW_ID" --operation-id pr-rework-v1
+# Renew gates, push the new head, and verify a replacement manifest.
 df pr refresh --root "$CONTROL" --run-id greeting-run \
   --manifest-file "$NEW_VERIFIED_MANIFEST" --operation-id pr-refresh-v1
+```
+
+For an external PR update while delivery is pending, start with `pr sync`
+instead of `pr rework`, then renew gates and use `pr refresh`:
+
+```sh
 df pr sync --root "$CONTROL" --run-id greeting-run \
   --operation-id pr-external-update-v1
 ```

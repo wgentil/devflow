@@ -56,7 +56,8 @@ def _reduce(data, kind, req, version):
     if kind == 'domain.pr.rework':
         run = data.get('runs', {}).get(req.get('run_id'))
         require(run and run.get('status') == 'active' and run.get('pending_pr')
-                and not run.get('pr_rework'), 'active pending PR without rework is required')
+                and not run.get('pr_rework') and not run.get('pr_rejected'),
+                'active pending PR without rejection or rework is required')
         require(not run.get('active_attempt') and not any(
                     row.get('status') == 'running' for row in run.get('native_invocations', {}).values()),
                 'finish active implementation before PR rework')
@@ -67,19 +68,39 @@ def _reduce(data, kind, req, version):
                          or req['observed_base'] != old.get('base_sha')),
                     'external PR update must change head or base')
             review_id = None
+            reason = 'external-update'
         else:
             review = next((row for row in reversed(run.get('reviews', {}).get('pr', []))
                            if row.get('review_id') == req.get('review_id')), None)
             require(review and run['reviews']['pr'][-1] == review
-                    and review.get('verdict') == 'changes-requested',
-                    'latest changes-requested PR review is required')
+                    and review.get('verdict') in {'changes-requested', 'human-decision-required'},
+                    'latest review must request changes or human direction')
+            if review['verdict'] == 'human-decision-required':
+                require(any(row.get('package_hash') == review.get('package_hash')
+                            and row.get('effect') == 'request-changes'
+                            for row in run.get('pr_human_decisions', [])),
+                        'human owner must request changes before rework')
+                reason = 'human-requested-changes'
+            else:
+                reason = 'changes-requested'
             require(any(row.get('review_id') == review['review_id'] and row.get('state') == 'failure'
                         for row in run.get('pr_publications', [])),
                     'publish the changes-requested PR review before rework')
             review_id = review['review_id']
-        rounds = sum(row.get('verdict') == 'changes-requested'
-                     for row in run['reviews']['pr'])
-        require(rounds <= 2, 'PR automatic correction limit reached')
+        rounds = sum(row.get('reason') == 'changes-requested' and not row.get('direction')
+                     for row in run.get('pr_rework_history', []))
+        direction = req.get('direction')
+        if reason == 'changes-requested' and rounds >= 2:
+            require(isinstance(direction, dict) and direction.get('choice') == 'continue'
+                    and direction.get('review_id') == review_id
+                    and text(direction.get('actor_id')) and text(direction.get('rationale'))
+                    and text(direction.get('cost_if_wrong')),
+                    'PR automatic correction limit reached; human direction is required')
+            excluded = set(run.get('implementer_actors', [])) | set(run.get('actors', {}).values())
+            require(direction['actor_id'] not in excluded,
+                    'PR rework direction must come from an independent human')
+        elif direction is not None:
+            require(False, 'human direction is only accepted after the automatic limit')
         for item in run.get('items', {}).values():
             item['status'] = 'pending'
         for evidence in run.get('verification_proofs', {}).values():
@@ -91,14 +112,15 @@ def _reduce(data, kind, req, version):
             acceptance['fresh'] = False
         for proof in run.get('hardening_proofs', {}).values():
             proof['passed'] = False
-        run['pr_rework'] = {'review_id': review_id, 'round': rounds,
-                            'reason': req.get('reason', 'changes-requested')}
+        run['pr_rework'] = {'review_id': review_id, 'round': rounds + (reason == 'changes-requested'),
+                            'reason': reason, 'direction': deepcopy(direction)}
+        run.setdefault('pr_rework_history', []).append(deepcopy(run['pr_rework']))
         return deepcopy(run['pr_rework'])
     if kind == 'domain.pr.refresh':
         run = data.get('runs', {}).get(req.get('run_id'))
         receipt = req.get('receipt')
         old = run.get('pending_pr') if run else None
-        require(run and run.get('pr_rework') and isinstance(receipt, dict)
+        require(run and run.get('pr_rework') and not run.get('pr_rejected') and isinstance(receipt, dict)
                 and receipt.get('status') == 'pending-review'
                 and all(receipt.get(key) == old.get(key) for key in
                         ('pr_id', 'pr_number', 'owner', 'repo', 'base_branch'))
@@ -157,6 +179,8 @@ def _reduce(data, kind, req, version):
             decision.get('choice'), decision.get('rationale'))
         require(expected == decision, 'PR human decision does not match the current finding')
         run.setdefault('pr_human_decisions', []).append(deepcopy(decision))
+        if decision['effect'] == 'reject':
+            run['pr_rejected'] = deepcopy(decision)
         return deepcopy(decision)
     if kind == 'domain.pr.open-start':
         run = data.get('runs', {}).get(req.get('run_id'))
