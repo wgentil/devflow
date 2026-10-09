@@ -126,6 +126,8 @@ flowchart TD
     HumanPR -->|Reject| PRBlocked[Keep PR non-passing]
     PRReview -->|Pass with current CI| PRStatus[Publish report and required status]
     PRStatus -->|Confirmed success| PRDelivered[Record ready-to-merge PR delivery]
+    DirectResult --> SitePrompt[Ask whether to update the DevFlow Codex site]
+    PRDelivered --> SitePrompt
     Proof -->|Failure| Fix[Current implementer reworks]
     Review -->|Changes requested| Fix
     Accept -->|Configured hardening gate fails| Repair{Opted-in bounded repair eligible?}
@@ -303,6 +305,11 @@ review. After PR delivery is recorded, start a fresh run for a later update;
 there is no webhook watcher. A fork's exact commits must be locally available.
 An explicit human rejection also closes this run's PR path; a later attempt
 needs a fresh run.
+After each completed delivery record, including a ready-to-merge PR, the agent
+asks whether to update the [DevFlow Codex site](https://devflow-field-guide.waygent.chatgpt.site/)
+with that build. The question is asked once per completed build and does not
+hold up delivery if declined or unanswered. Site updates are a separate user-
+approved action; DevFlow does not synchronize or publish the site automatically.
 If CI is missing, GitHub pages are truncated, or the PR changes, the gate
 stays closed. The setup receipt alone does not create or review a PR. See the
 [full review guide](../skills/review-work/GUIDE.md#github-pr-full-review) for

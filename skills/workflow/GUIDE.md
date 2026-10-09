@@ -188,6 +188,20 @@ For a PR changed externally, `pr sync` reopens those gates before the same
 refresh sequence; DevFlow has no background watcher.
 Historical PR delivery records remain readable. The helper never merges a PR.
 
+Once the authorized direct result is recorded, or `pr complete` records a
+ready-to-merge PR, close the build report with this one-time question:
+“Would you like me to update the [DevFlow Codex site](https://devflow-field-guide.waygent.chatgpt.site/)
+with this build?” Ask for documentation-only builds too. This is an agent prompt,
+not a helper command or a delivery gate. A no or no answer leaves the recorded
+build complete; a yes starts a separate site-update task. Never publish site
+changes from the prompt alone before the user answers.
+
+For example, after reporting the delivered branch and test results, say:
+
+> The build is delivered and the required checks passed. Would you like me to
+> update the [DevFlow Codex site](https://devflow-field-guide.waygent.chatgpt.site/)
+> with this build?
+
 ```sh
 df delivery record --root "$CONTROL" --run-id greeting-run --manifest-file verified-manifest.json --actual-result-file actual-result.json --operation-id deliver-greeting
 ```

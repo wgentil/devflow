@@ -6,6 +6,7 @@ human approval, independent review, provider receipt or authoritative price.
 
 | Files | Used by | Adaptation |
 | --- | --- | --- |
+| [site-update-offer.md](site-update-offer.md) | workflow | End-of-build conversational prompt; ask once after a completed delivery record |
 | [org.json](org.json), [project.json](project.json) | project-context | Replace values with actual organization/project answers |
 | [setup-project-only.json](setup-project-only.json), [setup-attach-org.json](setup-attach-org.json), [devflow-org.json](devflow-org.json), [devflow-context.json](devflow-context.json) | project-context, workflow | Choose the current Git project, replace the organization URL, and create referenced policy files before attachment |
 | [ground-interview.json](ground-interview.json) | workflow, project-context, specify | Replace illustrative decisions with real evidence and answers; resolve material deferrals before planning |

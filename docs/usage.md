@@ -131,6 +131,8 @@ During explicit PR rework, `delivery prepare` and `delivery verify` can issue a 
 
 PR opening, refresh, publication and completion verify the live dedicated ruleset rather than relying on the setup receipt alone. GitHub check-run conclusions `success`, `neutral` and `skipped` are acceptable after completion; status contexts must succeed. Findings without a valid changed text line stay in the concise summary instead of blocking status publication with an invalid inline comment.
 
+After a completed build is recorded through direct delivery or `pr complete`, the coordinating agent asks once whether the user wants to update the [DevFlow Codex site](https://devflow-field-guide.waygent.chatgpt.site/) with that build. This is a conversational prompt, not a CLI command or journal gate; no site update occurs unless the user accepts.
+
 Deterministic operations append best-effort measurements to `offload.jsonl` under the selected control root. Records include operation, duration, result, byte counts, and available run/attempt/item attribution. Supplied operation IDs identify retries and are deduplicated; independent read commands receive distinct measurement IDs. A telemetry write failure emits a warning and leaves the workflow result and event journal unchanged. These byte counts do not prove tokens saved; actual usage requires explicitly imported supported runtime records.
 
 Context projections are reused by source hashes, resolved input values, budget, and resolver version. Changing any of those inputs produces a new projection key; prior cache entries remain historical and do not satisfy execution or review evidence.
