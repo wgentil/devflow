@@ -11,7 +11,8 @@ description: Create or extend requirements, record assumptions and source citati
 flowchart TD
     Input["Intent, ground interview decisions, specification sources and applicable contracts"] --> Native["Resolve specification profile for optional scoped native worker"]
     Native --> Draft["Create or extend requirements with provenance"]
-    Draft --> Inspect["Agent checks scope, contradictions and missing decisions"]
+    Draft --> Diagram["Author a relevant Mermaid diagram in JSON"]
+    Diagram --> Inspect["Agent checks scope, contradictions and missing decisions"]
     Inspect --> Gaps{"Unresolved questions?"}
     Gaps -->|Yes| Ask["Ask only unresolved questions"]
     Ask --> Revise["Record answers and revise requirements and criteria"]
@@ -30,6 +31,15 @@ validates structure and binds approval to content, but currently permits approva
 with unanswered recorded gaps. Any content change requires renewed approval.
 
 New approvals use a selected registered repository and visible JSON/Markdown pair, typically `docs/specs/0063-ios-safari-suite.json` and `.md`. The repository files are authoritative: approval checks deterministic Markdown and both recorded hashes immediately before journaling. Ignored paths, `.devflow`, and paths escaping the repository are rejected. Existing journal-only flows remain supported as explicit legacy behavior.
+
+Always include at least one relevant Mermaid diagram when creating or revising a
+specification. Store each diagram as a titled `diagrams` entry in the authoritative
+JSON; `spec render` includes its fenced Mermaid source in the Markdown companion.
+Choose a system, data, state, sequence, or workflow view that explains actual
+requirements; check the rendered diagram for accuracy. New or changed
+repository-backed specifications cannot be approved without a diagram. Previously
+approved content without diagrams remains usable until it changes. The helper
+checks diagram structure, not Mermaid syntax or semantic accuracy.
 
 Use `new`, `extend`, or `migrate` mode. Preserve authored, derived, and assumed provenance; cite path, commit, and line range for derived facts. Ask only unresolved gap questions. Review the rendered specification with the user before recording approval. Approval must include the exact content hash and becomes stale when content changes.
 Before the first feature spec in a new project, complete the project-context

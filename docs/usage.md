@@ -72,6 +72,11 @@ python3 skills/workflow/scripts/run.py run next --root "$CONTROL_ROOT" --run-id 
 ```
 
 Use the `content_hash` returned by `spec validate` as the explicit approval hash and record the approving human's stable actor ID. The hash binds approval to the specification's exact content. Any edit makes the prior approval stale. Work items must cover every requirement, use their kind-specific acceptance criteria, and declare valid acyclic dependencies.
+New or revised repository-backed spec JSON needs a nonempty `diagrams` array of
+objects with `title` and Mermaid `mermaid` source. The deterministic Markdown
+renderer includes each diagram; approval rejects missing diagrams unless the
+exact content was previously approved. Validation checks shape, not Mermaid
+syntax or whether the diagram accurately reflects the requirements.
 
 After changing a context layer, run `context resolve` before starting a new run. Runs retain the context snapshot they started with.
 

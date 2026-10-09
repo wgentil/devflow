@@ -39,6 +39,19 @@ class SpecTests(unittest.TestCase):
         self.assertIn("single tenant", rendered)
         self.assertIn("G1", rendered)
 
+    def test_diagram_is_rendered_from_authoritative_spec(self):
+        value = spec()
+        value["diagrams"] = [{"title": "Setting flow", "mermaid": "flowchart LR\n    Input --> Save"}]
+        rendered = render_spec(value)
+        self.assertIn("## Diagrams\n\n### Setting flow\n\n```mermaid\nflowchart LR\n    Input --> Save\n```", rendered)
+
+    def test_diagram_cannot_break_markdown_fence(self):
+        value = spec()
+        value["diagrams"] = [{"title": "Bad", "mermaid": "flowchart LR\n```\nA --> B"}]
+        with self.assertRaises(WorkflowError) as caught:
+            validate_spec(value)
+        self.assertEqual(caught.exception.code, "INVALID_SPEC_DIAGRAM")
+
     def test_supported_modes_validate(self):
         for mode in ("new", "extend", "migrate"):
             self.assertEqual(validate_spec(spec(mode))["mode"], mode)

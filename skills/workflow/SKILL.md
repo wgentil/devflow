@@ -22,7 +22,7 @@ flowchart TD
     Fresh --> Plan
     Init["Discover Git project and initialize/resume"] --> Attach["Explicit host/session binding"]
     Attach --> Context["project-context: resolve scoped context"] --> Ground["First-use ground interview: inspect evidence, close material decisions"]
-    Ground --> Spec["specify: create or refine requirements"]
+    Ground --> Spec["specify: create or refine requirements and Mermaid diagram"]
     Sources["ingest: index source evidence"] -.-> Spec
     Issues["issues: capture and group complete snapshot"] -.-> Spec
     Migration["migrate: map parity and increment dependencies"] -.-> Spec

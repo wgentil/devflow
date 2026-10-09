@@ -45,7 +45,8 @@ class FoundationFlowTests(unittest.TestCase):
     def test_repository_spec_approval_rechecks_pair_without_events(self):
         subprocess.run(['git', 'init', '-q', str(self.repo)], check=True)
         self.cli('repo', 'register', '--root', self.control, '--repo-id', 'app', '--location', self.repo)
-        specification = {'mode': 'new', 'requirements': []}
+        specification = {'mode': 'new', 'requirements': [], 'diagrams': [
+            {'title': 'Scope', 'mermaid': 'flowchart LR\n    Intent --> Requirements'}]}
         source = self.put_json('spec.json', specification)
         stored = self.cli('spec', 'store', '--root', self.control, '--file', source,
                           '--repo-id', 'app', '--path', 'docs/specs/0063-ios-safari-suite.json')
@@ -66,6 +67,44 @@ class FoundationFlowTests(unittest.TestCase):
                             '--actor-id', 'owner')
         self.assertEqual(approved['approval']['repo_id'], 'app')
         self.assertIn('markdown_hash', approved['approval'])
+
+    def test_new_repository_spec_requires_mermaid_before_approval(self):
+        subprocess.run(['git', 'init', '-q', str(self.repo)], check=True)
+        self.cli('repo', 'register', '--root', self.control, '--repo-id', 'app', '--location', self.repo)
+        source = self.put_json('spec.json', {'mode': 'new', 'requirements': []})
+        stored = self.cli('spec', 'store', '--root', self.control, '--file', source,
+                          '--repo-id', 'app', '--path', 'docs/specs/new.json')
+        version = read_state(self.control)['version']
+        rejected = self.cli('spec', 'approve', '--root', self.control,
+                            '--confirm-hash', stored['content_hash'], '--actor-id', 'owner', ok=False)
+        self.assertIn('SPEC_DIAGRAM_REQUIRED', rejected.stdout)
+        self.assertEqual(read_state(self.control)['version'], version)
+        source = self.put_json('spec.json', {'mode': 'new', 'requirements': [], 'diagrams': [
+            {'title': 'Scope', 'mermaid': 'flowchart LR\n    Intent --> Requirements'}]})
+        stored = self.cli('spec', 'store', '--root', self.control, '--file', source,
+                          '--repo-id', 'app', '--path', 'docs/specs/new.json')
+        approved = self.cli('spec', 'approve', '--root', self.control,
+                            '--confirm-hash', stored['content_hash'], '--actor-id', 'owner')
+        self.assertEqual(approved['approval']['content_hash'], stored['content_hash'])
+
+    def test_changed_approved_repository_spec_needs_diagram(self):
+        subprocess.run(['git', 'init', '-q', str(self.repo)], check=True)
+        self.cli('repo', 'register', '--root', self.control, '--repo-id', 'app', '--location', self.repo)
+        source = self.put_json('spec.json', {'mode': 'new', 'title': 'Legacy', 'requirements': []})
+        stored = self.cli('spec', 'store', '--root', self.control, '--file', source,
+                          '--repo-id', 'app', '--path', 'docs/specs/legacy.json')
+        state = read_state(self.control)
+        transact(self.control, state['version'], 'legacy-approval-fixture', {'kind': 'fixture', 'payload': {
+            'approval': {**stored['spec_pair'], 'content_hash': stored['content_hash'],
+                         'confirmed': True, 'actor_id': 'owner'}}})
+        self.cli('spec', 'approve', '--root', self.control, '--confirm-hash',
+                 stored['content_hash'], '--actor-id', 'owner')
+        source = self.put_json('spec.json', {'mode': 'new', 'title': 'Edited', 'requirements': []})
+        changed = self.cli('spec', 'store', '--root', self.control, '--file', source,
+                           '--repo-id', 'app', '--path', 'docs/specs/legacy.json')
+        rejected = self.cli('spec', 'approve', '--root', self.control,
+                            '--confirm-hash', changed['content_hash'], '--actor-id', 'owner', ok=False)
+        self.assertIn('SPEC_DIAGRAM_REQUIRED', rejected.stdout)
 
     def test_next_brief_resume_atomic_result_retry_and_state_location(self):
         self.cli("repo", "register", "--root", self.control, "--repo-id", "backend", "--location", self.repo)

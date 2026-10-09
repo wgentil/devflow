@@ -230,6 +230,11 @@ matching files does not revive approval. Repair and store the pair when necessar
 then ask the human to approve it explicitly with a new operation ID. Historical
 receipts remain readable; journal replay does not read repository files. Changes
 that occur and are restored between checks cannot be detected.
+New or edited repository-backed specifications need a titled Mermaid diagram in
+their authoritative JSON before approval. The deterministic Markdown companion
+renders it for human review. The agent checks its meaning and syntax; the helper
+checks its shape and presence. Previously approved repository content without a
+diagram remains usable until it changes.
 
 Legacy journal-backed specifications remain usable under their existing approval
 checks. To move one to visible files, ask the agent to migrate the specification
@@ -243,6 +248,9 @@ hash. Retrying the same operation ID returns the recorded candidate receipt; a
 different target needs a different ID. Migration creates no approval: human
 reapproval is required before new work uses the candidate. Installed plugin
 files and `.devflow` are never specification targets.
+If the migrated JSON lacks a diagram, add one with `spec store`, review the new
+Markdown and hash, then approve; the migration command preserves the original
+JSON and does not invent a diagram.
 
 Migration writes visible files before recording the journal receipt. An external
 interruption between those steps can leave a candidate without a receipt. Inspect

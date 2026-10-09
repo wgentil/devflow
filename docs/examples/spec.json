@@ -1,6 +1,12 @@
 {
   "mode": "new",
   "title": "Greeting CLI",
+  "diagrams": [
+    {
+      "title": "Greeting flow",
+      "mermaid": "flowchart LR\n    Name[Supplied name] --> Greet[Greeting CLI]\n    Greet --> Output[Greeting text]"
+    }
+  ],
   "requirements": [
     {
       "id": "R1",

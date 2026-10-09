@@ -85,18 +85,25 @@ require renewed approval. Semantic gap discovery remains
 agent-led; the helper validates structure and lists recorded gaps, rather than
 proving semantic completeness. Approval currently permits recorded unanswered gaps,
 so the agent must resolve material questions before proceeding.
+DevFlow authors at least one relevant Mermaid diagram in every new or revised
+specification. The diagram lives in the authoritative JSON and appears in the
+rendered Markdown for review. New or changed repository-backed specs cannot be
+approved without it; older approved content remains valid until edited. The
+agent checks the diagram's meaning and rendering, because the helper only
+validates its structure.
 
 ```mermaid
 flowchart TD
     Invoke[Invoke workflow] --> Init[Discover project and initialize or resume]
     Init --> Docs[Select project and organization documents]
     Docs --> Ground[First-use ground interview; resolve material choices]
-    Ground --> Spec[Clarify and approve visible specification pair]
-    Spec --> Policy[Review and approve exact governing diffs separately]
+    Ground --> Spec[Clarify requirements and author Mermaid diagram in visible specification pair]
+    Spec --> SpecApprove[Review and approve exact specification content]
+    SpecApprove --> Policy[Review and approve exact governing diffs separately]
     Policy --> Impact[Record plan and verification reassessment after changes]
     Impact --> Fresh[Revalidate plan; start a fresh run for changed digest]
     Fresh --> Plan[Validate covered plan and dependencies]
-    Spec -.-> Migration[Optional ordered migration increments]
+    SpecApprove -.-> Migration[Optional ordered migration increments]
     Migration --> Pilot[Run declared legacy and replacement pilot on hashed fixtures]
     Pilot -.-> Accept
     Plan --> Attach[Attach session and map host tasks]
@@ -117,7 +124,7 @@ flowchart TD
     Fix --> Work
     Work -.-> Transfer[Prepare handoff; destination checks release and profile]
     Transfer -.-> Work
-    Spec -.-> Goal[Optional user-authorized host Goal]
+    SpecApprove -.-> Goal[Optional user-authorized host Goal]
     Goal -.-> Work
     Transfer -.-> NewGoal[Destination activates a new Goal]
     Deliver -.-> Trace[Optional redacted run trace]
@@ -293,6 +300,8 @@ rather than a duplicate repository identity. Preserve the original journal.
 Ask DevFlow to store the specification in the selected registered repository as a
 visible JSON/Markdown pair, for example `docs/specs/0063-ios-safari-suite.json`
 and `.md`, and review the rendered file before confirming its exact content hash.
+Include a titled `diagrams` entry with Mermaid source in the JSON; DevFlow renders
+it into the Markdown and requires it before approving new or edited content.
 The helper records the repository ID, relative paths and both hashes. Approval
 rereads both files immediately before journaling; changed or missing files require
 repair and renewed review. Ignored paths, `.devflow`, and paths escaping the

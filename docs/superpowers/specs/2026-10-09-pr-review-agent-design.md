@@ -1,12 +1,27 @@
 # DevFlow PR review agent design
 
-Status: design approved in conversation; implementation pending.
+Status: conversational design approved; written spec awaiting review.
 
 ## Purpose and scope
 
 A DevFlow build can produce too much code for a practical line-by-line human PR review. When a user chooses the pull-request delivery path, DevFlow should assign a fresh, independent agent to review the complete hosted PR, give the team a concise decision, and send only unresolved judgment calls to a person. A passing agent review should make the PR eligible to merge once its other required checks pass.
 
 The PR agent is invoked only after the user explicitly asks DevFlow to create a PR. Direct push, local merge, and retained-branch delivery remain available choices and do not invoke it. This design targets GitHub for its first release. It extends the existing item, branch, and acceptance reviews; it does not replace their evidence or gates.
+
+```mermaid
+flowchart TD
+    Choice{User chooses delivery} -->|Direct push or local merge| Direct[Existing direct delivery path]
+    Choice -->|Create PR| Preflight[Verify existing DevFlow gates and authorize PR]
+    Preflight --> Open[Create or locate GitHub PR]
+    Open --> Review[Independent full PR review]
+    Review -->|Changes requested| Repair[Implementer repairs and reruns affected gates]
+    Repair --> Review
+    Review -->|Human decision required| Human[Human records a scoped decision]
+    Human --> Review
+    Review -->|Pass on current head| Status[Publish required GitHub status]
+    Status --> Ready[PR eligible under repository merge rules]
+    Review -->|Blocked or stale| Stop[Keep PR check non-passing]
+```
 
 ## Chosen approach and alternatives
 

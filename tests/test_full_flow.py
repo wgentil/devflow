@@ -42,7 +42,7 @@ class RepositoryEvidenceFlowTests(unittest.TestCase):
    self.assertFalse(subprocess.run(['git','-C',str(project),'check-ignore','-q','.devflow/control'],check=False).returncode)
    call('repo','register','--root',root,'--repo-id','app','--location',project,'--operation-id','register-app')
    call('repo','register','--root',root,'--repo-id','team','--location',setup['org_checkout'],'--operation-id','register-team')
-   spec={'mode':'new','title':'Greeting','requirements':[{'id':'R1','text':'Return a greeting','acceptance_criteria':['greet Ada returns Hello, Ada'],'provenance':{'kind':'authored'}}], 'gaps':[]}
+   spec={'mode':'new','title':'Greeting','requirements':[{'id':'R1','text':'Return a greeting','acceptance_criteria':['greet Ada returns Hello, Ada'],'provenance':{'kind':'authored'}}], 'gaps':[], 'diagrams':[{'title':'Greeting flow','mermaid':'flowchart LR\n    Name --> Greeting'}]}
    stored=call('spec','store','--root',root,'--file',source('spec.json',spec),'--repo-id','app','--path','docs/specs/greeting.json','--operation-id','store-spec')
    pair=stored['spec_pair'];self.assertTrue((project/pair['json_path']).is_file());self.assertTrue((project/pair['markdown_path']).is_file())
    plan={'spec_hash':stored['content_hash'],'work_items':[{'id':'W1','kind':'code','repo_id':'app','requirement_ids':['R1'],'dependencies':[],'acceptance_criteria':[{'kind':'code-test','text':'greeting test passes'}]}]}

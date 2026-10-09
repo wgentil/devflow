@@ -652,11 +652,15 @@ def transact(root: Path, expected_version: int, operation_id: str, event: dict) 
             raise WorkflowError("STALE_STATE", f"expected state version {expected_version}, current version is {state['version']}")
         if event["kind"] == "spec.approved" and state["data"].get("spec_pair"):
             from .repo_specs import assert_repo_spec_approval
+            from .specs import require_mermaid_diagram
             pair = state["data"]["spec_pair"]
             registered = state["data"].get("repositories", {}).get(pair["repo_id"])
             if not registered:
                 raise WorkflowError("REPO_NOT_FOUND", "specification repository is no longer registered")
-            assert_repo_spec_approval(Path(registered["location"]), pair)
+            current_spec = assert_repo_spec_approval(Path(registered["location"]), pair)["spec"]
+            prior = state["data"].get("approval") or {}
+            if prior.get("content_hash") != pair["content_hash"]:
+                require_mermaid_diagram(current_spec)
             approval = event["payload"]["approval"]
             if any(approval.get(key) != value for key, value in pair.items()) or approval.get("confirmed") is not True:
                 raise WorkflowError("SPEC_APPROVAL_STALE", "approval must bind the repository specification receipt")

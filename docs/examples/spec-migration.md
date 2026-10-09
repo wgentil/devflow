@@ -1,5 +1,10 @@
 # Legacy specification migration (optional developer example)
 
+If the migrated JSON lacks a Mermaid diagram, add a titled `diagrams` entry and
+store the revised pair before asking for approval. Migration preserves the
+original JSON rather than generating a diagram. Existing approved repository
+specifications remain usable without a diagram until edited.
+
 Plugin users can ask the agent to migrate their existing journal specification;
 no shell setup is required. This example documents the helper contract for
 source-package developers. Supply an existing control journal and a registered

@@ -26,6 +26,14 @@ def validate_spec(spec: dict) -> dict:
     requirements = spec.get("requirements")
     if not isinstance(requirements, list):
         raise WorkflowError("INVALID_REQUIREMENTS", "requirements must be a list")
+    if "diagrams" in spec:
+        diagrams = spec["diagrams"]
+        if (not isinstance(diagrams, list) or not diagrams
+                or any(not isinstance(diagram, dict)
+                       or not isinstance(diagram.get("title"), str) or not diagram["title"].strip()
+                       or not isinstance(diagram.get("mermaid"), str) or not diagram["mermaid"].strip()
+                       or "```" in diagram["mermaid"] for diagram in diagrams)):
+            raise WorkflowError("INVALID_SPEC_DIAGRAM", "diagrams need a title and non-empty Mermaid source without code fences")
     ids = set()
     for requirement in requirements:
         if not isinstance(requirement, dict):
@@ -61,6 +69,12 @@ def validate_spec(spec: dict) -> dict:
     return {"mode": spec["mode"], "requirement_count": len(requirements), "content_hash": content_hash(spec)}
 
 
+def require_mermaid_diagram(spec: dict) -> None:
+    validate_spec(spec)
+    if not spec.get("diagrams"):
+        raise WorkflowError("SPEC_DIAGRAM_REQUIRED", "repository-backed specification approval requires a Mermaid diagram")
+
+
 def find_gaps(spec: dict) -> list[dict]:
     validate_spec(spec)
     gaps = spec.get("gaps", [])
@@ -72,6 +86,10 @@ def find_gaps(spec: dict) -> list[dict]:
 def render_spec(spec: dict) -> str:
     validate_spec(spec)
     lines = [f"# {spec.get('title', 'Requirements')}", "", f"Mode: {spec['mode']}", ""]
+    if spec.get("diagrams"):
+        lines.extend(["## Diagrams", ""])
+        for diagram in spec["diagrams"]:
+            lines.extend([f"### {diagram['title']}", "", "```mermaid", diagram["mermaid"].strip(), "```", ""])
     for requirement in sorted(spec["requirements"], key=lambda item: item["id"]):
         provenance = requirement["provenance"]
         lines.extend([f"## {requirement['id']}: {requirement['text']}", "",

@@ -7,6 +7,10 @@ For plugin use, ask DevFlow to refine the requirements, store the pair in the se
 
 Create requirements in `new`, `extend` or `migrate` mode. Each requirement needs a
 stable ID, text, acceptance criteria and authored/derived/assumed provenance.
+New and revised repository-backed specifications also need at least one titled
+Mermaid diagram in the JSON source. Choose a diagram that explains the feature's
+behavior or structure and inspect it in the rendered Markdown. The approval gate
+checks its presence; the agent checks Mermaid syntax and meaning.
 Use project context and source indexes when grounding existing behavior.
 For newly initialized projects, consult the ground interview and inherited rules
 before a feature specification. Resolve material baseline deferrals first. Ask
@@ -28,6 +32,16 @@ scope, asks only unanswered questions, and updates requirements from the answers
 `spec gaps` lists recorded gaps; it does not discover semantic omissions. Resolve
 material gaps before asking for approval, even though the helper does not enforce
 that condition. `spec render` returns a `markdown` string in its JSON response.
+For example, the JSON can include:
+
+```json
+"diagrams": [{"title": "Greeting flow", "mermaid": "flowchart LR\n    Name --> Greeting"}]
+```
+
+The Markdown companion contains a `mermaid` code fence. A changed diagram changes
+the content hash and needs renewed approval. Previously approved repository specs
+without a diagram remain valid while their content is unchanged; an edited spec
+must add one before approval. Legacy journal-only specs remain compatible.
 
 ```sh
 df repo register --root "$CONTROL" --repo-id app --location "$APP"

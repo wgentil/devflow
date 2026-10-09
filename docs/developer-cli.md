@@ -120,7 +120,8 @@ starting context snapshot. See [project-context](../skills/project-context/GUIDE
 ### 2. Write, refine and approve the specification
 
 Copy the greeting example as a starting point, then replace its requirements with
-the project's actual scope. Preserve requirement IDs, criteria and provenance.
+the project's actual scope. Preserve requirement IDs, criteria and provenance,
+and replace its Mermaid diagram with one that explains the actual feature.
 
 ```sh
 cp "$EXAMPLES/spec.json" "$WORK/spec.json"
