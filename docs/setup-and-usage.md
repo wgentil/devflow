@@ -111,7 +111,9 @@ flowchart TD
     Work --> Proof[Execute real required verification]
     Proof --> Review[Independent item and branch review]
     Review --> Accept[Acceptance and configured hardening]
-    Accept --> Deliver[Human delivery choice and actual result]
+    Accept --> Deliver[Human delivery choice]
+    Deliver -->|Local merge or retained branch| DirectResult[Record actual terminal result]
+    Deliver -->|Create PR| PendingPR[Create exact-head PR and pending status]
     Proof -->|Failure| Fix[Current implementer reworks]
     Review -->|Changes requested| Fix
     Accept -->|Configured hardening gate fails| Repair{Opted-in bounded repair eligible?}
@@ -275,8 +277,10 @@ Missing remote makes PR unavailable, without preventing local implementation.
 The optional GitHub PR ruleset setup helper can currently inspect and configure
 the dedicated `devflow/pr-review` required status with named direct-push bypass
 actors. It requires authenticated GitHub CLI access and repository ruleset
-permission. The hosted PR review lifecycle is not connected yet on this branch;
-the helper's verified setup receipt alone does not create or review a PR. See the
+permission. The `pr open` command can create or find one exact-head GitHub PR and
+post an initial pending status after explicit authorization. It leaves the run
+active; full PR review and final status publication are not connected yet on
+this branch. The setup receipt alone does not create or review a PR. See the
 [developer command reference](usage.md) for its input and recovery behavior.
 
 Optional source ingestion, issues, migrations and usage reporting are documented

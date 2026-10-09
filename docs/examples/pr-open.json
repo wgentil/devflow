@@ -1,0 +1,15 @@
+{
+  "owner": "REPLACE_WITH_GITHUB_OWNER",
+  "repo": "REPLACE_WITH_GITHUB_REPO",
+  "base_branch": "main",
+  "head_branch": "REPLACE_WITH_BRANCH",
+  "title": "REPLACE_WITH_PR_TITLE",
+  "body": "REPLACE_WITH_PR_DESCRIPTION",
+  "setup_operation_id": "REPLACE_WITH_VERIFIED_SETUP_OPERATION_ID",
+  "authorization": {
+    "approved": true,
+    "actor_id": "REPLACE_WITH_AUTHORIZING_HUMAN_ID",
+    "manifest_hash": "REPLACE_WITH_VERIFIED_MANIFEST_HASH",
+    "action": "delivery.pull-request"
+  }
+}

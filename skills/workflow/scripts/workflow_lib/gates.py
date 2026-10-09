@@ -74,6 +74,12 @@ def gate_status(run: dict, live: bool = True) -> dict:
     if run.get("status") in {"delivered", "discarded"}:
         return {"stage": run["status"], "can_advance": False, "blocking_findings": [],
                 "unverified_items": [], "terminal": True}
+    if run.get('pending_pr'):
+        return {'stage': 'pr-review', 'can_advance': False, 'blocking_findings': [],
+                'unverified_items': []}
+    if run.get('pr_open', {}).get('status') in {'pending', 'uncertain'}:
+        return {'stage': 'pr-opening', 'can_advance': False, 'blocking_findings': [],
+                'unverified_items': []}
     items = run.get("plan", {}).get("work_items", [])
     unverified = [item["id"] for item in items if not _required_proof(run, item, live)]
     if unverified:

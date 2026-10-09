@@ -53,6 +53,39 @@ def reduce_event(data, kind, payload, version):
 
 
 def _reduce(data, kind, req, version):
+    if kind == 'domain.pr.open-start':
+        run = data.get('runs', {}).get(req.get('run_id'))
+        require(run and run.get('status') == 'active' and not run.get('pending_pr'),
+                'active run without a PR is required')
+        from .gates import gate_status
+        require(gate_status(run, live=False).get('stage') == 'delivery', 'delivery gate is not open')
+        require(text(req.get('operation_id')) and text(req.get('request_hash'))
+                and text(req.get('manifest_hash')), 'PR opening identity is required')
+        require(not run.get('pr_open') or run['pr_open'].get('status') == 'failed',
+                'PR opening already started')
+        run['pr_open'] = {'status': 'pending', 'operation_id': req['operation_id'],
+                          'request_hash': req['request_hash'], 'manifest_hash': req['manifest_hash']}
+        return deepcopy(run['pr_open'])
+    if kind == 'domain.pr.open-finish':
+        run = data.get('runs', {}).get(req.get('run_id'))
+        opening = run.get('pr_open') if run else None
+        require(opening and opening.get('operation_id') == req.get('operation_id')
+                and opening.get('request_hash') == req.get('request_hash'),
+                'PR opening completion must bind the exact request')
+        status = req.get('status')
+        require(status in {'verified', 'uncertain', 'failed'}, 'invalid PR opening result')
+        if status == 'verified':
+            receipt = req.get('receipt')
+            require(isinstance(receipt, dict) and receipt.get('status') == 'pending-review'
+                    and receipt.get('manifest_hash') == opening['manifest_hash']
+                    and text(receipt.get('pr_id')) and text(receipt.get('head_sha')),
+                    'verified PR opening needs an exact-head receipt')
+            run['pending_pr'] = deepcopy(receipt)
+        else:
+            require(text(req.get('error_code')), 'failed PR opening needs an error code')
+            opening['error_code'] = req['error_code']
+        opening['status'] = status
+        return deepcopy(opening)
     if kind == 'domain.pr.setup-start':
         operation_id, request_hash = req.get('operation_id'), req.get('request_hash')
         require(text(operation_id) and text(request_hash) and isinstance(req.get('setup_request'), dict),

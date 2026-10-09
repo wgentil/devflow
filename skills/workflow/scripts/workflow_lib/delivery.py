@@ -120,6 +120,8 @@ def verify_delivery(run: dict, manifest: dict, confirmed_hash: str, repositories
 
 
 def record_delivery(run: dict, manifest: dict, actual_result: dict) -> dict:
+    if manifest.get('outcome') == 'pull-request':
+        raise ValueError('use the pending PR delivery flow; PR creation is not terminal delivery')
     manifest_hash = manifest.get("manifest_hash")
     verification = manifest.get("verification", {})
     if (verification.get("passed") is not True or verification.get("manifest_hash") != manifest_hash

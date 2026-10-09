@@ -82,6 +82,14 @@ repository ruleset permission. It records the request and verified readback in
 the control journal. A write with an uncertain result remains pending for
 read-only reconciliation with the same operation ID. This helper alone does not
 open or review a PR.
+With a verified setup receipt and an exact verified pull-request delivery
+manifest, `pr open --root ROOT --run-id RUN --manifest-file verified.json
+--request-file pr-open.json --operation-id ID` creates or locates one GitHub PR
+and posts the initial pending status. Its request shape is in
+[pr-open.json](examples/pr-open.json). The run remains active at `pr-review`;
+`delivery record` no longer accepts new PR outcomes. Historical delivered PR
+records remain readable. An uncertain PR creation is journaled and retried by
+finding the exact hosted PR before another write.
 New or revised repository-backed spec JSON needs a nonempty `diagrams` array of
 objects with `title` and Mermaid `mermaid` source. The deterministic Markdown
 renderer includes each diagram; approval rejects missing diagrams unless the
@@ -117,7 +125,7 @@ normalized contract is bound to the gate configuration and proof; see the
 
 `run amend-item` binds its human ruling to current spec and plan hashes, preserves the old plan and ruling, and invalidates dependent implementation proofs, review judgments, and acceptance. `run park-finding` records why and cost if wrong; it does not satisfy a gate. Resolve findings with evidence references. `run waive-finding` requires an explicit run-scoped authorization record. After the correction limit, use `run adjudicate` to preserve an independent adjudicator's decision and rationale. `run discard` is terminal for the workflow run and preserves its history and reason.
 
-Delivery preparation is read-only: `delivery prepare` emits a canonical manifest covering the exact spec/plan and acceptance hashes, repository base/head and worktree fingerprints, unresolved findings, rulings, outcome, and run-owned cleanup resources. Save the manifest and confirm its exact `manifest_hash` with `delivery verify` immediately before any authorized outcome. `delivery record` requires a separately authorized actual-result record bound to the same manifest and every repository. Retained branches must preserve exact heads; local-merge records must identify resulting commits; pull-request records require a provider request ID and remain caller-reported. The helper does not merge, push, create a PR, or delete resources. It only records verified outcomes and validates ownership metadata.
+Delivery preparation is read-only: `delivery prepare` emits a canonical manifest covering the exact spec/plan and acceptance hashes, repository base/head and worktree fingerprints, unresolved findings, rulings, outcome, and run-owned cleanup resources. Save the manifest and confirm its exact `manifest_hash` with `delivery verify` immediately before any authorized outcome. `delivery record` requires a separately authorized actual-result record bound to the same manifest and every repository for local-merge or retained-branch outcomes. Retained branches must preserve exact heads; local-merge records must identify resulting commits. PR creation uses `pr open` and leaves the run pending for independent review; only that command performs a GitHub provider write after explicit authorization. Historical caller-reported PR delivery records remain readable. The helper does not merge or delete resources.
 
 Deterministic operations append best-effort measurements to `offload.jsonl` under the selected control root. Records include operation, duration, result, byte counts, and available run/attempt/item attribution. Supplied operation IDs identify retries and are deduplicated; independent read commands receive distinct measurement IDs. A telemetry write failure emits a warning and leaves the workflow result and event journal unchanged. These byte counts do not prove tokens saved; actual usage requires explicitly imported supported runtime records.
 

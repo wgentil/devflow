@@ -171,9 +171,12 @@ df delivery verify --root "$CONTROL" --run-id greeting-run --manifest-file manif
 Ask the human to choose and authorize the exact outcome. After performing that
 choice, write `actual-result.json` with `outcome`, every `repository_heads` entry,
 and `authorization: {approved: true, actor_id, manifest_hash, action}`. The action
-is `delivery.retained-branch`, `delivery.local-merge` or `delivery.pull-request`.
-Local merge also needs matching `merge_commits`; PR needs a provider `pull_request`
-object with an `id`. The helper records results, not external execution.
+is `delivery.retained-branch` or `delivery.local-merge` for this command.
+Local merge also needs matching `merge_commits`. New PR outcomes use `pr open`
+with action `delivery.pull-request` after verified GitHub ruleset setup. It
+creates or finds the exact-head PR, posts a pending required status, and keeps
+the run active for a separate full PR review. Historical PR delivery records
+remain readable. The helper never merges a PR.
 
 ```sh
 df delivery record --root "$CONTROL" --run-id greeting-run --manifest-file verified-manifest.json --actual-result-file actual-result.json --operation-id deliver-greeting

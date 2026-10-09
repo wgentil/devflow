@@ -94,7 +94,16 @@ class DeliveryTests(unittest.TestCase):
                 result["merge_commits"] = {"repo-1": self.head}
             elif outcome == "pull-request":
                 result["pull_request"] = {"id": "PR-1", "url": "https://example.test/pr/1"}
-            terminal = record(run, checked, result)
+            if outcome == 'pull-request':
+                from workflow_lib.delivery import _manifest_body
+                # Historical PR-created deliveries remain replayable, although
+                # new PRs use the pending review gate.
+                terminal = {'delivery': {'manifest_hash': manifest['manifest_hash'],
+                    'outcome': outcome, 'manifest': _manifest_body(manifest),
+                    'actor_id': 'owner', 'actual_result': result,
+                    'verification': checked['verification']}}
+            else:
+                terminal = record(run, checked, result)
             root = Path(self.temp.name) / ("control-" + outcome)
             transact(root, 0, "fixture", {"kind": "fixture", "payload": {"runs": {"run-1": run}}})
             state = read_state(root)

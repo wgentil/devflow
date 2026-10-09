@@ -47,7 +47,9 @@ flowchart TD
     Harden --> DeliverySpecGate["Check live approved pair before delivery"]
     DeliverySpecGate --> Manifest["Prepare and verify exact delivery manifest"]
     Manifest --> Choice["Human chooses merge, PR or retained branch"]
-    Choice --> Delivered["Execute authorized delivery and record actual result"]
+    Choice -->|Local merge or retained branch| Delivered["Execute authorized delivery and record actual result"]
+    Choice -->|Create PR| PendingPR["Create exact-head PR and pending required status"]
+    PendingPR --> PRReview["PR review gate pending implementation"]
     Delivered --> NewRun{"Start another run in this session?"}
     NewRun -->|Yes| Retire["Attach new run; retire terminal binding and clear old task mappings"]
     Retire --> Attach
