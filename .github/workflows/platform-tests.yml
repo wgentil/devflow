@@ -28,11 +28,14 @@ jobs:
           node-version: '22'
       - name: Install Claude Code
         run: npm install -g @anthropic-ai/claude-code
-      - name: Validate and install DevFlow
+      - name: Validate DevFlow marketplace
         run: |
           claude --version
           claude plugin validate . --strict
-          claude plugin marketplace add . --scope local
+      - name: Add checkout marketplace
+        run: claude plugin marketplace add ./ --scope local
+      - name: Install DevFlow
+        run: |
           claude plugin install devflow@devflow-marketplace --scope local -y
       - name: Check installed package and hooks
         run: python scripts/verify_claude_install.py
