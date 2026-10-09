@@ -6,14 +6,14 @@ No shell variables, CLI function, installation paths or Python commands are user
 setup steps. Existing Python 3.11+ on macOS/Linux is required; this package does
 not provision an interpreter. Native Windows is outside current support. The source tree now has a
 portable lock and pipe boundaries, and Claude hooks use shell-free exec form,
-but native installed-hook and worker validation remain incomplete. See the
+but live Windows hook dispatch and worker validation remain incomplete. See the
 [platform validation matrix](windows-validation.md) for observed results.
 
 ## Installation
 
 Codex and Claude have separate installations of the same shared package. Users
 choose when to upgrade. Both manifests and one skills/helper tree are included;
-the package version is `0.3.2`;
+the package version is `0.3.3`;
 the Claude marketplace descriptor is packaged at `.claude-plugin/marketplace.json`.
 The private GitHub repository `wgentil/devflow` serves the marketplace from
 `main`. Codex users with access to that repository can install it:
