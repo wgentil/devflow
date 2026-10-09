@@ -53,6 +53,111 @@ def reduce_event(data, kind, payload, version):
 
 
 def _reduce(data, kind, req, version):
+    if kind == 'domain.pr.rework':
+        run = data.get('runs', {}).get(req.get('run_id'))
+        require(run and run.get('status') == 'active' and run.get('pending_pr')
+                and not run.get('pr_rework'), 'active pending PR without rework is required')
+        require(not run.get('active_attempt') and not any(
+                    row.get('status') == 'running' for row in run.get('native_invocations', {}).values()),
+                'finish active implementation before PR rework')
+        if req.get('reason') == 'external-update':
+            old = run['pending_pr']
+            require(text(req.get('observed_head')) and text(req.get('observed_base'))
+                    and (req['observed_head'] != old.get('head_sha')
+                         or req['observed_base'] != old.get('base_sha')),
+                    'external PR update must change head or base')
+            review_id = None
+        else:
+            review = next((row for row in reversed(run.get('reviews', {}).get('pr', []))
+                           if row.get('review_id') == req.get('review_id')), None)
+            require(review and run['reviews']['pr'][-1] == review
+                    and review.get('verdict') == 'changes-requested',
+                    'latest changes-requested PR review is required')
+            require(any(row.get('review_id') == review['review_id'] and row.get('state') == 'failure'
+                        for row in run.get('pr_publications', [])),
+                    'publish the changes-requested PR review before rework')
+            review_id = review['review_id']
+        rounds = sum(row.get('verdict') == 'changes-requested'
+                     for row in run['reviews']['pr'])
+        require(rounds <= 2, 'PR automatic correction limit reached')
+        for item in run.get('items', {}).values():
+            item['status'] = 'pending'
+        for evidence in run.get('verification_proofs', {}).values():
+            evidence['fresh'] = False
+        for entries in run.get('reviews', {}).values():
+            for row in entries:
+                row['fresh'] = False
+        for acceptance in run.get('acceptances', []):
+            acceptance['fresh'] = False
+        for proof in run.get('hardening_proofs', {}).values():
+            proof['passed'] = False
+        run['pr_rework'] = {'review_id': review_id, 'round': rounds,
+                            'reason': req.get('reason', 'changes-requested')}
+        return deepcopy(run['pr_rework'])
+    if kind == 'domain.pr.refresh':
+        run = data.get('runs', {}).get(req.get('run_id'))
+        receipt = req.get('receipt')
+        old = run.get('pending_pr') if run else None
+        require(run and run.get('pr_rework') and isinstance(receipt, dict)
+                and receipt.get('status') == 'pending-review'
+                and all(receipt.get(key) == old.get(key) for key in
+                        ('pr_id', 'pr_number', 'owner', 'repo', 'base_branch'))
+                and text(receipt.get('head_sha')) and text(receipt.get('base_sha'))
+                and receipt.get('head_sha') != old.get('head_sha')
+                and text(receipt.get('manifest_hash')),
+                'PR refresh must preserve identity and bind a new verified head')
+        from .gates import gate_status
+        gate_run = {key: value for key, value in run.items()
+                    if key not in {'pending_pr', 'pr_open', 'pr_rework'}}
+        require(gate_status(gate_run, live=False).get('stage') == 'delivery',
+                'renewed verification and review gates are required before PR refresh')
+        run['pending_pr'] = deepcopy(receipt)
+        run['pr_rework'] = None
+        return deepcopy(receipt)
+    if kind == 'domain.pr.review-published':
+        run = data.get('runs', {}).get(req.get('run_id'))
+        receipt = req.get('receipt')
+        require(run and isinstance(receipt, dict), 'known run and PR publication receipt required')
+        review = next((row for row in run.get('reviews', {}).get('pr', [])
+                       if row.get('review_id') == receipt.get('review_id')), None)
+        package = run.get('review_packages', {}).get(receipt.get('package_hash'))
+        require(review and package and review.get('package_hash') == package.get('package_hash')
+                and receipt.get('pr_id') == package.get('pr_id')
+                and receipt.get('head_sha') == package.get('head_sha')
+                and receipt.get('state') in {'pending', 'failure', 'success'}
+                and (receipt.get('state') != 'success' or review.get('verdict') == 'pass'),
+                'PR publication must bind a current recorded review')
+        run.setdefault('pr_publications', []).append(deepcopy(receipt))
+        return deepcopy(receipt)
+    if kind == 'domain.pr.delivered':
+        run = data.get('runs', {}).get(req.get('run_id'))
+        delivery = req.get('delivery')
+        require(run and isinstance(delivery, dict) and run.get('status') == 'active'
+                and not run.get('delivery'), 'active undelivered PR run required')
+        receipt = next((row for row in reversed(run.get('pr_publications', []))
+                        if row.get('state') == 'success'
+                        and row.get('review_id') == delivery.get('review_id')), None)
+        package = run.get('review_packages', {}).get(delivery.get('package_hash'))
+        review = next((row for row in run.get('reviews', {}).get('pr', [])
+                       if row.get('review_id') == delivery.get('review_id')), None)
+        from .pr_reporting import complete_pr_delivery
+        require(receipt and package and review and run['reviews']['pr'][-1] == review
+                and complete_pr_delivery(run, package, review, receipt) == delivery,
+                'PR delivery needs confirmed review and status receipt')
+        run['delivery'] = {**deepcopy(delivery), 'actual_result': deepcopy(delivery)}
+        run['status'] = 'delivered'
+        return deepcopy(run['delivery'])
+    if kind == 'domain.pr.human-decision':
+        run = data.get('runs', {}).get(req.get('run_id'))
+        decision = req.get('decision')
+        require(run and isinstance(decision, dict), 'known PR run and decision required')
+        from .pr_reviews import record_pr_human_decision
+        expected = record_pr_human_decision(run, decision.get('package_hash'),
+            decision.get('actor_id'), decision.get('finding_id'),
+            decision.get('choice'), decision.get('rationale'))
+        require(expected == decision, 'PR human decision does not match the current finding')
+        run.setdefault('pr_human_decisions', []).append(deepcopy(decision))
+        return deepcopy(decision)
     if kind == 'domain.pr.open-start':
         run = data.get('runs', {}).get(req.get('run_id'))
         require(run and run.get('status') == 'active' and not run.get('pending_pr'),

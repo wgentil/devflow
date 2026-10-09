@@ -114,6 +114,16 @@ flowchart TD
     Accept --> Deliver[Human delivery choice]
     Deliver -->|Local merge or retained branch| DirectResult[Record actual terminal result]
     Deliver -->|Create PR| PendingPR[Create exact-head PR and pending status]
+    PendingPR --> PRPackage[Read complete GitHub PR and full diff]
+    PRPackage --> PRReview[Independent PR reviewer covers every changed file]
+    PRReview -->|Changes requested| PRRework[Reopen proofs and reviews; implementer repairs]
+    PRRework --> PRRefresh[Verify new manifest and refresh hosted PR head]
+    PRRefresh --> PRPackage
+    PendingPR -.->|External PR update: pr sync| PRRework
+    PRReview -->|Human decision required| HumanPR[Human chooses exact finding option]
+    HumanPR --> PRPackage
+    PRReview -->|Pass with current CI| PRStatus[Publish report and required status]
+    PRStatus -->|Confirmed success| PRDelivered[Record ready-to-merge PR delivery]
     Proof -->|Failure| Fix[Current implementer reworks]
     Review -->|Changes requested| Fix
     Accept -->|Configured hardening gate fails| Repair{Opted-in bounded repair eligible?}
@@ -279,8 +289,18 @@ the dedicated `devflow/pr-review` required status with named direct-push bypass
 actors. It requires authenticated GitHub CLI access and repository ruleset
 permission. The `pr open` command can create or find one exact-head GitHub PR and
 post an initial pending status after explicit authorization. It leaves the run
-active; full PR review and final status publication are not connected yet on
-this branch. The setup receipt alone does not create or review a PR. See the
+active. `review pr-package` gathers complete hosted and local diff evidence;
+a distinct PR reviewer records every-file coverage. `pr publish` writes a
+concise summary, actionable inline findings and a required status, then
+`pr complete` records delivery only after a fresh successful status readback.
+The helper does not merge the PR. While delivery is pending, use `pr sync`
+after an external PR change, renew the gates and `pr refresh`, then rerun the
+review. After PR delivery is recorded, start a fresh run for a later update;
+there is no webhook watcher. A fork's exact commits must be locally available.
+If CI is missing, GitHub pages are truncated, or the PR changes, the gate
+stays closed. The setup receipt alone does not create or review a PR. See the
+[full review guide](../skills/review-work/GUIDE.md#github-pr-full-review) for
+the explicit `pr rework`, `pr sync` and `pr refresh` recovery steps. See the
 [developer command reference](usage.md) for its input and recovery behavior.
 
 Optional source ingestion, issues, migrations and usage reporting are documented

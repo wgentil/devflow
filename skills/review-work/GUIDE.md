@@ -58,6 +58,69 @@ role, actor, decision, rationale and cost if wrong. Use `review impact` with
 reused actors or stale package content keep the gate blocked. The helper checks
 record relationships; it cannot prove a supplied invocation reference is real.
 
+## GitHub PR full review
+
+After the user chooses and authorizes PR creation, `pr open` leaves the run in
+`pr-review`. The coordinator calls `review pr-package` with the local Git
+checkout containing the exact base and head commits. The helper reads every
+GitHub file, commit, comment, review and CI page, compares the hosted file list
+with the local binary-aware diff, and creates batches of at most 20 paths. A
+fork head must first be available in the checkout. Incomplete pagination,
+missing CI, or a changed PR prevents a package.
+The `full_diff` field is authoritative for rename and deletion context;
+batch diffs are navigation aids.
+
+Attach a separate `pr-reviewer` host actor to the returned package and give it
+all batches plus the approved spec, governing rules, acceptance criteria,
+verification, prior findings, discussion and mergeability. Record a report
+using [pr-review-report.json](../../docs/examples/pr-review-report.json) as a
+shape example. `reviewed_files` must enumerate every changed path. `pass`
+requires successful CI and mergeability. Findings need a reason and acceptance
+condition; human questions also need options, impact, recommendation and owner.
+Each human option states its consequence and the recorded actor must be the
+named owner. A blocked report lists a reason and next action.
+The helper can validate the report shape and actor IDs; the coordinator must
+ensure the invocation was genuinely separate and the review substantive.
+
+```sh
+df review pr-package --root "$CONTROL" --run-id greeting-run \
+  --repository "$CHECKOUT" --operation-id pr-package-v1
+df review record --root "$CONTROL" --run-id greeting-run \
+  --package-hash "$PACKAGE_HASH" --actor-id fresh-pr-reviewer \
+  --invocation-ref "$PR_REVIEW_INVOCATION" --tool-available \
+  --report-json "$PR_REPORT_JSON" --operation-id pr-review-v1
+df pr publish --root "$CONTROL" --run-id greeting-run \
+  --review-id "$PR_REVIEW_ID" --operation-id pr-publish-v1
+df pr complete --root "$CONTROL" --run-id greeting-run \
+  --review-id "$PR_REVIEW_ID" --operation-id pr-complete-v1
+```
+
+For `changes-requested`, publish the failure report, then use `pr rework` to
+reopen all item proofs, reviews, acceptance and hardening. The implementer
+repairs code and renews those gates. Prepare and verify a new delivery manifest,
+push the repaired branch, then use `pr refresh` to bind its new hosted head and
+pending status before preparing a new PR package. After two
+correction rounds, get human direction or independent adjudication. For
+`human-decision-required`, use `review pr-human-decision` with the exact package,
+finding, selected option, actor and rationale, then obtain a fresh PR review.
+A human choice cannot waive failed CI or make a nonpassing verdict pass.
+`pr publish` posts a concise GitHub summary, actionable inline findings and a
+required status. `pr complete` records PR delivery only after confirmed success
+on the exact head. The helper does not merge the PR or watch external updates.
+While delivery is pending, `pr sync` detects an external GitHub PR head or base
+change and reopens the same gates. After renewing them, `pr refresh` binds the
+new verified head. The old verdict and status do not transfer. After terminal
+PR delivery, use a fresh run for a later update to the same PR.
+
+```sh
+df pr rework --root "$CONTROL" --run-id greeting-run \
+  --review-id "$PR_REVIEW_ID" --operation-id pr-rework-v1
+df pr refresh --root "$CONTROL" --run-id greeting-run \
+  --manifest-file "$NEW_VERIFIED_MANIFEST" --operation-id pr-refresh-v1
+df pr sync --root "$CONTROL" --run-id greeting-run \
+  --operation-id pr-external-update-v1
+```
+
 ## Host usage example
 
 Invoke this skill from the same selected DevFlow project/run in either host. An

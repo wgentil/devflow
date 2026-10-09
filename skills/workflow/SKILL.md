@@ -49,7 +49,17 @@ flowchart TD
     Manifest --> Choice["Human chooses merge, PR or retained branch"]
     Choice -->|Local merge or retained branch| Delivered["Execute authorized delivery and record actual result"]
     Choice -->|Create PR| PendingPR["Create exact-head PR and pending required status"]
-    PendingPR --> PRReview["PR review gate pending implementation"]
+    PendingPR --> PRPackage["Read complete hosted PR and prepare full diff package"]
+    PRPackage --> PRReview["Separate PR reviewer covers every changed file"]
+    PRReview -->|Changes requested| PRFix["pr rework: reset proof and review gates; implementer repairs"]
+    PRFix --> PRRefresh["Renew verification, reviews, manifest; pr refresh new head"]
+    PRRefresh --> PRPackage
+    PendingPR -.->|External PR update: pr sync| PRFix
+    PRReview -->|Human decision required| PRHuman["Human answers exact finding; fresh review"]
+    PRHuman --> PRPackage
+    PRReview -->|Pass| PRStatus["Publish concise report and exact-head required status"]
+    PRStatus -->|Confirmed success| Delivered
+    PRReview -->|Blocked| PRBlocked["Keep PR check non-passing"]
     Delivered --> NewRun{"Start another run in this session?"}
     NewRun -->|Yes| Retire["Attach new run; retire terminal binding and clear old task mappings"]
     Retire --> Attach
@@ -146,7 +156,7 @@ Resume by run ID with `run status`; the active attempt token remains bound to th
 
 Deterministic operations record best-effort byte and duration measurements under the chosen root. Read `offload.jsonl` to inspect the measures; these bytes do not establish actual tokens saved. Reuse context projections only when source and resolver fingerprints match.
 
-Use the focused Devflow skills for project context, specification, planning, build verification, and independent review. Prepare and verify delivery manifests, then stop at the human's local-merge / pull-request / retained-branch decision. The helper never performs those external effects automatically. Treat event journal state and evidence as authoritative. The dispatcher requires Python 3.11+ on macOS/Linux; no daemon or dependencies are required. A portable lock boundary exists, but native Windows host support remains unverified.
+Use the focused Devflow skills for project context, specification, planning, build verification, and independent review. Prepare and verify delivery manifests, then ask for the human's local-merge / pull-request / retained-branch decision. Only a chosen, authorized PR path uses GitHub. After `pr open`, prepare a complete `review pr-package`, invoke a distinct `pr-reviewer`, record its full-file verdict, then `pr publish` and `pr complete` only after a fresh pass and confirmed status. Changes need renewed evidence and a new package. The helper never merges a PR. Treat event journal state and evidence as authoritative. The dispatcher requires Python 3.11+ on macOS/Linux; no daemon or dependencies are required. A portable lock boundary exists, but native Windows host support remains unverified.
 
 ## Documentation
 

@@ -1,0 +1,8 @@
+{
+  "package_hash": "REPLACE_WITH_CURRENT_PR_PACKAGE_HASH",
+  "verdict": "pass",
+  "reviewed_files": [
+    "REPLACE_WITH_EVERY_CHANGED_FILE_PATH"
+  ],
+  "findings": []
+}

@@ -1,0 +1,24 @@
+{
+  "package_hash": "REPLACE_WITH_CURRENT_PR_PACKAGE_HASH",
+  "verdict": "human-decision-required",
+  "reviewed_files": [
+    "REPLACE_WITH_EVERY_CHANGED_FILE_PATH"
+  ],
+  "findings": [
+    {
+      "id": "business-rule-1",
+      "severity": "important",
+      "path": "PR",
+      "reason": "The approved rule leaves this behavior ambiguous.",
+      "acceptance_condition": "Record the chosen behavior and verify it.",
+      "question": "Which behavior is intended?",
+      "options": [
+        {"choice": "A", "consequence": "Existing users retain the old behavior."},
+        {"choice": "B", "consequence": "All users receive the new behavior."}
+      ],
+      "impact": "The wrong choice changes user-visible results.",
+      "recommendation": "A",
+      "owner": "REPLACE_WITH_DECISION_OWNER_ACTOR_ID"
+    }
+  ]
+}

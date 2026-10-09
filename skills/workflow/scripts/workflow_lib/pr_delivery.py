@@ -78,8 +78,9 @@ def _preflight(run: dict, manifest: dict, request: dict) -> tuple[str, str, str]
 
 
 def _pr_path(owner: str, repo: str, request: dict) -> str:
+    head = request['head_branch'] if ':' in request['head_branch'] else owner + ':' + request['head_branch']
     return (f'/repos/{quote(owner, safe="")}/{quote(repo, safe="")}/pulls?state=open'
-            f'&head={quote(owner + ":" + request["head_branch"], safe="")}'
+            f'&head={quote(head, safe="")}'
             f'&base={quote(request["base_branch"], safe="")}')
 
 
@@ -114,8 +115,8 @@ def _checked_pr(pr: dict, owner: str, repo: str, request: dict, head_sha: str) -
 def _pending_status(client, owner: str, repo: str, head_sha: str, *, write: bool) -> bool:
     path = f'/repos/{owner}/{repo}/commits/{head_sha}/statuses?per_page=100'
     statuses = client.api('GET', path)
-    if not isinstance(statuses, list) or len(statuses) >= 100:
-        raise WorkflowError('PR_STATUS_UNVERIFIED', 'GitHub status history is incomplete')
+    if not isinstance(statuses, list):
+        raise WorkflowError('PR_STATUS_UNVERIFIED', 'GitHub status history is invalid')
     latest = next((status for status in statuses if isinstance(status, dict)
                    and status.get('context') == STATUS_CONTEXT), None)
     if latest and latest.get('state') == 'pending':
@@ -159,3 +160,41 @@ def reconcile_pr_delivery(run: dict, verified_manifest: dict, request: dict, cli
         raise WorkflowError('PR_STATUS_UNVERIFIED', 'pending status is not yet visible on GitHub')
     result['manifest_hash'] = verified_manifest['manifest_hash']
     return result
+
+
+def refresh_pr_delivery(run: dict, verified_manifest: dict, client) -> dict:
+    """Bind a repaired, reverified branch to the already-authorized PR."""
+    pending = run.get('pending_pr', {})
+    if not pending or not run.get('pr_rework') or run.get('status') != 'active':
+        raise ValueError('published changes-requested review and active PR rework are required')
+    manifest = verified_manifest
+    gate_run = {key: value for key, value in run.items()
+                if key not in {'pending_pr', 'pr_open', 'pr_rework'}}
+    manifest_hash = manifest.get('manifest_hash')
+    if (manifest.get('outcome') != 'pull-request' or not manifest_hash
+            or _hash(_manifest_body(manifest)) != manifest_hash
+            or manifest.get('verification', {}).get('passed') is not True
+            or manifest['verification'].get('manifest_hash') != manifest_hash
+            or manifest.get('run_id') != run.get('id')
+            or gate_status(gate_run).get('stage') != 'delivery'
+            or verify_delivery(gate_run, manifest, manifest_hash,
+                               manifest.get('repositories', {})) != manifest):
+        raise ValueError('PR refresh requires a fresh verified delivery manifest')
+    repositories = manifest.get('repositories', {})
+    if len(repositories) != 1:
+        raise ValueError('PR refresh needs one verified GitHub repository')
+    head_sha = next(iter(repositories.values())).get('head')
+    if not isinstance(head_sha, str) or not head_sha or head_sha == pending.get('head_sha'):
+        raise ValueError('PR refresh requires a new verified head')
+    owner, repo, number = pending['owner'], pending['repo'], pending['pr_number']
+    pr = client.api('GET', f'/repos/{owner}/{repo}/pulls/{number}')
+    if (not isinstance(pr, dict) or str(pr.get('id')) != str(pending['pr_id'])
+            or pr.get('state') != 'open' or pr.get('base', {}).get('ref') != pending['base_branch']
+            or pr.get('head', {}).get('sha') != head_sha):
+        raise ValueError('hosted PR head does not match the repaired verified manifest')
+    base_sha = pr.get('base', {}).get('sha')
+    if not isinstance(base_sha, str) or not base_sha:
+        raise ValueError('hosted PR base is missing')
+    _pending_status(client, owner, repo, head_sha, write=True)
+    return {**pending, 'status': 'pending-review', 'base_sha': base_sha,
+            'head_sha': head_sha, 'manifest_hash': manifest_hash}

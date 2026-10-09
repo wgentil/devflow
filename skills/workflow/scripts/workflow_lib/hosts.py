@@ -2,7 +2,7 @@
 from copy import deepcopy
 from .store import WorkflowError
 
-ROLES = {'implementer', 'item-reviewer', 'branch-reviewer', 'acceptance-reviewer'}
+ROLES = {'implementer', 'item-reviewer', 'branch-reviewer', 'acceptance-reviewer', 'pr-reviewer'}
 HOSTS = {'claude', 'codex'}
 
 
@@ -149,6 +149,8 @@ def apply_host_event(state: dict, kind: str, request: dict) -> dict:
             package = run.get('review_packages', {}).get(req.get('package_hash'), {})
             require(package and package.get('role') == role, 'Matching review package required.')
             require(req['actor_id'] not in history, 'Every implementing actor is excluded from independent review.')
+            require(req['actor_id'] not in {entry.get('actor_id') for entries in run.get('reviews', {}).values()
+                                            for entry in entries}, 'PR reviewer must differ from prior reviewers.')
             if role == 'item': require(req.get('item_id') in run.get('items', {}), 'Planned item required.')
         if terminal_prior:
             terminal_prior['status']='detached';terminal_prior['revision']+=1

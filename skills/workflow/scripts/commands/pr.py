@@ -9,7 +9,11 @@ from pathlib import Path
 
 from workflow_lib.github_pr import GithubClient
 from workflow_lib.pr_setup import configure_pr_setup, inspect_pr_setup, verify_pr_setup
-from workflow_lib.pr_delivery import open_pr_delivery, reconcile_pr_delivery
+from workflow_lib.pr_delivery import open_pr_delivery, reconcile_pr_delivery, refresh_pr_delivery
+from workflow_lib.pr_reviews import (read_pr_snapshot, validate_pr_snapshot,
+                                     current_pr_inputs, _hash as review_hash)
+from workflow_lib.pr_reporting import publish_pr_review, complete_pr_delivery, _latest_status, _paths
+from workflow_lib.host_completion import package_current
 from workflow_lib.store import WorkflowError, read_state, transact
 
 
@@ -28,6 +32,26 @@ def register_commands(parser: argparse.ArgumentParser) -> None:
     opening.add_argument('--manifest-file', required=True)
     opening.add_argument('--request-file', required=True)
     opening.add_argument('--operation-id', required=True)
+    rework = actions.add_parser('rework')
+    rework.add_argument('--root', required=True)
+    rework.add_argument('--run-id', required=True)
+    rework.add_argument('--review-id', required=True)
+    rework.add_argument('--operation-id', required=True)
+    sync = actions.add_parser('sync')
+    sync.add_argument('--root', required=True)
+    sync.add_argument('--run-id', required=True)
+    sync.add_argument('--operation-id', required=True)
+    refresh = actions.add_parser('refresh')
+    refresh.add_argument('--root', required=True)
+    refresh.add_argument('--run-id', required=True)
+    refresh.add_argument('--manifest-file', required=True)
+    refresh.add_argument('--operation-id', required=True)
+    for name in ('publish', 'complete'):
+        action = actions.add_parser(name)
+        action.add_argument('--root', required=True)
+        action.add_argument('--run-id', required=True)
+        action.add_argument('--review-id', required=True)
+        action.add_argument('--operation-id', required=True)
 
 
 def _request(path: str) -> dict:
@@ -46,8 +70,22 @@ def _hash(value: dict) -> str:
 
 
 def dispatch(parsed: argparse.Namespace) -> dict:
-    request = _request(parsed.request_file)
     client = GithubClient()
+    if parsed.pr_command == 'sync':
+        return _sync(parsed, client)
+    if parsed.pr_command == 'rework':
+        root = Path(parsed.root).expanduser().resolve()
+        state = read_state(root)
+        response = transact(root, state['version'], parsed.operation_id,
+            {'kind': 'domain.pr.rework', 'payload': {'request': {
+                'run_id': parsed.run_id, 'review_id': parsed.review_id}}})
+        return {**response['state']['data']['domain_receipts'][parsed.operation_id],
+                'state_version': response['state']['version'], 'replayed': response['replayed']}
+    if parsed.pr_command == 'refresh':
+        return _refresh(parsed, client)
+    if parsed.pr_command in {'publish', 'complete'}:
+        return _review_delivery(parsed, client)
+    request = _request(parsed.request_file)
     if parsed.pr_command == 'open':
         return _open(parsed, request, client)
     if not all(key in request for key in ('owner', 'repo', 'base', 'bypass_actors')):
@@ -93,6 +131,115 @@ def dispatch(parsed: argparse.Namespace) -> dict:
                  'operation_id': operation_id, 'request_hash': request_hash,
                  'status': 'verified', 'receipt': result}}})
     return result
+
+
+def _sync(parsed: argparse.Namespace, client: GithubClient) -> dict:
+    root = Path(parsed.root).expanduser().resolve()
+    state = read_state(root)
+    run = state['data'].get('runs', {}).get(parsed.run_id)
+    pending = run.get('pending_pr') if run else None
+    if not pending or run.get('status') != 'active' or run.get('pr_rework'):
+        raise WorkflowError('PR_SYNC_UNAVAILABLE', 'active pending PR outside rework is required')
+    previous = state['operations'].get(parsed.operation_id)
+    if previous:
+        if previous.get('kind') != 'domain.pr.rework':
+            raise WorkflowError('OPERATION_CONFLICT', 'PR sync operation ID belongs to another action')
+        return {**state['data']['domain_receipts'][parsed.operation_id], 'replayed': True}
+    pr = client.api('GET', f'/repos/{pending["owner"]}/{pending["repo"]}/pulls/{pending["pr_number"]}')
+    if (not isinstance(pr, dict) or str(pr.get('id')) != str(pending['pr_id'])
+            or pr.get('state') != 'open' or pr.get('base', {}).get('ref') != pending['base_branch']):
+        raise WorkflowError('PR_IDENTITY_STALE', 'hosted PR identity or target changed')
+    observed_head = pr.get('head', {}).get('sha')
+    observed_base = pr.get('base', {}).get('sha')
+    if (not observed_head or not observed_base
+            or observed_head == pending['head_sha'] and observed_base == pending['base_sha']):
+        raise WorkflowError('PR_SYNC_NOT_NEEDED', 'hosted PR head and base have not changed')
+    response = transact(root, state['version'], parsed.operation_id,
+        {'kind': 'domain.pr.rework', 'payload': {'request': {
+            'run_id': parsed.run_id, 'reason': 'external-update',
+            'observed_head': observed_head, 'observed_base': observed_base}}})
+    return {**response['state']['data']['domain_receipts'][parsed.operation_id],
+            'state_version': response['state']['version'], 'replayed': response['replayed']}
+
+
+def _refresh(parsed: argparse.Namespace, client: GithubClient) -> dict:
+    root = Path(parsed.root).expanduser().resolve()
+    state = read_state(root)
+    run = state['data'].get('runs', {}).get(parsed.run_id)
+    if not run:
+        raise WorkflowError('RUN_NOT_FOUND', 'PR refresh needs an active run')
+    try:
+        manifest = json.loads(Path(parsed.manifest_file).read_text(encoding='utf-8'))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise WorkflowError('PR_MANIFEST_INVALID', 'read a verified delivery manifest JSON file') from exc
+    previous = state['operations'].get(parsed.operation_id)
+    if previous:
+        if previous.get('kind') != 'domain.pr.refresh':
+            raise WorkflowError('OPERATION_CONFLICT', 'PR refresh operation ID belongs to another action')
+        receipt = previous['payload']['request']['receipt']
+        if receipt.get('manifest_hash') != manifest.get('manifest_hash'):
+            raise WorkflowError('OPERATION_CONFLICT', 'PR refresh operation belongs to another manifest')
+        return {**receipt, 'replayed': True}
+    receipt = refresh_pr_delivery(run, manifest, client)
+    response = transact(root, state['version'], parsed.operation_id,
+        {'kind': 'domain.pr.refresh', 'payload': {'request': {
+            'run_id': parsed.run_id, 'receipt': receipt}}})
+    return {**receipt, 'state_version': response['state']['version'], 'replayed': response['replayed']}
+
+
+def _review_delivery(parsed: argparse.Namespace, client: GithubClient) -> dict:
+    root = Path(parsed.root).expanduser().resolve()
+    state = read_state(root)
+    run = state['data'].get('runs', {}).get(parsed.run_id)
+    if not run or not run.get('pending_pr'):
+        raise WorkflowError('PR_NOT_OPEN', 'pending PR is required')
+    previous = state['operations'].get(parsed.operation_id)
+    if previous:
+        expected_kind = ('domain.pr.review-published' if parsed.pr_command == 'publish'
+                         else 'domain.pr.delivered')
+        record = previous.get('payload', {}).get('request', {})
+        result = record.get('receipt', record.get('delivery', {}))
+        if (previous.get('kind') != expected_kind or record.get('run_id') != parsed.run_id
+                or result.get('review_id') != parsed.review_id):
+            raise WorkflowError('OPERATION_CONFLICT', 'PR operation ID belongs to different input')
+        return {**result, 'replayed': True}
+    review = next((row for row in run.get('reviews', {}).get('pr', [])
+                   if row.get('review_id') == parsed.review_id), None)
+    if not review:
+        raise WorkflowError('PR_REVIEW_REQUIRED', 'recorded PR review is required')
+    package = run.get('review_packages', {}).get(review['package_hash'])
+    if not package or not package_current(run, package) or not current_pr_inputs(state['data'], run, package):
+        raise WorkflowError('PR_REVIEW_STALE', 'PR package or local head changed')
+    if (not run.get('reviews', {}).get('pr')
+            or run['reviews']['pr'][-1]['review_id'] != parsed.review_id):
+        raise WorkflowError('PR_REVIEW_STALE', 'only the latest PR review may be published')
+    snapshot = read_pr_snapshot(client, run['pending_pr'],
+                                review_hash(state['data'].get('governing_input_receipt', {})))
+    validate_pr_snapshot(package, snapshot)
+    if parsed.pr_command == 'publish':
+        decisions = run.get('pr_human_decisions', [])
+        receipt = publish_pr_review(client, package, review, decisions)
+        after = read_pr_snapshot(client, run['pending_pr'],
+                                 review_hash(state['data'].get('governing_input_receipt', {})))
+        validate_pr_snapshot(package, after)
+        response = transact(root, state['version'], parsed.operation_id,
+            {'kind': 'domain.pr.review-published', 'payload': {'request': {
+                'run_id': parsed.run_id, 'receipt': receipt}}})
+        return {**receipt, 'state_version': response['state']['version'], 'replayed': response['replayed']}
+    receipt = next((row for row in reversed(run.get('pr_publications', []))
+                    if row.get('review_id') == parsed.review_id and row.get('state') == 'success'), None)
+    if not receipt:
+        raise WorkflowError('PR_STATUS_REQUIRED', 'confirmed successful PR status is required')
+    prefix, _ = _paths(package)
+    latest = _latest_status(client, prefix, package['head_sha'])
+    if (not latest or latest.get('state') != 'success' or latest.get('url') != receipt['status_url']
+            or latest.get('description') != f'DevFlow pass; package {package["package_hash"][:12]}'):
+        raise WorkflowError('PR_STATUS_STALE', 'GitHub required status is not the confirmed current success')
+    delivery = complete_pr_delivery(run, package, review, receipt)
+    response = transact(root, state['version'], parsed.operation_id,
+        {'kind': 'domain.pr.delivered', 'payload': {'request': {
+            'run_id': parsed.run_id, 'delivery': delivery}}})
+    return {**delivery, 'state_version': response['state']['version'], 'replayed': response['replayed']}
 
 
 def _open(parsed: argparse.Namespace, request: dict, client: GithubClient) -> dict:

@@ -29,6 +29,18 @@ flowchart TD
     Stage -->|Acceptance| Requirements["Record every requirement verdict with evidence"]
     Requirements --> Complete{"All requirements MET?"}
     Complete -->|Yes| Hardening["Configured hardening and delivery checks"]
+    Hardening --> Choice{"Delivery choice"}
+    Choice -->|Create PR| PRPackage["Read GitHub PR and prepare exact-head full-diff package"]
+    PRPackage --> PRReviewer["Distinct PR reviewer covers every changed file"]
+    PRReviewer --> PRVerdict{"PR verdict"}
+    PRVerdict -->|Pass with green CI| Publish["Publish report and required status; confirm readback"]
+    PRVerdict -->|Changes requested| PRFix["pr rework resets proofs; implementer repairs and renews gates"]
+    PRFix --> PRRefresh["pr refresh binds verified new head"]
+    PRRefresh --> PRPackage
+    PRPackage -.->|External PR update: pr sync| PRFix
+    PRVerdict -->|Human decision required| PRHuman["Record scoped human choice; fresh review"]
+    PRHuman --> PRPackage
+    PRVerdict -->|Blocked| Blocked
     Complete -->|No| Fix["Agent reworks and renews affected verification"]
     Verdict -->|Request changes| Limit{"Correction wave available?"}
     Limit -->|Yes| Fix
@@ -58,6 +70,8 @@ python3 <plugin-root>/skills/workflow/scripts/run.py review record \
 ```
 
 Use verdicts `pass`, `request-changes`, or `block`. Item review permits four correction waves; a fifth unresolved request requires adjudication. Branch and acceptance reviews permit one correction wave; a subsequent request requires adjudication. After changes, prepare a new package. Unknown correction impact invalidates all dependent judgments. Acceptance must address every requirement and cannot silently waive prior accepted requirements.
+
+For a user-chosen GitHub PR, `review pr-package` reads all hosted PR pages and CI evidence, compares every hosted file and commit with the exact local base-to-head diff, and records bounded diff batches. Missing local fork commits, truncated GitHub lists, absent CI, or changed inputs block packaging. Attach a distinct `pr-reviewer` to that package. Its report uses `pass`, `changes-requested`, `human-decision-required`, or `blocked`, lists every file in `reviewed_files`, and gives structured findings. Two automatic correction rounds are allowed. After a published changes-requested report, `pr rework` invalidates all item proofs, reviews, acceptance and hardening, then the implementer repairs and renews them. `pr refresh` binds a newly verified delivery manifest and new hosted head to the existing PR. A human decision names an exact finding, option and rationale; it cannot waive CI or create a passing verdict. `pr publish` posts a concise report, actionable inline findings and the required status. `pr complete` needs a fresh package and confirmed success on the exact head. External PR updates require `pr sync`, renewed gates and `pr refresh` before a fresh review; the helper does not watch GitHub continuously.
 
 ## Documentation
 

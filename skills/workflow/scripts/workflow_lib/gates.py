@@ -75,6 +75,13 @@ def gate_status(run: dict, live: bool = True) -> dict:
         return {"stage": run["status"], "can_advance": False, "blocking_findings": [],
                 "unverified_items": [], "terminal": True}
     if run.get('pending_pr'):
+        if run.get('pr_rework'):
+            underlying = gate_status({key: value for key, value in run.items()
+                                      if key not in {'pending_pr', 'pr_open', 'pr_rework'}}, live)
+            return {'stage': 'pr-rework', 'can_advance': False,
+                    'underlying_stage': underlying['stage'],
+                    'blocking_findings': underlying['blocking_findings'],
+                    'unverified_items': underlying['unverified_items']}
         return {'stage': 'pr-review', 'can_advance': False, 'blocking_findings': [],
                 'unverified_items': []}
     if run.get('pr_open', {}).get('status') in {'pending', 'uncertain'}:

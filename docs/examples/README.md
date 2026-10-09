@@ -12,6 +12,8 @@ human approval, independent review, provider receipt or authoritative price.
 | [spec.json](spec.json) | specify | One authored requirement; add real criteria and unresolved questions |
 | [pr-setup.json](pr-setup.json) | PR setup | Replace repository identity and trusted bypass login before configuring GitHub |
 | [pr-open.json](pr-open.json) | PR opening | Replace repository, branch, verified setup, manifest, and authorization identities |
+| [pr-review-report.json](pr-review-report.json) | PR review | Replace package hash and enumerate every changed path after a genuinely independent full review |
+| [pr-review-human-question.json](pr-review-human-question.json) | PR human decision | Replace the package, paths and owner; each option needs a consequence |
 | [plan.json](plan.json) | plan-work | Replace specification hash; register app repository |
 | [greeting.py](greeting.py), [test_greeting.py](test_greeting.py), [test_runner.py](test_runner.py) | build-work | Put test in tests/; start with a failing implementation for RED |
 | [review-report.json](review-report.json), [acceptance.json](acceptance.json) | review-work | Actual independent report, package hash and changed-source citations |

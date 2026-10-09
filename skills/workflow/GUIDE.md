@@ -175,8 +175,16 @@ is `delivery.retained-branch` or `delivery.local-merge` for this command.
 Local merge also needs matching `merge_commits`. New PR outcomes use `pr open`
 with action `delivery.pull-request` after verified GitHub ruleset setup. It
 creates or finds the exact-head PR, posts a pending required status, and keeps
-the run active for a separate full PR review. Historical PR delivery records
-remain readable. The helper never merges a PR.
+the run active for a separate full PR review. Use `review pr-package`, attach a
+distinct `pr-reviewer`, record its every-file verdict, then `pr publish` and
+`pr complete` only on a fresh passing package and confirmed GitHub status.
+After a published changes-requested report, `pr rework` reopens all item proofs,
+reviews, acceptance and hardening. The implementer repairs, renews these gates,
+pushes a new head, and uses `pr refresh` with a newly verified manifest before
+another package. A human decision is scoped to an exact finding and never waives CI.
+For a PR changed externally, `pr sync` reopens those gates before the same
+refresh sequence; DevFlow has no background watcher.
+Historical PR delivery records remain readable. The helper never merges a PR.
 
 ```sh
 df delivery record --root "$CONTROL" --run-id greeting-run --manifest-file verified-manifest.json --actual-result-file actual-result.json --operation-id deliver-greeting
