@@ -1,6 +1,16 @@
 # DevFlow PR review agent design
 
-Status: conversational design approved; written spec awaiting review.
+Status: approved for implementation by the request to start the build with Autowork.
+
+## Acceptance requirements
+
+- **R1:** Only an explicit create-PR choice invokes the PR agent; direct delivery paths remain available.
+- **R2:** Setup configures and verifies a GitHub required `devflow/pr-review` status and named trusted direct-push bypass actors without altering unrelated rules.
+- **R3:** PR creation leaves delivery pending until a current, independent full-diff review and required status publication succeed.
+- **R4:** The review package covers every changed file and current specs, rules, tests, CI, discussion, and mergeability; missing or stale evidence cannot pass.
+- **R5:** Changes requested receive bounded implementer repair and fresh verification; human-required decisions block until a recorded human choice; unrecoverable conditions fail closed.
+- **R6:** GitHub receives a concise report, actionable inline findings, and a head-bound required status without duplicate writes on retry.
+- **R7:** Skills, diagrams, guides, examples, and automated and live verification describe and exercise the implemented behavior and limits.
 
 ## Purpose and scope
 
