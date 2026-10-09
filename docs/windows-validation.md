@@ -34,6 +34,8 @@ checkout at local scope, checks the installed version and hook files, and runs
 the hook behavior suite against the installed copy. This can establish package
 and hook-script behavior without authentication. A live Claude session must
 still prove that Claude dispatches each installed hook event as expected.
+Claude's validator warns that the repository's root `CLAUDE.md` is not loaded
+as plugin context; DevFlow's shipped instructions live in its skills.
 
 Run the [WSL2 plan](superpowers/plans/2026-10-08-wsl2-validation.md) and the
 [native Windows plan](superpowers/plans/2026-10-08-native-windows-port.md) before

@@ -31,7 +31,7 @@ jobs:
       - name: Validate DevFlow marketplace
         run: |
           claude --version
-          claude plugin validate . --strict
+          claude plugin validate .
       - name: Add checkout marketplace
         run: claude plugin marketplace add ./ --scope local
       - name: Install DevFlow
