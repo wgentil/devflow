@@ -38,4 +38,6 @@ jobs:
         run: |
           claude plugin install devflow@devflow-marketplace --scope local -y
       - name: Check installed package and hooks
-        run: python scripts/verify_claude_install.py
+        run: |
+          claude plugin list --json > "$env:RUNNER_TEMP\devflow-plugin-list.json"
+          python scripts/verify_claude_install.py "$env:RUNNER_TEMP\devflow-plugin-list.json"

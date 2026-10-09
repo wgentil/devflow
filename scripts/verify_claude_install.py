@@ -28,11 +28,9 @@ def find_installed_plugin(records, expected_version):
     return path
 
 
-def main():
+def main(listing_file):
     expected = json.loads((ROOT / '.claude-plugin/plugin.json').read_text(encoding='utf-8'))['version']
-    listing = subprocess.run(['claude', 'plugin', 'list', '--json'], capture_output=True,
-                             text=True, check=True, timeout=30)
-    installed = find_installed_plugin(json.loads(listing.stdout), expected)
+    installed = find_installed_plugin(json.loads(Path(listing_file).read_text(encoding='utf-8-sig')), expected)
     environment = dict(os.environ, DEVFLOW_HOOK_PATH=str(installed / 'adapters/claude-code/hook.py'))
     print(f'Installed {PLUGIN_ID} {expected}: {installed}', flush=True)
     result = subprocess.run([sys.executable, '-m', 'unittest', 'discover', '-s', 'tests',
@@ -42,4 +40,6 @@ def main():
 
 
 if __name__ == '__main__':
-    raise SystemExit(main())
+    if len(sys.argv) != 2:
+        raise SystemExit('usage: verify_claude_install.py PLUGIN_LIST_JSON')
+    raise SystemExit(main(sys.argv[1]))
