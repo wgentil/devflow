@@ -57,10 +57,18 @@ def _current_acceptance(run: dict) -> dict:
     return acceptance
 
 
+def _gate_run(run: dict, outcome: str) -> dict:
+    """A pending PR may prepare a replacement manifest only during explicit rework."""
+    if outcome == 'pull-request' and run.get('pending_pr') and run.get('pr_rework'):
+        return {key: value for key, value in run.items()
+                if key not in {'pending_pr', 'pr_open', 'pr_rework'}}
+    return run
+
+
 def prepare_delivery(run: dict, repositories: dict, outcome: str) -> dict:
     if outcome not in OUTCOMES or not isinstance(repositories, dict) or not repositories:
         raise ValueError("delivery outcome and repository manifest are required")
-    if run.get("status") != "active" or gate_status(run).get("stage") != "delivery":
+    if run.get("status") != "active" or gate_status(_gate_run(run, outcome)).get("stage") != "delivery":
         raise ValueError("run has not passed implementation, review, and acceptance gates")
     acceptance = _current_acceptance(run)
     registered = sorted(repositories)
@@ -100,12 +108,12 @@ def verify_delivery(run: dict, manifest: dict, confirmed_hash: str, repositories
     if run.get("id") != manifest.get("run_id") or hashlib.sha256(
             _canonical(run.get("plan", {})).encode()).hexdigest() != manifest.get("plan_hash"):
         raise ValueError("delivery manifest run or plan is stale")
-    if gate_status(run).get("stage") != "delivery":
+    if gate_status(_gate_run(run, manifest.get('outcome'))).get("stage") != "delivery":
         raise ValueError("delivery gate is no longer open")
     acceptance = _current_acceptance(run)
     if acceptance.get("acceptance_hash") != manifest.get("acceptance_hash"):
         raise ValueError("delivery manifest acceptance is stale")
-    if gate_status(run).get("stage") != "delivery" or run.get("status") != "active":
+    if gate_status(_gate_run(run, manifest.get('outcome'))).get("stage") != "delivery" or run.get("status") != "active":
         raise ValueError("delivery gate is no longer open")
     if set(repositories) != set(manifest.get("repositories", {})):
         raise ValueError("delivery requires every repository in the manifest")
@@ -120,6 +128,8 @@ def verify_delivery(run: dict, manifest: dict, confirmed_hash: str, repositories
 
 
 def record_delivery(run: dict, manifest: dict, actual_result: dict) -> dict:
+    if manifest.get('outcome') == 'pull-request':
+        raise ValueError('use the pending PR delivery flow; PR creation is not terminal delivery')
     manifest_hash = manifest.get("manifest_hash")
     verification = manifest.get("verification", {})
     if (verification.get("passed") is not True or verification.get("manifest_hash") != manifest_hash

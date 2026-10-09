@@ -1,0 +1,7 @@
+{
+  "review_id": "REPLACE_WITH_CURRENT_CHANGES_REQUESTED_REVIEW_ID",
+  "choice": "continue",
+  "actor_id": "REPLACE_WITH_INDEPENDENT_HUMAN_ACTOR_ID",
+  "rationale": "The remaining finding is repairable and worth another bounded attempt.",
+  "cost_if_wrong": "Another correction cycle delays delivery."
+}

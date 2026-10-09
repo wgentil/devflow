@@ -17,6 +17,18 @@ def package_current(run, package):
     from .reviews import _git
     plan_hash=hashlib.sha256(json.dumps(run.get('plan',{}),sort_keys=True,ensure_ascii=False,separators=(',',':')).encode()).hexdigest()
     if package.get('plan_hash') != plan_hash or package.get('spec_hash') != run.get('plan',{}).get('spec_hash'):return False
+    if package.get('role') == 'pr':
+        from .pr_reviews import _git, _hash
+        if package.get('run_governing_digest') != run.get('governing_digest'):return False
+        pending=run.get('pending_pr',{})
+        if any(str(pending.get(key)) != str(package.get(key)) for key in
+               ('pr_id','pr_number','owner','repo','base_branch','base_sha','head_sha')):return False
+        try:
+            location=Path(package['location'])
+            if _git(location,'rev-parse','HEAD').decode().strip() != package['head_sha']:return False
+            if _git(location,'status','--porcelain','--untracked-files=all').strip():return False
+            return _hash({key:value for key,value in package.items() if key != 'package_hash'}) == package['package_hash']
+        except (KeyError,OSError,ValueError):return False
     try:
         for repo in package.get('repositories',{}).values():
             location=Path(repo['location'])
@@ -77,7 +89,7 @@ def check_completion(state: dict, binding: dict, task_id: str, live: bool = True
         if not package or package.get('role') != role or live and not package_current(run,package):return _decision('block','REVIEW_PACKAGE_STALE')
         history=set(run.get('implementer_actors',[]))|{run.get('actors',{}).get('implementer')}
         if binding['actor_id'] in history:return _decision('block','REVIEWER_NOT_INDEPENDENT')
-        review=next((r for r in reversed(run.get('reviews',{}).get(role,[])) if r.get('package_hash')==task['package_hash'] and r.get('actor_id')==binding['actor_id'] and r.get('invocation_ref') and r.get('fresh',True) and r.get('verdict') in {'pass','request-changes','block'} and (role!='item' or r.get('item_id')==task.get('item_id'))),None)
+        review=next((r for r in reversed(run.get('reviews',{}).get(role,[])) if r.get('package_hash')==task['package_hash'] and r.get('actor_id')==binding['actor_id'] and r.get('invocation_ref') and r.get('fresh',True) and r.get('verdict') in ({'pass','changes-requested','human-decision-required','blocked'} if role=='pr' else {'pass','request-changes','block'}) and (role!='item' or r.get('item_id')==task.get('item_id'))),None)
         return _decision('allow','ASSESSMENT_RECORDED',evidence_refs=[{'review_id':review.get('review_id'),'package_hash':task['package_hash']}]) if review else _decision('block','ASSESSMENT_REQUIRED')
     delivery=run.get('delivery',{})
     if run.get('status') != 'delivered' or not delivery.get('actual_result') or not delivery.get('manifest_hash'):

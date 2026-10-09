@@ -28,7 +28,7 @@ and [Claude manifest](https://code.claude.com/docs/en/plugins-reference).
 ## Explicit attachment
 
 The agent records a host/session/actor and role against a selected run. One
-implementer owns a run; separate reviewers attach to prepared review packages.
+implementer owns a run; separate item, branch, acceptance and PR reviewers attach to prepared review packages.
 All actors that implemented the run remain excluded from independent review.
 Task mapping explicitly names the item/latest token or exact review package.
 Unmapped tasks are ordinary host work. Detach preserves attempts and release history.

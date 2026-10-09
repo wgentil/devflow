@@ -282,17 +282,34 @@ def _apply_event(state: dict, event: dict) -> None:
                 or not isinstance(review, dict) or review.get("review_id") in run.setdefault("review_ids", [])):
             raise WorkflowError("INVALID_EVENT", "review does not reference a stored package")
         package = run["review_packages"][package_hash]
-        if (review.get("role") != package.get("role") or review.get("verdict") not in {"pass", "request-changes", "block"}
+        allowed_verdicts = ({"pass", "changes-requested", "human-decision-required", "blocked"}
+                            if package.get("role") == "pr" else {"pass", "request-changes", "block"})
+        if (review.get("role") != package.get("role") or review.get("verdict") not in allowed_verdicts
                 or not all(isinstance(review.get(key), str) and review[key]
                            for key in ("review_id", "actor_id", "invocation_ref"))):
             raise WorkflowError("INVALID_EVENT", "review record has invalid role, verdict, or actor reference")
+        if review['role'] == 'pr':
+            from .pr_reviews import record_pr_review
+            try:
+                expected = record_pr_review(run, package_hash,
+                    {'role': 'pr', 'actor_id': review['actor_id'],
+                     'invocation_ref': review['invocation_ref'], 'tool_available': True},
+                    {'package_hash': package_hash, 'verdict': review['verdict'],
+                     'reviewed_files': review.get('reviewed_files'),
+                     'findings': review.get('findings'), 'blockers': review.get('blockers', [])})
+            except ValueError as exc:
+                raise WorkflowError('INVALID_EVENT', str(exc)) from exc
+            if expected != review:
+                raise WorkflowError('INVALID_EVENT', 'PR review record does not match validated report')
         actors = run.setdefault("actors", {})
         reviewer_key = review["role"] + "_reviewer"
         if (review.get("actor_id") in run.get("implementer_actors", []) or review.get("actor_id") == actors.get("implementer")
                 or any(key != reviewer_key and actor == review.get("actor_id") for key, actor in actors.items())
-                or reviewer_key in actors and actors[reviewer_key] != review.get("actor_id")):
+                or reviewer_key in actors and actors[reviewer_key] != review.get("actor_id") and review['role'] != 'pr'):
             raise WorkflowError("INVALID_EVENT", "reviewer actor is not independent for this role")
         actors[reviewer_key] = review["actor_id"]
+        if review['role'] == 'pr' and sorted(review.get('reviewed_files', [])) != package.get('changed_files'):
+            raise WorkflowError('INVALID_EVENT', 'PR review must cover every changed file')
         run.setdefault("reviews", {}).setdefault(review["role"], []).append(review)
         run["review_ids"].append(review["review_id"])
     elif kind == "review.adjudicated":
