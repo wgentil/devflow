@@ -31,7 +31,7 @@ class RepoSpecTests(unittest.TestCase):
         for path in (self.path, 'docs/specs/space café.json'):
             receipt = write_spec_pair(self.repo, path, self.spec)
             self.assertEqual(receipt['content_hash'], content_hash(self.spec))
-            self.assertEqual((self.repo / receipt['markdown_path']).read_text(), render_spec(self.spec))
+            self.assertEqual((self.repo / receipt['markdown_path']).read_text(encoding='utf-8'), render_spec(self.spec))
             self.assertEqual(read_spec_pair(self.repo, path)['spec'], self.spec)
             self.assertEqual(write_spec_pair(self.repo, path, self.spec), receipt)
             self.assertEqual(assert_repo_spec_approval(self.repo, receipt)['spec'], self.spec)

@@ -1,0 +1,63 @@
+import multiprocessing
+import tempfile
+import unittest
+import time
+import os
+from pathlib import Path
+
+from skills.workflow.scripts.workflow_lib.platform_lock import exclusive_file
+
+
+def contend(path, queue):
+    with Path(path).open('a+b') as handle:
+        try:
+            with exclusive_file(handle, blocking=False):
+                queue.put('acquired')
+        except BlockingIOError:
+            queue.put('blocked')
+
+
+class PlatformLockTests(unittest.TestCase):
+    def test_nonblocking_contention_and_release_across_processes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'lock'
+            queue = multiprocessing.Queue()
+            with path.open('a+b') as handle:
+                with exclusive_file(handle):
+                    child = multiprocessing.Process(target=contend, args=(str(path), queue))
+                    child.start(); child.join(5)
+                    self.assertEqual(child.exitcode, 0)
+                    self.assertEqual(queue.get(timeout=2), 'blocked')
+            child = multiprocessing.Process(target=contend, args=(str(path), queue))
+            child.start(); child.join(5)
+            self.assertEqual(child.exitcode, 0)
+            self.assertEqual(queue.get(timeout=2), 'acquired')
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows byte-range lock retry behavior')
+    def test_blocking_lock_waits_longer_than_msvcrt_default_retry_window(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'lock'
+            queue = multiprocessing.Queue()
+            with path.open('a+b') as handle:
+                with exclusive_file(handle):
+                    child = multiprocessing.Process(target=contend_blocking, args=(str(path), queue))
+                    child.start()
+                    time.sleep(1.5)
+                child.join(5)
+                self.assertEqual(child.exitcode, 0)
+                self.assertEqual(queue.get(timeout=2), 'acquired')
+
+
+def contend_blocking(path, queue):
+    with Path(path).open('a+b') as handle:
+        with exclusive_file(handle):
+            queue.put('acquired')
+
+class DirectorySyncTests(unittest.TestCase):
+    def test_windows_directory_sync_is_skipped_after_file_fsync(self):
+        from unittest.mock import patch
+        from skills.workflow.scripts.workflow_lib import platform_lock
+        directory = Path('unused')
+        with patch.object(platform_lock.os, 'name', 'nt'):
+            with patch.object(platform_lock.os, 'open', side_effect=AssertionError('directory opened')):
+                platform_lock.sync_directory(directory)

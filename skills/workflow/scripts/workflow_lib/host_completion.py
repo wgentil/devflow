@@ -6,6 +6,7 @@ from .hosts import validate_binding, receipt_matches_task, task_stage
 from .store import WorkflowError
 from .gates import _required_proof, gate_status
 from .model_policy import check_model_receipt
+from .git_paths import git_paths, resolve_repo_path
 
 
 def _decision(status, reason, blockers=None, **extra):
@@ -20,7 +21,7 @@ def package_current(run, package):
         for repo in package.get('repositories',{}).values():
             location=Path(repo['location'])
             if not repo.get('head_verified') or _git(location,'rev-parse','HEAD').strip() != repo['head'] or _git(location,'status','--porcelain','--untracked-files=all') != repo['worktree_status'] or _git(location,'diff','--binary','HEAD') != repo['worktree_diff']: return False
-            current={name:hashlib.sha256((location/name).read_bytes()).hexdigest() for name in _git(location,'ls-files','--others','--exclude-standard').splitlines()}
+            current={name:hashlib.sha256(resolve_repo_path(location,name).read_bytes()).hexdigest() for name in git_paths(location,'ls-files','--others','--exclude-standard')}
             if current != repo['untracked_hashes']:return False
     except (KeyError,OSError,ValueError):return False
     return bool(package.get('repositories'))

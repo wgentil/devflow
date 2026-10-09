@@ -112,7 +112,7 @@ class RepairRuntimeTests(unittest.TestCase):
         transact(self.root, state['version'], 'repo', {'kind': 'fixture', 'payload': {
             'repositories': {'app': {'location': str(repo)}}, 'runs': {'r': run}}})
         script = ("import json,pathlib; print(json.dumps({'findings': [] if "
-                  "pathlib.Path('flag.txt').read_text() == 'PASS' else [{'id':'F'}]}))")
+                  "pathlib.Path('flag.txt').read_text(encoding='utf-8') == 'PASS' else [{'id':'F'}]}))")
         request = {'run_id': 'r', 'actor_id': 'worker', 'gates': {'security': {
             'repo_id': 'app', 'command': [sys.executable, '-c', script],
             'contract': {'kind': 'json-report', 'version': 1}}}}

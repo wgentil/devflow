@@ -21,7 +21,7 @@ class TelemetryTests(unittest.TestCase):
                       "input_bytes": 9, "output_bytes": 0}
             self.assertTrue(record_offload(root, success)["recorded"])
             self.assertTrue(record_offload(root, failed)["recorded"])
-            rows = [json.loads(line) for line in (root / "offload.jsonl").read_text().splitlines()]
+            rows = [json.loads(line) for line in (root / "offload.jsonl").read_text(encoding='utf-8').splitlines()]
             self.assertEqual(rows[0]["input_bytes"], 6)
             self.assertEqual(rows[0]["run_id"], "run-1")
             self.assertNotIn("run_id", rows[1])
@@ -35,7 +35,7 @@ class TelemetryTests(unittest.TestCase):
             record_offload(root, item)
             repeated = record_offload(root, item)
             self.assertTrue(repeated["duplicate"])
-            self.assertEqual(len((root / "offload.jsonl").read_text().splitlines()), 1)
+            self.assertEqual(len((root / "offload.jsonl").read_text(encoding='utf-8').splitlines()), 1)
 
     def test_collection_failure_is_returned_without_raising_or_changing_input(self):
         with tempfile.TemporaryDirectory() as folder:

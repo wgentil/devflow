@@ -130,14 +130,14 @@ class ReviewRegressions(unittest.TestCase):
         self.cli('run', 'abandon', '--root', self.control, '--run-id', 'r', '--attempt-id', token)
         state = read_state(self.control)
         for event in state['operations'].values():
-            disk = json.loads((self.control / 'events' / f"{event['sequence']:08d}.json").read_text())
+            disk = json.loads((self.control / 'events' / f"{event['sequence']:08d}.json").read_text(encoding='utf-8'))
             self.assertEqual(event, disk)
 
     def test_telemetry_deduplicates_supplied_ids_and_counts_independent_reads(self):
         path = self.put_json('org.json', {'slices': {}})
         for _ in range(2):
             self.cli('context', 'set', '--root', self.control, '--layer', 'org', '--file', path, '--operation-id', 'B')
-        rows = [json.loads(line) for line in (self.control / 'offload.jsonl').read_text().splitlines()]
+        rows = [json.loads(line) for line in (self.control / 'offload.jsonl').read_text(encoding='utf-8').splitlines()]
         self.assertEqual([row['operation_id'] for row in rows], ['B'])
         self.cli('context', 'resolve', '--root', self.control)
         current = read_state(self.control)
@@ -146,7 +146,7 @@ class ReviewRegressions(unittest.TestCase):
         self.next()
         for _ in range(2):
             self.cli('run', 'brief', '--root', self.control, '--run-id', 'r')
-        rows = [json.loads(line) for line in (self.control / 'offload.jsonl').read_text().splitlines()]
+        rows = [json.loads(line) for line in (self.control / 'offload.jsonl').read_text(encoding='utf-8').splitlines()]
         self.assertEqual(len([row for row in rows if row['operation'] == 'run.brief']), 2)
 
     def test_next_rejects_different_item_even_during_replay(self):
@@ -188,7 +188,7 @@ class ReviewRegressions(unittest.TestCase):
             # Isolate home expansion without writing to or changing the real home.
             original = Path.expanduser
             def expand(value):
-                return root if str(value) == '~/control' else original(value)
+                return root if value.parts == ('~', 'control') else original(value)
             with patch.object(Path, 'expanduser', expand), redirect_stdout(stdout):
                 code = dispatcher.main(['context', 'set', '--root', '~/control',
                                         '--layer', 'org', '--file', str(path)])

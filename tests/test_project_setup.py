@@ -45,7 +45,7 @@ class ProjectSetupTests(unittest.TestCase):
         path=self.repo/'rules.md';path.write_text('## CODE-1: Existing rule\nKeep this.\n')
         result=initialize_project_documents(self.repo,{'mode':'project-only','documents':[{'category':'coding-standards','path':'rules.md','rule_ids':['CODE-1']}]},'one')
         self.assertEqual(result['manifest']['documents'][0]['path'],'rules.md')
-        self.assertEqual(path.read_text(),'## CODE-1: Existing rule\nKeep this.\n')
+        self.assertEqual(path.read_text(encoding='utf-8'),'## CODE-1: Existing rule\nKeep this.\n')
     def test_non_git_rejected(self):
         with self.assertRaises(WorkflowError): inspect_project_setup(Path(self.temp.name))
 
@@ -71,7 +71,7 @@ class ProjectSetupTests(unittest.TestCase):
         manifest=self.repo/'docs/devflow-context.json';original=manifest.read_bytes()
         (org/'docs/new-policy.md').write_text('## NEW-1: New sealed policy\nRequired.\n')
         import json
-        org_manifest=json.loads((org/'docs/devflow-org.json').read_text())
+        org_manifest=json.loads((org/'docs/devflow-org.json').read_text(encoding='utf-8'))
         org_manifest['documents']=[{'category':'coding-standards','path':'docs/new-policy.md','rule_ids':['NEW-1'],'sealed_rule_ids':['NEW-1']}]
         (org/'docs/devflow-org.json').write_text(json.dumps(org_manifest))
         subprocess.run(['git','-C',str(org),'add','.'],check=True)
@@ -90,4 +90,4 @@ class ProjectSetupTests(unittest.TestCase):
         result = initialize_project_documents(self.repo, {'mode': 'project-only', 'documents': [
             {'category': 'application-contracts', 'path': 'existing-api.yaml', 'rule_ids': ['API']} ]}, 'adopt-api')
         self.assertEqual(result['manifest']['documents'][0]['path'], 'existing-api.yaml')
-        self.assertEqual(path.read_text(), raw)
+        self.assertEqual(path.read_text(encoding='utf-8'), raw)

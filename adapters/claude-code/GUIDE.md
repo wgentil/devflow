@@ -8,7 +8,11 @@ host task IDs before enforcement applies. See [hosts](../../docs/hosts.md).
 SessionStart/UserPromptSubmit emit a compact brief only when relevant state changes.
 TaskCompleted checks mapped tasks and exits 2 with feedback on blockers. Unmapped
 tasks remain unaffected. Stop is always nonblocking; pausing does not trigger rework.
-The hook adapter uses bounded JSON, argument arrays and a helper timeout. It never
+The hook adapter uses Claude command-hook exec form with `python` and a
+plugin-root script argument, avoiding shell-dependent path expansion. An installed
+Python 3.11+ executable named `python` must be available to the host. This
+form has passed package validation but still needs an installed Windows hook
+smoke. The adapter uses bounded JSON, argument arrays and a helper timeout. It never
 runs tests, calls providers, changes ownership or creates attempts. The brief cache
 is disposable; completion always rereads shared eligibility and live repository data.
 

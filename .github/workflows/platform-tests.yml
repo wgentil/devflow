@@ -1,0 +1,43 @@
+name: Platform tests
+on:
+  push:
+    branches: [main, feat/windows-portability]
+  pull_request:
+jobs:
+  python:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m unittest discover -s tests -f -v
+  claude-plugin-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+      - name: Validate DevFlow marketplace
+        run: |
+          claude --version
+          claude plugin validate .
+      - name: Add checkout marketplace
+        run: claude plugin marketplace add ./ --scope local
+      - name: Install DevFlow
+        run: |
+          claude plugin install devflow@devflow-marketplace --scope local -y
+      - name: Check installed package and hooks
+        run: |
+          claude plugin list --json > "$env:RUNNER_TEMP\devflow-plugin-list.json"
+          python scripts/verify_claude_install.py "$env:RUNNER_TEMP\devflow-plugin-list.json"

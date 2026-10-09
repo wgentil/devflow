@@ -10,7 +10,7 @@ SCHEMAS = [1]
 
 def release_descriptor(package_root: Path = PACKAGE_ROOT) -> dict:
     root = package_root.resolve()
-    manifest = json.loads((root / 'plugin.json').read_text())
+    manifest = json.loads((root / 'plugin.json').read_text(encoding='utf-8'))
     digest = hashlib.sha256()
     paths = [root / 'plugin.json']
     for name in ('skills', 'adapters', 'definitions', '.claude-plugin', '.codex-plugin'):

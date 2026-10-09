@@ -49,7 +49,7 @@ class DocumentApprovalTests(unittest.TestCase):
         self.assertEqual(state,read_state(self.root))
 
     def test_explicit_irrelevance_does_not_drift_block(self):
-        manifest=json.loads((self.repo/'docs/devflow-context.json').read_text())
+        manifest=json.loads((self.repo/'docs/devflow-context.json').read_text(encoding='utf-8'))
         manifest['irrelevance_decisions']=[{'rule_id':'A','reason':'feature does not change code'}]
         self.write('docs/devflow-context.json',json.dumps(manifest)); self.commit()
         before=self.gate(); self.write('rules.md','## A: Rule\nchanged\n')

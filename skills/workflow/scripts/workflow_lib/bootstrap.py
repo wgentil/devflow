@@ -1,11 +1,11 @@
 """Explicit workflow initialization; never writes to an installed bundle."""
-import fcntl
 import hashlib
 import shutil
 import subprocess
 import sys
 from pathlib import Path
 from .store import WorkflowError, read_state
+from .platform_lock import exclusive_file
 
 
 def compatible_runtime(candidates=None) -> str:
@@ -37,12 +37,12 @@ def exclude_runtime(project: Path) -> None:
     path = Path(result.stdout.strip())
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open('a+', encoding='utf-8') as file:
-        fcntl.flock(file.fileno(), fcntl.LOCK_EX)
-        file.seek(0); body = file.read()
-        if '/.devflow/' not in body.splitlines():
-            file.seek(0, 2)
-            file.write(('\n' if body and not body.endswith('\n') else '') + '/.devflow/\n')
-            file.flush()
+        with exclusive_file(file):
+            file.seek(0); body = file.read()
+            if '/.devflow/' not in body.splitlines():
+                file.seek(0, 2)
+                file.write(('\n' if body and not body.endswith('\n') else '') + '/.devflow/\n')
+                file.flush()
 
 
 def initialize_project(project_dir: Path, control_root: Path | None, operation_id: str, expected_version: int | None) -> dict:

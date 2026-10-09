@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import fcntl
 from contextvars import ContextVar
 
 HOST_CONTEXT = ContextVar("devflow_host_context", default=None)
@@ -17,6 +16,7 @@ from pathlib import Path
 from typing import Iterator
 
 from . import STATE_SCHEMA_VERSION
+from .platform_lock import exclusive_file, sync_directory
 
 
 class WorkflowError(Exception):
@@ -592,11 +592,8 @@ def read_state(root: Path) -> dict:
 def _exclusive(root: Path) -> Iterator[None]:
     root.mkdir(parents=True, exist_ok=True)
     with (root / ".lock").open("a+") as handle:
-        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
-        try:
+        with exclusive_file(handle):
             yield
-        finally:
-            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
 
 
 def _atomic_json(path: Path, value: dict) -> None:
@@ -607,11 +604,7 @@ def _atomic_json(path: Path, value: dict) -> None:
             handle.flush()
             os.fsync(handle.fileno())
         os.replace(name, path)
-        directory_fd = os.open(path.parent, os.O_RDONLY)
-        try:
-            os.fsync(directory_fd)
-        finally:
-            os.close(directory_fd)
+        sync_directory(path.parent)
     except BaseException:
         try:
             os.unlink(name)

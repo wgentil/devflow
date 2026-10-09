@@ -80,6 +80,8 @@ represent one named rule (JSON files are syntax-validated). Org entries may decl
 `sealed_rule_ids`. The project `overrides` object maps inherited IDs to project
 entry paths; overriding a sealed rule blocks resolution. Categories must agree.
 Duplicate IDs, absent IDs, ignored paths, symlinks and escaping paths block.
+On Windows, checkout CRLF is ignored when the tracked Git blob uses LF;
+tracked CRLF content keeps its established approval hash.
 
 Explicit resolution verifies the org URL with Git and fetches origin when using
 a separate matching checkout. It requires a supplied existing checkout and matching
@@ -175,3 +177,7 @@ syntax validation; YAML/OpenAPI semantics and JSON Schema conformance are not
 validated by this helper. Setup inspection includes `.yaml` and `.yml` files.
 This category does not add a legacy journal context slice and does not describe
 DevFlow's operational verification or host contracts.
+
+On native Windows, governing-document comparisons canonicalize checkout CRLF to LF
+to avoid a false approval request after Git text conversion. Native host parity
+and installed plugin behavior remain unverified; see [validation](../../docs/windows-validation.md).

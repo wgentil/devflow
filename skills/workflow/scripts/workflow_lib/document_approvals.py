@@ -7,7 +7,7 @@ import json
 import subprocess
 from uuid import uuid4
 
-from .governing_docs import _git, _path, resolve_governing_docs
+from .governing_docs import _git, _path, resolve_governing_docs, canonical_document_bytes
 from .store import WorkflowError, read_state, transact
 
 
@@ -26,7 +26,6 @@ def _snapshot(repo, paths, data=None, repo_id=None):
     records = {}
     for path in sorted(set(paths)):
         target = _path(repo, path)
-        after = target.read_bytes() if target.exists() else b''
         previous = subprocess.run(['git', '-C', str(repo), 'show', f'HEAD:{path}'], capture_output=True, timeout=30)
         before = previous.stdout if previous.returncode == 0 else b''
         accepted = (data or {}).get('governing_input_receipt', {}).get('files', {}).get(str(repo_id) + ':' + path)
@@ -37,6 +36,7 @@ def _snapshot(repo, paths, data=None, repo_id=None):
                 before_exists = accepted.get('exists', True)
             elif _digest(before) != accepted['content_digest']:
                 raise WorkflowError('GOVERNING_BASELINE_UNAVAILABLE', 'accepted before image is unavailable; do not approve an empty replacement diff')
+        after = canonical_document_bytes(target.read_bytes(), baseline=before) if target.exists() else b''
         diff = ''.join(difflib.unified_diff(before.decode('utf-8', errors='surrogateescape').splitlines(True), after.decode('utf-8', errors='surrogateescape').splitlines(True),
                                           fromfile='a/' + path, tofile='b/' + path))
         records[path] = {'before_hash': _digest(before), 'after_hash': _digest(after),
@@ -93,7 +93,7 @@ def require_current_governing_inputs(root: Path, state: dict, phase: str) -> dic
             raise WorkflowError('GOVERNING_INPUT_DRIFT', 'governing manifest was removed')
         return {}
     try:
-        manifest = json.loads((project / 'docs/devflow-context.json').read_text())
+        manifest = json.loads((project / 'docs/devflow-context.json').read_text(encoding='utf-8'))
     except (OSError, ValueError) as exc:
         raise WorkflowError('INVALID_GOVERNING_DOCS', 'cannot read project governing manifest') from exc
     if not isinstance(manifest, dict):

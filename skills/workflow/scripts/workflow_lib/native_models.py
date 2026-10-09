@@ -14,6 +14,7 @@ from .store import WorkflowError, _atomic_json
 from .model_discovery import discovery_key, cached_discovery, store_discovery
 from .host_models import delegated_configuration
 from .releases import PACKAGE_ROOT
+from .process_transport import JsonLineProcess, bounded_capture, stop_tree
 
 MAX_OUTPUT=2*1024*1024
 
@@ -40,6 +41,11 @@ def error_kind(message):
 
 
 def _stop(process):
+    if os.name == 'nt':
+        try: stop_tree(process)
+        except (OSError, RuntimeError, subprocess.TimeoutExpired) as exc:
+            raise NativeError('unavailable', 'Native process tree cleanup could not be confirmed.') from exc
+        return
     # The group can outlive its leader. Always stop descendants too.
     process.poll()
     try:os.killpg(process.pid,signal.SIGTERM)
@@ -55,6 +61,11 @@ def _stop(process):
 
 def run_bounded(argv, cwd, timeout=30):
     """Bound bytes during capture, not after an unbounded communicate()."""
+    if os.name == 'nt':
+        try: return bounded_capture(argv, cwd, timeout, MAX_OUTPUT)
+        except TimeoutError as exc: raise NativeError('network', str(exc)) from exc
+        except ValueError as exc: raise NativeError('context', str(exc)) from exc
+        except (OSError, RuntimeError) as exc: raise NativeError('unavailable', str(exc)) from exc
     try:process=subprocess.Popen(argv,cwd=cwd,stdin=subprocess.DEVNULL,stdout=subprocess.PIPE,stderr=subprocess.PIPE,start_new_session=True)
     except OSError as exc:raise NativeError('unavailable','Native host executable is unavailable.') from exc
     selector=selectors.DefaultSelector();buffers={}
@@ -82,18 +93,36 @@ def run_bounded(argv, cwd, timeout=30):
 class RPC:
     """JSON Lines Codex app-server transport; reject unsupported server requests."""
     def __init__(self,cwd,argv=None):
+        self.transport = None
+        if os.name == 'nt':
+            try: self.transport = JsonLineProcess(argv or ['codex','app-server'], cwd, MAX_OUTPUT)
+            except OSError as exc: raise NativeError('unavailable','Codex app-server is unavailable.') from exc
+            self.process = self.transport.process
+            self.sequence=0;self.notifications=[];self.total=0
+            try:
+                version=json.loads((PACKAGE_ROOT/'plugin.json').read_text(encoding='utf-8'))['version']
+                self.request('initialize',{'clientInfo':{'name':'devflow','title':'DevFlow','version':version}})
+                self.send({'method':'initialized','params':{}})
+            except BaseException:self.close();raise
+            return
         try:self.process=subprocess.Popen(argv or ['codex','app-server'],cwd=cwd,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,start_new_session=True)
         except OSError as exc:raise NativeError('unavailable','Codex app-server is unavailable.') from exc
         os.set_blocking(self.process.stdin.fileno(),False)
         self.selector=selectors.DefaultSelector();self.selector.register(self.process.stdout,selectors.EVENT_READ)
         self.buffer=bytearray();self.sequence=0;self.notifications=[];self.total=0
         try:
-            version=json.loads((PACKAGE_ROOT/'plugin.json').read_text())['version']
+            version=json.loads((PACKAGE_ROOT/'plugin.json').read_text(encoding='utf-8'))['version']
             self.request('initialize',{'clientInfo':{'name':'devflow','title':'DevFlow','version':version}})
             self.send({'method':'initialized','params':{}})
         except BaseException:self.close();raise
     def send(self,value,deadline=None):
         deadline=deadline or time.monotonic()+20
+        if self.transport is not None:
+            try: self.transport.send(value, max(deadline-time.monotonic(), 0))
+            except TimeoutError as exc: raise NativeError('network', str(exc)) from exc
+            except ValueError as exc: raise NativeError('context', str(exc)) from exc
+            except OSError as exc: raise NativeError('unavailable', str(exc)) from exc
+            return
         encoded=(json.dumps(value,separators=(',',':'))+'\n').encode()
         if len(encoded)>MAX_OUTPUT:raise NativeError('context','Native request exceeds supported bound.')
         pending=memoryview(encoded)
@@ -108,6 +137,14 @@ class RPC:
                 except OSError as exc:raise NativeError('network','Codex connection closed.') from exc
                 pending=pending[count:]
     def next(self,deadline):
+        if self.transport is not None:
+            try: value=self.transport.next(max(deadline-time.monotonic(), 0))
+            except TimeoutError as exc: raise NativeError('network', str(exc)) from exc
+            except (ValueError, EOFError) as exc: raise NativeError('unavailable', str(exc)) from exc
+            if not isinstance(value,dict):raise NativeError('unavailable','Codex returned unsupported protocol data.')
+            if value.get('method') and 'id' in value:
+                self.send({'id':value['id'],'error':{'code':-32601,'message':'DevFlow does not authorize this server request.'}},deadline)
+            return value
         while b'\n' not in self.buffer:
             remaining=deadline-time.monotonic()
             if remaining<=0:raise NativeError('network','Codex app-server timed out.')
@@ -137,6 +174,11 @@ class RPC:
                 if len(self.notifications)>=4096:raise NativeError('context','Too many native notifications.')
                 self.notifications.append(value)
     def close(self):
+        if self.transport is not None:
+            try: self.transport.close()
+            except (OSError, RuntimeError, subprocess.TimeoutExpired) as exc:
+                raise NativeError('unavailable','Native process cleanup could not be confirmed.') from exc
+            return
         self.selector.close()
         try:_stop(self.process)
         finally:self.process.stdin.close();self.process.stdout.close()
@@ -236,7 +278,7 @@ class ClaudeBackend:
 class NativeCache:
     def __init__(self,root):self.path=Path(root)/'native-model-discovery.json'
     def read(self):
-        try:value=json.loads(self.path.read_text());return value if isinstance(value,dict) else {}
+        try:value=json.loads(self.path.read_text(encoding='utf-8'));return value if isinstance(value,dict) else {}
         except (OSError,ValueError):return {}
     def key(self,host,account,policy,release):return discovery_key(host,account,policy+':'+release)
     def put(self,host,account,policy,release,result,now,ttl=900):

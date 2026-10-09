@@ -38,7 +38,7 @@ class GroundInterviewTests(unittest.TestCase):
                 for name in TOPICS}
 
     def test_new_project_requires_visible_interview_before_work(self):
-        manifest = json.loads((self.project / 'docs/devflow-context.json').read_text())
+        manifest = json.loads((self.project / 'docs/devflow-context.json').read_text(encoding='utf-8'))
         self.assertEqual(manifest['ground_interview']['path'], 'docs/devflow-ground-interview.json')
         report = inspect_ground_interview(self.project)
         self.assertFalse(report['ready'])
@@ -72,7 +72,7 @@ class GroundInterviewTests(unittest.TestCase):
 
     def test_legacy_manifest_without_interview_field_stays_compatible(self):
         manifest = self.project / 'docs/devflow-context.json'
-        value = json.loads(manifest.read_text()); value.pop('ground_interview')
+        value = json.loads(manifest.read_text(encoding='utf-8')); value.pop('ground_interview')
         manifest.write_text(json.dumps(value))
         self.assertFalse(inspect_ground_interview(self.project)['required'])
         self.assertTrue(require_ground_interview(self.project)['ready'])

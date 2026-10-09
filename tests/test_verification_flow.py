@@ -116,11 +116,11 @@ class VerificationFlowTests(unittest.TestCase):
             "--invocation-ref", f"codex://{actor}", "--tool-available", "--report-json", json.dumps(report))
 
     def test_devconsole_selected_outcomes_fixture(self):
-        fixture = json.loads((ROOT / "tests/fixtures/devconsole-outcomes.json").read_text())
+        fixture = json.loads((ROOT / "tests/fixtures/devconsole-outcomes.json").read_text(encoding='utf-8'))
         self.assertEqual([entry["capability"] for entry in fixture["comparisons"]],
                          ["stale attempt token", "locked test change", "delivery summary"])
         names = {node.name for source in (ROOT / "tests").rglob("test_*.py")
-                 for node in ast.walk(ast.parse(source.read_text()))
+                 for node in ast.walk(ast.parse(source.read_text(encoding='utf-8')))
                  if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name.startswith("test_")}
         for item in fixture["comparisons"]:
             self.assertIn(item["devflow_test"], names)

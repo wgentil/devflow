@@ -55,7 +55,7 @@ class ModelValidationTests(unittest.TestCase):
 
     def test_illustrative_example_parses_and_evaluates(self):
         example = json.loads((Path(__file__).resolve().parents[1] /
-                              'docs/examples/model-suitability.json').read_text())
+                              'docs/examples/model-suitability.json').read_text(encoding='utf-8'))
         report = evaluate_model(example['host'], example['model_id'],
                                 example['host_version'], example['cases'], example['results'])
         self.assertEqual(promotion_decision(report, self.policy())['status'], 'eligible')

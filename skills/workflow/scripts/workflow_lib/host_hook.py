@@ -46,7 +46,7 @@ def evaluate(project_dir, session_id, event, task_id=None):
     if issue:return {'status':'inactive','reason_code':issue,'message':'Repair locator by retrying explicit attachment.'}
     brief=host_brief(state,binding)
     path=locator_path(project,'claude',session_id).with_suffix('.brief.json')
-    try:prior=json.loads(path.read_text()) if path.is_file() else {}
+    try:prior=json.loads(path.read_text(encoding='utf-8')) if path.is_file() else {}
     except (OSError,ValueError):prior={}
     if prior.get('fingerprint') == brief['fingerprint']:return {'status':'inactive','reason_code':'BRIEF_UNCHANGED'}
     encoded=json.dumps(brief,separators=(',',':'))

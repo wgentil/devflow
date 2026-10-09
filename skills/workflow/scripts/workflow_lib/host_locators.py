@@ -23,7 +23,7 @@ def read_locator(project_dir: Path, host: str, session_id: str) -> dict | None:
     if not path.exists(): return None
     try:
         if path.stat().st_size > 8192: raise ValueError('locator exceeds limit')
-        value=json.loads(path.read_text())
+        value=json.loads(path.read_text(encoding='utf-8'))
         if set(value) != {'control_root','binding_id'} or not all(isinstance(x,str) and x for x in value.values()) or not Path(value['control_root']).is_absolute():
             raise ValueError('invalid locator fields')
         return value
@@ -42,7 +42,7 @@ def read_task_index(project_dir, host, session_id):
     if not path.is_file():return None
     try:
         if path.stat().st_size>65536:raise ValueError('task index too large')
-        value=json.loads(path.read_text())
+        value=json.loads(path.read_text(encoding='utf-8'))
         if not isinstance(value.get('task_ids'),list) or not all(isinstance(t,str) for t in value['task_ids']) or not isinstance(value.get('control_root'),str) or not Path(value['control_root']).is_absolute():raise ValueError('invalid task index')
         return value
     except (OSError,ValueError,TypeError):return None

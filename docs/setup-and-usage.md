@@ -4,13 +4,16 @@ Install/enable DevFlow, open your Git project and invoke workflow. The agent cal
 bundled helpers, discovers the project and initializes or resumes its records.
 No shell variables, CLI function, installation paths or Python commands are user
 setup steps. Existing Python 3.11+ on macOS/Linux is required; this package does
-not provision an interpreter. Native Windows is outside current support.
+not provision an interpreter. Native Windows is outside current support. The source tree now has a
+portable lock and pipe boundaries, and Claude hooks use shell-free exec form,
+but live Windows hook dispatch and worker validation remain incomplete. See the
+[platform validation matrix](windows-validation.md) for observed results.
 
 ## Installation
 
 Codex and Claude have separate installations of the same shared package. Users
 choose when to upgrade. Both manifests and one skills/helper tree are included;
-the package version is `0.3.2`;
+the package version is `0.3.3`;
 the Claude marketplace descriptor is packaged at `.claude-plugin/marketplace.json`.
 The private GitHub repository `wgentil/devflow` serves the marketplace from
 `main`. Codex users with access to that repository can install it:
@@ -347,6 +350,8 @@ unchanged files already in Git history; later preflights compare the recorded
 applicable content as well as the working tree, so committing observed drift
 cannot bypass approval. Register the organization checkout when inherited rules
 are configured. A removed governing manifest blocks further work once recorded.
+Windows checkout CRLF is ignored when the tracked Git blob uses LF; tracked
+CRLF document content keeps its established hash.
 
 The project manifest may record `irrelevance_decisions`, an array of objects
 containing `rule_id` and a nonempty `reason`. All other effective rules are
