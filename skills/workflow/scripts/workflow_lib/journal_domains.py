@@ -53,6 +53,32 @@ def reduce_event(data, kind, payload, version):
 
 
 def _reduce(data, kind, req, version):
+    if kind == 'domain.pr.setup-start':
+        operation_id, request_hash = req.get('operation_id'), req.get('request_hash')
+        require(text(operation_id) and text(request_hash) and isinstance(req.get('setup_request'), dict),
+                'PR setup needs operation identity and request')
+        setups = data.setdefault('pr_setup', {})
+        require(operation_id not in setups, 'PR setup operation already exists')
+        setups[operation_id] = {'status': 'pending', 'request_hash': request_hash,
+                                'request': deepcopy(req['setup_request'])}
+        return deepcopy(setups[operation_id])
+    if kind == 'domain.pr.setup-finish':
+        operation_id = req.get('operation_id')
+        setup = data.get('pr_setup', {}).get(operation_id)
+        require(setup and setup['request_hash'] == req.get('request_hash'),
+                'PR setup completion must bind the exact request')
+        status = req.get('status')
+        require(status in {'verified', 'uncertain', 'failed'}, 'invalid PR setup result')
+        if status == 'verified':
+            receipt = req.get('receipt')
+            require(isinstance(receipt, dict) and receipt.get('verified') is True,
+                    'verified PR setup needs a readback receipt')
+            setup['receipt'] = deepcopy(receipt)
+        else:
+            require(text(req.get('error_code')), 'failed PR setup needs an error code')
+            setup['error_code'] = req['error_code']
+        setup['status'] = status
+        return deepcopy(setup)
     if kind == 'domain.improve.trace-enable':
         run = data.get('runs', {}).get(req.get('run_id'))
         require(run is not None and text(req.get('actor_id')), 'known run and opt-in actor required')

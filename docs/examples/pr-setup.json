@@ -1,0 +1,8 @@
+{
+  "owner": "REPLACE_WITH_GITHUB_OWNER",
+  "repo": "REPLACE_WITH_GITHUB_REPO",
+  "base": "main",
+  "bypass_actors": [
+    {"actor_type": "User", "login": "REPLACE_WITH_TRUSTED_LOGIN"}
+  ]
+}

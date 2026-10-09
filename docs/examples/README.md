@@ -10,6 +10,7 @@ human approval, independent review, provider receipt or authoritative price.
 | [setup-project-only.json](setup-project-only.json), [setup-attach-org.json](setup-attach-org.json), [devflow-org.json](devflow-org.json), [devflow-context.json](devflow-context.json) | project-context, workflow | Choose the current Git project, replace the organization URL, and create referenced policy files before attachment |
 | [ground-interview.json](ground-interview.json) | workflow, project-context, specify | Replace illustrative decisions with real evidence and answers; resolve material deferrals before planning |
 | [spec.json](spec.json) | specify | One authored requirement; add real criteria and unresolved questions |
+| [pr-setup.json](pr-setup.json) | PR setup | Replace repository identity and trusted bypass login before configuring GitHub |
 | [plan.json](plan.json) | plan-work | Replace specification hash; register app repository |
 | [greeting.py](greeting.py), [test_greeting.py](test_greeting.py), [test_runner.py](test_runner.py) | build-work | Put test in tests/; start with a failing implementation for RED |
 | [review-report.json](review-report.json), [acceptance.json](acceptance.json) | review-work | Actual independent report, package hash and changed-source citations |

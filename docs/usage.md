@@ -72,6 +72,16 @@ python3 skills/workflow/scripts/run.py run next --root "$CONTROL_ROOT" --run-id 
 ```
 
 Use the `content_hash` returned by `spec validate` as the explicit approval hash and record the approving human's stable actor ID. The hash binds approval to the specification's exact content. Any edit makes the prior approval stale. Work items must cover every requirement, use their kind-specific acceptance criteria, and declare valid acyclic dependencies.
+
+The GitHub PR setup helper is an optional developer command. Replace the values
+in [pr-setup.json](examples/pr-setup.json), then run `pr inspect --request-file
+pr-setup.json` to read the current ruleset or `pr setup --root ROOT
+--request-file pr-setup.json --operation-id ID` to configure a dedicated
+`DevFlow PR review` ruleset. Setup requires GitHub CLI authentication and
+repository ruleset permission. It records the request and verified readback in
+the control journal. A write with an uncertain result remains pending for
+read-only reconciliation with the same operation ID. This helper alone does not
+open or review a PR.
 New or revised repository-backed spec JSON needs a nonempty `diagrams` array of
 objects with `title` and Mermaid `mermaid` source. The deterministic Markdown
 renderer includes each diagram; approval rejects missing diagrams unless the
