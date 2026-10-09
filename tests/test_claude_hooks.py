@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -9,7 +10,7 @@ sys.path.insert(0,str(ROOT/'skills/workflow/scripts'))
 from test_hosts import host_state, attachment
 from workflow_lib.store import transact, read_state
 from workflow_lib.host_locators import write_locator, locator_path
-HOOK=ROOT/'adapters/claude-code/hook.py'
+HOOK=Path(os.environ.get('DEVFLOW_HOOK_PATH', ROOT/'adapters/claude-code/hook.py'))
 
 class HookTests(unittest.TestCase):
     def setUp(self):
