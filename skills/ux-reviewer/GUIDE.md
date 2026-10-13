@@ -12,7 +12,8 @@ without requiring every input type.
 flowchart TD
     Target[Target and user task] --> Inspect[Inspect available evidence]
     Inspect --> Tasks[Walk key journey and observable states]
-    Tasks --> Report[Findings with evidence, impact, and next action]
+    Tasks --> Classify[Classify observed defects, requirement gaps, risks, and questions]
+    Classify --> Report[Findings with evidence, impact, severity, and next action]
     Report --> Limits[Coverage and unverified behavior]
     Limits --> Formal{DevFlow gate requested?}
     Formal -->|No| Return[Return report]
@@ -41,15 +42,21 @@ include:
 | Field | Meaning |
 | --- | --- |
 | Location | Screen, component, step, requirement, or image region |
+| Type | Observed defect, requirement gap, risk, or question |
 | Evidence | What was observed and from which artifact or interaction |
 | Impact | User/task affected and likely consequence |
-| Severity | High, medium, or low, with a brief reason |
+| Severity | High for a blocked or seriously harmed key task; medium for substantial friction or recoverable failure; low for limited friction. Give the reason. |
 | Recommendation | Specific change or decision and how to check it |
 
 Close with coverage: artifacts and states inspected, states unavailable, and
 questions or tests needed to resolve uncertain risks. Label an inference as an
 inference. A screenshot can show a missing visible label, but it cannot prove
 keyboard behavior or screen-reader output.
+
+For a requirement gap, cite the relevant specification and name the missing
+criterion. Do not describe it as an observed product failure without
+implementation evidence. See the [worked report](../../docs/examples/ux-review-report.md)
+for a report that combines a screenshot observation with a requirements gap.
 
 ## DevFlow review integration
 

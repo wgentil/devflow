@@ -19,6 +19,7 @@ human approval, independent review, provider receipt or authoritative price.
 | [plan.json](plan.json) | plan-work | Replace specification hash; register app repository |
 | [greeting.py](greeting.py), [test_greeting.py](test_greeting.py), [test_runner.py](test_runner.py) | build-work | Put test in tests/; start with a failing implementation for RED |
 | [review-report.json](review-report.json), [acceptance.json](acceptance.json) | review-work | Actual independent report, package hash and changed-source citations |
+| [ux-review-report.md](ux-review-report.md) | ux-reviewer | Illustrative findings, requirement gap, and coverage limits |
 | [profile.json](profile.json) | ingest | Python source filter; choose explicit scope paths |
 | [snapshot.json](snapshot.json), [groups.json](groups.json) | issues | Actual complete source snapshot, returned hash and per-issue requirements |
 | [classification.json](classification.json) | issues | Actual accepted requirement attribution; confirm separately |

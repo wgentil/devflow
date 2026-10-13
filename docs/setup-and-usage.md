@@ -67,8 +67,9 @@ Ordinary host work stays inert until explicit attachment and task mapping.
 
 Ask for a UX review of a live interface, design, screenshot, or requirements to
 use [ux-reviewer](../skills/ux-reviewer/GUIDE.md). Supply the target and main
-user task when known. Its report gives prioritized, evidence-backed findings
-and states what could not be checked. It can inform a formal DevFlow review,
+user task when known. Its report classifies observed defects, requirement gaps,
+risks, and questions; prioritizes evidence-backed findings by user impact; and
+states what could not be checked. It can inform a formal DevFlow review,
 which still follows the independent [review-work](../skills/review-work/GUIDE.md)
 gates; the UX skill adds no helper command or automatic approval.
 
