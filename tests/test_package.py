@@ -32,7 +32,7 @@ class PackageTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         descriptor = json.loads(result.stdout)
         self.assertEqual(descriptor['plugin'], 'devflow')
-        self.assertEqual(descriptor['plugin_version'], '0.3.5')
+        self.assertEqual(descriptor['plugin_version'], '0.3.6')
         self.assertEqual(descriptor['state_schema_version'], 1)
         self.assertEqual(len(descriptor['fingerprint']), 64)
 
@@ -51,7 +51,7 @@ class PackageTests(unittest.TestCase):
             shutil.copytree(ROOT / "skills", relocated / "skills")
             shutil.copy2(ROOT / "plugin.json", relocated / "plugin.json")
             manifest = json.loads((relocated / "plugin.json").read_text(encoding='utf-8'))
-            self.assertEqual(len(manifest["skills"]), 10)
+            self.assertEqual(len(manifest["skills"]), 11)
             for skill in manifest["skills"]:
                 self.assertTrue((relocated / skill / "SKILL.md").is_file(), skill)
             control = Path(temp_name) / "control"

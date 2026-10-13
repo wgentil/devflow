@@ -15,6 +15,7 @@ recovery notes. Start with [workflow](../skills/workflow/GUIDE.md).
 | plan-work | [Guide](../skills/plan-work/GUIDE.md) | Map requirements to dependent work items |
 | build-work | [Guide](../skills/build-work/GUIDE.md) | Record verification and handle rework |
 | review-work | [Guide](../skills/review-work/GUIDE.md) | Independent review and requirement acceptance |
+| ux-reviewer | [Guide](../skills/ux-reviewer/GUIDE.md) | Critique live interfaces, designs, screenshots and UX requirements |
 | ingest | [Guide](../skills/ingest/GUIDE.md) | Index scoped sources with provenance |
 | issues | [Guide](../skills/issues/GUIDE.md) | Intake, classification and authorized reconciliation |
 | migrate | [Guide](../skills/migrate/GUIDE.md) | Bind ordered increments to parity evidence |
@@ -89,7 +90,8 @@ launch are implemented. See [native usage](native-models.md) and the
 
 ## Shared hosts
 
-All ten skills share [host ownership, completion and model contracts](hosts.md).
+The ten workflow skills share [host ownership, completion and model contracts](hosts.md).
+`ux-reviewer` can run independently; formal DevFlow review records still use `review-work`.
 See [setup and initialization](setup-and-usage.md) and the
 [installed-host validation report](cross-host-validation.md).
 

@@ -13,7 +13,7 @@ but live Windows hook dispatch and worker validation remain incomplete. See the
 
 Codex and Claude have separate installations of the same shared package. Users
 choose when to upgrade. Both manifests and one skills/helper tree are included;
-the package version is `0.3.5`;
+the package version is `0.3.6`;
 the Claude marketplace descriptor is packaged at `.claude-plugin/marketplace.json`.
 The private GitHub repository `wgentil/devflow` serves the marketplace from
 `main`. Codex users with access to that repository can install it:
@@ -64,6 +64,13 @@ spec/plan, create an attempt or grant permission for provider writes or delivery
 Ordinary host work stays inert until explicit attachment and task mapping.
 
 ## Requirements, planning and work
+
+Ask for a UX review of a live interface, design, screenshot, or requirements to
+use [ux-reviewer](../skills/ux-reviewer/GUIDE.md). Supply the target and main
+user task when known. Its report gives prioritized, evidence-backed findings
+and states what could not be checked. It can inform a formal DevFlow review,
+which still follows the independent [review-work](../skills/review-work/GUIDE.md)
+gates; the UX skill adds no helper command or automatic approval.
 
 Describe the intended outcome. The agent gathers relevant context, interviews
 unresolved requirements and shows a written specification for exact-content
@@ -317,7 +324,7 @@ the explicit `pr rework`, `pr sync` and `pr refresh` recovery steps. See the
 [developer command reference](usage.md) for its input and recovery behavior.
 
 Optional source ingestion, issues, migrations and usage reporting are documented
-in [all ten guides](skills.md). Missing usage is unavailable, not zero; example
+in the [skill guides](skills.md). Missing usage is unavailable, not zero; example
 prices and provider records are fixtures unless explicitly described as live.
 
 ## Recovery and maintenance
