@@ -98,5 +98,5 @@ class PortableHookTests(unittest.TestCase):
         hooks=json.loads((ROOT/'adapters/claude-code/hooks.json').read_text(encoding='utf-8'))['hooks']
         for event in ('SessionStart','UserPromptSubmit','TaskCompleted','Stop'):
             handler=hooks[event][0]['hooks'][0]
-            self.assertEqual(handler['command'],'python')
+            self.assertEqual(handler['command'],'python3')
             self.assertEqual(handler['args'],['-B','${CLAUDE_PLUGIN_ROOT}/adapters/claude-code/hook.py'])
