@@ -199,6 +199,12 @@ def invoke(root,request,operation_id):
             backend=(CodexBackend if binding['host']=='codex' else ClaudeBackend)(binding['project_dir'])
             context=discover(root,binding,request.get('refresh',False) or task_facts is not None,backend)
             decision=resolve(data,binding,stage,context,task_facts)
+            retry = None
+            if task_facts is not None and request.get('replacement_of') and not request.get('predecessor_invocation_id'):
+                from .routing_escalation import resolve_routing_retry
+                retry = resolve_routing_retry(policy(),run,task_facts,request['replacement_of'],
+                    preferences(data,binding,stage),context,prices(data,preferences(data,binding,stage)))
+                if retry is not None: decision = retry['decision']
             if not decision.get('resolved'):decision=candidate_intent(data,binding,stage,context,task_facts)
             if decision['status'] not in {'allow','pending-access'} or not decision.get('resolved'):return {**decision,'message':'Choose a permitted model or resolve the reported policy blocker before native work.'}
             if task_facts is not None:
@@ -229,7 +235,8 @@ def invoke(root,request,operation_id):
                         return {'status':'block','reason_code':'ROUTING_ESCALATION_CONTROLS','controls':controls}
                 fresh = {**backend.discover(), 'account_key':backend.identity()['account_key']}
                 fresh_evidence = native_control_evidence(binding['host'],fresh,decision['resolved'])
-                if fresh_evidence['configuration_hash'] != controls_evidence['configuration_hash'] or fresh['account_key'] != context['account_key']:
+                if (fresh_evidence['configuration_hash'] != controls_evidence['configuration_hash']
+                        or any(fresh.get(key) != context.get(key) for key in ('account_key','capabilities','discovery'))):
                     invalidate(root,binding,context)
                     return {'status':'block','reason_code':'ROUTING_CONFIGURATION_CHANGED'}
                 scope=invocation_scope(binding,run,stage,{})
@@ -242,6 +249,8 @@ def invoke(root,request,operation_id):
                     routing.update(escalation_index=escalation['escalation_index'],
                         predecessor_invocation_id=request['predecessor_invocation_id'],
                         escalation_authorization=request.get('escalation_authorization'),escalation_evidence=request.get('escalation_evidence'))
+                if retry is not None:
+                    routing.update(escalation_index=retry['escalation_index'],retry_of=request['replacement_of'])
                 decision={**decision,'routing':routing}
             if task_facts is not None:
                 from .interactive_routing import measure_delegation_payload

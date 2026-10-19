@@ -107,3 +107,52 @@ class RoutedNativeRuntimeTests(unittest.TestCase):
         self.assertEqual(result['routing']['escalation_index'],1)
         state=read_state(self.root)['data']['runs']['run']
         self.assertEqual(state['routing_lineages'][metadata['lineage_id']]['count'],1)
+
+    def test_fresh_model_revision_availability_or_observation_invalidates_dispatch(self):
+        from test_model_policy import ReleasedMappingTests
+        validated=ReleasedMappingTests();validated.setUp()
+        policy=copy.deepcopy(validated.policy);policy['stages']['implementation']='deep-reasoning'
+        old={'capabilities':validated.cap,'discovery':validated.discovery}
+        for change in ('revision','availability','observation'):
+            fixture=RoutedNativeRuntimeTests();fixture.setUp();self.addCleanup(fixture.doCleanups)
+            state=read_state(fixture.root);state['data']['runs']['run']['model_overrides']=[]
+            apply_host_event(state['data'],'model-override',{'binding_id':'b1','revision':1,'mode':'strict'})
+            transact(fixture.root,state['version'],'validated',{'kind':'fixture','payload':state['data']})
+            fresh=copy.deepcopy(old)
+            if change=='revision':fresh['discovery']['model_revisions']['model']='rev2'
+            elif change=='availability':fresh['discovery']['models']['model']='retired'
+            else:fresh['capabilities']['observe']=False
+            fixture.backend.discover.side_effect=[copy.deepcopy(old),fresh]
+            with self.subTest(change=change),patch('workflow_lib.native_runtime.policy',return_value=policy):
+                result=fixture.call({**fixture.request,'invocation_id':'drift-'+change})
+                self.assertEqual(result['status'],'block')
+                fixture.backend.configure.assert_not_called();fixture.backend.invoke.assert_not_called()
+
+    def test_network_retry_after_escalation_retains_route_and_count(self):
+        from workflow_lib.native_models import NativeError
+        original={**self.request,'task':task(actor_id='a1')}
+        self.backend.invoke.side_effect=NativeError('unavailable')
+        first=self.call(original);metadata=first['routing']
+        auth={'approved':True,'actor_id':'human','lineage_id':metadata['lineage_id'],
+            'task_hash':metadata['task_hash'],'policy_hash':metadata['policy_hash'],
+            'configuration_hash':metadata['configuration_hash'],'host':'codex','stage':'implementation',
+            'max_escalations':1,'eligible_routes':[{'model':'candidate','effort':'high'}]}
+        self.backend.invoke.side_effect=NativeError('network')
+        escalated={**original,'invocation_id':'escalated','predecessor_invocation_id':'routed',
+            'escalation_evidence':{'kind':'reasoning','reason':'Unresolved diagnosis','evidence_refs':['verification:failed']},
+            'escalation_authorization':auth}
+        with patch('workflow_lib.native_runtime.CodexBackend',return_value=self.backend):
+            second=invoke(self.root,escalated,'escalate-network')
+            self.assertEqual(second['resolved']['effort'],'high')
+            self.backend.invoke.side_effect=lambda selected,*args:{'status':'completed','observed':copy.deepcopy(selected),
+                'observation_source':'host-effective-configuration','output':self.completed_output()}
+            retry={**original,'invocation_id':'retry','replacement_of':'escalated'}
+            result=invoke(self.root,retry,'retry-network')
+        self.assertEqual(result['status'],'allow');self.assertEqual(result['resolved']['effort'],'high')
+        run=read_state(self.root)['data']['runs']['run']
+        self.assertEqual(run['routing_lineages'][metadata['lineage_id']]['count'],1)
+        self.assertEqual(run['native_invocations']['retry']['retry_count'],2)
+        self.assertEqual(run['native_invocations']['retry']['decision']['routing']['retry_of'],'escalated')
+        from workflow_lib.routing_evaluation import routing_statistics
+        stats=routing_statistics(read_state(self.root)['data'],{'run_id':'run'})
+        self.assertEqual(stats['escalations'],1);self.assertEqual(stats['retries'],1)

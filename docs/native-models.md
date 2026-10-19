@@ -159,7 +159,10 @@ See [authorization and recovery](reference/task-routing.md#escalation-and-recove
 
 `host model-run` accepts optional task facts and `execution_path: isolated-native`.
 Use the [task schema](reference/task-routing.md#task-decisions); the item identity
-is required for item-bound work. Native capabilities are refreshed before launch.
+is required for item-bound work. Native capabilities and model suitability inputs are refreshed before launch;
+revision, availability or observation-support drift blocks the prepared decision.
+Operational retries after escalation retain the route/count through `replacement_of`
+and fresh checks; they do not consume another escalation.
 
 ## Interactive delegation preparation
 

@@ -301,6 +301,8 @@ def apply_native_event(state,kind,req):
             validate_routing_evidence(decision['routing'], scope)
             from .routing_escalation import validate_lineage_start
             lineage = validate_lineage_start(run, decision['routing'], scope, decision['resolved'])
+            if decision['routing'].get('retry_of') is not None:
+                require(req.get('replacement_of') == decision['routing']['retry_of'], 'Retry must identify its replacement predecessor.')
         prior=next((r for r in reversed(list(records.values())) if r.get('scope')==scope),None)
         retry_count=0
         if prior and prior.get('status')=='interrupted':

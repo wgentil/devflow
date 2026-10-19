@@ -90,11 +90,11 @@ class InteractiveRoutingTests(unittest.TestCase):
         state=read_state(self.root);state['data']['host_bindings']['b1']['host']='claude'
         transact(self.root,state['version'],'claude',{'kind':'fixture','payload':state['data']})
         context=copy.deepcopy(self.context);context['capabilities']['observe']=False
-        context['controls']['host_version']='2.1.291'
+        context['controls']['host_version']='2.1.291';context['discovery']['host_version']='2.1.291'
         bridge=Bridge(context)
         self.assertEqual(dispatch_delegation(self.root,self.request,'old',bridge)['status'],'not-dispatched')
         self.assertFalse(bridge.spawns)
-        bridge.context['controls']['host_version']='2.1.299'
+        bridge.context['controls']['host_version']='2.1.299';bridge.context['discovery']['host_version']='2.1.299'
         bridge.collect=lambda handle:{'status':'completed','observed':{'provider':'anthropic','model':'candidate','effort':None},
             'observation_source':'host-invocation-metadata','output':completed_output(bridge.spawns[-1]['scope'])}
         result=dispatch_delegation(self.root,self.request,'claude',bridge)
@@ -139,3 +139,50 @@ class InteractiveRoutingTests(unittest.TestCase):
         result=dispatch_delegation(self.root,request,'second',bridge)
         self.assertEqual(result['status'],'allow');self.assertEqual(result['resolved']['effort'],'high')
         self.assertEqual(result['routing']['escalation_index'],1)
+
+    def test_contradictory_host_snapshot_cannot_be_ready_or_spawn(self):
+        from workflow_lib.interactive_routing import prepare_delegation,dispatch_delegation
+        for field,value in (('host_version','1.2.4'),('account_key','different')):
+            context=copy.deepcopy(self.context);context['controls'][field]=value
+            with self.subTest(field=field):
+                prepared=prepare_delegation(self.root,self.request,context)
+                self.assertNotEqual(prepared['reason_code'],'READY')
+                bridge=Bridge(context)
+                result=dispatch_delegation(self.root,self.request,'contradiction-'+field,bridge)
+                self.assertFalse(bridge.spawns);self.assertFalse(result['dispatch'])
+
+    def test_stopped_transport_interruption_preserves_diagnosis_and_retry(self):
+        from workflow_lib.interactive_routing import dispatch_delegation
+        bridge=Bridge(self.context)
+        bridge.collect=lambda handle:{'status':'interrupted','error_kind':'network','reason_code':'NATIVE_NETWORK','output':''}
+        receipt=dispatch_delegation(self.root,self.request,'network',bridge)
+        self.assertEqual(receipt['reason_code'],'NATIVE_NETWORK')
+        record=read_state(self.root)['data']['runs']['run']['native_invocations']['routed']
+        self.assertEqual(record['error_kind'],'network');self.assertTrue(record['retry_allowed'])
+
+    def test_network_retry_after_interactive_escalation_retains_level(self):
+        from workflow_lib.interactive_routing import dispatch_delegation
+        bridge=Bridge(self.context)
+        original={**self.request,'task':{**self.request['task'],'uncertainty':'resolved'}}
+        bridge.collect=lambda handle:{'status':'partial','output':'Missing reasoning result'}
+        first=dispatch_delegation(self.root,original,'initial-retry-case',bridge)
+        metadata=first['routing']
+        auth={'approved':True,'actor_id':'human','lineage_id':metadata['lineage_id'],
+            'task_hash':metadata['task_hash'],'policy_hash':metadata['policy_hash'],
+            'configuration_hash':metadata['configuration_hash'],'host':'codex','stage':'implementation',
+            'max_escalations':1,'eligible_routes':[{'model':'candidate','effort':'high'}]}
+        escalation={**original,'invocation_id':'escalated','predecessor_invocation_id':'routed',
+            'escalation_authorization':auth,'escalation_evidence':{'kind':'reasoning',
+                'reason':'Unresolved diagnosis','evidence_refs':['verification:failed']}}
+        bridge.collect=lambda handle:{'status':'interrupted','error_kind':'network','reason_code':'NATIVE_NETWORK','output':''}
+        dispatch_delegation(self.root,escalation,'escalation-network',bridge)
+        bridge.collect=lambda handle:{'status':'completed','observed':{'provider':'openai','model':'candidate','effort':'high'},
+            'observation_source':'host-invocation-metadata','output':completed_output(bridge.spawns[-1]['scope'])}
+        retry={**original,'invocation_id':'retry','replacement_of':'escalated'}
+        result=dispatch_delegation(self.root,retry,'retry-escalation-network',bridge)
+        self.assertEqual(result['status'],'allow');self.assertEqual(result['resolved']['effort'],'high')
+        run=read_state(self.root)['data']['runs']['run']
+        self.assertEqual(run['routing_lineages'][metadata['lineage_id']]['count'],1)
+        self.assertEqual(run['native_invocations']['retry']['retry_count'],2)
+        self.assertTrue(dispatch_delegation(self.root,retry,'retry-escalation-network',bridge)['replayed'])
+        self.assertEqual(len(bridge.spawns),3)

@@ -86,9 +86,9 @@ def routing_statistics(data: dict, scope: dict) -> dict:
             rows.append({'run_id':run_id,'invocation_id':identifier,'operation_id':record.get('operation_id'),
                 'status':record.get('status'),'worker_status':result.get('worker_outcome',{}).get('status'),
                 'execution_path':routing.get('execution_path'),'escalation_index':routing.get('escalation_index',0),
-                'retry_count':record.get('retry_count',0)})
+                'retry_of':routing.get('retry_of'),'retry_count':record.get('retry_count',0)})
     return {'schema_version':1,'invocations':len(rows),'outcomes':rows,
-        'escalations':sum(row['escalation_index']>0 for row in rows),'retries':sum(row['retry_count']>0 and row['escalation_index']==0 for row in rows),
+        'escalations':sum(row['escalation_index']>0 and not row['retry_of'] for row in rows),'retries':sum(row['retry_count']>0 and (row['escalation_index']==0 or bool(row['retry_of'])) for row in rows),
         'runtime_usage':{key:sum(value.get(key,0) for value in runtime) for key in ('input_tokens','output_tokens','cached_tokens')
                          if any(key in value for value in runtime)},
         'runtime_usage_coverage':{key:sum(key in value for value in runtime)/len(rows) if rows else None

@@ -54,6 +54,31 @@ def plan_escalation(policy: dict, lineage: dict, failure: dict, authorization: d
     return {**base, 'reason_code': 'NO_ELIGIBLE_ESCALATION'}
 
 
+def resolve_routing_retry(policy, run, facts, replacement_of, preferences, context, prices):
+    """Re-resolve an existing escalated route; never spend or reset allowance."""
+    from .routing_receipts import routing_lineage_id
+    from .model_policy import resolve_profile
+    from .task_routing import classify_task
+    identifier = routing_lineage_id(facts)
+    known = run.get('routing_lineages', {}).get(identifier, {})
+    if not known.get('count'): return None
+    prior = run.get('native_invocations', {}).get(replacement_of, {})
+    if replacement_of != known.get('last_invocation_id') or prior.get('status') != 'interrupted':
+        raise WorkflowError('ESCALATION_CONFLICT', 'Retry must name the last stopped lineage invocation.')
+    old = prior.get('decision', {})
+    selected = old.get('resolved', {})
+    retained = {'pin': selected.get('model'), 'effort': selected.get('effort'), 'profile': old.get('profile')}
+    if any(preferences.get(key) is not None and preferences[key] != value for key,value in retained.items()):
+        raise WorkflowError('ESCALATION_CONFLICT', 'Retained route conflicts with current preferences.')
+    order = policy.get('task_routing', {}).get('profile_order', [])
+    floor = classify_task(policy, facts, facts['stage'])['profile']
+    if floor in order and retained['profile'] in order and order.index(floor) > order.index(retained['profile']):
+        raise WorkflowError('ESCALATION_CONFLICT', 'Changed task facts require a stronger fresh decision.')
+    decision = resolve_profile(policy, {**preferences, **retained, 'task': facts},
+        context.get('capabilities', {}), context.get('discovery', {}), prices)
+    return {'decision': decision, 'escalation_index': known['count']}
+
+
 def validate_lineage_start(run: dict, routing: dict, scope: dict, resolved: dict) -> dict:
     """Validate under the existing journal CAS; return the next lineage record."""
     def require(value, message):
@@ -68,6 +93,13 @@ def validate_lineage_start(run: dict, routing: dict, scope: dict, resolved: dict
     require(key not in associations or associations[key] == identifier, 'Task lineage cannot reset across retries or handoff.')
     index = routing.get('escalation_index', 0)
     require(type(index) is int and index >= 0, 'Escalation index must be nonnegative.')
+    if routing.get('retry_of') is not None:
+        predecessor = routing['retry_of']
+        prior = run.get('native_invocations', {}).get(predecessor, {})
+        require(known is not None and index == known.get('count', 0), 'Retry must retain the durable escalation count.')
+        require(predecessor == known.get('last_invocation_id') and prior.get('status') == 'interrupted', 'Retry requires the last stopped invocation.')
+        require(prior.get('decision', {}).get('resolved') == resolved, 'Retry cannot change the escalated route.')
+        return {**deepcopy(known), 'last_invocation_id': None}
     if index == 0:
         require(not known or known.get('count', 0) == 0, 'Escalation allowance cannot reset.')
         return {'lineage_id': identifier, 'count': 0, 'task_key': key, 'last_invocation_id': None}

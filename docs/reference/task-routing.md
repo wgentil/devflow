@@ -45,7 +45,10 @@ changes the parent conversation. Load the following sections only when needed:
 
 Isolated CLI/app-server execution and enclosing interactive execution are separate
 capabilities. Refresh host version, account/configuration identity and controls
-before effects; changed evidence invalidates a prepared decision.
+before effects; changed evidence invalidates a prepared decision. Native refresh
+compares model revisions, availability and observation support as well as controls.
+Interactive discovery and control versions, account identity and model-effort
+support must describe one consistent snapshot.
 
 Claude non-fork interactive effort needs 2.1.292+; fork support is not inferred.
 `CLAUDE_CODE_EFFORT_LEVEL` and forced subagent-model overrides can defeat requested
@@ -78,8 +81,15 @@ across retry, resume and host handoff; a new task label cannot reset an item's c
 Quota/authentication failures, missing inputs and configuration conflicts require
 operational recovery, not stronger reasoning. Network retries have separate counts.
 Changed task/configuration facts require a fresh decision and authorization.
+After escalation, an operational retry names `replacement_of`; the harness freshly
+resolves the retained route against current preferences, suitability and controls.
+It records `retry_of` and retains the escalation index, never spending or resetting
+an escalation. Existing stopped-worker, replacement authorization and retry caps
+still apply. A changed route cannot masquerade as that retry.
 If collection fails, reconcile the running invocation and establish that its worker
-stopped before replacement. A collection error does not prove remote termination.
+stopped before replacement. A collection error does not prove remote termination. A confirmed transport
+interruption preserves its network/rate-limit/authentication/quota diagnosis;
+worker-report normalization applies separately to completed/partial output.
 
 ## Outcomes and evaluation
 

@@ -47,10 +47,19 @@ def prepare_delegation(root: Path, request: dict, host_context: dict | None = No
     pref = preferences(data, binding, stage)
     decision = resolve_profile(policy(), {**pref, 'task': facts}, context.get('capabilities', {}),
                                context.get('discovery', {}), prices(data, pref))
+    retry = None
+    if request.get('replacement_of') and not request.get('predecessor_invocation_id'):
+        from .routing_escalation import resolve_routing_retry
+        retry = resolve_routing_retry(policy(),run,facts,request['replacement_of'],pref,context,prices(data,pref))
+        if retry is not None: decision = retry['decision']
     resolved = decision.get('resolved') or {}
     evidence = deepcopy(context.get('controls') or {})
     evidence['spawn'] = {key: resolved.get(key) for key in ('model', 'effort')}
     controls = assess_route_controls(binding['host'], path, resolved, evidence)
+    snapshot_consistent = (bool(context.get('account_key')) and context['account_key'] == evidence.get('account_key')
+        and bool(context.get('discovery', {}).get('host_version'))
+        and context['discovery']['host_version'] == evidence.get('host_version')
+        and context.get('capabilities', {}).get('model_efforts') == evidence.get('model_efforts'))
     escalation = None
     if request.get('predecessor_invocation_id') and evidence.get('configuration_hash'):
         from .routing_escalation import plan_escalation
@@ -77,8 +86,10 @@ def prepare_delegation(root: Path, request: dict, host_context: dict | None = No
         routing.update(escalation_index=escalation['escalation_index'],
             predecessor_invocation_id=request['predecessor_invocation_id'],
             escalation_authorization=request['escalation_authorization'],escalation_evidence=request['escalation_evidence'])
+    if retry is not None:
+        routing.update(escalation_index=retry['escalation_index'],retry_of=request['replacement_of'])
     decision = {**decision, 'routing': routing}
-    ready = decision.get('status') == 'allow' and bool(resolved) and controls['status'] == 'compatible'
+    ready = snapshot_consistent and decision.get('status') == 'allow' and bool(resolved) and controls['status'] == 'compatible'
     launch = delegated_configuration(decision, binding['host'], binding['actor_id']) if ready else None
     if launch:
         launch.update(access=access, allow_delegation=False)
@@ -92,7 +103,7 @@ def prepare_delegation(root: Path, request: dict, host_context: dict | None = No
     decision['routing']['known_payload'] = known_payload
     return {'status': 'not-dispatched', 'dispatch': False, 'known_payload':known_payload, 'reason_code': 'READY' if ready else 'INTERACTIVE_CONTROLS_UNAVAILABLE',
             'binding_id': binding['binding_id'], 'revision': binding['revision'], 'invocation_id': identifier,
-            'scope': scope, 'policy_revision': len(run.get('model_overrides', [])), 'decision': decision,
+            'snapshot_hash': digest(context), 'scope': scope, 'policy_revision': len(run.get('model_overrides', [])), 'decision': decision,
             'worker_input': worker_input, 'launch': launch, 'access': access,
             'context_coverage': deepcopy(full_view.get('task_view', {}).get('coverage', {})),
             'context_artifact_id': full_view.get('task_view', {}).get('artifact_id'),
@@ -123,7 +134,7 @@ def dispatch_delegation(root: Path, request: dict, operation_id: str, bridge=Non
         if prepared['reason_code'] != 'READY': return prepared
         fresh = prepare_delegation(root, request, bridge.capabilities())
         if (fresh['reason_code'] != 'READY' or fresh['decision']['routing']['controls']['evidence_hash'] != prepared['decision']['routing']['controls']['evidence_hash']
-                or fresh['scope'] != prepared['scope'] or fresh['decision']['routing']['task_hash'] != prepared['decision']['routing']['task_hash']
+                or fresh['snapshot_hash'] != prepared['snapshot_hash'] or fresh['scope'] != prepared['scope'] or fresh['decision']['routing']['task_hash'] != prepared['decision']['routing']['task_hash']
                 or fresh['policy_revision'] != prepared['policy_revision']):
             return {**fresh, 'reason_code': 'ROUTING_CONFIGURATION_CHANGED'}
         start = {'binding_id': binding['binding_id'], 'revision': binding['revision'], 'invocation_id': identifier,
@@ -131,7 +142,7 @@ def dispatch_delegation(root: Path, request: dict, operation_id: str, bridge=Non
             'operation_id': operation_id, 'policy_revision': fresh['policy_revision'], 'expected_scope': fresh['scope'],
             'launcher_pid': os.getpid(), 'replacement_of': request.get('replacement_of'),
             'replacement_authorization': request.get('replacement_authorization')}
-        if fresh['decision']['routing'].get('escalation_index'):
+        if fresh['decision']['routing'].get('escalation_index') and not fresh['decision']['routing'].get('retry_of'):
             predecessor=request['predecessor_invocation_id']
             if request.get('replacement_of',predecessor)!=predecessor:
                 return {**fresh,'reason_code':'ESCALATION_PREDECESSOR_MISMATCH'}
@@ -146,7 +157,8 @@ def dispatch_delegation(root: Path, request: dict, operation_id: str, bridge=Non
             # A failed collect does not prove that a remote worker stopped.
             return {'status': 'block', 'dispatch': True, 'reason_code': 'INTERACTIVE_RECONCILE_REQUIRED',
                     'invocation_id': identifier, 'message': 'Confirm the worker stopped before reconciling or launching a replacement.'}
-        result = project_worker_result(result,fresh['scope'])
+        if result.get('status') != 'interrupted':
+            result = project_worker_result(result,fresh['scope'])
         from .context_metrics import record_context_measurement, explicit_runtime_usage
         record_context_measurement(root, {'operation_id':operation_id+':interactive-input', 'operation':'interactive.input',
             'run_id':binding['run_id'],'invocation_id':identifier,'stage':request['stage'],
