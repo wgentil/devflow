@@ -37,7 +37,9 @@ flowchart LR
 
 ## Requirements
 
-**R1 — Quick start.** Add `docs/quick-start.md`, at most 350 words and 4,096 UTF-8
+## R1: Quick start
+
+Add `docs/quick-start.md`, at most 350 words and 4,096 UTF-8
 bytes. Include marketplace registration plus plugin installation for Codex/Claude,
 opening an existing Git repository or asking the harness to create a local one,
 and a copyable “Start DevFlow in this repository…” prompt. Include the existing
@@ -47,7 +49,9 @@ need not understand skill names, control roots, manifests or helper commands.
 GitHub hosting is optional. Lead README and documentation navigation with this
 page; `docs/setup-and-usage.md` remains the authoritative detailed guide.
 
-**R2 — Small entry points and canonical ownership.** Each shipped `SKILL.md` must
+## R2: Small entry points and canonical ownership
+
+Each shipped `SKILL.md` must
 be at most 4,096 bytes, and their aggregate at most 32,768 bytes. Keep triggers,
 stage responsibilities, mandatory stop conditions and explicit read routing.
 Keep common mandatory invariants in one canonical reference of at most 4,096
@@ -56,7 +60,9 @@ where suitable. Each independently loaded domain section is at most 12,288
 bytes. Preserve public document paths and referenced anchors through short
 compatibility entries when content moves. Update affected guides and diagrams.
 
-**R3 — Generated navigation and budgets.** Add a versioned
+## R3: Generated navigation and budgets
+
+Add a versioned
 `definitions/documentation.json` describing canonical source IDs, section selectors,
 stage read requirements, dependencies, history classification and byte budgets.
 Generate repeated skill/load navigation and a size/duplication report from this
@@ -65,7 +71,9 @@ dependency-free maintainer checker verifies generation drift, references and
 budgets. Initial skill/common/stage documentation loads must fit 20,000 bytes.
 Developer shell setup has one canonical home in `docs/developer-cli.md`.
 
-**R4 — Complete task views.** Extend run/host briefs through a shared context-view
+## R4: Complete task views
+
+Extend run/host briefs through a shared context-view
 builder. Include current task requirements and acceptance criteria, applicable
 governing constraints, required documentation sections and declared dependencies,
 plus fresh authorization, blockers and evidence references. Resolve IDs and
@@ -75,7 +83,9 @@ model, all applicable governing rules remain required; retrieval selections neve
 change the governing digest or grant rule irrelevance. Existing full briefs remain
 the default; added fields/options are backward compatible.
 
-**R5 — Contract and document projections.** Support exact Markdown heading
+## R5: Contract and document projections
+
+Support exact Markdown heading
 sections and JSON Pointer selections. JSON contract selections include transitive
 local and registered repository-relative `$ref` dependencies, with cycle handling
 and existing path-containment/visibility restrictions. Unknown, unregistered,
@@ -85,7 +95,9 @@ from YAML does not ship, and no YAML parser dependency is added. Validate spec J
 generated Markdown together in the helper, then emit only the requested model
 representation. Referenced sources remain authoritative and independently approved.
 
-**R6 — Real load budgets.** Measure exact UTF-8 bytes for the documentation and
+## R6: Real load budgets
+
+Measure exact UTF-8 bytes for the documentation and
 context actually emitted, including required skill/common sections and envelope
 overhead. Default full task-view budget is 20,000 bytes, explicitly overridable.
 Optional omissions name what was omitted. Required overflow reports size, source
@@ -94,14 +106,18 @@ Measure the combined known native configuration/turn payload as well. Bytes/4
 may be reported only as an estimate. Hidden host instructions, unrelated tool
 reads and conversation history remain outside measured coverage and are disclosed.
 
-**R7 — Content reuse.** Cache immutable document/view artifacts under the selected
+## R7: Content reuse
+
+Cache immutable document/view artifacts under the selected
 control root by content identities, selectors, dependency closure and builder/policy
 versions. Any dependency change invalidates its derived content. Reuse unaffected
 content across unrelated changes while producing fresh source/provenance metadata.
 Corrupt or missing caches rebuild safely. Cached content never substitutes for
 live source/approval/ownership checks or fresh attempt/gate state.
 
-**R8 — Checkpoints and recovery.** Add explicit full/since-checkpoint options to
+## R8: Checkpoints and recovery
+
+Add explicit full/since-checkpoint options to
 read briefs. A delta identifies its exact base and current checkpoint, changed
 units, removed IDs and a complete current control-state envelope. Applying a
 valid delta to its base must reconstruct the full current document view. Deltas
@@ -111,27 +127,35 @@ supplied. Unknown/corrupt checkpoints, identity mismatches, compaction, session 
 handoff rebuild a full view with a reason. New native workers always receive full
 context. Checkpoints are advisory caches and cannot advance workflow gates.
 
-**R9 — Eliminate duplicate native context.** Codex currently receives the same
+## R9: Eliminate duplicate native context
+
+Codex currently receives the same
 brief in developer instructions and its turn prompt. Supply the shared full view
 exactly once while preserving task instructions, actor identity and native model
 observation checks. Claude receives the equivalent full view once. Preserve
 existing launch deduplication, leases, interruption handling and output artifacts.
 
-**R10 — Active discovery.** Routine documentation discovery and broad source
+## R10: Active discovery
+
+Routine documentation discovery and broad source
 indexing omit declared historical designs, plans, release notes and old audits by
 default, reporting excluded scope. Explicit history requests remain supported.
 Required governing inputs and declared task dependencies are always included,
 even when their paths are classified historical. Record the selection policy in
 index/cache fingerprints; legacy receipts remain replayable without reinterpretation.
 
-**R11 — Compact output modes.** Add explicit reference/projection modes to large
+## R11: Compact output modes
+
+Add explicit reference/projection modes to large
 read operations, including source indexes and context views. Return compact
 metadata, decision/failure information, counts and content-addressed artifact
 references; provide explicit inspection to retrieve complete material. Preserve
 existing default output compatibility where callers depend on full content.
 Never hide mandatory blockers, approvals or verification failures behind a summary.
 
-**R12 — Honest workflow metrics.** Extend best-effort telemetry and add a context
+## R12: Honest workflow metrics
+
+Extend best-effort telemetry and add a context
 statistics projection for document bytes emitted, repeated content bytes, helper
 calls, latency, cache outcomes and full/delta counts, with run/task/invocation
 attribution when available. Include relevant host/native operations. Repeated
@@ -140,6 +164,33 @@ Use existing explicit runtime usage/pricing evidence for actual usage or cost;
 otherwise report unavailable. Byte reduction is not measured token or cost savings.
 Report supplied-required-ID coverage and fixture omissions separately from unknown
 semantic omissions; do not infer correctness from smaller output.
+
+## R13: Requirement headings and descriptions
+
+For newly generated specifications, render a short requirement heading followed
+by its description as ordinary paragraph text, with no renderer-added bold or
+heading styling on the description. Use an optional single-line requirement
+`title` for the short heading and keep the existing `text` field as the complete
+description. Include the stable requirement ID in the heading. If a legacy
+requirement has no title, use its ID as the heading rather than promoting the
+whole description into it. New authored requirements should have concise titles.
+
+```markdown
+## R1: Greeting output
+
+Return a greeting for a supplied name.
+```
+
+Preserve acceptance criteria, provenance, assumptions, citations and diagrams.
+Adding a title changes specification content and follows ordinary reapproval.
+Existing approved JSON/Markdown pairs in the prior deterministic layout must
+remain readable and valid against their exact recorded hashes until explicitly
+rewritten. Storing a reformatted pair must record its new Markdown hash and
+require normal approval; compatibility must never accept arbitrary Markdown.
+Update specify instructions, its companion guide/diagram and the greeting
+example. Tests cover titled requirements, the ID-only fallback, plain description
+formatting, title validation, old approved-pair compatibility, and reapproval
+after rewriting the rendered pair.
 
 ## Compatibility and verification
 
