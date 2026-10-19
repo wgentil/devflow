@@ -75,20 +75,21 @@ def preferences(data,binding,stage):return {**effective_preferences(data['runs']
 def prices(data,request):return data.get('prices',{}).get(request.get('price_version'))
 
 
-def resolve(data,binding,stage,context=None):
+def resolve(data,binding,stage,context=None,task=None):
     request=preferences(data,binding,stage);context=context or {}
+    if task is not None:request['task']=task
     return resolve_profile(policy(),request,context.get('capabilities',{'configure':False,'observe':False,'models':[],'efforts':[]}),context.get('discovery',{}),prices(data,request))
 
 
-def candidate_intent(data,binding,stage,context):
+def candidate_intent(data,binding,stage,context,task=None):
     """Only an explicit permitted advisory selection may await actual native access."""
     request=preferences(data,binding,stage);pin=request.get('pin');cap=context['capabilities']
-    if not pin or request.get('mode','advisory')!='advisory' or not cap.get('configure'):return resolve(data,binding,stage,context)
+    if not pin or request.get('mode','advisory')!='advisory' or not cap.get('configure'):return resolve(data,binding,stage,context,task)
     # This is eligibility of the requested intent, not an availability observation.
     proposed=deepcopy(context);proposed['capabilities']['models']=list(set(proposed['capabilities']['models'])|{pin})
     proposed['capabilities'].setdefault('model_efforts',{})[pin]=cap['efforts']
     proposed['discovery']['models'][pin]='available'
-    decision=resolve(data,binding,stage,proposed)
+    decision=resolve(data,binding,stage,proposed,task)
     if decision['status']=='allow' and decision.get('resolved'):
         return {**decision,'status':'pending-access','reason_code':'NATIVE_ACCESS_PENDING','eligible_reason_code':decision['reason_code'],'dispatch':False}
     return decision
@@ -163,6 +164,12 @@ def invoke(root,request,operation_id):
     parity=check_release(binding['release'],release_descriptor(),1)
     if parity['status']!='allow':raise WorkflowError('RELEASE_MISMATCH',parity['message'])
     if stage not in policy()['stages']:raise WorkflowError('PROFILE_UNAVAILABLE','Known native stage required.')
+    if request.get('execution_path', 'isolated-native') != 'isolated-native':
+        raise WorkflowError('NATIVE_PATH_INVALID', 'Use interactive delegation preparation for interactive paths.')
+    task_facts = None
+    if request.get('task') is not None:
+        from .task_routing import normalize_task_facts
+        task_facts = normalize_task_facts(request['task'], invocation_scope(binding, run, stage, {}))
     if policy()['stages'][stage]=='deterministic':return {'status':'allow','reason_code':'DETERMINISTIC','dispatch':False}
     timeout=request.get('timeout_seconds',300)
     if type(timeout) not in (int,float) or not 1<=timeout<=3600:raise WorkflowError('NATIVE_TIMEOUT_INVALID','Native timeout must be between 1 and 3600 seconds.')
@@ -187,12 +194,61 @@ def invoke(root,request,operation_id):
                 recovery_reason='new-native-worker')
             native_input = invocation_context(binding, stage, full_view, prompt, context_limit)
             backend=(CodexBackend if binding['host']=='codex' else ClaudeBackend)(binding['project_dir'])
-            context=discover(root,binding,request.get('refresh',False),backend)
-            decision=resolve(data,binding,stage,context)
-            if not decision.get('resolved'):decision=candidate_intent(data,binding,stage,context)
+            context=discover(root,binding,request.get('refresh',False) or task_facts is not None,backend)
+            decision=resolve(data,binding,stage,context,task_facts)
+            if not decision.get('resolved'):decision=candidate_intent(data,binding,stage,context,task_facts)
             if decision['status'] not in {'allow','pending-access'} or not decision.get('resolved'):return {**decision,'message':'Choose a permitted model or resolve the reported policy blocker before native work.'}
+            if task_facts is not None:
+                from .host_route_controls import assess_route_controls, native_control_evidence
+                from .routing_receipts import routing_lineage_id
+                from .document_units import digest
+                controls_evidence = native_control_evidence(binding['host'], context, decision['resolved'])
+                controls = assess_route_controls(binding['host'], 'isolated-native', decision['resolved'], controls_evidence)
+                if controls['status'] in {'conflict', 'unsupported'} or controls['status']=='unknown' and decision['mode']=='strict':
+                    return {'status':'block','reason_code':'ROUTING_CONTROLS_'+controls['status'].upper(),'controls':controls}
+                if request.get('predecessor_invocation_id'):
+                    from .routing_escalation import plan_escalation
+                    predecessor = run.get('native_invocations', {}).get(request['predecessor_invocation_id'], {})
+                    lineage_id = routing_lineage_id(task_facts)
+                    lineage = {**run.get('routing_lineages', {}).get(lineage_id, {}),
+                        'lineage_id':lineage_id,'task_hash':digest(task_facts),'policy_hash':digest(policy()),
+                        'configuration_hash':controls_evidence['configuration_hash'],'host':binding['host'],'stage':stage,
+                        'current':predecessor.get('decision',{}).get('resolved'),
+                        'predecessor_invocation_id':request['predecessor_invocation_id'],
+                        'preferences':preferences(data,binding,stage),'capabilities':context['capabilities'],
+                        'discovery':context['discovery'],'prices':prices(data,preferences(data,binding,stage))}
+                    escalation=plan_escalation(policy(),lineage,request.get('escalation_evidence',{}),request.get('escalation_authorization',{}))
+                    if escalation['status']!='eligible':return escalation
+                    decision=escalation['candidate']
+                    controls_evidence = native_control_evidence(binding['host'],context,decision['resolved'])
+                    controls=assess_route_controls(binding['host'],'isolated-native',decision['resolved'],controls_evidence)
+                    if controls['status'] in {'conflict','unsupported'} or controls['status']=='unknown' and decision['mode']=='strict':
+                        return {'status':'block','reason_code':'ROUTING_ESCALATION_CONTROLS','controls':controls}
+                fresh = {**backend.discover(), 'account_key':backend.identity()['account_key']}
+                fresh_evidence = native_control_evidence(binding['host'],fresh,decision['resolved'])
+                if fresh_evidence['configuration_hash'] != controls_evidence['configuration_hash'] or fresh['account_key'] != context['account_key']:
+                    invalidate(root,binding,context)
+                    return {'status':'block','reason_code':'ROUTING_CONFIGURATION_CHANGED'}
+                scope=invocation_scope(binding,run,stage,{})
+                routing={**decision.get('routing',{}),'routing_schema_version':1,'task_facts':task_facts,
+                    'task_hash':digest(task_facts),'policy_hash':digest(policy()),'lineage_id':routing_lineage_id(task_facts),
+                    'scope_hash':digest(scope),'execution_path':'isolated-native','controls':controls,
+                    'configuration_hash':controls_evidence['configuration_hash'],'classification_origin':task_facts['origin'],
+                    'reasons':decision.get('routing',{}).get('reasons',['AUTHORIZED_ESCALATION'])}
+                if request.get('predecessor_invocation_id'):
+                    routing.update(escalation_index=escalation['escalation_index'],
+                        predecessor_invocation_id=request['predecessor_invocation_id'],
+                        escalation_authorization=request.get('escalation_authorization'),escalation_evidence=request.get('escalation_evidence'))
+                decision={**decision,'routing':routing}
             prompt = native_input['prompt']
             start={'binding_id':binding['binding_id'],'revision':binding['revision'],'invocation_id':identifier,'stage':stage,'decision':decision,'request_hash':request_hash,'operation_id':operation_id,'policy_revision':len(run.get('model_overrides',[])),'expected_scope':invocation_scope(binding,run,stage,{}),'launcher_pid':os.getpid(),'account_key':context['account_key'],'replacement_of':request.get('replacement_of'),'replacement_authorization':request.get('replacement_authorization')}
+            if task_facts is not None and request.get('predecessor_invocation_id'):
+                predecessor = request['predecessor_invocation_id']
+                if request.get('replacement_of', predecessor) != predecessor:
+                    return {'status':'block','reason_code':'ESCALATION_PREDECESSOR_MISMATCH'}
+                start['replacement_of'] = predecessor
+                auth = request['escalation_authorization']
+                start['replacement_authorization'] = {'approved':auth['approved'],'actor_id':auth['actor_id']}
             _commit(root,operation_id+':native-start','native-start',start,binding);started=True
             if request.get('task_id'):
                 scope=invocation_scope(binding,run,stage,{})

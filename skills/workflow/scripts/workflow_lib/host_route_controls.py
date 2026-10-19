@@ -1,5 +1,6 @@
 """Host-specific precedence assessment, independent of observation or dispatch."""
 from copy import deepcopy
+import os
 import re
 
 from .document_units import digest
@@ -81,3 +82,17 @@ def execution_path_capabilities(configure: bool, observe: bool) -> dict:
     return {'isolated-native': {'configure': configure, 'observe': observe},
             'interactive-nonfork': {'configure': False, 'observe': False, 'reason': 'ENCLOSING_HOST_BRIDGE_REQUIRED'},
             'interactive-fork': {'configure': False, 'observe': False, 'reason': 'FORK_OVERRIDES_UNSUPPORTED'}}
+
+
+def native_control_evidence(host: str, context: dict, resolved: dict) -> dict:
+    """Known native launcher settings; these are not observed effective settings."""
+    capabilities, discovery = context.get('capabilities', {}), context.get('discovery', {})
+    overrides = collect_claude_overrides(os.environ) if host == 'claude' else {}
+    configuration = {'host_version': discovery.get('host_version'), 'overrides': overrides,
+                     'model_efforts': capabilities.get('model_efforts', {}), 'configure': capabilities.get('configure')}
+    return {'schema_version': 1, 'host_version': discovery.get('host_version'),
+            'source': 'local-native-discovery', 'supported': capabilities.get('configure'),
+            'account_key': context.get('account_key'), 'configuration_hash': digest(configuration),
+            'model_efforts': capabilities.get('model_efforts', {}), 'overrides': overrides,
+            'spawn': {key: resolved.get(key) for key in ('model', 'effort')},
+            'custom_agent': {}, 'agent_defaults': {}, 'parent': {}}

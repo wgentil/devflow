@@ -44,7 +44,9 @@ ineligible. No provider mapping has been released in this package.
 flowchart TD
     scope[Attached actor and current item or review scope] --> prepare[Live input checks and full task view]
     prepare --> discover[Existing native login and bounded account discovery]
-    discover --> policy[Resolve stage, pin, effort, allowlist and sourced cost estimate]
+    discover --> policy[Resolve task or stage, pin, effort, allowlist and sourced cost estimate]
+    policy --> controls[Check path controls and fresh configuration identity]
+    controls --> blocked
     cases[Reviewed stage cases] --> eval[Run representative model eval]
     eval --> release[Human-reviewed versioned mapping release]
     release -.-> policy
@@ -179,3 +181,15 @@ cost constraints remain required. Operational blockers do not justify escalation
 The journal binds work-item/stage lineage across retries and handoff; a changed
 task label cannot reset its count. Network retries remain a separate counter.
 Policy loading itself grants no authorization and no new validated model mapping.
+
+## Routed isolated requests
+
+`host model-run` accepts an optional version-1 `task` object and explicit
+`execution_path: isolated-native`; omission keeps legacy stage-only behavior.
+Task identity must match the binding/run/stage/item. Routed work refreshes native
+capability/configuration evidence before dispatch; drift or a known control
+conflict blocks before worker execution. Requested controls remain separate from
+host observations. An authorized reasoning escalation supplies predecessor,
+scoped authorization and evidence, creates a new invocation, and consumes the
+same durable lineage allowance. That scoped authorization also authorizes its
+linked replacement; it does not grant further retries or external actions.
