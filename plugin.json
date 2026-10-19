@@ -1,6 +1,6 @@
 {
   "name": "devflow",
-  "version": "0.3.9",
+  "version": "0.3.10",
   "description": "Skills for guided software development, verification, and delivery.",
   "skills": [
     "skills/workflow",
