@@ -33,6 +33,13 @@ flowchart LR
     Full --> Native[One full context copy for a new native worker]
     Full --> Metrics[Measured bytes, repetition and latency]
     Resume --> Metrics
+    Changed[Repository changes] --> Invalidate[Invalidate affected context caches]
+    Invalidate --> Cache
+    Checks[Validation requested] --> Plan[Focused checks and required full checks]
+    Plan --> Verify[Existing verification runners]
+    Verify --> Digest[Bounded failure digest with full evidence references]
+    Digest --> Metrics
+    CI[Offline CI fixtures] --> Regression[Check context budgets, completeness and retrieval calls]
 ```
 
 ## Requirements
@@ -192,6 +199,86 @@ example. Tests cover titled requirements, the ID-only fallback, plain descriptio
 formatting, title validation, old approved-pair compatibility, and reapproval
 after rewriting the rendered pair.
 
+## R14: Shared Python lifecycle hooks
+
+Implement portable Python hook functions at existing helper boundaries, shared
+by the Codex and Claude adapters. Cover pre-invocation context preparation,
+repository-change invalidation, validation planning, verifier-result digests and
+offline CI regression checks. Reuse R4–R12 for context preparation and recovery;
+avoid a second implementation of their policies. No additional native host event
+API is required, and installation does not modify user Git hooks or configuration.
+
+Each interactive hook has an explicit deadline and output budget, defaulting to
+five seconds and 8,192 UTF-8 bytes, with overrides recorded in its result.
+Report status, reason, elapsed time, output size, source/configuration hashes and
+artifact references. Missing inputs, deadline expiry or overflow produce an
+explicit diagnostic. A required context/preflight failure stops that operation;
+advisory formatting or telemetry failure preserves the original verification
+outcome and exposes the gap. Hooks never grant approval, replace proof, launch
+model/provider work, install dependencies or advance workflow gates. A diagnostic
+cannot turn an unknown or failed check into a passing result.
+
+## R15: Verification failure digests
+
+After an existing verification runner produces a result, build a deterministic,
+bounded digest with the original status, failed/error/skipped counts, affected
+test or finding IDs, relevant error excerpts and references to complete reports
+and logs. Group identical failures only while retaining their individual IDs and
+counts in the referenced evidence. Preserve original exit codes, raw evidence,
+attempt identity and content hashes; the digest is a navigation aid, not proof.
+
+Process large logs within bounded read/time limits. If details exceed the output
+budget, retain the failure status and totals, identify omitted detail explicitly,
+and reference the complete artifact. Malformed or incomplete reports retain their
+unavailable/error result rather than implying no failures. Tests cover real
+structured test results, repeated failures, Unicode, oversized logs and digest
+failure without any change to the underlying verifier verdict.
+
+## R16: Dependency-based cache invalidation
+
+After observing repository changes, compare declared source and configuration
+identities and invalidate affected derived context artifacts through the reverse
+dependency graph. Handle edits, deletions, renames and dependency/selector changes;
+report affected IDs and reasons. Unchanged unrelated content remains reusable.
+Unknown dependencies or an incomplete graph trigger conservative invalidation of
+the affected scope instead of speculative reuse. Live preflights remain required.
+
+This hook invalidates retrieval caches only. It cannot clear governing-input
+reassessment, refresh old proof or selectively reuse verification evidence across
+changed inputs. Test direct/transitive changes, unknown scope, stale graph data,
+unchanged bytes, and source drift after warming the cache.
+
+## R17: Focused validation planning
+
+Before running validation, produce a plan from explicit project-owned mappings
+between changed paths/components and configured checks. Identify focused checks
+for fast feedback and the complete checks still required before workflow
+advancement. Include selection reasons and configuration/source hashes. Missing
+or uncertain mappings fall back to the configured full required set; missing
+check configuration remains unavailable rather than generating guessed commands.
+
+The hook plans existing authorized runners and does not execute additional
+commands or grant external-action authorization. A focused pass never satisfies
+an outstanding full-suite or configured gate requirement. Existing attempt,
+repository, report and freshness checks still determine valid proof. Test known,
+overlapping and unmapped changes, stale configuration and preservation of the
+complete required-check set.
+
+## R18: CI context-regression checks
+
+Run deterministic, offline fixtures in the existing Python CI suite. Compare
+declared context-byte and retrieval-call budgets, duplicate-content counts,
+required rule/requirement IDs, dependency completeness and full/delta
+reconstruction. Include cold-cache, warm-cache, dependency-change and
+compaction/handoff scenarios. Missing required facts fail even if payloads shrink.
+Unexpected budget or call-count growth requires an explicit reviewed baseline or
+policy change rather than automatic regeneration that conceals the regression.
+
+Record latency for comparison without brittle fixed-time assertions on shared CI
+runners. Reuse R3's documentation checker and R12's measurements. Fixtures must
+not call providers, create paid model sessions or claim that byte/call reductions
+establish actual token savings, costs or semantic correctness.
+
 ## Compatibility and verification
 
 No new daemon, service or required Python packages. Preserve existing journal
@@ -205,7 +292,10 @@ safe path handling, same-content reuse, corrupt caches, reconstruction/removals,
 full compaction/handoff recovery, exact budgets/Unicode, mandatory overflow,
 source drift with warm caches, one-copy native payloads, history exceptions,
 reference inspection and honest telemetry/unknown costs. Run required documentation
-checks and the complete existing suite. Compare a fixed representative fixture
+checks, hook deadline/output/failure tests and the complete existing suite. Verify
+that failure digests preserve verifier results, invalidation never clears gates,
+validation plans retain all required checks, and CI catches missing required facts
+as well as size/call regressions. Compare a fixed representative fixture
 before/after using identical required facts; require at least a 50% reduction in
 aggregate skill entry bytes and a strictly smaller valid same-scope delta. Record
 call/byte/latency results without presenting them as provider-token savings.
