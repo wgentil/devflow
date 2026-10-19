@@ -193,3 +193,20 @@ host observations. An authorized reasoning escalation supplies predecessor,
 scoped authorization and evidence, creates a new invocation, and consumes the
 same durable lineage allowance. That scoped authorization also authorizes its
 linked replacement; it does not grant further retries or external actions.
+
+## Interactive delegation preparation
+
+`host delegation-prepare --root CONTROL --file REQUEST.json` performs live checks
+and returns a complete prepared worker input with `status: not-dispatched` and
+`dispatch: false`. Use the [request example](examples/delegation-request.json)
+with actual binding/task identities. JSON-supplied host context and observations
+are not trusted. This read operation does not start workers or advance a journal.
+
+An embedding host may supply an actual in-process bridge with capability, spawn
+and collection methods. Both hosts share policy, context, leases and journal
+receipts. No production interactive bridge ships: mock integrations exercise the
+contract, not live Agent-tool access. Unavailable/fork/conflicting controls remain
+not dispatched. A failed collection leaves the invocation running until a stopped
+worker is reconciled; it does not imply a remote worker stopped. Parent decisions,
+role/access boundaries and strict observation rules remain in force. No automatic
+fallback changes execution paths or permissions.

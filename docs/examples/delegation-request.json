@@ -1,0 +1,28 @@
+{
+  "binding_id": "binding-1",
+  "revision": 1,
+  "invocation_id": "discovery-1",
+  "stage": "scan",
+  "execution_path": "interactive-nonfork",
+  "prompt": "Locate the code implementing R1 and report evidence.",
+  "access": "read-only",
+  "task": {
+    "schema_version": 1,
+    "task_id": "discovery-1",
+    "run_id": "run-1",
+    "stage": "scan",
+    "actor_id": "implementer-1",
+    "kind": "discovery",
+    "scope": [
+      "src"
+    ],
+    "required_output": "Paths and evidence for R1",
+    "complexity": "bounded",
+    "uncertainty": "resolved",
+    "consequence": "ordinary",
+    "evidence_refs": [
+      "requirements:R1"
+    ],
+    "origin": "plan"
+  }
+}

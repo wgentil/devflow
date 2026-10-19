@@ -615,3 +615,5 @@ An exact `document approve` retry returns its committed approval before reading
 files, even after baseline advancement or file removal. Changing its actor
 returns `OPERATION_CONFLICT`; this historical receipt does not authorize current
 drift. New approvals still require a current exact proposal.
+
+Interactive delegation can be inspected with `host delegation-prepare --root CONTROL --file REQUEST.json`; see [native worker limitations](native-models.md#interactive-delegation-preparation). The command prepares only and accepts no bridge or trusted observations from JSON.

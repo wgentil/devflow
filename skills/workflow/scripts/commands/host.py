@@ -15,6 +15,9 @@ def register_commands(parser):
         add_journal_options(action)
         action.add_argument('--file', required=True)
         if name in {'attach','handoff-accept','legacy-adopt'}: action.add_argument('--loaded-release', required=True)
+    preparation = commands.add_parser('delegation-prepare')
+    preparation.add_argument('--root', required=True)
+    preparation.add_argument('--file', required=True)
     for name in ('model-discover','model-probe'):
         action=commands.add_parser(name)
         action.add_argument('--root',required=True)
@@ -62,6 +65,11 @@ def register_commands(parser):
 
 
 def dispatch(parsed):
+    if parsed.host_command == 'delegation-prepare':
+        from workflow_lib.interactive_routing import prepare_delegation
+        request = json.loads(Path(parsed.file).read_text(encoding='utf-8'))
+        if not isinstance(request, dict):raise WorkflowError('NATIVE_INPUT_REQUIRED', 'Delegation request must be an object.')
+        return prepare_delegation(Path(parsed.root), request)
     if parsed.host_command == 'hook-evaluate':
         from workflow_lib.host_hook import evaluate
         return evaluate(parsed.project_dir,parsed.session_id,parsed.event,parsed.task_id)
