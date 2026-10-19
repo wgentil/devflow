@@ -1,5 +1,10 @@
 # DevFlow developer CLI walkthrough
 
+Context selection and content-cache behavior are described in the
+[context efficiency reference](context-efficiency.md). From the plugin checkout,
+`python3 scripts/check_documentation.py --check` checks documentation;
+`--write` regenerates marked navigation only.
+
 This optional reference is for contributors, diagnostics and direct helper use.
 Plugin users should start with the [user guide](setup-and-usage.md); they should
 not need these shell variables, path selections or helper commands.
