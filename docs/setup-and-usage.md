@@ -353,6 +353,10 @@ rather than a duplicate repository identity. Preserve the original journal.
 
 ### Repository-backed specifications
 
+New requirements use short ID/title headings followed by ordinary description
+paragraphs. Exact legacy Markdown stays readable; rewriting it needs renewed
+approval of the new pair. See the [specify guide](../skills/specify/GUIDE.md).
+
 Ask DevFlow to store the specification in the selected registered repository as a
 visible JSON/Markdown pair, for example `docs/specs/greeting.json`
 and `.md`, and review the rendered file before confirming its exact content hash.

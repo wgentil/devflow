@@ -17,6 +17,28 @@ def spec(mode="new"):
 
 
 class SpecTests(unittest.TestCase):
+    def test_requirement_title_and_plain_description(self):
+        value = spec()
+        value['requirements'][0]['title'] = 'Setting persistence'
+        rendered = render_spec(value)
+        self.assertIn('## R1: Setting persistence\n\nPersist the user setting\n', rendered)
+        self.assertNotIn('**Persist the user setting**', rendered)
+        record = approval_record(value, validate_spec(value)['content_hash'])
+        value['requirements'][0]['title'] = 'Changed'
+        self.assertFalse(approval_status(value, record)['approved'])
+
+    def test_id_only_heading_without_title(self):
+        self.assertIn('## R1\n\nPersist the user setting\n', render_spec(spec()))
+
+    def test_invalid_requirement_title(self):
+        for title in ('', '  ', 'a\nb', 'a\rb', 4, None, 'a\u2028b'):
+            with self.subTest(title=title):
+                value = spec()
+                value['requirements'][0]['title'] = title
+                with self.assertRaises(WorkflowError) as caught:
+                    validate_spec(value)
+                self.assertEqual(caught.exception.code, 'INVALID_REQUIREMENT_TITLE')
+
     def test_duplicate_requirement_ids_are_rejected(self):
         value = spec()
         value["requirements"].append(dict(value["requirements"][0]))

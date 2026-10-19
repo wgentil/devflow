@@ -10,7 +10,7 @@ description: Create or extend requirements, record assumptions and source citati
 ```mermaid
 flowchart TD
     Input["Intent, ground interview decisions, specification sources and applicable contracts"] --> Native["Resolve specification profile for optional scoped native worker"]
-    Native --> Draft["Create or extend requirements with provenance"]
+    Native --> Draft["Create requirements with short titles, plain descriptions and provenance"]
     Draft --> Diagram["Author a relevant Mermaid diagram in JSON"]
     Diagram --> Inspect["Agent checks scope, contradictions and missing decisions"]
     Inspect --> Gaps{"Unresolved questions?"}
@@ -47,6 +47,10 @@ approved content without diagrams remains usable until it changes. The helper
 checks diagram structure, not Mermaid syntax or semantic accuracy.
 
 Use `new`, `extend`, or `migrate` mode. Preserve authored, derived, and assumed provenance; cite path, commit, and line range for derived facts. Ask only unresolved gap questions. Review the rendered specification with the user before recording approval. Approval must include the exact content hash and becomes stale when content changes.
+Give each new requirement a concise single-line `title`. Keep its full description
+in `text`: Markdown renders the ID/title heading, then an ordinary paragraph.
+Without a title, the heading contains only the ID. Exact legacy renderings remain
+readable; rewriting a pair records a new Markdown hash and requires reapproval.
 Before the first feature spec in a new project, complete the project-context
 ground interview. Reuse its decisions and applicable governing rules for later
 specs, then interview feature-specific gaps dynamically. A ready checklist is

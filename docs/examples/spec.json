@@ -10,6 +10,7 @@
   "requirements": [
     {
       "id": "R1",
+      "title": "Greeting output",
       "text": "Return a greeting for a supplied name",
       "acceptance_criteria": [
         "greet(\"Ada\") returns \"Hello, Ada\""

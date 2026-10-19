@@ -12,6 +12,22 @@ from workflow_lib.store import WorkflowError
 
 
 class RepoSpecTests(unittest.TestCase):
+    def test_frozen_legacy_pair_remains_valid_until_rewritten(self):
+        self.spec['requirements'] = [{'id': 'R1', 'text': 'Say hello',
+            'acceptance_criteria': ['greeting returned'], 'provenance': {'kind': 'authored'}}]
+        receipt = write_spec_pair(self.repo, self.path, self.spec)
+        md = self.repo / receipt['markdown_path']
+        old = '# Safari\n\nMode: new\n\n## R1: Say hello\n\nProvenance: authored\n\nAcceptance criteria:\n- greeting returned\n'
+        md.write_text(old, encoding='utf-8')
+        legacy = read_spec_pair(self.repo, self.path)
+        legacy.pop('spec')
+        self.assertEqual(assert_repo_spec_approval(self.repo, legacy)['spec'], self.spec)
+        current = write_spec_pair(self.repo, self.path, self.spec)
+        self.assertNotEqual(current['markdown_hash'], legacy['markdown_hash'])
+        self.error('SPEC_APPROVAL_STALE', assert_repo_spec_approval, self.repo, legacy)
+        md.write_text(old + '\nUnapproved detail\n', encoding='utf-8')
+        self.error('SPEC_PAIR_MISMATCH', read_spec_pair, self.repo, self.path)
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix='spec café ')
         self.repo = Path(self.temp.name)

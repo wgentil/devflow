@@ -8,7 +8,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 
-from .specs import content_hash, render_spec, validate_spec
+from .specs import content_hash, render_spec, render_legacy_spec, validate_spec
 from .store import WorkflowError
 
 
@@ -57,7 +57,7 @@ def read_spec_pair(repo: Path, relative_json: str) -> dict:
     except (ValueError, UnicodeError) as exc:
         raise WorkflowError('SPEC_PAIR_INVALID', 'specification JSON is invalid') from exc
     validate_spec(spec)
-    if markdown != render_spec(spec).encode('utf-8'):
+    if markdown not in (render_spec(spec).encode('utf-8'), render_legacy_spec(spec).encode('utf-8')):
         raise WorkflowError('SPEC_PAIR_MISMATCH', 'Markdown does not match the deterministic specification rendering')
     return {'spec': spec, **_receipt(repo, json_path, md_path, spec, markdown)}
 

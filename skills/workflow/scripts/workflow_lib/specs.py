@@ -46,6 +46,10 @@ def validate_spec(spec: dict) -> dict:
         ids.add(rid)
         if not isinstance(requirement.get("text"), str) or not requirement["text"].strip():
             raise WorkflowError("INVALID_REQUIREMENT", f"requirement {rid} needs text")
+        if 'title' in requirement:
+            title = requirement['title']
+            if not isinstance(title, str) or not title.strip() or len(title.splitlines()) != 1:
+                raise WorkflowError('INVALID_REQUIREMENT_TITLE', f'requirement {rid} title must be a nonempty single line')
         criteria = requirement.get("acceptance_criteria")
         if not isinstance(criteria, list) or not criteria or any(not isinstance(item, str) or not item.strip() for item in criteria):
             raise WorkflowError("INVALID_ACCEPTANCE_CRITERIA", f"requirement {rid} needs acceptance criteria")
@@ -84,6 +88,15 @@ def find_gaps(spec: dict) -> list[dict]:
 
 
 def render_spec(spec: dict) -> str:
+    return _render_spec(spec, legacy=False)
+
+
+def render_legacy_spec(spec: dict) -> str:
+    """Exact pre-title layout, solely for reading content-bound historical pairs."""
+    return _render_spec(spec, legacy=True)
+
+
+def _render_spec(spec: dict, *, legacy: bool) -> str:
     validate_spec(spec)
     lines = [f"# {spec.get('title', 'Requirements')}", "", f"Mode: {spec['mode']}", ""]
     if spec.get("diagrams"):
@@ -92,8 +105,12 @@ def render_spec(spec: dict) -> str:
             lines.extend([f"### {diagram['title']}", "", "```mermaid", diagram["mermaid"].strip(), "```", ""])
     for requirement in sorted(spec["requirements"], key=lambda item: item["id"]):
         provenance = requirement["provenance"]
-        lines.extend([f"## {requirement['id']}: {requirement['text']}", "",
-                      f"Provenance: {provenance['kind']}", "", "Acceptance criteria:"])
+        if legacy:
+            lines.extend([f"## {requirement['id']}: {requirement['text']}", ""])
+        else:
+            heading = requirement['id'] + (': ' + requirement['title'] if 'title' in requirement else '')
+            lines.extend([f'## {heading}', '', requirement['text'], ''])
+        lines.extend([f"Provenance: {provenance['kind']}", "", "Acceptance criteria:"])
         lines.extend(f"- {criterion}" for criterion in requirement["acceptance_criteria"])
         if provenance["kind"] == "assumed":
             lines.append(f"\nAssumption: {provenance.get('assumption', '')}")

@@ -7,6 +7,11 @@ For plugin use, ask DevFlow to refine the requirements, store the pair in the se
 
 Create requirements in `new`, `extend` or `migrate` mode. Each requirement needs a
 stable ID, text, acceptance criteria and authored/derived/assumed provenance.
+Give new requirements a concise, nonempty single-line `title`; `text` remains the
+complete description. The renderer uses `## R1: Greeting output`, a blank line,
+then the description as ordinary text. Without a title it uses `## R1`.
+Exact older deterministic Markdown remains readable against its recorded hash;
+storing a reformatted pair changes the Markdown hash and requires reapproval.
 New and revised repository-backed specifications also need at least one titled
 Mermaid diagram in the JSON source. Choose a diagram that explains the feature's
 behavior or structure and inspect it in the rendered Markdown. The approval gate
