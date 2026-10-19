@@ -6,6 +6,7 @@ import math
 from pathlib import Path
 import sys
 import time
+from uuid import uuid4
 
 from .context_artifacts import inspect_context_artifact, store_context_artifact
 from .document_units import canonical, digest
@@ -64,6 +65,13 @@ def run_lifecycle_hook(name: str, request: dict, *, deadline_seconds: float = 5,
     if valid and result['output_bytes'] > max_bytes:
         result = _finish({'status': 'block', 'reason_code': 'HOOK_OUTPUT_OVERFLOW'}, name, request,
                           started, deadline_seconds, max_bytes, required)
+    if isinstance(request, dict) and isinstance(request.get('root'), str):
+        from .context_metrics import record_context_measurement
+        identifier = request.get('operation_id')
+        identifier = identifier if isinstance(identifier, str) else uuid4().hex
+        record_context_measurement(Path(request['root']), {'operation_id': identifier + ':hook:' + name,
+            'operation': 'hook.' + name, 'run_id': request.get('run_id'), 'stage': request.get('stage'),
+            'helper_calls': 1, 'duration_ms': result['elapsed_ms'], 'envelope_bytes': result['output_bytes']})
     return result
 
 

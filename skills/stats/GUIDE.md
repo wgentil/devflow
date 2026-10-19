@@ -1,5 +1,11 @@
 # stats usage guide
 
+`df stats context --root "$CONTROL" --options '{"run_id":"greeting-run"}'`
+projects best-effort context measurements. It counts emitted content and metadata,
+not entire journals as model input. Actual tokens need explicit runtime evidence;
+actual cost still requires the existing usage/pricing workflow. See
+[measurement coverage](../../docs/usage.md#context-measurements).
+
 Read the [shared setup and conventions](../../docs/skills.md#shared-setup) first.
 Commands below use its `df` function and path variables.
 

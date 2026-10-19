@@ -5,10 +5,16 @@ description: Report measured runtime usage, explicitly priced estimates, and rep
 
 # Usage and outcome reporting
 
+Use `stats context` for measured context bytes, repeated reads, helper calls,
+cache outcomes and full/delta counts. Report required-ID coverage separately
+from unknown semantic omissions. Bytes/4 is an estimate, never actual usage/cost.
+
 Import only explicitly accessible versioned runtime records. Deduplicate by source event identity; leave ambiguous attribution unbound. Prices are user supplied, versioned, and labeled API-equivalent estimates. Cost requires at least 90% usage coverage and known rates. Reports disclose exclusions and unavailable event history, use ratios of sums, and preserve frozen snapshots when repriced.
 
 ```mermaid
 flowchart LR
+    Context[Emitted context metadata without bodies] --> Measurements[Byte/call/cache/full-delta statistics]
+    Measurements --> Limits[Disclose hidden context and unknown cost]
     Run[Selected run] --> OptIn[Explicit trace opt-in]
     OptIn --> Trace[Redacted trace with usage unknown when missing]
     Trace --> Feedback[Reviewed feedback]

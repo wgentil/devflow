@@ -209,6 +209,11 @@ def invoke(root,request,operation_id):
                 if any(observed.get(k)!=resolved.get(k) for k in ('model','effort','provider')):
                     result={**configuration,'status':'interrupted','error_kind':'unavailable','reason_code':'MODEL_SUBSTITUTED'}
             if result is None:result=backend.invoke(decision['resolved'],prompt,binding['actor_id'],access,request.get('timeout_seconds',300))
+            from .context_metrics import record_context_view, explicit_runtime_usage
+            record_context_view(root, full_view, operation_id=operation_id + ':native-context', operation='native.input',
+                invocation_id=identifier, consumer_id=binding['session_id'],
+                configuration_bytes=len(native_input['configuration_text'].encode('utf-8')), turn_bytes=len(prompt.encode('utf-8')),
+                runtime_usage=explicit_runtime_usage(result.get('usage')))
             result['output_ref']=_blob(root,result.pop('output',''))
         except NativeError as exc:
             if context:invalidate(root,binding,context)

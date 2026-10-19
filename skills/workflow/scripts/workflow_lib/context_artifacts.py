@@ -102,8 +102,10 @@ def resolve_cached_units(root: Path, selection: dict) -> dict:
                     'selections': selections, 'policy': policy, 'builder_version': VERSION})
     index, _ = _index(root)
     entry = index['entries'].get(scope)
+    validation_reads = 0
     if entry:
         hashes, provenance = _current_sources(sources, entry['source_hashes'])
+        validation_reads = len(hashes)
         if hashes == entry['source_hashes']:
             try:
                 value = inspect_context_artifact(root, entry['artifact_id'])
@@ -124,7 +126,8 @@ def resolve_cached_units(root: Path, selection: dict) -> dict:
     index['entries'][scope] = {**ref, 'policy_hash': digest(policy), 'source_hashes': hashes,
                                'dependencies': value['dependencies']}
     _atomic_json(_directory(root) / 'index.json', index)
-    return {**value, **ref, 'cache_outcome': 'miss', 'source_provenance': provenance}
+    return {**value, **ref, 'cache_outcome': 'miss', 'source_provenance': provenance,
+            'retrieval_calls': value['retrieval_calls'] + len(hashes) + validation_reads}
 
 
 def invalidate_context_artifacts(root: Path, observed_sources: dict, policy_hash: str) -> dict:

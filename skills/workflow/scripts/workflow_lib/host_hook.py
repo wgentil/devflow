@@ -74,4 +74,7 @@ def evaluate(project_dir, session_id, event, task_id=None):
             return {'status':'block','reason_code':'HOOK_OUTPUT_OVERFLOW','message':'Mandatory control state exceeds inline budget; inspect host brief.'}
     path.parent.mkdir(parents=True,exist_ok=True)
     _atomic_json(path,{'fingerprint':fingerprint,'checkpoint_id':checkpoint_id})
+    from uuid import uuid4
+    from .context_metrics import record_context_view
+    record_context_view(root,brief,operation_id=uuid4().hex,operation='host.'+event,consumer_id=session_id)
     return {'status':'allow','brief':brief}

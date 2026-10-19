@@ -118,3 +118,12 @@ references. Raw evidence and original verdict/exit/attempt/hash stay authoritati
 Malformed/incomplete reports never imply zero failures. Reads are bounded to
 1 MiB per log plus the hook deadline; omissions and unknown totals are explicit.
 Output overflow or digest failure preserves the verifier result unchanged.
+
+## Measurements
+
+`stats context` projects best-effort metadata from run/host/native/hook operations.
+It reports emitted document/envelope bytes, repeated content, helper and
+selector/cache reads, durations, cache outcomes, full/delta counts and required-ID
+coverage. It stores no document bodies. Repeated operation IDs count once.
+Collection failure or a busy/bounded telemetry scan leaves an explicit gap without
+changing the operation. See [measurement limits](usage.md#context-measurements).

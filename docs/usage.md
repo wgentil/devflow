@@ -1,5 +1,23 @@
 # DevFlow detailed CLI notes
 
+## Context measurements
+
+`stats context --root CONTROL --options '{"run_id":"RUN"}'` reports emitted
+document/envelope bytes, repeated content bytes, helper and selector/cache read
+counts, summed operation latency, cache outcomes and full/delta counts. Records
+contain IDs/hashes/sizes, never document bodies. Replayed operation IDs do not
+double count; repeated reads with different operation IDs remain visible.
+
+Native configuration/turn text is measured separately. Explicit runtime token
+observations remain partial observations; missing observations and actual cost
+remain unavailable. Use the existing explicit usage/pricing reports for priced
+estimates. Byte/4 estimates are labeled and never claimed as measured token or
+cost savings. Required-ID coverage does not establish semantic completeness.
+Hidden host instructions, unrelated tool reads and history remain outside coverage.
+Selector/cache reads exclude governing Git/network preflight reads; summed helper
+durations can overlap and are not end-to-end latency. Collection gaps are explicit
+and never change workflow outcomes.
+
 For complete setup, initialization and everyday usage, start with the
 [primary guide](setup-and-usage.md).
 
