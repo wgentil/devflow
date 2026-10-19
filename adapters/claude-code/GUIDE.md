@@ -36,3 +36,10 @@ For new delegated work, the adapter renderer produces documented model/effort
 fields for native agents. Confirm the host accepts them and report account policy
 substitutions. Rendering alone grants no strict observation receipt. The actual
 Claude 2.1.284 task-completion smoke passed in a relocated read-only package.
+
+CLI capability discovery reports isolated and interactive paths separately. A
+non-fork interactive effort request needs Claude Code 2.1.292+ and an available
+enclosing host bridge; version alone is insufficient. Relevant effort/forced-model
+environment overrides are disclosed, never cleared automatically. Fork controls
+are not inferred from non-fork support. Effective effort observation remains a
+separate limitation and strict dispatch retains its existing block.

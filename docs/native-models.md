@@ -152,3 +152,12 @@ stage defaults. Explicit user profiles, effort, pins, allowlists and cost limits
 remain binding. Policy version 3 ships no new validated provider mappings;
 a recommendation is not a dispatch. Task facts carry bounded scope, origin and
 evidence references and never replace approval or verification evidence.
+
+Capability discovery distinguishes isolated native controls from interactive
+non-fork and fork controls. An installed CLI does not establish an enclosing
+harness bridge. Interactive non-fork Claude invocation effort requires 2.1.292+;
+environment effort and forced model overrides remain higher priority. Codex custom
+agent settings may override spawn settings. Unknown precedence/support stays
+unknown, and relevant configuration changes invalidate its assessment. Only
+routing-related environment fields are retained; account availability and trusted
+observation remain separate from configuration support.

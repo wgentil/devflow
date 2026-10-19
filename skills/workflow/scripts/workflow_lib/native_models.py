@@ -13,6 +13,7 @@ import uuid
 from .store import WorkflowError, _atomic_json
 from .model_discovery import discovery_key, cached_discovery, store_discovery
 from .host_models import delegated_configuration
+from .host_route_controls import execution_path_capabilities, collect_claude_overrides
 from .releases import PACKAGE_ROOT
 from .process_transport import JsonLineProcess, bounded_capture, stop_tree
 
@@ -210,7 +211,7 @@ class CodexBackend:
             if cursor in seen:raise NativeError('unavailable','Native model pagination is inconsistent.')
             seen.add(cursor)
         else:raise NativeError('context','Native model inventory exceeds supported pages.')
-        return {'capabilities':{'configure':True,'observe':True,'models':list(models),'efforts':sorted({e for values in efforts.values() for e in values}),'model_efforts':efforts},'discovery':{'models':models,'model_revisions':revisions,'host_version':_cli_version('codex',self.project),'source':'codex-app-server-model-list'}}
+        return {'capabilities':{'configure':True,'observe':True,'execution_paths':execution_path_capabilities(True,True),'models':list(models),'efforts':sorted({e for values in efforts.values() for e in values}),'model_efforts':efforts},'discovery':{'models':models,'model_revisions':revisions,'host_version':_cli_version('codex',self.project),'source':'codex-app-server-model-list'}}
     def configure(self,resolved,brief,access='read-only'):
         settings=self.rpc.request('config/read',{'includeLayers':False,'cwd':self.project}).get('config',{})
         servers=settings.get('mcp_servers',{}) if isinstance(settings,dict) else {}
@@ -257,7 +258,7 @@ class ClaudeBackend:
     def discover(self):
         result=run_bounded(['claude','--help'],self.project,15)
         supported=result.returncode==0 and all(flag in result.stdout for flag in ('--agents','--agent','--model','--effort','--tools','--output-format','--strict-mcp-config'))
-        return {'capabilities':{'configure':supported,'observe':False,'models':[],'efforts':['low','medium','high','xhigh','max'] if supported else [],'model_efforts':{}},'discovery':{'models':{},'model_revisions':{},'host_version':_cli_version('claude',self.project),'source':'selected-model-native-launch-required'}}
+        return {'capabilities':{'configure':supported,'observe':False,'execution_paths':execution_path_capabilities(supported,False),'models':[],'efforts':['low','medium','high','xhigh','max'] if supported else [],'model_efforts':{}},'discovery':{'models':{},'model_revisions':{},'host_version':_cli_version('claude',self.project),'source':'selected-model-native-launch-required','overrides':collect_claude_overrides(os.environ)}}
     def invoke(self,resolved,prompt,actor,access='read-only',timeout=300):
         name='devflow-'+hashlib.sha256(actor.encode()).hexdigest()[:16]
         rendered=delegated_configuration({'status':'allow','resolved':resolved},'claude',name)

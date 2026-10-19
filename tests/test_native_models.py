@@ -21,7 +21,7 @@ class NativeModelTests(unittest.TestCase):
         rpc=Mock();rpc.request.side_effect=[{'account':{'type':'chatgpt','email':'private@example.test','planType':'pro'}},{'data':[{'model':'candidate','supportedReasoningEfforts':[{'reasoningEffort':'high'}]}],'nextCursor':'more'},{'data':[{'model':'other','supportedReasoningEfforts':[{'reasoningEffort':'low'}]}],'nextCursor':None}]
         backend=Backend(tempfile.gettempdir(),rpc=rpc);identity=backend.identity();context=backend.discover()
         self.assertNotIn('private@example.test',json.dumps(identity));self.assertEqual(len(identity['account_key']),64)
-        self.assertEqual(context['capabilities']['model_efforts']['candidate'],['high']);self.assertEqual(context['discovery']['models']['other'],'available')
+        self.assertTrue(context['capabilities']['execution_paths']['isolated-native']['configure']);self.assertFalse(context['capabilities']['execution_paths']['interactive-nonfork']['configure']);self.assertEqual(context['capabilities']['model_efforts']['candidate'],['high']);self.assertEqual(context['discovery']['models']['other'],'available')
         self.assertEqual(rpc.request.call_args_list[-1].args[1]['cursor'],'more')
     def test_codex_inventory_exposes_version_but_not_inferred_model_revision(self):
         from unittest.mock import Mock
