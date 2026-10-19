@@ -10,7 +10,7 @@ from workflow_lib.legacy import import_legacy
 
 def register_commands(parser):
     command = parser.add_parser('stats')
-    command.add_argument('operation', choices=['usage-import','expectations','prices','price','metrics','rollup','export','legacy-import','inspect','trace','context'])
+    command.add_argument('operation', choices=['usage-import','expectations','prices','price','metrics','rollup','export','legacy-import','inspect','trace','context','routing'])
     command.add_argument('--input')
     command.add_argument('--options', default='{}')
     add_journal_options(command)
@@ -18,6 +18,10 @@ def register_commands(parser):
 
 def dispatch(parsed):
     opts = json.loads(parsed.options)
+    if parsed.operation == 'routing':
+        if not parsed.root:raise WorkflowError('CONTROL_ROOT_REQUIRED','Routing statistics require a control root.')
+        from workflow_lib.routing_evaluation import routing_statistics
+        return routing_statistics(read_state(Path(parsed.root))['data'], opts)
     if parsed.operation == 'context':
         if not parsed.root:
             raise WorkflowError('CONTROL_ROOT_REQUIRED', 'context statistics require a selected control root')

@@ -210,3 +210,21 @@ not dispatched. A failed collection leaves the invocation running until a stoppe
 worker is reconciled; it does not imply a remote worker stopped. Parent decisions,
 role/access boundaries and strict observation rules remain in force. No automatic
 fallback changes execution paths or permissions.
+
+## Routing outcomes and offline comparison
+
+`stats routing --root CONTROL --options '{"run_id":"run-1"}'` projects routed
+journal invocations, separate escalation/retry counts, known context bytes and
+explicit runtime usage with coverage. Duplicate operation IDs count once. Cost
+remains unavailable here; use attributed usage and sourced pricing through the
+existing `stats price` workflow. Operation durations are not additive wall time.
+
+`improve model-evaluate` accepts an optional `routing_evaluation` object with
+reviewed `case_ids` and `results`. Reviewed improvement snapshots can include
+`expected.routing` (required IDs/facts and exact host/model/effort/path/policy
+binding). Their original snapshot hashes and separate case approval remain
+required. Missing facts, incomplete coverage or stale binding fail a comparison.
+Routing reports do not promote model suitability or release a mapping. See the
+[synthetic report](examples/routing-evaluation-report.json); it is an offline
+format example, not live evaluation evidence. Normal comparisons launch nothing;
+paid/live evaluations still need explicit authorization.

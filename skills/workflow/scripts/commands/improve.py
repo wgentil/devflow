@@ -55,6 +55,15 @@ def dispatch(parsed):
                                 cases, request.get('results', []))
         decision = promotion_decision(report, {'version': policy()['version'],
             'thresholds': policy().get('validation_thresholds', {})})
-        return {'report': report, 'decision': decision, 'released': False}
+        value = {'report': report, 'decision': decision, 'released': False}
+        if request.get('routing_evaluation') is not None:
+            from workflow_lib.routing_evaluation import evaluate_routing
+            evaluation = request['routing_evaluation']
+            identifiers = evaluation.get('case_ids', [])
+            if not isinstance(identifiers,list) or any(identifier not in approved for identifier in identifiers):
+                raise WorkflowError('CASE_NOT_APPROVED','Routing evaluation requires reviewed case IDs.')
+            value['routing_report'] = evaluate_routing([approved[identifier] for identifier in identifiers],
+                                                      evaluation.get('results', []), policy())
+        return value
     from workflow_lib.improvement_eval import retrospective
     return retrospective(request['traces'], list(data.get('improvement_feedback', {}).values()))

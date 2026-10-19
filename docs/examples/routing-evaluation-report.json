@@ -1,0 +1,101 @@
+{
+  "routing_evaluation_schema_version": 1,
+  "policy_hash": "cf5ce6ebf6207ec5ebd3d31b02e3dd52663b7a44b47c2b85b936220c7389b3c5",
+  "status": "passed",
+  "coverage": 1.0,
+  "cases": [
+    {
+      "case_id": "discovery",
+      "case_hash": "32b8d2fec6a33edc9a6e5af2b78a9600130ea3db8b2c8f8b035db128484cc4e4",
+      "passed": true,
+      "missing_ids": [],
+      "missing_facts": [],
+      "binding": {
+        "host": "codex",
+        "host_version": "fixture-1.2.3",
+        "model_id": "illustrative-model",
+        "model_revision": "fixture-r1",
+        "effort": "medium",
+        "execution_path": "isolated-native",
+        "policy_hash": "cf5ce6ebf6207ec5ebd3d31b02e3dd52663b7a44b47c2b85b936220c7389b3c5"
+      },
+      "findings": [],
+      "reported_usage": null,
+      "duration_ms": 1,
+      "context_bytes": 1000,
+      "retries": 0,
+      "escalations": 0
+    },
+    {
+      "case_id": "implementation",
+      "case_hash": "12f48534897b8aba92465698b10981e2a6b564733fcc368327aca7c9fa0a9016",
+      "passed": true,
+      "missing_ids": [],
+      "missing_facts": [],
+      "binding": {
+        "host": "codex",
+        "host_version": "fixture-1.2.3",
+        "model_id": "illustrative-model",
+        "model_revision": "fixture-r1",
+        "effort": "medium",
+        "execution_path": "isolated-native",
+        "policy_hash": "cf5ce6ebf6207ec5ebd3d31b02e3dd52663b7a44b47c2b85b936220c7389b3c5"
+      },
+      "findings": [],
+      "reported_usage": null,
+      "duration_ms": 1,
+      "context_bytes": 1000,
+      "retries": 0,
+      "escalations": 0
+    },
+    {
+      "case_id": "debugging",
+      "case_hash": "2f17592e9397ab901aa8608ab8c7ce229c98a4b3ad87fe8f8c1b69c5e1cb23b0",
+      "passed": true,
+      "missing_ids": [],
+      "missing_facts": [],
+      "binding": {
+        "host": "codex",
+        "host_version": "fixture-1.2.3",
+        "model_id": "illustrative-model",
+        "model_revision": "fixture-r1",
+        "effort": "medium",
+        "execution_path": "isolated-native",
+        "policy_hash": "cf5ce6ebf6207ec5ebd3d31b02e3dd52663b7a44b47c2b85b936220c7389b3c5"
+      },
+      "findings": [],
+      "reported_usage": null,
+      "duration_ms": 1,
+      "context_bytes": 1000,
+      "retries": 0,
+      "escalations": 0
+    },
+    {
+      "case_id": "review",
+      "case_hash": "1bd9bc15a55f112726d55424c19fd961113ef363f6f4ae7ede97f95c1d7beb03",
+      "passed": true,
+      "missing_ids": [],
+      "missing_facts": [],
+      "binding": {
+        "host": "codex",
+        "host_version": "fixture-1.2.3",
+        "model_id": "illustrative-model",
+        "model_revision": "fixture-r1",
+        "effort": "medium",
+        "execution_path": "isolated-native",
+        "policy_hash": "cf5ce6ebf6207ec5ebd3d31b02e3dd52663b7a44b47c2b85b936220c7389b3c5"
+      },
+      "findings": [],
+      "reported_usage": null,
+      "duration_ms": 1,
+      "context_bytes": 1000,
+      "retries": 0,
+      "escalations": 0
+    }
+  ],
+  "issues": [],
+  "promotion_eligible": false,
+  "cost_usd": null,
+  "measurement_scope": "Supplied reviewed evaluation results; host attribution requires matching journal receipts. Byte/effort reductions are not savings.",
+  "report_hash": "c8a23216586dd7024e04e55bd0f8de4b1af2aed3011dcc9a45fdc147e058cf4f"
+}

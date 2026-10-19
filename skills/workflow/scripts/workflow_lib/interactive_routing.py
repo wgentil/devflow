@@ -89,6 +89,7 @@ def prepare_delegation(root: Path, request: dict, host_context: dict | None = No
     if known_payload['known_payload_bytes'] > request.get('context_max_bytes',20000):
         raise WorkflowError('CONTEXT_BUDGET_EXCEEDED', 'Known delegation payload exceeds its budget; rescope the task.',
             {'known_payload':known_payload,'artifact_id':full_view.get('task_view',{}).get('artifact_id')})
+    decision['routing']['known_payload'] = known_payload
     return {'status': 'not-dispatched', 'dispatch': False, 'known_payload':known_payload, 'reason_code': 'READY' if ready else 'INTERACTIVE_CONTROLS_UNAVAILABLE',
             'binding_id': binding['binding_id'], 'revision': binding['revision'], 'invocation_id': identifier,
             'scope': scope, 'policy_revision': len(run.get('model_overrides', [])), 'decision': decision,

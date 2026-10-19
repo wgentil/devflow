@@ -1,0 +1,202 @@
+{
+  "fixture_only": true,
+  "note": "Synthetic offline examples; no live capability validation, human approval or measured savings is claimed.",
+  "policy": {
+    "version": "illustrative-routing-fixture",
+    "task_routing": {
+      "schema_version": 1
+    }
+  },
+  "cases": [
+    {
+      "case_id": "discovery",
+      "approved_by": "synthetic-fixture-reviewer",
+      "scoring_version": 1,
+      "kind": "discovery",
+      "required_ids": [
+        "R1"
+      ],
+      "required_facts": [
+        "Locate R1 owner"
+      ],
+      "binding": {
+        "host": "codex",
+        "host_version": "fixture-1.2.3",
+        "model_id": "illustrative-model",
+        "model_revision": "fixture-r1",
+        "effort": "medium",
+        "execution_path": "isolated-native",
+        "policy_hash": "cf5ce6ebf6207ec5ebd3d31b02e3dd52663b7a44b47c2b85b936220c7389b3c5"
+      },
+      "case_hash": "32b8d2fec6a33edc9a6e5af2b78a9600130ea3db8b2c8f8b035db128484cc4e4"
+    },
+    {
+      "case_id": "implementation",
+      "approved_by": "synthetic-fixture-reviewer",
+      "scoring_version": 1,
+      "kind": "implementation",
+      "required_ids": [
+        "R1"
+      ],
+      "required_facts": [
+        "Required behavior passes"
+      ],
+      "binding": {
+        "host": "codex",
+        "host_version": "fixture-1.2.3",
+        "model_id": "illustrative-model",
+        "model_revision": "fixture-r1",
+        "effort": "medium",
+        "execution_path": "isolated-native",
+        "policy_hash": "cf5ce6ebf6207ec5ebd3d31b02e3dd52663b7a44b47c2b85b936220c7389b3c5"
+      },
+      "case_hash": "12f48534897b8aba92465698b10981e2a6b564733fcc368327aca7c9fa0a9016"
+    },
+    {
+      "case_id": "debugging",
+      "approved_by": "synthetic-fixture-reviewer",
+      "scoring_version": 1,
+      "kind": "debugging",
+      "required_ids": [
+        "R1"
+      ],
+      "required_facts": [
+        "Identify reproduced cause"
+      ],
+      "binding": {
+        "host": "codex",
+        "host_version": "fixture-1.2.3",
+        "model_id": "illustrative-model",
+        "model_revision": "fixture-r1",
+        "effort": "medium",
+        "execution_path": "isolated-native",
+        "policy_hash": "cf5ce6ebf6207ec5ebd3d31b02e3dd52663b7a44b47c2b85b936220c7389b3c5"
+      },
+      "case_hash": "2f17592e9397ab901aa8608ab8c7ce229c98a4b3ad87fe8f8c1b69c5e1cb23b0"
+    },
+    {
+      "case_id": "review",
+      "approved_by": "synthetic-fixture-reviewer",
+      "scoring_version": 1,
+      "kind": "review",
+      "required_ids": [
+        "R1"
+      ],
+      "required_facts": [
+        "Report independent finding"
+      ],
+      "binding": {
+        "host": "codex",
+        "host_version": "fixture-1.2.3",
+        "model_id": "illustrative-model",
+        "model_revision": "fixture-r1",
+        "effort": "medium",
+        "execution_path": "isolated-native",
+        "policy_hash": "cf5ce6ebf6207ec5ebd3d31b02e3dd52663b7a44b47c2b85b936220c7389b3c5"
+      },
+      "case_hash": "1bd9bc15a55f112726d55424c19fd961113ef363f6f4ae7ede97f95c1d7beb03"
+    }
+  ],
+  "results": [
+    {
+      "case_id": "discovery",
+      "case_hash": "32b8d2fec6a33edc9a6e5af2b78a9600130ea3db8b2c8f8b035db128484cc4e4",
+      "binding": {
+        "host": "codex",
+        "host_version": "fixture-1.2.3",
+        "model_id": "illustrative-model",
+        "model_revision": "fixture-r1",
+        "effort": "medium",
+        "execution_path": "isolated-native",
+        "policy_hash": "cf5ce6ebf6207ec5ebd3d31b02e3dd52663b7a44b47c2b85b936220c7389b3c5"
+      },
+      "passed": true,
+      "supplied_ids": [
+        "R1"
+      ],
+      "supplied_facts": [
+        "Locate R1 owner"
+      ],
+      "findings": [],
+      "retries": 0,
+      "escalations": 0,
+      "duration_ms": 1,
+      "context_bytes": 1000
+    },
+    {
+      "case_id": "implementation",
+      "case_hash": "12f48534897b8aba92465698b10981e2a6b564733fcc368327aca7c9fa0a9016",
+      "binding": {
+        "host": "codex",
+        "host_version": "fixture-1.2.3",
+        "model_id": "illustrative-model",
+        "model_revision": "fixture-r1",
+        "effort": "medium",
+        "execution_path": "isolated-native",
+        "policy_hash": "cf5ce6ebf6207ec5ebd3d31b02e3dd52663b7a44b47c2b85b936220c7389b3c5"
+      },
+      "passed": true,
+      "supplied_ids": [
+        "R1"
+      ],
+      "supplied_facts": [
+        "Required behavior passes"
+      ],
+      "findings": [],
+      "retries": 0,
+      "escalations": 0,
+      "duration_ms": 1,
+      "context_bytes": 1000
+    },
+    {
+      "case_id": "debugging",
+      "case_hash": "2f17592e9397ab901aa8608ab8c7ce229c98a4b3ad87fe8f8c1b69c5e1cb23b0",
+      "binding": {
+        "host": "codex",
+        "host_version": "fixture-1.2.3",
+        "model_id": "illustrative-model",
+        "model_revision": "fixture-r1",
+        "effort": "medium",
+        "execution_path": "isolated-native",
+        "policy_hash": "cf5ce6ebf6207ec5ebd3d31b02e3dd52663b7a44b47c2b85b936220c7389b3c5"
+      },
+      "passed": true,
+      "supplied_ids": [
+        "R1"
+      ],
+      "supplied_facts": [
+        "Identify reproduced cause"
+      ],
+      "findings": [],
+      "retries": 0,
+      "escalations": 0,
+      "duration_ms": 1,
+      "context_bytes": 1000
+    },
+    {
+      "case_id": "review",
+      "case_hash": "1bd9bc15a55f112726d55424c19fd961113ef363f6f4ae7ede97f95c1d7beb03",
+      "binding": {
+        "host": "codex",
+        "host_version": "fixture-1.2.3",
+        "model_id": "illustrative-model",
+        "model_revision": "fixture-r1",
+        "effort": "medium",
+        "execution_path": "isolated-native",
+        "policy_hash": "cf5ce6ebf6207ec5ebd3d31b02e3dd52663b7a44b47c2b85b936220c7389b3c5"
+      },
+      "passed": true,
+      "supplied_ids": [
+        "R1"
+      ],
+      "supplied_facts": [
+        "Report independent finding"
+      ],
+      "findings": [],
+      "retries": 0,
+      "escalations": 0,
+      "duration_ms": 1,
+      "context_bytes": 1000
+    }
+  ]
+}
