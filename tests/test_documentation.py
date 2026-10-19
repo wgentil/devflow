@@ -1,0 +1,49 @@
+import copy
+import json
+from pathlib import Path
+import sys
+import tempfile
+import unittest
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'skills/workflow/scripts'))
+from workflow_lib.documentation import load_documentation_policy, check_documentation, navigation
+from workflow_lib.store import WorkflowError
+
+
+class DocumentationTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        (self.root / 'definitions').mkdir()
+        (self.root / 'guide.md').write_text('# Guide\n\nBody\n', encoding='utf-8')
+        self.policy = {'schema_version': 1, 'sources': {'guide': {'path': 'guide.md', 'selector': {'kind': 'whole'}, 'dependencies': [], 'classification': 'active'}}, 'stage_reads': {'build': ['guide']}, 'history': ['docs/superpowers/**'], 'budgets': {'entry_bytes': 4096, 'aggregate_entry_bytes': 32768, 'common_bytes': 4096, 'domain_bytes': 12288, 'initial_load_bytes': 20000}}
+
+    def write(self, value=None):
+        (self.root / 'definitions/documentation.json').write_text(json.dumps(value or self.policy), encoding='utf-8')
+
+    def test_policy_validation_and_stable_navigation(self):
+        self.write()
+        policy = load_documentation_policy(self.root)
+        self.assertEqual(navigation(policy, 'build'), navigation(policy, 'build'))
+        self.assertIn('guide.md', navigation(policy, 'build'))
+        self.assertEqual(check_documentation(self.root)['problems'], [])
+
+    def test_invalid_version_dependencies_routes_and_budgets(self):
+        for field, value in [('schema_version', 2), ('stage_reads', {'build': ['missing']}), ('budgets', {'domain_bytes': -1})]:
+            bad = {**self.policy, field: value}
+            self.write(bad)
+            with self.subTest(field=field), self.assertRaises(WorkflowError):
+                load_documentation_policy(self.root)
+        bad = copy.deepcopy(self.policy)
+        bad['sources']['guide']['dependencies'] = ['missing']
+        self.write(bad)
+        with self.assertRaises(WorkflowError):
+            load_documentation_policy(self.root)
+
+    def test_duplicate_json_ids_rejected(self):
+        self.write()
+        p = self.root / 'definitions/documentation.json'
+        p.write_text(p.read_text().replace('"schema_version": 1', '"schema_version": 1, "schema_version": 1'))
+        with self.assertRaises(WorkflowError):
+            load_documentation_policy(self.root)

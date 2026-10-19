@@ -1,0 +1,264 @@
+{
+  "schema_version": 1,
+  "sources": {
+    "skill.build-work": {
+      "path": "skills/build-work/SKILL.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.build-work": {
+      "path": "skills/build-work/GUIDE.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "skill.ingest": {
+      "path": "skills/ingest/SKILL.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.ingest": {
+      "path": "skills/ingest/GUIDE.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "skill.issues": {
+      "path": "skills/issues/SKILL.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.issues": {
+      "path": "skills/issues/GUIDE.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "skill.migrate": {
+      "path": "skills/migrate/SKILL.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.migrate": {
+      "path": "skills/migrate/GUIDE.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "skill.plan-work": {
+      "path": "skills/plan-work/SKILL.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.plan-work": {
+      "path": "skills/plan-work/GUIDE.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "skill.project-context": {
+      "path": "skills/project-context/SKILL.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.project-context": {
+      "path": "skills/project-context/GUIDE.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "skill.review-work": {
+      "path": "skills/review-work/SKILL.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.review-work": {
+      "path": "skills/review-work/GUIDE.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "skill.specify": {
+      "path": "skills/specify/SKILL.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.specify": {
+      "path": "skills/specify/GUIDE.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "skill.stats": {
+      "path": "skills/stats/SKILL.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.stats": {
+      "path": "skills/stats/GUIDE.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "skill.ux-reviewer": {
+      "path": "skills/ux-reviewer/SKILL.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.ux-reviewer": {
+      "path": "skills/ux-reviewer/GUIDE.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "skill.workflow": {
+      "path": "skills/workflow/SKILL.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.workflow": {
+      "path": "skills/workflow/GUIDE.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    }
+  },
+  "stage_reads": {
+    "build-work": [
+      "skill.build-work",
+      "guide.build-work"
+    ],
+    "ingest": [
+      "skill.ingest",
+      "guide.ingest"
+    ],
+    "issues": [
+      "skill.issues",
+      "guide.issues"
+    ],
+    "migrate": [
+      "skill.migrate",
+      "guide.migrate"
+    ],
+    "plan-work": [
+      "skill.plan-work",
+      "guide.plan-work"
+    ],
+    "project-context": [
+      "skill.project-context",
+      "guide.project-context"
+    ],
+    "review-work": [
+      "skill.review-work",
+      "guide.review-work"
+    ],
+    "specify": [
+      "skill.specify",
+      "guide.specify"
+    ],
+    "stats": [
+      "skill.stats",
+      "guide.stats"
+    ],
+    "ux-reviewer": [
+      "skill.ux-reviewer",
+      "guide.ux-reviewer"
+    ],
+    "workflow": [
+      "skill.workflow",
+      "guide.workflow"
+    ],
+    "context": [
+      "skill.project-context",
+      "guide.project-context"
+    ],
+    "specification": [
+      "skill.specify",
+      "guide.specify"
+    ],
+    "planning": [
+      "skill.plan-work",
+      "guide.plan-work"
+    ],
+    "implementation": [
+      "skill.build-work",
+      "guide.build-work"
+    ],
+    "review": [
+      "skill.review-work",
+      "guide.review-work"
+    ],
+    "acceptance": [
+      "skill.workflow",
+      "guide.workflow"
+    ]
+  },
+  "history": [
+    "docs/superpowers/**",
+    "docs/releases/**",
+    "**/*-acceptance.md",
+    "**/*-review.md"
+  ],
+  "budgets": {
+    "entry_bytes": 4096,
+    "aggregate_entry_bytes": 32768,
+    "common_bytes": 4096,
+    "domain_bytes": 12288,
+    "initial_load_bytes": 20000
+  }
+}
