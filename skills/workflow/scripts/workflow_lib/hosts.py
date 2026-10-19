@@ -87,6 +87,7 @@ def apply_host_event(state: dict, kind: str, request: dict) -> dict:
         elif kind == 'model-receipt':
             record = deepcopy(req['receipt'])
             require(isinstance(record,dict) and isinstance(record.get('invocation_id'),str) and record['invocation_id'], 'Invocation ID required.')
+            require('routing' not in record, 'Portable CLI cannot mint routed invocation receipts.')
             require(record.get('observed') is None and record.get('observation_source') is None, 'Portable CLI cannot assert trusted host observations.')
             require(req.get('resolution_policy_revision',len(run.get('model_overrides',[])))==len(run.get('model_overrides',[])), 'Model policy changed before receipt commit; resolve again.', 'STALE_STATE')
             record['scope'] = invocation_scope(binding,run,record.get('stage','implementation'),record)
@@ -295,6 +296,9 @@ def apply_native_event(state,kind,req):
         require(decision.get('status')!='pending-access' or decision.get('mode')=='advisory', 'Pending access cannot satisfy strict dispatch.')
         scope=invocation_scope(binding,run,req['stage'],{})
         require(req.get('expected_scope',scope)==scope, 'Attempt or review scope changed during discovery.', 'STALE_STATE')
+        if 'routing' in decision:
+            from .routing_receipts import validate_routing_evidence
+            validate_routing_evidence(decision['routing'], scope)
         prior=next((r for r in reversed(list(records.values())) if r.get('scope')==scope),None)
         retry_count=0
         if prior and prior.get('status')=='interrupted':
@@ -309,7 +313,10 @@ def apply_native_event(state,kind,req):
         return deepcopy(record)
     record=records.get(identifier,{})
     require(record.get('status')=='running' and all(record.get('scope',{}).get(k)==binding.get(k) for k in ('binding_id','revision','actor_id','role','run_id')), 'Native finish requires this binding running invocation.')
-    result=deepcopy(req.get('result',{}));require(result.get('status') in {'completed','interrupted'}, 'Native result status required.')
+    result=deepcopy(req.get('result',{}))
+    if record['decision'].get('routing') and result.get('status') == 'partial':
+        result.update(status='interrupted', error_kind='unavailable', reason_code='WORKER_PARTIAL')
+    require(result.get('status') in {'completed','interrupted'}, 'Native result status required.')
     receipt={**deepcopy(record['decision']),'invocation_id':identifier,'stage':record['stage'],'scope':deepcopy(record['scope']),'policy_revision':record['policy_revision'],'account_key':record.get('account_key'),
              'observed':result.get('observed'),'observation_source':result.get('observation_source'),
              'invocation_ref':result.get('invocation_ref'),'output_ref':result.get('output_ref'),'usage':result.get('usage')}

@@ -161,3 +161,10 @@ agent settings may override spawn settings. Unknown precedence/support stays
 unknown, and relevant configuration changes invalidate its assessment. Only
 routing-related environment fields are retained; account availability and trusted
 observation remain separate from configuration support.
+
+Routed native receipts add versioned task facts, policy/configuration identities,
+selection reasons, lineage and the exact invocation-scope hash. Requested,
+resolved and observed settings remain separate. Portable receipt imports cannot
+mint routed or trusted observations. Partial worker results are blocked and do
+not change the active attempt; a scoped worker report is navigation, not proof.
+Historical events without routing metadata retain their original interpretation.
