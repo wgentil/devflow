@@ -142,3 +142,13 @@ model identity, tiny no-tool outputs, immutable receipts and exact retry replay.
 Worker smoke is separate from the successful earlier isolated plugin-install
 checks and does not establish current-release install-to-workflow behavior or
 representative model capability. See [validation](cross-host-validation.md).
+
+## Task routing intent
+
+Optional version-1 task facts refine stage recommendations through the shared
+model policy. Bounded discovery can use fast analysis; uncertain, consequential
+or reasoning-sensitive work uses deep reasoning. Missing task objects retain
+stage defaults. Explicit user profiles, effort, pins, allowlists and cost limits
+remain binding. Policy version 3 ships no new validated provider mappings;
+a recommendation is not a dispatch. Task facts carry bounded scope, origin and
+evidence references and never replace approval or verification evidence.

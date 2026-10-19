@@ -1,26 +1,76 @@
 {
-  "schema_version": 2,
-  "version": "2",
+  "schema_version": 3,
+  "version": "3",
   "stages": {
-    "specification": "deep-reasoning", "architecture": "deep-reasoning",
-    "planning": "deep-reasoning", "review": "deep-reasoning",
-    "acceptance": "deep-reasoning", "security": "deep-reasoning",
-    "debugging": "deep-reasoning", "implementation": "efficient-coding",
-    "scan": "fast-analysis", "tests": "deterministic", "indexing": "deterministic",
-    "journal": "deterministic", "calculations": "deterministic",
+    "specification": "deep-reasoning",
+    "architecture": "deep-reasoning",
+    "planning": "deep-reasoning",
+    "review": "deep-reasoning",
+    "acceptance": "deep-reasoning",
+    "security": "deep-reasoning",
+    "debugging": "deep-reasoning",
+    "implementation": "efficient-coding",
+    "scan": "fast-analysis",
+    "tests": "deterministic",
+    "indexing": "deterministic",
+    "journal": "deterministic",
+    "calculations": "deterministic",
     "delivery": "deterministic"
   },
   "profiles": {
-    "deep-reasoning": {"effort": "high"},
-    "efficient-coding": {"effort": "medium"},
-    "fast-analysis": {"effort": "low"}
+    "deep-reasoning": {
+      "effort": "high"
+    },
+    "efficient-coding": {
+      "effort": "medium"
+    },
+    "fast-analysis": {
+      "effort": "low"
+    }
   },
   "validation_thresholds": {
-    "specification": {"min_cases": 1, "min_pass_rate": 1.0},
-    "coding": {"min_cases": 1, "min_pass_rate": 1.0},
-    "debugging": {"min_cases": 1, "min_pass_rate": 1.0},
-    "review": {"min_cases": 1, "min_pass_rate": 1.0}
+    "specification": {
+      "min_cases": 1,
+      "min_pass_rate": 1.0
+    },
+    "coding": {
+      "min_cases": 1,
+      "min_pass_rate": 1.0
+    },
+    "debugging": {
+      "min_cases": 1,
+      "min_pass_rate": 1.0
+    },
+    "review": {
+      "min_cases": 1,
+      "min_pass_rate": 1.0
+    }
   },
-  "hosts": {"codex": {}, "claude": {}},
-  "validation_note": "No provider mapping has completed representative live capability evaluation in this release. Empty mappings disclose advisory recommendations; strict routing pauses. Availability alone is never validation."
+  "hosts": {
+    "codex": {},
+    "claude": {}
+  },
+  "validation_note": "No provider mapping has completed representative live capability evaluation in this release. Empty mappings disclose advisory recommendations; strict routing pauses. Availability alone is never validation.",
+  "task_routing": {
+    "schema_version": 1,
+    "reasoning_kinds": [
+      "requirements",
+      "architecture",
+      "debugging",
+      "review",
+      "security"
+    ],
+    "reasoning_profile": "deep-reasoning",
+    "discovery_kinds": [
+      "discovery",
+      "extraction"
+    ],
+    "discovery_profile": "fast-analysis",
+    "implementation_profile": "efficient-coding",
+    "profile_order": [
+      "fast-analysis",
+      "efficient-coding",
+      "deep-reasoning"
+    ]
+  }
 }

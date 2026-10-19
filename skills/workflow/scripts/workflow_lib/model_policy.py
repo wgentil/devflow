@@ -38,12 +38,19 @@ def _released_mapping_valid(policy, host, entry, discovery):
 
 def resolve_profile(policy: dict, request: dict, capabilities: dict, discovery: dict, prices: dict | None) -> dict:
     req = deepcopy(request)
-    profile = req.get('profile') or policy.get('stages', {}).get(req.get('stage'))
+    routing = None
+    if req.get('task') is not None:
+        from .task_routing import classify_task
+        from .document_units import digest
+        routing = {'routing_schema_version': 1, **classify_task(policy, req['task'], req.get('stage')),
+                   'policy_hash': digest(policy)}
+    profile = req.get('profile') or (routing['profile'] if routing else policy.get('stages', {}).get(req.get('stage')))
     mode = req.get('mode','advisory')
     base = {'status':'block','mode':mode,'profile':profile,'policy_version':policy.get('version'),
             'requested':{'model':req.get('pin'),'effort':req.get('effort')},'resolved':None,
             'observed':None,'observation_source':None,'dispatch':False,'override':req,
             'reason_code':'PROFILE_UNAVAILABLE'}
+    if routing is not None: base['routing'] = routing
     if mode not in {'strict','advisory'}: return base
     if profile == 'deterministic': return {**base,'status':'allow','reason_code':'DETERMINISTIC'}
     definition = policy.get('profiles', {}).get(profile)
