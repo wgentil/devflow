@@ -15,9 +15,11 @@ Missing, remote, unregistered or unsupported references fail explicitly. Sources
 must stay within visible registered paths; private, ignored and symlinked sources
 are rejected. YAML remains a whole-file input with no additional parser.
 
-The initial registry still describes the existing guides. Entry-point and guide
-consolidation is a later task in the approved implementation plan; running the
-size checker before that task can report the pre-existing budget overruns.
+Skill entries route to one common invariant reference and exact domain sections.
+Detailed procedures stay in each skill's `REFERENCE.md`; companion guides retain
+command, input, output and recovery sections. Public paths and referenced anchors
+remain available through short compatibility entries. Generated navigation and
+the size/duplication report come from the registry, never copied normative prose.
 
 ## Content caches
 
@@ -71,9 +73,9 @@ advance gates or transfer ownership.
 ## Portable lifecycle hooks
 
 The shared Python hook runner uses an allowlisted worker at existing helper
-boundaries. Context preparation and retrieval-cache invalidation are integrated;
-validation planning, failure digests and offline regression operations become
-available with their corresponding implementation tasks. No Git hooks or user
+boundaries. Context preparation, retrieval-cache invalidation, validation planning and failure
+digests share the same helper boundaries. Offline regression checks use this
+pipeline without provider calls. No Git hooks or user
 configuration are installed, and hooks never launch model/provider work.
 
 Interactive defaults are a five-second deadline and an 8,192-byte inline result

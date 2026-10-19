@@ -3,9 +3,10 @@
 DevFlow combines agent skills and a Python helper for guided software development,
 verification, independent review and recorded delivery.
 
-Start with the **[setup and usage guide](docs/setup-and-usage.md)**. It covers
-the intended install-and-start experience, initialization, verified work, resume
-and delivery, with current implementation limits clearly identified.
+Start with the **[quick start](docs/quick-start.md)**: install the plugin, open
+a repository and describe your goal. The harness guides setup and next steps;
+you do not need to learn skill names or helper commands. The
+[setup and usage guide](docs/setup-and-usage.md) remains the detailed primary reference.
 
 - [All eleven skill guides](docs/skills.md)
 - [Examples](docs/examples/README.md)

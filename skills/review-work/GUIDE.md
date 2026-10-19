@@ -150,57 +150,12 @@ df pr sync --root "$CONTROL" --run-id greeting-run \
 
 ## Host usage example
 
-Invoke this skill from the same selected DevFlow project/run in either host. An
-attached session uses its binding revision; a handoff preserves the attempt while
-invalidating the old owner. This skill requests `review` for model work.
-Helpers execute deterministically. Scoped native workers support discovery and
-explicit model selection; strict checks require validated suitability and observed
-effective settings. Ordinary unmapped tasks remain unaffected.
-See [setup](../../docs/setup-and-usage.md) and [host examples](../../docs/hosts.md).
-
-For model work, see [native worker usage and examples](../../docs/native-models.md).
-Example: “Use my permitted model for this stage as an advisory choice; show the
-actual observed model and preserve my spending cap.” Selection never promotes a
-new model to a capability-validated default.
-
+Read [canonical guidance](../../docs/hosts.md). Stage routing is declared in this skill.
 
 ## Governing-document evidence
 
-Before new plan, build, review, delivery or host handoff work, the runner checks
-repository specification approval and applicable governing inputs together.
-Relevant organization and project rules are always included unless the project
-manifest records an explicit `irrelevance_decisions` entry with `rule_id` and a
-nonempty `reason`. The receipt stores applicable rule IDs, owning repositories,
-paths, Git revisions, content digests and the effective digest. Documents remain
-in their repositories; the receipt does not copy whole documents into briefs.
-
-New or changed applicable governing files require separate human approval of
-an exact proposal. Specification approval and Git commits cannot grant that
-approval. Present the proposal's before/after hashes and exact diff for human
-conflict review, including edits originally authored by the user; never fabricate
-an approval event. Register the organization checkout before resolving inherited
-rules. Unchanged historical files and unrelated edits do not need approval.
-A handoff checks the prepared effective digest before changing ownership.
-
-
-The accepted input receipt preserves file bytes for exact before-image recovery.
-Proposals compare edits against this accepted baseline even after a Git commit.
-An approval authorizes that exact before/after change; a historical approval for
-the same after image cannot authorize restoration from a different baseline.
-Committing an already accepted edit preserves its approval. A legacy receipt
-without recoverable baseline bytes fails closed if its Git baseline differs.
+Read [canonical guidance](../../docs/reference/governing-inputs.md#governing-document-evidence). Stage routing is declared in this skill.
 
 ## Governing input reassessment
 
-Plan validation records the effective governing digest. An applicable policy
-change after validation leaves a persistent `GOVERNING_REASSESSMENT_REQUIRED`
-blocker, even after exact-diff approval or a repeated preflight. Reassess the
-plan and verification impact, then explicitly validate the plan with a recorded
-assessment. The helper checks that the assessment is nonempty; the agent and
-human remain responsible for its substance and any required plan edits.
-
-Runs retain their original governing digest. A run with an older digest remains
-blocked with `RUN_GOVERNING_INPUTS_STALE` after plan revalidation. Preserve that
-run and its evidence for audit and start a fresh run from the revalidated plan;
-previous verification and review evidence are not carried forward. Discarding an
-old run is a separate, explicit user-directed action, never automatic recovery.
+Read [canonical guidance](../../docs/reference/governing-inputs.md#governing-input-reassessment). Stage routing is declared in this skill.

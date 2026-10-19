@@ -85,15 +85,4 @@ blocked. Continue with normal workflow execution and independent reviews.
 
 ## Host usage example
 
-Invoke this skill from the same selected DevFlow project/run in either host. An
-attached session uses its binding revision; a handoff preserves the attempt while
-invalidating the old owner. This skill requests `planning` for model work.
-Helpers execute deterministically. Scoped native workers support discovery and
-explicit model selection; strict checks require validated suitability and observed
-effective settings. Ordinary unmapped tasks remain unaffected.
-See [setup](../../docs/setup-and-usage.md) and [host examples](../../docs/hosts.md).
-
-For model work, see [native worker usage and examples](../../docs/native-models.md).
-Example: “Use my permitted model for this stage as an advisory choice; show the
-actual observed model and preserve my spending cap.” Selection never promotes a
-new model to a capability-validated default.
+Read [canonical guidance](../../docs/hosts.md). Stage routing is declared in this skill.

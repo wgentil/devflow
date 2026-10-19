@@ -1,6 +1,14 @@
 {
   "schema_version": 1,
   "sources": {
+    "common": {
+      "path": "docs/reference/workflow-invariants.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
     "skill.build-work": {
       "path": "skills/build-work/SKILL.md",
       "selector": {
@@ -21,6 +29,90 @@
       "dependencies": [],
       "classification": "active"
     },
+    "procedure.build-work.1": {
+      "path": "skills/build-work/REFERENCE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "build-work procedures",
+          "Verification and rework"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.build-work.2": {
+      "path": "skills/build-work/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "build-work usage guide",
+          "Unit-test example"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.build-work.3": {
+      "path": "skills/build-work/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "build-work usage guide",
+          "Other item kinds"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.build-work.4": {
+      "path": "skills/build-work/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "build-work usage guide",
+          "Failure and recovery"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.build-work.5": {
+      "path": "skills/build-work/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "build-work usage guide",
+          "Host usage example"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.build-work.6": {
+      "path": "skills/build-work/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "build-work usage guide",
+          "Governing-document evidence"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.build-work.7": {
+      "path": "skills/build-work/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "build-work usage guide",
+          "Governing input reassessment"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
     "skill.ingest": {
       "path": "skills/ingest/SKILL.md",
       "selector": {
@@ -32,7 +124,59 @@
     "guide.ingest": {
       "path": "skills/ingest/GUIDE.md",
       "selector": {
-        "kind": "whole"
+        "kind": "markdown",
+        "heading": [
+          "ingest usage guide",
+          "Purpose and prerequisites"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.ingest.2": {
+      "path": "skills/ingest/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "ingest usage guide",
+          "Durable indexing example"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.ingest.3": {
+      "path": "skills/ingest/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "ingest usage guide",
+          "Outputs and provenance"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.ingest.4": {
+      "path": "skills/ingest/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "ingest usage guide",
+          "Troubleshooting"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.ingest.5": {
+      "path": "skills/ingest/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "ingest usage guide",
+          "Host usage example"
+        ]
       },
       "dependencies": [],
       "classification": "active"
@@ -48,7 +192,71 @@
     "guide.issues": {
       "path": "skills/issues/GUIDE.md",
       "selector": {
-        "kind": "whole"
+        "kind": "markdown",
+        "heading": [
+          "issues usage guide",
+          "Purpose and prerequisites"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.issues.2": {
+      "path": "skills/issues/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "issues usage guide",
+          "Snapshot and grouping example"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.issues.3": {
+      "path": "skills/issues/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "issues usage guide",
+          "Linked build and classification"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.issues.4": {
+      "path": "skills/issues/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "issues usage guide",
+          "Authorized reconciliation example"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.issues.5": {
+      "path": "skills/issues/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "issues usage guide",
+          "Troubleshooting"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.issues.6": {
+      "path": "skills/issues/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "issues usage guide",
+          "Host usage example"
+        ]
       },
       "dependencies": [],
       "classification": "active"
@@ -64,7 +272,71 @@
     "guide.migrate": {
       "path": "skills/migrate/GUIDE.md",
       "selector": {
-        "kind": "whole"
+        "kind": "markdown",
+        "heading": [
+          "migrate usage guide",
+          "Purpose and prerequisites"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.migrate.2": {
+      "path": "skills/migrate/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "migrate usage guide",
+          "Store and bind example"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.migrate.3": {
+      "path": "skills/migrate/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "migrate usage guide",
+          "Executable pilot parity"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.migrate.4": {
+      "path": "skills/migrate/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "migrate usage guide",
+          "Record verified parity"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.migrate.5": {
+      "path": "skills/migrate/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "migrate usage guide",
+          "Delivery and grounding"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.migrate.6": {
+      "path": "skills/migrate/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "migrate usage guide",
+          "Host usage example"
+        ]
       },
       "dependencies": [],
       "classification": "active"
@@ -80,7 +352,71 @@
     "guide.plan-work": {
       "path": "skills/plan-work/GUIDE.md",
       "selector": {
-        "kind": "whole"
+        "kind": "markdown",
+        "heading": [
+          "plan-work usage guide",
+          "Purpose and prerequisites"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.plan-work.2": {
+      "path": "skills/plan-work/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "plan-work usage guide",
+          "Example plan"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.plan-work.3": {
+      "path": "skills/plan-work/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "plan-work usage guide",
+          "Outputs and changes"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.plan-work.4": {
+      "path": "skills/plan-work/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "plan-work usage guide",
+          "Host usage example"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.plan-work.5": {
+      "path": "skills/plan-work/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "plan-work usage guide",
+          "Repository specification preflight"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.plan-work.6": {
+      "path": "skills/plan-work/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "plan-work usage guide",
+          "Governing input reassessment"
+        ]
       },
       "dependencies": [],
       "classification": "active"
@@ -96,7 +432,107 @@
     "guide.project-context": {
       "path": "skills/project-context/GUIDE.md",
       "selector": {
-        "kind": "whole"
+        "kind": "markdown",
+        "heading": [
+          "project-context usage guide",
+          "Purpose and prerequisites"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "procedure.project-context.1": {
+      "path": "skills/project-context/REFERENCE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "project-context procedures",
+          "Governing documents"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "procedure.project-context.2": {
+      "path": "skills/project-context/REFERENCE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "project-context procedures",
+          "Ground interview checkpoint"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.project-context.2": {
+      "path": "skills/project-context/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "project-context usage guide",
+          "Record and resolve example"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.project-context.3": {
+      "path": "skills/project-context/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "project-context usage guide",
+          "Outputs and relocation"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.project-context.4": {
+      "path": "skills/project-context/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "project-context usage guide",
+          "Troubleshooting"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.project-context.5": {
+      "path": "skills/project-context/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "project-context usage guide",
+          "Host usage example"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.project-context.6": {
+      "path": "skills/project-context/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "project-context usage guide",
+          "Git-backed governing documents"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.project-context.7": {
+      "path": "skills/project-context/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "project-context usage guide",
+          "Guided organization and project setup"
+        ]
       },
       "dependencies": [],
       "classification": "active"
@@ -112,7 +548,107 @@
     "guide.review-work": {
       "path": "skills/review-work/GUIDE.md",
       "selector": {
-        "kind": "whole"
+        "kind": "markdown",
+        "heading": [
+          "review-work usage guide",
+          "Purpose and prerequisites"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "procedure.review-work.1": {
+      "path": "skills/review-work/REFERENCE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "review-work procedures",
+          "Independent review gates"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.review-work.2": {
+      "path": "skills/review-work/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "review-work usage guide",
+          "Package and item-review example"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.review-work.3": {
+      "path": "skills/review-work/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "review-work usage guide",
+          "Branch review and acceptance"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.review-work.4": {
+      "path": "skills/review-work/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "review-work usage guide",
+          "Rework and blocked reviews"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.review-work.5": {
+      "path": "skills/review-work/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "review-work usage guide",
+          "GitHub PR full review"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.review-work.6": {
+      "path": "skills/review-work/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "review-work usage guide",
+          "Host usage example"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.review-work.7": {
+      "path": "skills/review-work/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "review-work usage guide",
+          "Governing-document evidence"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.review-work.8": {
+      "path": "skills/review-work/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "review-work usage guide",
+          "Governing input reassessment"
+        ]
       },
       "dependencies": [],
       "classification": "active"
@@ -128,7 +664,71 @@
     "guide.specify": {
       "path": "skills/specify/GUIDE.md",
       "selector": {
-        "kind": "whole"
+        "kind": "markdown",
+        "heading": [
+          "specify usage guide",
+          "Purpose and prerequisites"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "procedure.specify.1": {
+      "path": "skills/specify/REFERENCE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "specify procedures",
+          "Specification refinement"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.specify.2": {
+      "path": "skills/specify/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "specify usage guide",
+          "Validate, refine and approve example"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.specify.3": {
+      "path": "skills/specify/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "specify usage guide",
+          "Provenance examples"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.specify.4": {
+      "path": "skills/specify/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "specify usage guide",
+          "Outputs and revisions"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.specify.5": {
+      "path": "skills/specify/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "specify usage guide",
+          "Host usage example"
+        ]
       },
       "dependencies": [],
       "classification": "active"
@@ -144,7 +744,71 @@
     "guide.stats": {
       "path": "skills/stats/GUIDE.md",
       "selector": {
-        "kind": "whole"
+        "kind": "markdown",
+        "heading": [
+          "stats usage guide",
+          "Purpose and prerequisites"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.stats.2": {
+      "path": "skills/stats/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "stats usage guide",
+          "Usage and illustrative pricing example"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.stats.3": {
+      "path": "skills/stats/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "stats usage guide",
+          "Freeze, roll up and export"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.stats.4": {
+      "path": "skills/stats/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "stats usage guide",
+          "Unavailable costs and backfills"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.stats.5": {
+      "path": "skills/stats/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "stats usage guide",
+          "Opt-in improvement trace"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.stats.6": {
+      "path": "skills/stats/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "stats usage guide",
+          "Host usage example"
+        ]
       },
       "dependencies": [],
       "classification": "active"
@@ -160,7 +824,47 @@
     "guide.ux-reviewer": {
       "path": "skills/ux-reviewer/GUIDE.md",
       "selector": {
-        "kind": "whole"
+        "kind": "markdown",
+        "heading": [
+          "UX reviewer usage guide",
+          "Review flow"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.ux-reviewer.2": {
+      "path": "skills/ux-reviewer/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "UX reviewer usage guide",
+          "Example request"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.ux-reviewer.3": {
+      "path": "skills/ux-reviewer/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "UX reviewer usage guide",
+          "Report shape"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.ux-reviewer.4": {
+      "path": "skills/ux-reviewer/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "UX reviewer usage guide",
+          "DevFlow review integration"
+        ]
       },
       "dependencies": [],
       "classification": "active"
@@ -176,6 +880,314 @@
     "guide.workflow": {
       "path": "skills/workflow/GUIDE.md",
       "selector": {
+        "kind": "markdown",
+        "heading": [
+          "workflow usage guide",
+          "Purpose and prerequisites"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "procedure.workflow.1": {
+      "path": "skills/workflow/REFERENCE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "workflow procedures",
+          "Work orchestration"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "procedure.workflow.2": {
+      "path": "skills/workflow/REFERENCE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "workflow procedures",
+          "Explicit project initialization"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.workflow.2": {
+      "path": "skills/workflow/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "workflow usage guide",
+          "First-use ground interview"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.workflow.3": {
+      "path": "skills/workflow/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "workflow usage guide",
+          "Start, inspect and resume"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.workflow.4": {
+      "path": "skills/workflow/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "workflow usage guide",
+          "Configured hardening example"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.workflow.5": {
+      "path": "skills/workflow/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "workflow usage guide",
+          "Optional bounded repair"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.workflow.6": {
+      "path": "skills/workflow/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "workflow usage guide",
+          "Run-derived improvement cases"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.workflow.7": {
+      "path": "skills/workflow/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "workflow usage guide",
+          "Optional host Goals"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.workflow.8": {
+      "path": "skills/workflow/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "workflow usage guide",
+          "Delivery example"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.workflow.9": {
+      "path": "skills/workflow/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "workflow usage guide",
+          "Outputs and recovery"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.workflow.10": {
+      "path": "skills/workflow/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "workflow usage guide",
+          "Host usage example"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.workflow.11": {
+      "path": "skills/workflow/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "workflow usage guide",
+          "Repository specification preflight"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.workflow.12": {
+      "path": "skills/workflow/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "workflow usage guide",
+          "Governing-document evidence"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.workflow.13": {
+      "path": "skills/workflow/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "workflow usage guide",
+          "Guided organization and project setup"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "guide.workflow.14": {
+      "path": "skills/workflow/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "workflow usage guide",
+          "Governing input reassessment"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "governing-inputs.1": {
+      "path": "docs/reference/governing-inputs.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "Governing inputs",
+          "Governing-document evidence"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "governing-inputs.2": {
+      "path": "docs/reference/governing-inputs.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "Governing inputs",
+          "Governing input reassessment"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "host-lifecycle.1": {
+      "path": "docs/reference/host-lifecycle.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "Host lifecycle details",
+          "Shared host contract"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "procedure.build-work": {
+      "path": "skills/build-work/REFERENCE.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "procedure.ingest": {
+      "path": "skills/ingest/REFERENCE.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "procedure.issues": {
+      "path": "skills/issues/REFERENCE.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "procedure.migrate": {
+      "path": "skills/migrate/REFERENCE.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "procedure.plan-work": {
+      "path": "skills/plan-work/REFERENCE.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "procedure.project-context": {
+      "path": "skills/project-context/REFERENCE.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "procedure.review-work": {
+      "path": "skills/review-work/REFERENCE.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "procedure.specify": {
+      "path": "skills/specify/REFERENCE.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "procedure.stats": {
+      "path": "skills/stats/REFERENCE.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "procedure.ux-reviewer": {
+      "path": "skills/ux-reviewer/REFERENCE.md",
+      "selector": {
+        "kind": "whole"
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "procedure.workflow": {
+      "path": "skills/workflow/REFERENCE.md",
+      "selector": {
         "kind": "whole"
       },
       "dependencies": [],
@@ -185,70 +1197,87 @@
   "stage_reads": {
     "build-work": [
       "skill.build-work",
+      "common",
       "guide.build-work"
     ],
     "ingest": [
       "skill.ingest",
+      "common",
       "guide.ingest"
     ],
     "issues": [
       "skill.issues",
+      "common",
       "guide.issues"
     ],
     "migrate": [
       "skill.migrate",
+      "common",
       "guide.migrate"
     ],
     "plan-work": [
       "skill.plan-work",
+      "common",
       "guide.plan-work"
     ],
     "project-context": [
       "skill.project-context",
+      "common",
       "guide.project-context"
     ],
     "review-work": [
       "skill.review-work",
+      "common",
       "guide.review-work"
     ],
     "specify": [
       "skill.specify",
+      "common",
       "guide.specify"
     ],
     "stats": [
       "skill.stats",
+      "common",
       "guide.stats"
     ],
     "ux-reviewer": [
       "skill.ux-reviewer",
+      "common",
       "guide.ux-reviewer"
     ],
     "workflow": [
       "skill.workflow",
+      "common",
       "guide.workflow"
     ],
     "context": [
       "skill.project-context",
+      "common",
       "guide.project-context"
     ],
     "specification": [
       "skill.specify",
+      "common",
       "guide.specify"
     ],
     "planning": [
       "skill.plan-work",
+      "common",
       "guide.plan-work"
     ],
     "implementation": [
       "skill.build-work",
+      "common",
       "guide.build-work"
     ],
     "review": [
       "skill.review-work",
+      "common",
       "guide.review-work"
     ],
     "acceptance": [
       "skill.workflow",
+      "common",
       "guide.workflow"
     ]
   },
@@ -264,5 +1293,9 @@
     "common_bytes": 4096,
     "domain_bytes": 12288,
     "initial_load_bytes": 20000
-  }
+  },
+  "baseline": {
+    "aggregate_entry_bytes": 65937
+  },
+  "generated_report": "docs/reference/context-size-report.json"
 }

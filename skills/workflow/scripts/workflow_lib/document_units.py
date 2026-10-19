@@ -111,10 +111,16 @@ def _references(value):
 
 
 def select_document_units(sources: dict, selections: list[dict], policy: dict) -> dict:
-    units, hashes, edges, loaded = {}, {}, {}, {}
+    units, hashes, edges, loaded, files = {}, {}, {}, {}, {}
     path_ids = {}
     for sid, source in sources.items():
-        path_ids.setdefault(str(document_path(source)), []).append(sid)
+        # Build the registration map without repeatedly running Git for unused
+        # sections. Selected sources are independently checked before every read.
+        try:
+            target = resolve_repo_path(Path(source['root']), source['path'])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise WorkflowError('CONTEXT_SOURCE_INVALID', 'invalid registered source path') from exc
+        path_ids.setdefault(str(target), []).append(sid)
 
     def visit(sid, selector, reason):
         if sid not in sources:
@@ -128,8 +134,10 @@ def select_document_units(sources: dict, selections: list[dict], policy: dict) -
         path = document_path(sources[sid])
         if sid not in loaded:
             try:
-                raw = path.read_bytes()
-                text = raw.decode('utf-8')
+                if str(path) not in files:
+                    raw = path.read_bytes()
+                    files[str(path)] = (raw, raw.decode('utf-8'))
+                raw, text = files[str(path)]
             except (OSError, UnicodeError) as exc:
                 raise WorkflowError('CONTEXT_REQUIRED_SOURCE_MISSING', f'cannot read required source {sid}') from exc
             hashes[sid] = hashlib.sha256(raw).hexdigest()
@@ -179,4 +187,4 @@ def select_document_units(sources: dict, selections: list[dict], policy: dict) -
         visit(selection['source_id'], selection.get('selector'), selection.get('reason', 'required'))
     return {'units': [units[k] for k in sorted(units)], 'dependencies': dict(sorted(edges.items())),
             'required_ids': sorted({u['source_id'] for u in units.values()}), 'source_hashes': dict(sorted(hashes.items())),
-            'retrieval_calls': len(loaded)}
+            'retrieval_calls': len(files)}

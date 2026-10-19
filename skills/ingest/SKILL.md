@@ -3,34 +3,31 @@ name: ingest
 description: Index selected source files with repository-relative provenance and content-bound cache keys.
 ---
 
-# Source ingestion
+# ingest
 
-Broad discovery excludes declared history by default. Use `--include-history` or
-an explicit historical scope when needed. Required governing/dependency inputs
-override exclusion. `--output-mode refs` exposes content IDs and metadata; load
-complete content with `context-artifact inspect` before relying on source details.
+Index explicitly scoped UTF-8 source files with repository-relative path, content hash, commit and line provenance. Reject path/symlink escapes and keep inferred facts/conflicts explicit. Durable indexing binds registered repo, unchanged source fingerprint and an operation ID.
 
-Use the read-only `ingest` command with an explicit registered repository, scoped paths, and a versioned profile. Index records include content hashes, commit identity, and line ranges. Reject paths or symlinks that escape the repository. Treat digests as source-grounded material; inferred facts and unresolved conflicts must remain explicit.
+Broad discovery omits declared history unless explicitly requested or required. Required governing/dependency paths override exclusion. Compact indexes need explicit artifact inspection before using source details; historical receipts replay unchanged.
 
-For durable cache/index reuse, specify `--root`, a registered `--repo-id`, and an explicit `--operation-id`. Index/cache commits require unchanged repository fingerprints. Recovery replays records without reading sources or rerunning extractors. See `../../docs/journal-integration.md`.
+Read [shared invariants](../../docs/reference/workflow-invariants.md) and the declared stage sections before work. The harness runs helpers and guides the user. For model work use `scan` routing.
+
+```mermaid
+flowchart LR
+    Scope[Current task and declared inputs] --> Checks[Live checks and shared invariants]
+    Checks --> Work[Stage responsibility]
+    Work --> Evidence[Current evidence and next gate]
+```
+
+<!-- devflow:routes:ingest -->
+- `skill.ingest`: `skills/ingest/SKILL.md`
+- `common`: `docs/reference/workflow-invariants.md`
+- `guide.ingest`: `skills/ingest/GUIDE.md` → ingest usage guide / Purpose and prerequisites
+<!-- /devflow:routes -->
 
 ## Documentation
 
-See [usage guide and examples](GUIDE.md) for prerequisites, commands, input shapes,
-outputs and recovery. The [documentation index](../../docs/skills.md) covers shared
-setup and all DevFlow skills.
+Read [procedures](REFERENCE.md) for the matching stage/mode before verification, review or advanced operations. [Guide](GUIDE.md) contains command/input/output and recovery sections; load the section for the operation, not the entire manual. [Quick start](../../docs/quick-start.md) is the user entry point.
 
 ## Shared host contract
 
-When explicitly attached, retain the current binding ID/revision and include them
-in workflow mutations; transferred/stale bindings require refresh. Map actual
-host task IDs explicitly and check completion using the shared host policy.
-For model work here request `scan` stage routing; deterministic helper execution
-uses no separate model. Unknown effective settings remain advisory; strict mode
-blocks. New scoped workers use bundled native discovery and launch; explicit advisory
-pins require user permission for unvalidated suitability. Claude effort remains unobservable. See [host contracts](../../docs/hosts.md) for handoff and model limits.
-
-Before delegated model work, follow the [native invocation guide](../../docs/native-models.md).
-Keep the actual actor/stage and item token or review package. Hooks never launch
-workers. Preserve blocked policy decisions and classify interrupted work before
-any replacement. Deterministic operations do not need a model invocation.
+See [canonical guidance](../../docs/reference/host-lifecycle.md).

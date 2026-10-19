@@ -3,131 +3,43 @@ name: build-work
 description: Record fresh, attempt-bound verification evidence for Devflow work items.
 ---
 
-# Build work
+# build-work
 
-Use explicit project check mappings for focused validation feedback. A focused
-pass never replaces outstanding full checks. Failure digests are bounded
-navigation over original evidence; preserve the verifier verdict on digest failure.
+Implement the current eligible work item and record fresh attempt-bound evidence. For code, prove actual target RED then GREEN with unchanged locked test hashes. IaC needs plan/policy proof and explicit exact-scope apply authorization; agent configuration needs the recorded baseline/post evaluation.
 
-## Verification and rework
+Read the matching verification/rework procedure before running checks. Focused validation plans never replace full required checks. Preserve original failure verdicts and raw evidence when a digest is unavailable. Changes require renewed evidence; a reported result alone does not complete an item.
+
+Read [shared invariants](../../docs/reference/workflow-invariants.md) and the declared stage sections before work. The harness runs helpers and guides the user. For model work use `implementation` routing.
 
 ```mermaid
-flowchart TD
-    Inputs["Check spec and applicable governing inputs"] --> Policy{"Changed governing files?"}
-    Policy -->|Yes| Approve["Separate exact-diff human approval"]
-    Policy -->|No| Attempt
-    Approve --> Reassess["Reassess plan and verification; revalidate"]
-    Reassess --> Fresh["Start fresh run for changed governing digest"]
-    Fresh --> Attempt
-    Attempt["Active item and attempt token"] --> Kind{"Work-item kind"}
-    Kind -->|Code| Red["Record target RED failure with locked test hashes"]
-    Red --> Native["Resolve native implementation model and immutable invocation scope"]
-    Native --> Code["Implement code; record actual worker result"]
-    Code --> Green["Run declared targets for GREEN"]
-    Kind -->|IaC| Plan["Verify plan and policy"]
-    Plan --> Auth["Record explicit apply authorization bound to plan"]
-    Auth --> Apply["Verify apply and policy"]
-    Kind -->|Agent configuration| Baseline["Record baseline evaluation"]
-    Baseline --> Config["Update configuration and run post evaluation"]
-    Green --> Passed{"Fresh kind-matched proof passed?"}
-    Apply --> Passed
-    Config --> Passed
-    Passed -->|No| Fix["Agent diagnoses, fixes and reruns verification"]
-    Fix --> Kind
-    Passed -->|Yes| Result["Submit result and proceed to independent item review"]
-    Result -.-> Gates["Later: configured E2E or red-team hardening commands"]
-    Gates --> GatePass{"All required gates pass on current repository?"}
-    GatePass -->|No; eligible and opted in| Repair["Explicit bounded repair claim and native worker"]
-    Repair --> Rerun["Rerun configured gate and journal remaining failures"]
-    Rerun --> GatePass
-    GatePass -->|No; otherwise| Rework["Agent reworks and renews affected proof and reviews"]
-    Rework --> Attempt
-    GatePass -->|Yes| Delivery["Proceed to delivery checks"]
+flowchart LR
+    Scope[Current task and declared inputs] --> Checks[Live checks and shared invariants]
+    Checks --> Work[Stage responsibility]
+    Work --> Evidence[Current evidence and next gate]
 ```
 
-Unit and E2E suites can be declared code verification targets when they emit a
-supported report. E2E and red-team checks can also be configured hardening gates.
-Failures block the relevant gate. An explicit opted-in `repair next` command can
-dispatch the current implementer for a failed configured hardening gate, rerun it,
-and stop at attempt, time, spend or no-progress limits. Review findings and item
-verification still need agent-led rework and fresh proof. No hook launches repair.
-Test reruns have no enforced correction counter; review correction limits apply
-when reviewers request changes.
-
-Use this skill only for an active run attempt with declared test paths and target test IDs. Run the actual target test command and have it emit either JSON `{ "tests": [{ "id": "...", "outcome": "passed|failed|skipped|error" }] }` or JUnit XML to standard output. A nonzero exit alone never proves RED. GREEN requires all declared targets to pass and the same test files to match the recorded RED hashes.
-
-```sh
-python3 <plugin-root>/skills/workflow/scripts/run.py build verify \
-  --root <control-root> --run-id <run-id> --attempt-id <token> \
-  --phase red --argv-json '["python3", "test_runner.py"]' \
-  --test-path tests/test_feature.py --target-id tests.test_feature.TestFeature.test_case
-```
-
-Repeat with `--phase green` after implementation. The proof binds the run, item, token, registered repository, command, repository fingerprint, test hashes, exit status and captured logs. Unsupported reports, timeouts, stale tokens, changed tests and unrelated failures remain unverified. This helper cannot prevent an agent from running commands outside the recorded attempt.
-
-For IaC, run `build verify-iac-plan` with separate plan and policy argv JSON arrays. A passing policy command must emit JSON containing an empty `violations` list. After plan verification, record explicit scope with `build authorize-apply`, binding the active attempt, repository, exact argv arrays, actor, and plan proof ID; then apply with the returned authorization ID. Authorization is journaled and rejected if the repository changes after planning. For agent-configuration evaluation, record `verify-eval-set --phase baseline`, then run `--phase post --baseline-id ID` with the same case IDs and the configured pass-rate threshold.
-
-If a RED-locked test needs a correction, propose a content-only patch with `build test-change propose`, review its returned patch and hash, then separately approve and apply that exact hash with the approving human's actor ID. An `applying` event is journaled before touching files, so gates stop accepting affected GREEN proofs even if the process is interrupted. Retrying reconciles an already-applied patch. Re-run verification after applying it. Use `build verify --report-format unittest` for verbose Python unittest output; JSON and JUnit are also supported. If an item remains unresolved through the correction limit, stop and record independent adjudication; do not keep cycling changes.
+<!-- devflow:routes:build-work -->
+- `skill.build-work`: `skills/build-work/SKILL.md`
+- `common`: `docs/reference/workflow-invariants.md`
+- `guide.build-work`: `skills/build-work/GUIDE.md` → build-work usage guide / Purpose and prerequisites
+<!-- /devflow:routes -->
 
 ## Documentation
 
-See [usage guide and examples](GUIDE.md) for prerequisites, commands, input shapes,
-outputs and recovery. The [documentation index](../../docs/skills.md) covers shared
-setup and all DevFlow skills.
+Read [procedures](REFERENCE.md) for the matching stage/mode before verification, review or advanced operations. [Guide](GUIDE.md) contains command/input/output and recovery sections; load the section for the operation, not the entire manual. [Quick start](../../docs/quick-start.md) is the user entry point.
+
+## Verification and rework
+
+See [canonical guidance](REFERENCE.md#verification-and-rework).
 
 ## Shared host contract
 
-When explicitly attached, retain the current binding ID/revision and include them
-in workflow mutations; transferred/stale bindings require refresh. Map actual
-host task IDs explicitly and check completion using the shared host policy.
-For model work here request `implementation` stage routing; deterministic helper execution
-uses no separate model. Unknown effective settings remain advisory; strict mode
-blocks. New scoped workers use bundled native discovery and launch; explicit advisory
-pins require user permission for unvalidated suitability. Claude effort remains unobservable. See [host contracts](../../docs/hosts.md) for handoff and model limits.
-
-Before delegated model work, follow the [native invocation guide](../../docs/native-models.md).
-Keep the actual actor/stage and item token or review package. Hooks never launch
-workers. Preserve blocked policy decisions and classify interrupted work before
-any replacement. Deterministic operations do not need a model invocation.
-
+See [canonical guidance](../../docs/reference/host-lifecycle.md).
 
 ## Governing-document evidence
 
-Before new plan, build, review, delivery or host handoff work, the runner checks
-repository specification approval and applicable governing inputs together.
-Relevant organization and project rules are always included unless the project
-manifest records an explicit `irrelevance_decisions` entry with `rule_id` and a
-nonempty `reason`. The receipt stores applicable rule IDs, owning repositories,
-paths, Git revisions, content digests and the effective digest. Documents remain
-in their repositories; the receipt does not copy whole documents into briefs.
-
-New or changed applicable governing files require separate human approval of
-an exact proposal. Specification approval and Git commits cannot grant that
-approval. Present the proposal's before/after hashes and exact diff for human
-conflict review, including edits originally authored by the user; never fabricate
-an approval event. Register the organization checkout before resolving inherited
-rules. Unchanged historical files and unrelated edits do not need approval.
-A handoff checks the prepared effective digest before changing ownership.
-
-
-The accepted input receipt preserves file bytes for exact before-image recovery.
-Proposals compare edits against this accepted baseline even after a Git commit.
-An approval authorizes that exact before/after change; a historical approval for
-the same after image cannot authorize restoration from a different baseline.
-Committing an already accepted edit preserves its approval. A legacy receipt
-without recoverable baseline bytes fails closed if its Git baseline differs.
+See [canonical guidance](../../docs/reference/governing-inputs.md#governing-document-evidence).
 
 ## Governing input reassessment
 
-Plan validation records the effective governing digest. An applicable policy
-change after validation leaves a persistent `GOVERNING_REASSESSMENT_REQUIRED`
-blocker, even after exact-diff approval or a repeated preflight. Reassess the
-plan and verification impact, then explicitly validate the plan with a recorded
-assessment. The helper checks that the assessment is nonempty; the agent and
-human remain responsible for its substance and any required plan edits.
-
-Runs retain their original governing digest. A run with an older digest remains
-blocked with `RUN_GOVERNING_INPUTS_STALE` after plan revalidation. Preserve that
-run and its evidence for audit and start a fresh run from the revalidated plan;
-previous verification and review evidence are not carried forward. Discarding an
-old run is a separate, explicit user-directed action, never automatic recovery.
+See [canonical guidance](../../docs/reference/governing-inputs.md#governing-input-reassessment).

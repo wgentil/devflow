@@ -42,7 +42,8 @@ ineligible. No provider mapping has been released in this package.
 
 ```mermaid
 flowchart TD
-    scope[Attached actor and current item or review scope] --> discover[Existing native login and bounded account discovery]
+    scope[Attached actor and current item or review scope] --> prepare[Live input checks and full task view]
+    prepare --> discover[Existing native login and bounded account discovery]
     discover --> policy[Resolve stage, pin, effort, allowlist and sourced cost estimate]
     cases[Reviewed stage cases] --> eval[Run representative model eval]
     eval --> release[Human-reviewed versioned mapping release]
@@ -50,7 +51,7 @@ flowchart TD
     policy --> blocked{Eligible selected worker?}
     blocked -->|No| pause[Show recommendation or blocker; preserve owner and attempt]
     blocked -->|Yes| start[Lock lease and journal immutable invocation before model work]
-    start --> native[Apply native controls and launch bounded scoped worker]
+    start --> native[Apply native controls; send complete context once]
     native --> result{Completed with matching identity?}
     result -->|Yes| receipt[Journal actual observations, output reference and usage]
     result -->|No| interrupted[Record classified interruption and invalidate discovery]

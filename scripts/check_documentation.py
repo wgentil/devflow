@@ -8,7 +8,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'skills/workflow/scripts'))
-from workflow_lib.documentation import check_documentation, load_documentation_policy, navigation
+from workflow_lib.documentation import check_documentation, load_documentation_policy, navigation, size_report
 
 
 def main():
@@ -25,6 +25,11 @@ def main():
                             lambda m: navigation(policy, m[1]), text, flags=re.S)
             if result != text:
                 path.write_text(result, encoding='utf-8')
+        report = check_documentation(ROOT, check_generated=False)
+        if policy.get('generated_report'):
+            path = ROOT / policy['generated_report']
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(size_report(report, policy), ensure_ascii=False, sort_keys=True, indent=2) + '\n', encoding='utf-8')
     report = check_documentation(ROOT)
     print(json.dumps(report, ensure_ascii=False, sort_keys=True, indent=2))
     return bool(report['problems'])

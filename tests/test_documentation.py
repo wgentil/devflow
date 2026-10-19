@@ -55,3 +55,21 @@ class DocumentationTests(unittest.TestCase):
         self.assertEqual(discover_documentation(self.root)['excluded_ids'], ['old'])
         self.assertIn('old', discover_documentation(self.root, include_history=True)['sources'])
         self.assertIn('old', discover_documentation(self.root, required_ids=['guide'])['sources'])
+
+    def test_checker_rejects_broken_links_routes_and_unicode_overflow(self):
+        self.write()
+        guide = self.root / 'guide.md'
+        guide.write_text('# Guide\n\n[missing](missing.md)\n' + 'é' * 7000)
+        report = check_documentation(self.root)
+        self.assertTrue(any('link' in problem for problem in report['problems']))
+        self.assertTrue(any('exceeds' in problem for problem in report['problems']))
+        guide.write_text('# Guide\n<!-- devflow:routes:build -->\nstale\n<!-- /devflow:routes -->\n')
+        self.assertTrue(any('drifted' in problem for problem in check_documentation(self.root)['problems']))
+
+    def test_shipped_entry_budgets_and_complete_initial_read_routes(self):
+        package = Path(__file__).resolve().parents[1]
+        report = check_documentation(package)
+        self.assertEqual(report['problems'], [])
+        self.assertLessEqual(report['aggregate_entry_bytes'], 32768)
+        self.assertLessEqual(report['aggregate_entry_bytes'], 65937 // 2)
+        self.assertTrue(all(size <= 20000 for size in report['stage_load_bytes'].values()))

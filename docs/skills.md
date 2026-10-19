@@ -1,7 +1,13 @@
 # Skill usage guides
 
-Start with the [complete setup and usage guide](setup-and-usage.md), including
-project initialization and current host limitations.
+Start with the [quick start](quick-start.md); the [setup and usage guide](setup-and-usage.md)
+remains the detailed primary guide. Users can describe their goal; the harness
+chooses skills, runs helpers and guides setup and next steps.
+
+Each skill has a `GUIDE.md` and `REFERENCE.md` next to its small `SKILL.md`.
+The [documentation registry](../definitions/documentation.json) owns exact read
+routes and budgets; [shared invariants](reference/workflow-invariants.md) have one
+canonical home. Load routed sections and conditional procedures as needed.
 
 Each skill has a `GUIDE.md` next to `SKILL.md`. Skill instructions describe the
 agent's responsibilities; guides provide commands, input examples, outputs and
@@ -30,19 +36,8 @@ onboarding. The agent resolves the bundled helper and discovers project paths du
 explicit initialization; reading a skill alone creates no records.
 See the [developer walkthrough](developer-cli.md) for current direct CLI setup.
 
-Use Python 3.11+ on macOS/Linux. The lock implementation is platform-aware,
-but native Windows remains unsupported until its [host validation](windows-validation.md) passes. There is no daemon or
-runtime package dependency. From any shell, set absolute paths:
-
-```sh
-DEVFLOW="/absolute/path/to/devflow"
-CONTROL="/absolute/path/to/control-root"
-APP="/absolute/path/to/application-checkout"
-EXAMPLES="$DEVFLOW/docs/examples"
-df() { python3 "$DEVFLOW/skills/workflow/scripts/run.py" "$@"; }
-df version
-df --help
-```
+The canonical shell setup is in the [optional developer reference](developer-cli.md).
+Do not ask plugin users to define variables/functions or run Python helpers.
 
 The [example input catalog](examples/README.md) lists fixtures and required edits.
 

@@ -3,78 +3,43 @@ name: project-context
 description: Resolve organization and project context, record repository locations, and resolve Git-backed governing documents with rule-ID inheritance and provenance.
 ---
 
-# Project context
+# project-context
 
-Reuse answered or explicitly declined organization slices. Resolve organization defaults, project choices, and user overrides through the shared context helper so precedence and provenance stay consistent. Repository IDs are stable across checkout relocation; register only existing directories.
+Resolve organization defaults, project choices and user overrides with provenance. Register existing repository locations using stable IDs. Reuse answered/declined slices; surface sealed conflicts.
+
+For first use, inspect setup, resolve applicable inherited rules and record the ground interview with evidence/reasons. Material deferrals block new planning/implementation. Policy setup is not policy approval; unavailable/stale organization sources block resolution.
+
+Read [shared invariants](../../docs/reference/workflow-invariants.md) and the declared stage sections before work. The harness runs helpers and guides the user. For model work use `scan` routing.
+
+```mermaid
+flowchart LR
+    Scope[Current task and declared inputs] --> Checks[Live checks and shared invariants]
+    Checks --> Work[Stage responsibility]
+    Work --> Evidence[Current evidence and next gate]
+```
+
+<!-- devflow:routes:project-context -->
+- `skill.project-context`: `skills/project-context/SKILL.md`
+- `common`: `docs/reference/workflow-invariants.md`
+- `guide.project-context`: `skills/project-context/GUIDE.md` → project-context usage guide / Purpose and prerequisites
+<!-- /devflow:routes -->
 
 ## Documentation
 
-See [usage guide and examples](GUIDE.md) for prerequisites, commands, input shapes,
-outputs and recovery. The [documentation index](../../docs/skills.md) covers shared
-setup and all DevFlow skills.
+Read [procedures](REFERENCE.md) for the matching stage/mode before verification, review or advanced operations. [Guide](GUIDE.md) contains command/input/output and recovery sections; load the section for the operation, not the entire manual. [Quick start](../../docs/quick-start.md) is the user entry point.
 
 ## Shared host contract
 
-When explicitly attached, retain the current binding ID/revision and include them
-in workflow mutations; transferred/stale bindings require refresh. Map actual
-host task IDs explicitly and check completion using the shared host policy.
-For model work here request `scan` stage routing; deterministic helper execution
-uses no separate model. Unknown effective settings remain advisory; strict mode
-blocks. New scoped workers use bundled native discovery and launch; explicit advisory
-pins require user permission for unvalidated suitability. Claude effort remains unobservable. See [host contracts](../../docs/hosts.md) for handoff and model limits.
-
-Before delegated model work, follow the [native invocation guide](../../docs/native-models.md).
-Keep the actual actor/stage and item token or review package. Hooks never launch
-workers. Preserve blocked policy decisions and classify interrupted work before
-any replacement. Deterministic operations do not need a model invocation.
+See [canonical guidance](../../docs/reference/host-lifecycle.md).
 
 ## Governing documents
 
-When a project has `docs/devflow-context.json`, explicitly resolve its repository
-and the organization checkout with document mode. Files are authoritative; Windows checkout CRLF is
-normalized when Git tracks LF, while tracked CRLF keeps its existing hash. Do not
-convert terse journal slice answers into documents. Use stable rule IDs for
-project overrides and preserve unrelated organization rules. Stop on sealed rule
-conflicts, unavailable organization sources, or invalid manifest paths. Include
-`design-system` inputs when working on UI. See the guide for schema and limitations.
-
-### First-use document setup
-Inspect the opened Git project (nested working directories are supported). Offer
-project-only by default, an existing organization Git URL, or local organization
-creation at an explicit chosen directory. Use the workflow setup helpers; do not ask
-plugin users to prepare folders or run shell commands. Adopt existing documents at
-approved paths without rewriting them. Local-only organizations carry portability
-limits; unavailable sources block handoff, and setup never approves generated policy.
-
-Organization checkout HEAD must match the source's advertised HEAD. On
-`GOVERNING_SOURCE_STALE`, block policy resolution and select a current clone or
-request explicit recovery authorization; do not reset or switch a user checkout.
-See the companion guide for stale runtime clone recovery.
+See [canonical guidance](REFERENCE.md#governing-documents).
 
 ## Ground interview checkpoint
 
-For a new project, inspect repository files and inherited organization rules
-before asking questions. Use `setup ground-check` to see the required topic
-inventory and current status. Cover product/users, constraints, architecture,
-languages, standards and linting, data/database/API, UI and design system,
-accessibility/localization, security/privacy, integrations, testing,
-performance/reliability, deployment/release, operations and team conventions.
-Ask only unresolved material decisions. Record every topic in the visible
-`docs/devflow-ground-interview.json` using established (with source references),
-answered (with the decision), deferred (with reason and materiality), or
-not-applicable (with reason) status. Recheck with `setup ground-check`; a material
-deferral blocks plan and implementation preflights for new manifests. The helper
-checks completeness and shape, while the agent and user judge relevance, truth
-and materiality. Use organization/project governing documents for durable rules;
-this inventory does not approve or override them. Existing manifests without the
-ground interview declaration are compatible and can adopt it by reviewed change.
+See [canonical guidance](REFERENCE.md#ground-interview-checkpoint).
 
-Application API, data and event contracts use the `application-contracts`
-repository-document category. Preserve existing OpenAPI YAML/JSON and JSON
-Schema paths and bytes; one machine-readable file declares one stable rule ID.
-These rules use the same inheritance, explicit same-category overrides, sealing,
-exact-diff approval and drift gates as other governing documents. JSON receives
-syntax validation; YAML/OpenAPI semantics and JSON Schema conformance are not
-validated by this helper. Setup inspection includes `.yaml` and `.yml` files.
-This category does not add a legacy journal context slice and does not describe
-DevFlow's operational verification or host contracts.
+### First-use document setup
+
+See [governing guidance](../../docs/reference/governing-inputs.md).

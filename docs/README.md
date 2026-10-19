@@ -1,16 +1,16 @@
 # DevFlow documentation
 
-Start with [setup and usage](setup-and-usage.md). It is the primary guide for
-installation, initialization, requirements, verified work, recovery and delivery.
-The current package is v0.3.9 with eleven skills sharing one Codex/Claude helper
-tree. This documentation release corrects current guidance and distinguishes
-historical evidence from current support. It adds no runtime behavior or new
-end-to-end live-host validation.
+Start with the [quick start](quick-start.md) for the minimum guided path.
+[Setup and usage](setup-and-usage.md) remains the primary detailed guide for
+installation, initialization, verified work, recovery and delivery. The harness
+chooses skills and guides the user; skill/helper names are optional reference
+knowledge. Current guides describe source behavior and its explicit limits.
 
 ## Current references
 
 | Reference | Use it for |
 | --- | --- |
+| [Context selection and budgets](context-efficiency.md) | Complete views, checkpoints, hooks, discovery and measured coverage |
 | [Skill guides](skills.md) | All eleven skills, prerequisites and companion guides |
 | [Developer CLI walkthrough](developer-cli.md) | Optional direct-helper setup and worked commands |
 | [Detailed CLI notes](usage.md) | Evidence, delivery and recovery contracts |

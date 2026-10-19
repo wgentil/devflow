@@ -45,18 +45,7 @@ ruling; do not edit committed run state. Continue with the workflow guide.
 
 ## Host usage example
 
-Invoke this skill from the same selected DevFlow project/run in either host. An
-attached session uses its binding revision; a handoff preserves the attempt while
-invalidating the old owner. This skill requests `planning` for model work.
-Helpers execute deterministically. Scoped native workers support discovery and
-explicit model selection; strict checks require validated suitability and observed
-effective settings. Ordinary unmapped tasks remain unaffected.
-See [setup](../../docs/setup-and-usage.md) and [host examples](../../docs/hosts.md).
-
-For model work, see [native worker usage and examples](../../docs/native-models.md).
-Example: “Use my permitted model for this stage as an advisory choice; show the
-actual observed model and preserve my spending cap.” Selection never promotes a
-new model to a capability-validated default.
+Read [canonical guidance](../../docs/hosts.md). Stage routing is declared in this skill.
 
 ## Repository specification preflight
 
@@ -84,15 +73,4 @@ files and `.devflow` are never specification targets.
 
 ## Governing input reassessment
 
-Plan validation records the effective governing digest. An applicable policy
-change after validation leaves a persistent `GOVERNING_REASSESSMENT_REQUIRED`
-blocker, even after exact-diff approval or a repeated preflight. Reassess the
-plan and verification impact, then explicitly validate the plan with a recorded
-assessment. The helper checks that the assessment is nonempty; the agent and
-human remain responsible for its substance and any required plan edits.
-
-Runs retain their original governing digest. A run with an older digest remains
-blocked with `RUN_GOVERNING_INPUTS_STALE` after plan revalidation. Preserve that
-run and its evidence for audit and start a fresh run from the revalidated plan;
-previous verification and review evidence are not carried forward. Discarding an
-old run is a separate, explicit user-directed action, never automatic recovery.
+Read [canonical guidance](../../docs/reference/governing-inputs.md#governing-input-reassessment). Stage routing is declared in this skill.

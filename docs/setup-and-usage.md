@@ -1,5 +1,9 @@
 # DevFlow setup and usage
 
+For the minimum install-and-start path, use the [quick start](quick-start.md).
+This remains the detailed primary reference. The harness guides setup and next
+steps; users should not need to understand skill names or helper commands.
+
 Install/enable DevFlow, open your Git project and invoke workflow. The agent calls
 bundled helpers, discovers the project and initializes or resumes its records.
 No shell variables, CLI function, installation paths or Python commands are user
@@ -52,6 +56,14 @@ are recorded in [hosts](hosts.md) and [validation](cross-host-validation.md).
 The [evidence-loop acceptance review](evidence-loops-acceptance.md) separates
 implemented policy from live host behavior and remaining proof limits.
 Local source-package testing is described in the optional [developer guide](developer-cli.md).
+
+## Context and recovery
+
+Run/host briefs include complete bounded task context. Required missing/oversized
+inputs stop the operation; optional omissions are named. Session start, compaction
+and handoff rebuild full context. Load complete referenced artifacts before model
+work. Focused feedback and failure digests preserve full verification gates. See
+[context behavior and measurement limits](context-efficiency.md).
 
 ## Initialize a project
 
