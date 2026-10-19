@@ -50,3 +50,32 @@ def normalize_worker_outcome(result: dict, expected_scope: dict) -> dict:
     return {'status': status, 'scope': deepcopy(expected_scope), 'completed_scope': completed,
             'evidence_refs': refs, 'unresolved_facts': unresolved, 'unknowns': unknowns,
             'purpose': 'Worker report only; existing verification and review determine proof.'}
+
+
+def worker_task_prompt(prompt: str, facts: dict, scope: dict) -> str:
+    from .document_units import canonical
+    return (prompt + '\nTask facts and required output:\n' + canonical(facts).decode('utf-8')
+            + '\nReturn a JSON worker report with status (completed, partial or blocked), '
+              'scope exactly as supplied below, completed_scope (including the item ID, '
+              'review package or stage completed), evidence_refs and unresolved_facts lists. '
+              'A worker report never replaces independent verification. Expected scope:\n'
+            + canonical(scope).decode('utf-8'))
+
+
+def project_worker_result(result: dict, scope: dict) -> dict:
+    import json
+    value = deepcopy(result)
+    output = value.get('output', '')
+    try:
+        if not isinstance(output, str) or len(output.encode('utf-8')) > 2 * 1024 * 1024:
+            raise ValueError('Worker output unavailable within bounds')
+        report = json.loads(output)
+    except (ValueError, TypeError):
+        report = {}
+    outcome = normalize_worker_outcome(report, scope)
+    if value.get('status') != 'completed': outcome['status'] = 'partial'
+    value['worker_outcome'] = outcome
+    if outcome['status'] != 'completed': value['status'] = 'partial'
+    if not isinstance(output, str) or len(output.encode('utf-8')) > 2 * 1024 * 1024:
+        value['output'] = 'Worker output unavailable within bounds; inspect the host invocation reference.'
+    return value

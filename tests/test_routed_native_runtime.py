@@ -1,4 +1,5 @@
 import copy
+import json
 import os
 from pathlib import Path
 import sys
@@ -9,7 +10,7 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'skills/workflow/scripts'))
 from test_hosts import host_state,attachment
 from test_task_routing import task
-from workflow_lib.hosts import apply_host_event
+from workflow_lib.hosts import apply_host_event,invocation_scope
 from workflow_lib.native_runtime import invoke
 from workflow_lib.store import transact,read_state,WorkflowError
 
@@ -26,9 +27,14 @@ class RoutedNativeRuntimeTests(unittest.TestCase):
         self.backend.discover.side_effect=lambda:copy.deepcopy(self.context)
         self.backend.configure.side_effect=lambda selected,*args:{'observed':copy.deepcopy(selected),'observation_source':'host-effective-configuration'}
         self.backend.invoke.side_effect=lambda selected,*args:{'status':'completed','observed':copy.deepcopy(selected),
-            'observation_source':'host-effective-configuration','invocation_ref':'codex://test','output':'bounded result'}
+            'observation_source':'host-effective-configuration','invocation_ref':'codex://test','output':self.completed_output()}
         self.request={'binding_id':'b1','revision':1,'invocation_id':'routed','stage':'implementation',
             'prompt':'Perform scoped work','task':task(actor_id='a1',uncertainty='material')}
+    def completed_output(self):
+        state=read_state(self.root)['data'];binding=state['host_bindings']['b1']
+        scope=invocation_scope(binding,state['runs']['run'],'implementation',{})
+        return json.dumps({'status':'completed','scope':scope,'completed_scope':['W1'],
+                           'evidence_refs':['fixture:run:W1:t'],'unresolved_facts':[]})
     def call(self,request=None):
         with patch('workflow_lib.native_runtime.CodexBackend',return_value=self.backend):
             return invoke(self.root,request or self.request,'routed-op')
@@ -69,7 +75,7 @@ class RoutedNativeRuntimeTests(unittest.TestCase):
         self.context['discovery']['host_version']='2.1.299'
         self.backend.invoke.side_effect=lambda selected,*args:{'status':'completed',
             'observed':{'provider':'anthropic','model':'candidate','effort':None},
-            'observation_source':'host-invocation-metadata','output':'bounded result'}
+            'observation_source':'host-invocation-metadata','output':self.completed_output()}
         with patch('workflow_lib.native_runtime.ClaudeBackend',return_value=self.backend),patch.dict('os.environ',{key:value for key,value in os.environ.items() if key not in {'CLAUDE_CODE_EFFORT_LEVEL','CLAUDE_CODE_SUBAGENT_MODEL','CLAUDE_CODE_SUBAGENT_MODEL_FORCE'}},clear=True):
             result=invoke(self.root,self.request,'claude-task')
         self.assertEqual(result['status'],'allow')
@@ -85,7 +91,7 @@ class RoutedNativeRuntimeTests(unittest.TestCase):
         first=self.call(original)
         self.assertEqual(first['status'],'block')
         self.backend.invoke.side_effect=lambda selected,*args:{'status':'completed','observed':copy.deepcopy(selected),
-            'observation_source':'host-effective-configuration','output':'bounded result'}
+            'observation_source':'host-effective-configuration','output':self.completed_output()}
         metadata=first['routing']
         authorization={'approved':True,'actor_id':'human','lineage_id':metadata['lineage_id'],
             'task_hash':metadata['task_hash'],'policy_hash':metadata['policy_hash'],

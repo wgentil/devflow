@@ -192,6 +192,9 @@ def invoke(root,request,operation_id):
                 'binding_id': binding['binding_id'], 'session_id': binding['session_id'], 'revision': binding['revision'],
                 'stage': stage, 'role': binding['role'], 'task_ids': [item['id'] for item in full_view['work_items']]},
                 recovery_reason='new-native-worker')
+            if task_facts is not None:
+                from .routing_receipts import worker_task_prompt
+                prompt = worker_task_prompt(prompt,task_facts,invocation_scope(binding,run,stage,{}))
             native_input = invocation_context(binding, stage, full_view, prompt, context_limit)
             backend=(CodexBackend if binding['host']=='codex' else ClaudeBackend)(binding['project_dir'])
             context=discover(root,binding,request.get('refresh',False) or task_facts is not None,backend)
@@ -240,6 +243,17 @@ def invoke(root,request,operation_id):
                         predecessor_invocation_id=request['predecessor_invocation_id'],
                         escalation_authorization=request.get('escalation_authorization'),escalation_evidence=request.get('escalation_evidence'))
                 decision={**decision,'routing':routing}
+            if task_facts is not None:
+                from .interactive_routing import measure_delegation_payload
+                from .host_models import delegated_configuration
+                rendered=delegated_configuration({**decision,'status':'allow'},binding['host'],binding['actor_id'])
+                measured=measure_delegation_payload({'configuration_text':native_input['configuration_text'],'launch':rendered},
+                    native_input['prompt'],request.get('preloaded_units',[]))
+                if request.get('preloaded_units'):
+                    raise WorkflowError('CONTEXT_PRELOAD_REJECTED','Full task view already owns required skill content.')
+                if measured['known_payload_bytes']>context_limit:
+                    raise WorkflowError('CONTEXT_BUDGET_EXCEEDED','Known native payload exceeds budget; rescope task.',{'known_payload':measured})
+                decision['routing']['known_payload']=measured
             prompt = native_input['prompt']
             start={'binding_id':binding['binding_id'],'revision':binding['revision'],'invocation_id':identifier,'stage':stage,'decision':decision,'request_hash':request_hash,'operation_id':operation_id,'policy_revision':len(run.get('model_overrides',[])),'expected_scope':invocation_scope(binding,run,stage,{}),'launcher_pid':os.getpid(),'account_key':context['account_key'],'replacement_of':request.get('replacement_of'),'replacement_authorization':request.get('replacement_authorization')}
             if task_facts is not None and request.get('predecessor_invocation_id'):
@@ -265,6 +279,9 @@ def invoke(root,request,operation_id):
                 if any(observed.get(k)!=resolved.get(k) for k in ('model','effort','provider')):
                     result={**configuration,'status':'interrupted','error_kind':'unavailable','reason_code':'MODEL_SUBSTITUTED'}
             if result is None:result=backend.invoke(decision['resolved'],prompt,binding['actor_id'],access,request.get('timeout_seconds',300))
+            if task_facts is not None and result.get('status') == 'completed':
+                from .routing_receipts import project_worker_result
+                result=project_worker_result(result,invocation_scope(binding,run,stage,{}))
             from .context_metrics import record_context_view, explicit_runtime_usage
             record_context_view(root, full_view, operation_id=operation_id + ':native-context', operation='native.input',
                 invocation_id=identifier, consumer_id=binding['session_id'],

@@ -326,6 +326,8 @@ def apply_native_event(state,kind,req):
     receipt={**deepcopy(record['decision']),'invocation_id':identifier,'stage':record['stage'],'scope':deepcopy(record['scope']),'policy_revision':record['policy_revision'],'account_key':record.get('account_key'),
              'observed':result.get('observed'),'observation_source':result.get('observation_source'),
              'invocation_ref':result.get('invocation_ref'),'output_ref':result.get('output_ref'),'usage':result.get('usage')}
+    if result.get('worker_outcome') is not None:
+        receipt['worker_outcome'] = deepcopy(result['worker_outcome'])
     if result['status']=='completed':
         from .model_policy import check_model_receipt
         receipt['status']='allow'

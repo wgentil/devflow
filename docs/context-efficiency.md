@@ -136,3 +136,18 @@ selector/cache reads, durations, cache outcomes, full/delta counts and required-
 coverage. It stores no document bodies. Repeated operation IDs count once.
 Collection failure or a busy/bounded telemetry scan leaves an explicit gap without
 changing the operation. See [measurement limits](usage.md#context-measurements).
+
+## Routed worker context and reports
+
+Routed workers receive task facts and the required output alongside the existing
+complete task view. Known configuration, agent description and turn JSON/text
+bytes count toward the same default 20,000-byte budget. Required skill bodies
+already belong to that view, so additional caller preloads are rejected; optional
+skills are not preloaded automatically. Host-internal instructions remain unknown.
+
+Workers return a scoped JSON report with status, the supplied scope,
+`completed_scope`, `evidence_refs` and `unresolved_facts`. Unstructured, mismatched,
+incomplete or limited output stays partial/blocked even if it is shorter. Reports
+are navigation only: existing fresh verification and independent review still
+own completion. New workers receive full context; resumed/retried decisions retain
+live checks and the durable task escalation allowance.

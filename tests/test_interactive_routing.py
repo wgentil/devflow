@@ -8,6 +8,11 @@ import test_routed_native_runtime as native_fixtures
 from workflow_lib.store import read_state,WorkflowError
 
 
+def completed_output(scope):
+    return json.dumps({'status':'completed','scope':scope,'completed_scope':['W1'],
+                       'evidence_refs':['fixture:run:W1:t'],'unresolved_facts':[]})
+
+
 class Bridge:
     def __init__(self, context):
         self.context=copy.deepcopy(context);self.spawns=[]
@@ -17,7 +22,7 @@ class Bridge:
     def collect(self,handle):
         return {'status':'completed','observed':{'provider':'openai','model':'candidate','effort':'high'},
             'observation_source':'host-invocation-metadata','invocation_ref':'codex://interactive-test',
-            'output':'bounded worker output'}
+            'output':completed_output(self.spawns[-1]['scope'])}
 
 
 class InteractiveRoutingTests(unittest.TestCase):
@@ -91,7 +96,7 @@ class InteractiveRoutingTests(unittest.TestCase):
         self.assertFalse(bridge.spawns)
         bridge.context['controls']['host_version']='2.1.299'
         bridge.collect=lambda handle:{'status':'completed','observed':{'provider':'anthropic','model':'candidate','effort':None},
-            'observation_source':'host-invocation-metadata','output':'bounded worker output'}
+            'observation_source':'host-invocation-metadata','output':completed_output(bridge.spawns[-1]['scope'])}
         result=dispatch_delegation(self.root,self.request,'claude',bridge)
         self.assertEqual(result['status'],'allow');self.assertIsNone(result['observed']['effort'])
 
@@ -127,7 +132,7 @@ class InteractiveRoutingTests(unittest.TestCase):
             'configuration_hash':metadata['configuration_hash'],'host':'codex','stage':'implementation',
             'max_escalations':1,'eligible_routes':[{'model':'candidate','effort':'high'}]}
         bridge.collect=lambda handle:{'status':'completed','observed':{'provider':'openai','model':'candidate','effort':'high'},
-            'observation_source':'host-invocation-metadata','output':'completed'}
+            'observation_source':'host-invocation-metadata','output':completed_output(bridge.spawns[-1]['scope'])}
         request={**request,'invocation_id':'escalated','predecessor_invocation_id':'routed',
             'escalation_authorization':authorization,'escalation_evidence':{'kind':'reasoning',
                 'reason':'Unresolved diagnosis','evidence_refs':['verification:failed']}}

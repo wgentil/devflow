@@ -14,7 +14,7 @@ from .hosts import validate_binding, invocation_scope
 from .host_completion import host_brief
 from .model_policy import resolve_profile
 from .native_runtime import policy, preferences, prices, invocation_context, _native_lease, _commit
-from .routing_receipts import routing_lineage_id
+from .routing_receipts import routing_lineage_id, worker_task_prompt, project_worker_result
 from .releases import check_release, release_descriptor
 from .store import WorkflowError, read_state
 from .task_routing import normalize_task_facts
@@ -42,7 +42,7 @@ def prepare_delegation(root: Path, request: dict, host_context: dict | None = No
     if path not in {'interactive-nonfork', 'interactive-fork'}:
         raise WorkflowError('INTERACTIVE_PATH_INVALID', 'Interactive execution path required.')
     full_view = host_brief(data, binding, control_root=root, max_bytes=request.get('context_max_bytes', 20000), stage_override=stage)
-    worker_input = invocation_context(binding, stage, full_view, prompt, request.get('context_max_bytes', 20000))
+    worker_input = invocation_context(binding, stage, full_view, worker_task_prompt(prompt, facts, scope), request.get('context_max_bytes', 20000))
     context = deepcopy(host_context or {})
     pref = preferences(data, binding, stage)
     decision = resolve_profile(policy(), {**pref, 'task': facts}, context.get('capabilities', {}),
@@ -82,7 +82,14 @@ def prepare_delegation(root: Path, request: dict, host_context: dict | None = No
     launch = delegated_configuration(decision, binding['host'], binding['actor_id']) if ready else None
     if launch:
         launch.update(access=access, allow_delegation=False)
-    return {'status': 'not-dispatched', 'dispatch': False, 'reason_code': 'READY' if ready else 'INTERACTIVE_CONTROLS_UNAVAILABLE',
+    known_payload = measure_delegation_payload({'configuration_text':worker_input['configuration_text'],'launch':launch},
+        worker_input['prompt'], request.get('preloaded_units', []))
+    if request.get('preloaded_units'):
+        raise WorkflowError('CONTEXT_PRELOAD_REJECTED', 'The full task view already owns required skills; additional preloads are unavailable.')
+    if known_payload['known_payload_bytes'] > request.get('context_max_bytes',20000):
+        raise WorkflowError('CONTEXT_BUDGET_EXCEEDED', 'Known delegation payload exceeds its budget; rescope the task.',
+            {'known_payload':known_payload,'artifact_id':full_view.get('task_view',{}).get('artifact_id')})
+    return {'status': 'not-dispatched', 'dispatch': False, 'known_payload':known_payload, 'reason_code': 'READY' if ready else 'INTERACTIVE_CONTROLS_UNAVAILABLE',
             'binding_id': binding['binding_id'], 'revision': binding['revision'], 'invocation_id': identifier,
             'scope': scope, 'policy_revision': len(run.get('model_overrides', [])), 'decision': decision,
             'worker_input': worker_input, 'launch': launch, 'access': access,
@@ -138,9 +145,37 @@ def dispatch_delegation(root: Path, request: dict, operation_id: str, bridge=Non
             # A failed collect does not prove that a remote worker stopped.
             return {'status': 'block', 'dispatch': True, 'reason_code': 'INTERACTIVE_RECONCILE_REQUIRED',
                     'invocation_id': identifier, 'message': 'Confirm the worker stopped before reconciling or launching a replacement.'}
-        result = deepcopy(result)
+        result = project_worker_result(result,fresh['scope'])
+        from .context_metrics import record_context_measurement, explicit_runtime_usage
+        record_context_measurement(root, {'operation_id':operation_id+':interactive-input', 'operation':'interactive.input',
+            'run_id':binding['run_id'],'invocation_id':identifier,'stage':request['stage'],
+            'configuration_bytes':fresh['known_payload']['configuration_bytes'],'turn_bytes':fresh['known_payload']['turn_bytes'],
+            'runtime_usage':explicit_runtime_usage(result.get('usage')),'helper_calls':1,'context_mode':'full'})
         result['output_ref'] = _blob(root, result.pop('output', ''))
         if result.get('observation_source') not in {'host-effective-configuration', 'host-invocation-metadata'}:
             result.update(observed=None, observation_source=None)
         return _commit(root, operation_id + ':native-finish', 'native-finish',
             {'binding_id': binding['binding_id'], 'revision': binding['revision'], 'invocation_id': identifier, 'result': result}, binding)
+
+
+def measure_delegation_payload(configuration: dict, prompt: str, preloaded_units: list[dict]) -> dict:
+    """Exact known bytes; host-internal instructions and history remain unknown."""
+    from .document_units import canonical
+    configuration_bytes, turn_bytes = len(canonical(configuration)), len(prompt.encode('utf-8'))
+    if not isinstance(preloaded_units, list): raise WorkflowError('CONTEXT_PRELOAD_INVALID', 'Preloads must be a list.')
+    encoded = canonical(configuration).decode('utf-8') + prompt
+    seen, duplicates = set(), 0
+    for unit in preloaded_units:
+        if not isinstance(unit, dict) or not isinstance(unit.get('content'), str):
+            raise WorkflowError('CONTEXT_PRELOAD_INVALID', 'Known preload content and hash required.')
+        content_hash = hashlib.sha256(unit['content'].encode('utf-8')).hexdigest()
+        if content_hash != unit.get('content_hash'):
+            raise WorkflowError('CONTEXT_PRELOAD_INVALID', 'Preload content hash mismatch.')
+        if content_hash in seen or content_hash in encoded or unit['content'] and unit['content'] in encoded:
+            duplicates += len(unit['content'].encode('utf-8'))
+        seen.add(content_hash)
+    preload_bytes = len(canonical(preloaded_units)) if preloaded_units else 0
+    return {'configuration_bytes': configuration_bytes, 'turn_bytes': turn_bytes, 'preload_bytes': preload_bytes,
+            'known_payload_bytes': configuration_bytes + turn_bytes + preload_bytes,
+            'duplicate_content_bytes': duplicates,
+            'coverage': 'Known configuration, turn and explicit preload bytes only; hidden host context/history unknown.'}
