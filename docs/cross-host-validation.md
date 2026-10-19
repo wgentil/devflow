@@ -6,7 +6,7 @@ no regular user installation was changed by this validation.
 
 ## Current evidence limits
 
-The current package is v0.3.8 with eleven skills. Successful isolated native Codex
+The current package is v0.3.9 with eleven skills. Successful isolated native Codex
 and Claude installs are recorded below for earlier releases, including v0.3.1;
 they supersede the initial failed Codex discovery probe as installation evidence.
 They do not establish a current-release installed workflow or repair run. Native
@@ -14,6 +14,16 @@ worker smoke, hook-script tests and end-to-end host execution are distinct check
 Windows/WSL2 support remains unreleased; see the
 [platform matrix](windows-validation.md). Historical counts and review findings
 below retain their original scope.
+
+## v0.3.9 package checks (2026-10-19)
+
+Claude marketplace validation passed with the existing warning that root
+`CLAUDE.md` is not installed project context. An isolated local marketplace
+installation enabled v0.3.9, discovered all eleven skills, and passed all seven
+hook behavior tests against the installed copy. Configuration and installed files
+were confined to a temporary directory; the regular user installation was not
+changed. These checks validate package layout and hook-script behavior, not live
+host event dispatch, an authenticated workflow/repair run, or Windows support.
 
 ## Recorded installation checks
 

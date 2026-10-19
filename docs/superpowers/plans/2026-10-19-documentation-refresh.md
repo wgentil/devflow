@@ -98,3 +98,31 @@ R6: MET — Primary guide reviewed/updated, skill companions and diagrams review
 
 Delivery decision remains with the user. No merge, push or PR publication is part
 of the documentation edits already authorized.
+
+
+## Authorized release delivery
+
+After reviewing the completed documentation branch, the user instructed:
+“merge, push and create release.” This authorizes merging to `main`, pushing
+that branch and a new patch tag, and publishing GitHub release v0.3.9. The
+release adds aligned package versions, the version assertion and release notes;
+it supersedes the audit-only restriction against changing the release version.
+The user’s existing `AGENTS.md` edit remains uncommitted and unpublished.
+
+Before publication, verify the package versions and current release references,
+run the full suite and Claude marketplace validation, and smoke-test installation
+in an isolated Claude configuration. Tag from the clean release worktree. After
+push, check GitHub installation and inspect the published release and remote tag.
+Live authenticated workflow/repair sessions and Windows acceptance remain outside
+this release validation.
+
+### Release preparation verification
+
+The v0.3.9 version assertion was observed failing against v0.3.8 metadata, then
+passed after all three manifests were advanced together. The full release suite
+passed 471 tests with one Windows-only skip. Claude marketplace validation and
+an isolated local install passed; the installed copy exposed eleven skills and
+passed all seven hook behavior tests. The release audit checked 85 Markdown files,
+473 local links/anchors, 44 JSON examples, eleven skill/guide pairs and 134
+documented command lines without errors. A fresh release-diff review found no
+material issues. Source runtime behavior and journal schema remain unchanged.

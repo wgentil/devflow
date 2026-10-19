@@ -13,7 +13,7 @@ but live Windows hook dispatch and worker validation remain incomplete. See the
 
 Codex and Claude have separate installations of the same shared package. Users
 choose when to upgrade. Both manifests and one skills/helper tree are included;
-the package version is `0.3.8`;
+the package version is `0.3.9`;
 the Claude marketplace descriptor is packaged at `.claude-plugin/marketplace.json`.
 The private GitHub repository `wgentil/devflow` serves the marketplace from
 `main`. Codex users with access to that repository can install it:
@@ -45,6 +45,8 @@ Isolated Claude and Codex GitHub marketplace installs of 0.3.1 succeeded. These
 checks validate those earlier packages; they do not establish current-release
 end-to-end workflow, repair, or cross-OS behavior. The current package contains
 eleven skills, including the standalone UX reviewer.
+An isolated local Claude v0.3.9 installation and its hook-script behavior checks
+also passed; these checks do not establish live installed-session event dispatch.
 Host-specific verification and remaining limitations
 are recorded in [hosts](hosts.md) and [validation](cross-host-validation.md).
 The [evidence-loop acceptance review](evidence-loops-acceptance.md) separates

@@ -9,7 +9,7 @@ remain at the repository root for both Claude and Codex.
 The marketplace is available from the private GitHub repository
 `wgentil/devflow` on `main`. An isolated Claude installation from GitHub
 verified the earlier 0.2.0 package, all ten skills and all four hooks. The
-package version is `0.3.8` with eleven skills; see [release notes](releases/v0.3.8.md).
+package version is `0.3.9` with eleven skills; see [release notes](releases/v0.3.9.md).
 The ten-skill inventories above describe the earlier tested releases. An isolated GitHub install
 of 0.3.0 succeeded for both Claude and Codex. Access requires Git
 credentials for the private repository.

@@ -2,9 +2,10 @@
 
 Start with [setup and usage](setup-and-usage.md). It is the primary guide for
 installation, initialization, requirements, verified work, recovery and delivery.
-The current package is v0.3.8 with eleven skills sharing one Codex/Claude helper
-tree. Documentation corrections in this checkout do not constitute a new release
-or new live-host validation.
+The current package is v0.3.9 with eleven skills sharing one Codex/Claude helper
+tree. This documentation release corrects current guidance and distinguishes
+historical evidence from current support. It adds no runtime behavior or new
+end-to-end live-host validation.
 
 ## Current references
 

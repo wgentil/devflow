@@ -48,3 +48,20 @@ all eleven skill metadata/guide pairs, documented helper commands against the
 actual parser, greeting RED/GREEN behavior and the full unittest suite. Review
 the diff for unsupported claims and references to removed files. No live account,
 installation, provider, merge or publication actions are part of this change.
+
+
+## Authorized release delivery
+
+After reviewing the completed documentation branch, the user instructed:
+“merge, push and create release.” This authorizes merging to `main`, pushing
+that branch and a new patch tag, and publishing GitHub release v0.3.9. The
+release adds aligned package versions, the version assertion and release notes;
+it supersedes the audit-only restriction against changing the release version.
+The user’s existing `AGENTS.md` edit remains uncommitted and unpublished.
+
+Before publication, verify the package versions and current release references,
+run the full suite and Claude marketplace validation, and smoke-test installation
+in an isolated Claude configuration. Tag from the clean release worktree. After
+push, check GitHub installation and inspect the published release and remote tag.
+Live authenticated workflow/repair sessions and Windows acceptance remain outside
+this release validation.
