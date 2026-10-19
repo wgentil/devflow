@@ -96,3 +96,5 @@ project path declared in those manifests. The project replaces only `EVENT`;
 `API` remains inherited. The coding and token examples still need their referenced
 files authored, and the organization URL must be replaced. Contract formats and
 existing repository paths may be retained. These fixtures are not approval evidence.
+
+[delegation-request.json](delegation-request.json) illustrates prepared task facts; replace identities and add `item_id` for item-bound work. [routing-evaluation-report.json](routing-evaluation-report.json) is synthetic offline output, not measured savings.

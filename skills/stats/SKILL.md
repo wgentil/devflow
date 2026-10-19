@@ -15,13 +15,16 @@ Read [shared invariants](../../docs/reference/workflow-invariants.md) and the de
 flowchart LR
     Scope[Current task and declared inputs] --> Checks[Live checks and shared invariants]
     Checks --> Work[Stage responsibility]
-    Work --> Evidence[Current evidence and next gate]
+    Work --> Result{Worker outcome}
+    Result -->|Complete scoped report| Evidence[Current evidence and next gate]
+    Result -->|Partial or blocked| Recover[Resolve missing facts or controls]
 ```
 
 <!-- devflow:routes:stats -->
 - `skill.stats`: `skills/stats/SKILL.md`
 - `common`: `docs/reference/workflow-invariants.md`
 - `guide.stats`: `skills/stats/GUIDE.md` → stats usage guide / Purpose and prerequisites
+- `routing.outcomes`: `docs/reference/task-routing.md` → Task routing / Outcomes and evaluation
 <!-- /devflow:routes -->
 
 ## Documentation

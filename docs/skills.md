@@ -98,3 +98,5 @@ The [primary setup guide](setup-and-usage.md#governing-document-approval-during-
 shows the separate specification and governing-document approvals; the
 [example catalog](examples/README.md) includes project-only and organization
 attachment choices.
+
+Task model/effort guidance lives in the bounded [task routing reference](reference/task-routing.md); initial stage reads select its relevant section.

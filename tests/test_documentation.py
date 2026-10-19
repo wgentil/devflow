@@ -73,3 +73,14 @@ class DocumentationTests(unittest.TestCase):
         self.assertLessEqual(report['aggregate_entry_bytes'], 32768)
         self.assertLessEqual(report['aggregate_entry_bytes'], 65937 // 2)
         self.assertTrue(all(size <= 20000 for size in report['stage_load_bytes'].values()))
+
+    def test_routing_sections_are_mandatory_and_independently_loadable(self):
+        package = Path(__file__).resolve().parents[1]
+        policy = load_documentation_policy(package)
+        for stage in ('workflow', 'implementation', 'planning', 'specification', 'review', 'acceptance', 'ingest'):
+            self.assertIn('routing.task-decisions', policy['stage_reads'][stage])
+        self.assertIn('routing.outcomes', policy['stage_reads']['stats'])
+        for sid in ('routing.task-decisions', 'routing.host-controls', 'routing.escalation', 'routing.outcomes'):
+            self.assertEqual(policy['sources'][sid]['selector']['kind'], 'markdown')
+            self.assertIn(sid, discover_documentation(package, required_ids=[sid])['sources'])
+        self.assertEqual(check_documentation(package)['problems'], [])

@@ -542,3 +542,5 @@ their formats and paths, with one declared rule ID per machine-readable file.
 Inheritance, explicit overrides, sealing and exact-diff approvals apply normally.
 JSON syntax is checked; contract semantic/schema validation uses the project's
 own tools. These documents are distinct from DevFlow host/verification contracts.
+
+The harness supplies task facts and guides model/effort decisions within your constraints. You do not need to learn skill names or control syntax. Unsupported controls or missing observations are reported as unresolved; see [routing limits](reference/task-routing.md#host-controls).

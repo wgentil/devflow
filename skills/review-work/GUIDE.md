@@ -9,6 +9,8 @@ Commands below use its `df` function and path variables.
 
 ## Purpose and prerequisites
 
+For delegated model work, the harness supplies [task facts](../../docs/reference/task-routing.md#task-decisions). Load controls/recovery sections only when needed; prepared interactive requests do not start workers.
+
 Prepare review packages and record reports from genuinely separate invocations.
 The implementer and each reviewer role need distinct actors. Capture exact base
 and current head for each reviewed repository; include all relevant repositories.

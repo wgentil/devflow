@@ -11,6 +11,8 @@ Commands below use its `df` function and path variables.
 
 ## Purpose and prerequisites
 
+Routing statistics are deterministic; see [outcomes and coverage](../../docs/reference/task-routing.md#outcomes-and-evaluation).
+
 Import normalized, explicitly accessible runtime usage and freeze journal-derived
 outcomes. Registered run IDs are needed for attribution. Cost denominators use
 accepted requirements from delivered runs with an actual delivery timestamp.

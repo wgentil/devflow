@@ -227,3 +227,5 @@ Record plan and verification impact through explicit plan revalidation; a run
 whose original governing digest differs still blocks handoff preparation and
 acceptance. Retain it for audit and attach a fresh run from the revalidated plan.
 The source host stays active when a handoff is rejected.
+
+For delegated workers, use [task facts and host controls](reference/task-routing.md). Prepared interactive input is not execution; no production interactive bridge ships.

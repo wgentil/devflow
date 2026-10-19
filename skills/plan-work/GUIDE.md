@@ -5,6 +5,8 @@ Commands below use its `df` function and path variables.
 
 ## Purpose and prerequisites
 
+For delegated model work, the harness supplies [task facts](../../docs/reference/task-routing.md#task-decisions). Load controls/recovery sections only when needed; prepared interactive requests do not start workers.
+
 Decompose the currently approved specification into fully covered work items.
 Declare repository IDs, dependencies and kind-specific criteria. `plan validate`
 also stores the valid plan under the control root.

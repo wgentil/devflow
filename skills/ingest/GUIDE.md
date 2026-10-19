@@ -5,6 +5,8 @@ Commands below use its `df` function and path variables.
 
 ## Purpose and prerequisites
 
+For delegated model work, the harness supplies [task facts](../../docs/reference/task-routing.md#task-decisions). Load controls/recovery sections only when needed; prepared interactive requests do not start workers.
+
 Routine broad indexing excludes declared historical paths and reports exclusions.
 `--include-history` or an explicit historical path opts in; required governing
 inputs and `--required-path` selections override history and extension filtering.

@@ -5,6 +5,8 @@ Commands below use its `df` function and path variables.
 
 ## Purpose and prerequisites
 
+For delegated model work, the harness supplies [task facts](../../docs/reference/task-routing.md#task-decisions). Load controls/recovery sections only when needed; prepared interactive requests do not start workers.
+
 Verification responses add an advisory `failure_digest` beside the original
 proof. It preserves verdicts, exit codes and complete evidence references, with
 bounded error excerpts and explicit omissions. Digest failure never turns a

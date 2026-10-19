@@ -13,6 +13,8 @@ Commands below use its `df` function and path variables.
 
 ## Purpose and prerequisites
 
+For delegated model work, the harness supplies [task facts](../../docs/reference/task-routing.md#task-decisions). Load controls/recovery sections only when needed; prepared interactive requests do not start workers.
+
 Coordinate the whole process shown in [SKILL.md](SKILL.md). Begin with registered
 repositories, resolved context, a human-approved specification and a validated
 plan. Preparation is covered by the context, specification and planning guides.

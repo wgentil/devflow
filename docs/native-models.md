@@ -147,84 +147,28 @@ representative model capability. See [validation](cross-host-validation.md).
 
 ## Task routing intent
 
-Optional version-1 task facts refine stage recommendations through the shared
-model policy. Bounded discovery can use fast analysis; uncertain, consequential
-or reasoning-sensitive work uses deep reasoning. Missing task objects retain
-stage defaults. Explicit user profiles, effort, pins, allowlists and cost limits
-remain binding. Policy version 3 ships no new validated provider mappings;
-a recommendation is not a dispatch. Task facts carry bounded scope, origin and
-evidence references and never replace approval or verification evidence.
-
-Capability discovery distinguishes isolated native controls from interactive
-non-fork and fork controls. An installed CLI does not establish an enclosing
-harness bridge. Interactive non-fork Claude invocation effort requires 2.1.292+;
-environment effort and forced model overrides remain higher priority. Codex custom
-agent settings may override spawn settings. Unknown precedence/support stays
-unknown, and relevant configuration changes invalidate its assessment. Only
-routing-related environment fields are retained; account availability and trusted
-observation remain separate from configuration support.
-
-Routed native receipts add versioned task facts, policy/configuration identities,
-selection reasons, lineage and the exact invocation-scope hash. Requested,
-resolved and observed settings remain separate. Portable receipt imports cannot
-mint routed or trusted observations. Partial worker results are blocked and do
-not change the active attempt; a scoped worker report is navigation, not proof.
-Historical events without routing metadata retain their original interpretation.
+The canonical [task routing reference](reference/task-routing.md) defines facts,
+stage defaults, user constraints and receipt limits. Existing stage-only requests
+remain valid. Routed isolated requests use the same model policy and live gates.
 
 ## Escalation boundaries
 
-Routing policy may recommend the next eligible entry for a recorded reasoning
-failure. Automatic dispatch requires explicit human authorization bound to the
-lineage, task, host/stage, policy and configuration, with exact permitted model/
-effort pairs. The shipped limit is one escalation; evidence, pins, allowlists and
-cost constraints remain required. Operational blockers do not justify escalation.
-The journal binds work-item/stage lineage across retries and handoff; a changed
-task label cannot reset its count. Network retries remain a separate counter.
-Policy loading itself grants no authorization and no new validated model mapping.
+See [authorization and recovery](reference/task-routing.md#escalation-and-recovery).
 
 ## Routed isolated requests
 
-`host model-run` accepts an optional version-1 `task` object and explicit
-`execution_path: isolated-native`; omission keeps legacy stage-only behavior.
-Task identity must match the binding/run/stage/item. Routed work refreshes native
-capability/configuration evidence before dispatch; drift or a known control
-conflict blocks before worker execution. Requested controls remain separate from
-host observations. An authorized reasoning escalation supplies predecessor,
-scoped authorization and evidence, creates a new invocation, and consumes the
-same durable lineage allowance. That scoped authorization also authorizes its
-linked replacement; it does not grant further retries or external actions.
+`host model-run` accepts optional task facts and `execution_path: isolated-native`.
+Use the [task schema](reference/task-routing.md#task-decisions); the item identity
+is required for item-bound work. Native capabilities are refreshed before launch.
 
 ## Interactive delegation preparation
 
-`host delegation-prepare --root CONTROL --file REQUEST.json` performs live checks
-and returns a complete prepared worker input with `status: not-dispatched` and
-`dispatch: false`. Use the [request example](examples/delegation-request.json)
-with actual binding/task identities. JSON-supplied host context and observations
-are not trusted. This read operation does not start workers or advance a journal.
-
-An embedding host may supply an actual in-process bridge with capability, spawn
-and collection methods. Both hosts share policy, context, leases and journal
-receipts. No production interactive bridge ships: mock integrations exercise the
-contract, not live Agent-tool access. Unavailable/fork/conflicting controls remain
-not dispatched. A failed collection leaves the invocation running until a stopped
-worker is reconciled; it does not imply a remote worker stopped. Parent decisions,
-role/access boundaries and strict observation rules remain in force. No automatic
-fallback changes execution paths or permissions.
+`host delegation-prepare --root CONTROL --file REQUEST.json` returns a complete
+prepared input with `status: not-dispatched`, `dispatch: false`. It starts nothing.
+Use the [example](examples/delegation-request.json) with live identities.
+No production interactive bridge ships; see [host control limits](reference/task-routing.md#host-controls).
 
 ## Routing outcomes and offline comparison
 
-`stats routing --root CONTROL --options '{"run_id":"run-1"}'` projects routed
-journal invocations, separate escalation/retry counts, known context bytes and
-explicit runtime usage with coverage. Duplicate operation IDs count once. Cost
-remains unavailable here; use attributed usage and sourced pricing through the
-existing `stats price` workflow. Operation durations are not additive wall time.
-
-`improve model-evaluate` accepts an optional `routing_evaluation` object with
-reviewed `case_ids` and `results`. Reviewed improvement snapshots can include
-`expected.routing` (required IDs/facts and exact host/model/effort/path/policy
-binding). Their original snapshot hashes and separate case approval remain
-required. Missing facts, incomplete coverage or stale binding fail a comparison.
-Routing reports do not promote model suitability or release a mapping. See the
-[synthetic report](examples/routing-evaluation-report.json); it is an offline
-format example, not live evaluation evidence. Normal comparisons launch nothing;
-paid/live evaluations still need explicit authorization.
+See [outcomes and evaluation](reference/task-routing.md#outcomes-and-evaluation)
+for scoped worker reports, `stats routing` and reviewed offline comparisons.

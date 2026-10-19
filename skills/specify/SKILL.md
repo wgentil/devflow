@@ -9,19 +9,22 @@ Create or extend requirements in new/extend/migrate mode with stable IDs, concis
 
 Inspect semantic gaps and contradictions, interview unresolved decisions, and add a relevant titled Mermaid diagram. Store the visible registered-repository JSON/Markdown pair and obtain approval of its exact current content. Legacy renderings stay readable; rewriting or changing a title needs reapproval.
 
-Read [shared invariants](../../docs/reference/workflow-invariants.md) and the declared stage sections before work. The harness runs helpers and guides the user. For model work use `specification` routing.
+Read [shared invariants](../../docs/reference/workflow-invariants.md) and the declared stage sections before work. The harness runs helpers and guides the user. For delegated work read [task routing](../../docs/reference/task-routing.md#task-decisions); use the actual stage and preserve user constraints.
 
 ```mermaid
 flowchart LR
     Scope[Current task and declared inputs] --> Checks[Live checks and shared invariants]
     Checks --> Work[Stage responsibility]
-    Work --> Evidence[Current evidence and next gate]
+    Work --> Result{Worker outcome}
+    Result -->|Complete scoped report| Evidence[Current evidence and next gate]
+    Result -->|Partial or blocked| Recover[Resolve missing facts or controls]
 ```
 
 <!-- devflow:routes:specify -->
 - `skill.specify`: `skills/specify/SKILL.md`
 - `common`: `docs/reference/workflow-invariants.md`
 - `guide.specify`: `skills/specify/GUIDE.md` → specify usage guide / Purpose and prerequisites
+- `routing.task-decisions`: `docs/reference/task-routing.md` → Task routing / Task decisions
 <!-- /devflow:routes -->
 
 ## Documentation

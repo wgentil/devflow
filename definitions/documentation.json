@@ -1192,18 +1192,68 @@
       },
       "dependencies": [],
       "classification": "active"
+    },
+    "routing.task-decisions": {
+      "path": "docs/reference/task-routing.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "Task routing",
+          "Task decisions"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "routing.host-controls": {
+      "path": "docs/reference/task-routing.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "Task routing",
+          "Host controls"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "routing.escalation": {
+      "path": "docs/reference/task-routing.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "Task routing",
+          "Escalation and recovery"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "routing.outcomes": {
+      "path": "docs/reference/task-routing.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "Task routing",
+          "Outcomes and evaluation"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
     }
   },
   "stage_reads": {
     "build-work": [
       "skill.build-work",
       "common",
-      "guide.build-work"
+      "guide.build-work",
+      "routing.task-decisions"
     ],
     "ingest": [
       "skill.ingest",
       "common",
-      "guide.ingest"
+      "guide.ingest",
+      "routing.task-decisions"
     ],
     "issues": [
       "skill.issues",
@@ -1218,7 +1268,8 @@
     "plan-work": [
       "skill.plan-work",
       "common",
-      "guide.plan-work"
+      "guide.plan-work",
+      "routing.task-decisions"
     ],
     "project-context": [
       "skill.project-context",
@@ -1228,17 +1279,20 @@
     "review-work": [
       "skill.review-work",
       "common",
-      "guide.review-work"
+      "guide.review-work",
+      "routing.task-decisions"
     ],
     "specify": [
       "skill.specify",
       "common",
-      "guide.specify"
+      "guide.specify",
+      "routing.task-decisions"
     ],
     "stats": [
       "skill.stats",
       "common",
-      "guide.stats"
+      "guide.stats",
+      "routing.outcomes"
     ],
     "ux-reviewer": [
       "skill.ux-reviewer",
@@ -1248,7 +1302,8 @@
     "workflow": [
       "skill.workflow",
       "common",
-      "guide.workflow"
+      "guide.workflow",
+      "routing.task-decisions"
     ],
     "context": [
       "skill.project-context",
@@ -1258,27 +1313,32 @@
     "specification": [
       "skill.specify",
       "common",
-      "guide.specify"
+      "guide.specify",
+      "routing.task-decisions"
     ],
     "planning": [
       "skill.plan-work",
       "common",
-      "guide.plan-work"
+      "guide.plan-work",
+      "routing.task-decisions"
     ],
     "implementation": [
       "skill.build-work",
       "common",
-      "guide.build-work"
+      "guide.build-work",
+      "routing.task-decisions"
     ],
     "review": [
       "skill.review-work",
       "common",
-      "guide.review-work"
+      "guide.review-work",
+      "routing.task-decisions"
     ],
     "acceptance": [
       "skill.workflow",
       "common",
-      "guide.workflow"
+      "guide.workflow",
+      "routing.task-decisions"
     ]
   },
   "history": [

@@ -5,6 +5,8 @@ For plugin use, ask DevFlow to refine the requirements, store the pair in the se
 
 ## Purpose and prerequisites
 
+For delegated model work, the harness supplies [task facts](../../docs/reference/task-routing.md#task-decisions). Load controls/recovery sections only when needed; prepared interactive requests do not start workers.
+
 Create requirements in `new`, `extend` or `migrate` mode. Each requirement needs a
 stable ID, text, acceptance criteria and authored/derived/assumed provenance.
 Give new requirements a concise, nonempty single-line `title`; `text` remains the
