@@ -1,7 +1,8 @@
 # Context efficiency and guided onboarding
 
-Status: proposed for review. The user requested Autowork implementation of all
-discussed context/documentation optimizations and the approved quick start.
+Status: approved by the user on 2026-10-19 after commit `0ded5ff`. The user requested
+Autowork implementation of all discussed context/documentation optimizations and
+the approved quick start.
 Baseline: `3e924c5` (v0.3.9). Preserve the existing main-checkout `AGENTS.md` edit.
 
 ## Outcome and scope
