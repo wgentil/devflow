@@ -3,6 +3,9 @@
 `host brief` validates the current binding and uses the same
 [complete task-view builder](context-efficiency.md#complete-task-views) as run
 briefs, including live input checks and required-context byte limits.
+Preparation runs through the shared bounded Python hook; a required failure blocks
+the read/dispatch. Large complete views travel through content-addressed artifacts
+instead of overflowing the hook's inline response.
 
 One package contains `.codex-plugin/plugin.json`, `.claude-plugin/plugin.json`,
 `.claude-plugin/marketplace.json`, the shared `skills/`, helpers and all

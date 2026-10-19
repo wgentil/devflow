@@ -124,9 +124,9 @@ def host_brief(state: dict, binding: dict, *, control_root: Path | None = None,
             'budget':relevant['budget'],'work_items':work_items,'context':context,'package_hash':binding.get('package_hash'),'evidence_refs':['journal:'+binding['run_id']]}
     if control_root is None:
         return envelope
-    from .task_views import prepare_task_view
+    from .lifecycle_hooks import prepared_context
     from .document_units import digest as content_digest
-    view = prepare_task_view(control_root, run, envelope, [item['id'] for item in work_items],
+    view = prepared_context(control_root, run, envelope, [item['id'] for item in work_items],
                              stage=envelope['stage'], max_bytes=max_bytes,
                              representation=representation, output_mode=output_mode)
     view['fingerprint'] = content_digest({'envelope': digest, 'context': view['task_view'].get('artifact_id')})

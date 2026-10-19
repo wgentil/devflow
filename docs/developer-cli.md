@@ -15,6 +15,10 @@ For an explicit continuing CLI consumer, add `--consumer-id my-session` and late
 compaction; handoffs and new workers require full context. A CLI without consumer
 identity returns full context even when given an old checkpoint ID.
 
+The internal Python lifecycle runner defaults to five seconds and 8,192 output
+bytes. Required preparation stops on errors; advisory diagnostics preserve verifier
+outcomes. See [hook limits and behavior](context-efficiency.md#portable-lifecycle-hooks).
+
 This optional reference is for contributors, diagnostics and direct helper use.
 Plugin users should start with the [user guide](setup-and-usage.md); they should
 not need these shell variables, path selections or helper commands.

@@ -67,3 +67,22 @@ scope changes return full context with a reason. Session start, compaction,
 handoff and new native workers require full context. Checkpoints live under
 `context-checkpoints/` in the selected control root; they are advisory and never
 advance gates or transfer ownership.
+
+## Portable lifecycle hooks
+
+The shared Python hook runner uses an allowlisted worker at existing helper
+boundaries. Context preparation and retrieval-cache invalidation are integrated;
+validation planning, failure digests and offline regression operations become
+available with their corresponding implementation tasks. No Git hooks or user
+configuration are installed, and hooks never launch model/provider work.
+
+Interactive defaults are a five-second deadline and an 8,192-byte inline result
+budget. The internal runner accepts explicit recorded overrides (1,024–1,048,576
+output bytes and up to 3,600 seconds). Process-tree cleanup follows timeout or
+overflow. Results record effective limits, elapsed time, exact output bytes,
+input/config/source identities and complete artifact references. Large prepared
+views use a bounded reference response that the caller explicitly loads.
+
+Required context failure blocks the dependent operation. Advisory formatting or
+telemetry failure exposes a diagnostic and preserves the original verifier verdict,
+exit code and evidence. Hooks grant no approvals and cannot advance gates.

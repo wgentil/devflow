@@ -113,6 +113,9 @@ def build_task_view(run: dict, envelope: dict, selection: dict, sources: dict, p
         return {**select_document_units(sources, selections, policy), 'cache_outcome': 'disabled', 'source_provenance': {}}
 
     selected = resolve(mandatory)
+    if root is not None:
+        from .context_artifacts import invalidate_context_artifacts
+        invalidate_context_artifacts(root, selected['source_hashes'], digest(policy))
     required_document_ids = {d['source_id'] for d in mandatory if not str(d.get('reason', '')).startswith('governing:')}
     required_ids = sorted(set(required_requirements) | set(governing) | required_document_ids)
     task = {'schema_version': 1, 'representation': representation, 'required_ids': required_ids,
@@ -159,6 +162,11 @@ def prepare_task_view(root: Path, run: dict, envelope: dict, item_ids: list[str]
     """Live entry point shared by run and host reads; caches never bypass preflight."""
     from .repo_input_gate import require_current_inputs
     state = read_state(root)
+    if envelope.get('binding_id'):
+        from .hosts import validate_binding
+        binding = validate_binding(state['data'], envelope['binding_id'], envelope.get('revision'))
+        if binding['run_id'] != run['id']:
+            raise WorkflowError('CONTEXT_SCOPE_CHANGED', 'binding no longer owns this run context')
     require_current_inputs(root, state, 'context-preparation', run['id'])
     data = read_state(root)['data']
     spec = data['spec']

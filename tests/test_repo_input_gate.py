@@ -36,6 +36,20 @@ class RepoInputGateTests(unittest.TestCase):
                 md.unlink()
                 self.assertIsNotNone(read_state(self.root)['data']['spec'])
                 md.write_bytes(old)
+
+    def test_hook_warm_cache_cannot_bypass_live_pair_approval(self):
+        from workflow_lib.lifecycle_hooks import prepared_context
+        run = {'id': 'run', 'plan': {'spec_hash': content_hash(self.spec), 'work_items': []}}
+        self.write({'runs': {'run': run}})
+        first = prepared_context(self.root, run, {'run_id': 'run'}, [], stage='implementation')
+        self.assertEqual(first['task_view']['coverage']['missing_ids'], [])
+        warm = prepared_context(self.root, run, {'run_id': 'run'}, [], stage='implementation')
+        self.assertEqual(warm['task_view']['cache_outcome'], 'hit')
+        (self.repo / self.pair['markdown_path']).write_text('Unapproved drift')
+        with self.assertRaises(WorkflowError) as caught:
+            prepared_context(self.root, run, {'run_id': 'run'}, [], stage='implementation')
+        self.assertEqual(caught.exception.code, 'SPEC_PAIR_MISMATCH')
+        self.assertTrue(read_state(self.root)['data']['spec_approval_invalidated'])
     def test_legacy_migration_candidate_requires_reapproval_and_preserves_targets(self):
         self.write({'spec_pair': None, 'approval': {'content_hash': content_hash(self.spec), 'confirmed': True}})
         self.assertEqual(require_current_spec(self.root, read_state(self.root), 'plan')['content_hash'], content_hash(self.spec))

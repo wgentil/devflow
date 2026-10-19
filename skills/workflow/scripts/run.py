@@ -70,8 +70,8 @@ def _run_brief(run: dict, item_ids: list[str], max_bytes: int, *, root: Path | N
     envelope = assemble_brief(run, run.get("context", {}), stage, item_ids, max_bytes)
     if root is None:
         return envelope
-    from workflow_lib.task_views import prepare_task_view
-    return prepare_task_view(root, run, envelope, item_ids, stage=stage.get('name', 'implementation'),
+    from workflow_lib.lifecycle_hooks import prepared_context
+    return prepared_context(root, run, envelope, item_ids, stage=stage.get('name', 'implementation'),
                              max_bytes=max_bytes, representation=representation, output_mode=output_mode)
 
 
