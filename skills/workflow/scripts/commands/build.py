@@ -15,6 +15,11 @@ from workflow_lib.verifiers import record_typed_proof, verify_eval_set, verify_i
 def register_commands(parser: argparse.ArgumentParser) -> None:
     build = parser.add_parser("build")
     subcommands = build.add_subparsers(dest="build_command", required=True)
+    validation_plan = subcommands.add_parser('validation-plan')
+    validation_plan.add_argument('--root', required=True)
+    validation_plan.add_argument('--config', required=True)
+    validation_plan.add_argument('--changed-path', action='append', required=True)
+    validation_plan.add_argument('--observed-config-hash')
     verify = subcommands.add_parser("verify")
     verify.add_argument("--root", required=True)
     verify.add_argument("--run-id", required=True)
@@ -82,6 +87,19 @@ def register_commands(parser: argparse.ArgumentParser) -> None:
 
 
 def dispatch(parsed: argparse.Namespace) -> dict:
+    result = _dispatch(parsed)
+    if parsed.build_command.startswith('verify'):
+        from workflow_lib.lifecycle_hooks import verification_projection
+        return verification_projection(Path(parsed.root), result, report_format=getattr(parsed, 'report_format', 'json'))
+    return result
+
+
+def _dispatch(parsed: argparse.Namespace) -> dict:
+    if parsed.build_command == 'validation-plan':
+        from workflow_lib.lifecycle_hooks import run_lifecycle_hook
+        return run_lifecycle_hook('plan-validation', {'root': str(Path(parsed.root).resolve()),
+            'configuration': json.loads(Path(parsed.config).read_text(encoding='utf-8')),
+            'changed_paths': parsed.changed_path, 'observed_config_hash': parsed.observed_config_hash})
     if parsed.build_command == "authorize-apply":
         root = Path(parsed.root).expanduser().resolve()
         state = read_state(root)

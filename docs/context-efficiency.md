@@ -100,3 +100,21 @@ Explicit historical scopes, `--include-history`, required governing files and
 a complete index artifact. `context-artifact inspect --root CONTROL --id ID`
 retrieves complete content with hash verification. The inspection command accepts
 content IDs, never arbitrary filesystem paths. Existing full output stays default.
+
+## Validation feedback and failure digests
+
+`build validation-plan --root CONTROL --config CHECKS.json --changed-path PATH`
+selects focused checks from explicit project-owned mappings. Repeated paths
+represent edits, deletions and both sides of renames. Overlapping mappings merge;
+unknown paths, absent mappings or stale configuration select the complete
+configured set. Missing/invalid check configuration remains unavailable.
+The plan executes nothing, grants no authorization, and leaves every configured
+required check outstanding for existing runners and proof gates.
+
+Build verification and configured hardening responses add advisory failure
+digests beside original results. JSON/JUnit/unittest reports yield measured
+failure/error/skip counts, affected IDs, grouped excerpts and complete artifact
+references. Raw evidence and original verdict/exit/attempt/hash stay authoritative.
+Malformed/incomplete reports never imply zero failures. Reads are bounded to
+1 MiB per log plus the hook deadline; omissions and unknown totals are explicit.
+Output overflow or digest failure preserves the verifier result unchanged.

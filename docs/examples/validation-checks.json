@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "required_checks": [
+    {"id": "unit", "argv": ["python3", "-m", "unittest", "discover", "-s", "tests"]},
+    {"id": "docs", "argv": ["python3", "scripts/check_documentation.py", "--check"]}
+  ],
+  "mappings": [
+    {"component": "runtime", "paths": ["skills/**", "tests/**"], "check_ids": ["unit"]},
+    {"component": "documentation", "paths": ["docs/**", "definitions/**"], "check_ids": ["docs"]}
+  ]
+}

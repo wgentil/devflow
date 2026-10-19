@@ -336,7 +336,7 @@ def main(argv: list[str] | None = None) -> int:
                     or getattr(parsed, "repo_command", None) == "register"
                     or getattr(parsed, "spec_command", None) in {"store", "approve"}
                     or getattr(parsed, "plan_command", None) == "validate"
-                    or getattr(parsed, "build_command", None) is not None
+                    or getattr(parsed, "build_command", None) not in {None, 'validation-plan'}
                     or getattr(parsed, "review_command", None) in {"package", "record"}
                     or run_command in {"start", "abandon", "result"})
         mutation = mutation or run_command in {"amend-item", "discard", "accept", "park-finding", "waive-finding", "adjudicate", "resolve-finding"}
@@ -352,7 +352,7 @@ def main(argv: list[str] | None = None) -> int:
         if getattr(parsed, 'plan_command', None) == 'validate': phase = 'plan-validation'
         if getattr(parsed, 'plan_command', None) == 'ready': phase = 'plan-ready'
         if run_command in {'start', 'next', 'retry', 'result', 'accept'}: phase = 'run-' + run_command
-        if getattr(parsed, 'build_command', None): phase = 'build'
+        if getattr(parsed, 'build_command', None) not in {None, 'validation-plan'}: phase = 'build'
         if getattr(parsed, 'review_command', None): phase = 'review'
         if getattr(parsed, 'delivery_command', None): phase = 'delivery'
         if phase and getattr(parsed, 'root', None):

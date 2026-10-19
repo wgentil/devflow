@@ -5,6 +5,24 @@ Commands below use its `df` function and path variables.
 
 ## Purpose and prerequisites
 
+Verification responses add an advisory `failure_digest` beside the original
+proof. It preserves verdicts, exit codes and complete evidence references, with
+bounded error excerpts and explicit omissions. Digest failure never turns a
+failed/unknown verifier result into success.
+
+Before validation, use `build validation-plan --config` with explicit project-owned
+check mappings and repeated `--changed-path` values. The plan selects focused
+feedback but retains every required check outstanding; it executes no commands.
+See [validation-checks.json](../../docs/examples/validation-checks.json).
+
+```mermaid
+flowchart LR
+    Changes[Changed paths and explicit check mapping] --> Plan[Focused feedback and full required set]
+    Plan --> Runner[Existing authorized verification runner]
+    Runner --> Evidence[Unchanged verdict and raw evidence]
+    Evidence --> Digest[Advisory bounded failure digest]
+```
+
 Record actual verification for the active attempt. Register the item's repository
 and save the token returned by `run next` as `ATTEMPT`. Code targets require RED
 and GREEN evidence with unchanged test-file hashes.

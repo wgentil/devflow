@@ -182,6 +182,7 @@ def capture_evidence(root: Path, run_id: str, token: str, phase: str, command: l
                 "started_at": started, "finished_at": finished,
                 "stdout_ref": _blob(root, stdout), "stderr_ref": _blob(root, stderr)}
     target_outcomes = {name: outcomes[name] for name in target_ids if name in outcomes}
+    test_counts = {kind: sum(outcome == kind for outcome in outcomes.values()) for kind in ('failed', 'error', 'skipped', 'passed')}
     if phase == "RED":
         passed = exit_code != 0 and any(outcome == "failed" for outcome in target_outcomes.values())
         failure = None if passed else "TARGET_FAILURE_NOT_PROVEN"
@@ -197,13 +198,13 @@ def capture_evidence(root: Path, run_id: str, token: str, phase: str, command: l
                                        else "RED_PROOF_REQUIRED" if not same_baseline else "TARGETS_NOT_GREEN")
     if not passed:
         return {"passed": False, "failure": failure, "exit_code": exit_code,
-                "target_outcomes": target_outcomes, "started_at": started, "finished_at": finished,
+                "target_outcomes": target_outcomes, "test_counts": test_counts, "started_at": started, "finished_at": finished,
                 "stdout_ref": _blob(root, stdout), "stderr_ref": _blob(root, stderr)}
     proof = {"id": uuid.uuid4().hex, "kind": work_item["kind"], "phase": phase, "run_id": run_id,
              "item_id": item_id, "token": token, "repo_id": repo_id, "argv": command,
              "exit_code": exit_code, "started_at": started, "finished_at": finished,
              "repository_head": before_repo["head"], "worktree_digest": before_repo["worktree_digest"],
-             "test_hashes": before_tests, "target_outcomes": target_outcomes, "passed": True,
+             "test_hashes": before_tests, "target_outcomes": target_outcomes, "test_counts": test_counts, "passed": True,
              "stdout_ref": _blob(root, stdout), "stderr_ref": _blob(root, stderr)}
     response = transact(root, state["version"], f"verification:{proof['id']}",
                         {"kind": "verification.recorded", "payload": {"run_id": run_id, "proof": proof}})

@@ -18,6 +18,14 @@ def register_commands(parser):
 
 
 def dispatch(parsed):
+    result = _dispatch(parsed)
+    if parsed.operation == 'gate':
+        from workflow_lib.lifecycle_hooks import verification_projection
+        return verification_projection(Path(parsed.root), result)
+    return result
+
+
+def _dispatch(parsed):
     request = json.loads(Path(parsed.input).read_text())
     if parsed.operation == 'schedule':
         return repository_schedule(request['plan'], request['repositories'])
@@ -54,7 +62,7 @@ def dispatch(parsed):
                     'repository_fingerprint': fingerprint})
     if started['replayed']:
         raise WorkflowError('EXECUTION_INTERRUPTED', 'another process reserved this gate execution')
-    proof = verify_gate(repo, request['run_id'], request['gate_id'], config['command'], contract)
+    proof = verify_gate(repo, request['run_id'], request['gate_id'], config['command'], contract, artifacts_root=Path(parsed.root))
     proof['argv'] = config['command']
     proof['contract_hash'] = contract_hash
     if proof['passed'] and repository_fingerprint(repo) != fingerprint:

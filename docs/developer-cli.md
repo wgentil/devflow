@@ -24,6 +24,12 @@ history. Ingest supports `--include-history`, repeated `--required-path`, and
 `--output-mode refs`. Inspect returned content with
 `df context-artifact inspect --root "$CONTROL" --id ACTUAL_ARTIFACT_ID`.
 
+For this plugin checkout, try
+`df build validation-plan --root "$CONTROL" --config "$EXAMPLES/validation-checks.json" --changed-path skills/workflow/scripts/run.py`.
+It only plans feedback; the complete required-check list remains outstanding.
+Verification returns bounded advisory `failure_digest` metadata beside original
+proof; inspect its raw artifact references for detail.
+
 This optional reference is for contributors, diagnostics and direct helper use.
 Plugin users should start with the [user guide](setup-and-usage.md); they should
 not need these shell variables, path selections or helper commands.

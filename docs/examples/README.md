@@ -1,5 +1,9 @@
 # Example inputs
 
+[`validation-checks.json`](validation-checks.json) demonstrates explicit path to
+check mappings for the plugin checkout. `build validation-plan` selects feedback
+without executing these commands or changing required full checks.
+
 Use these with the [skill guides](../skills.md). Copy them before editing. Run
 from a disposable application checkout for exploration. No fixture is an actual
 human approval, independent review, provider receipt or authoritative price.

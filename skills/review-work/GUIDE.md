@@ -1,5 +1,9 @@
 # review-work usage guide
 
+Failure digests are navigation aids, not verification proof. Review original
+evidence and named omissions; focused validation never discharges the complete
+required-check set. See [context feedback](../../docs/context-efficiency.md#validation-feedback-and-failure-digests).
+
 Read the [shared setup and conventions](../../docs/skills.md#shared-setup) first.
 Commands below use its `df` function and path variables.
 

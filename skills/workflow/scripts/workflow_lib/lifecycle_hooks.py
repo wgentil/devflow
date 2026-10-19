@@ -130,3 +130,10 @@ def prepared_context(root: Path, run: dict, envelope: dict, item_ids: list[str],
     if result.get('full_result_artifact_id'):
         result = inspect_context_artifact(root, result['full_result_artifact_id'])
     return result
+
+
+def verification_projection(root: Path, result: dict, *, report_format: str = 'json') -> dict:
+    original = result.get('proof', result)
+    response = run_lifecycle_hook('digest-verification', {'root': str(Path(root).resolve()),
+        'result': {**original, 'report_format': report_format}, 'artifacts': {'root': str(Path(root).resolve())}})
+    return {**result, 'failure_digest': response}

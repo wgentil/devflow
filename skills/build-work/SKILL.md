@@ -5,6 +5,10 @@ description: Record fresh, attempt-bound verification evidence for Devflow work 
 
 # Build work
 
+Use explicit project check mappings for focused validation feedback. A focused
+pass never replaces outstanding full checks. Failure digests are bounded
+navigation over original evidence; preserve the verifier verdict on digest failure.
+
 ## Verification and rework
 
 ```mermaid
