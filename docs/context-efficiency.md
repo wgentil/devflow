@@ -86,3 +86,17 @@ views use a bounded reference response that the caller explicitly loads.
 Required context failure blocks the dependent operation. Advisory formatting or
 telemetry failure exposes a diagnostic and preserves the original verifier verdict,
 exit code and evidence. Hooks grant no approvals and cannot advance gates.
+
+## Discovery and inspection
+
+`docs --discover` returns active source references from the registry;
+`--include-history` includes historical entries and `--required-source-id ID`
+includes their dependency closure even when historical. Broad `ingest` uses the
+declared historical path patterns by default and reports excluded paths/counts.
+Explicit historical scopes, `--include-history`, required governing files and
+`--required-path` inputs override exclusion. Old receipts replay unchanged.
+
+`ingest --output-mode refs` needs a control root and returns source metadata plus
+a complete index artifact. `context-artifact inspect --root CONTROL --id ID`
+retrieves complete content with hash verification. The inspection command accepts
+content IDs, never arbitrary filesystem paths. Existing full output stays default.

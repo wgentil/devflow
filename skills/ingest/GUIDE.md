@@ -5,11 +5,33 @@ Commands below use its `df` function and path variables.
 
 ## Purpose and prerequisites
 
+Routine broad indexing excludes declared historical paths and reports exclusions.
+`--include-history` or an explicit historical path opts in; required governing
+inputs and `--required-path` selections override history and extension filtering.
+The selection policy participates in new cache identities. Existing operation
+receipts replay their original index even after sources change.
+
+```mermaid
+flowchart LR
+    Scope[Explicit source scope] --> Filter[Active discovery policy]
+    Required[Required governing and dependency paths] --> Filter
+    Filter --> Index[Content-bound index with exclusion report]
+    Index --> Full[Default existing output]
+    Index --> Refs[Explicit compact metadata and artifact ID]
+    Refs --> Inspect[Inspect complete original content]
+```
+
 Index explicitly selected UTF-8 source files. Durable indexing needs a registered
 repository ID, control root and operation ID. Choose narrow paths and a profile;
 `profile.json` includes Python files only. Keep the control root outside scope.
 
 ## Durable indexing example
+
+Add `--output-mode refs` to durable indexing to inspect compact source metadata.
+Use `df context-artifact inspect --root "$CONTROL" --id ACTUAL_ARTIFACT_ID` to
+load complete content. Durable default output remains its existing small receipt.
+Read-only indexing without a control root keeps full output; reference output
+requires a selected control root.
 
 ```sh
 df ingest --root "$CONTROL" --repo-id app --scope greeting.py --scope tests --profile-json "$EXAMPLES/profile.json" --operation-id ingest-greeting-v1

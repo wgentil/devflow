@@ -359,6 +359,16 @@ class ExecutionIntegrationTests(unittest.TestCase):
         version=read_state(self.root)['version']
         subprocess.run(args,capture_output=True,text=True,check=True)
         self.assertEqual(read_state(self.root)['version'],version)
+        (self.repo / 'app.py').write_text('source changed after indexed receipt')
+        compact = subprocess.run([*args, '--output-mode', 'refs'], capture_output=True, text=True)
+        self.assertEqual(compact.returncode, 0, compact.stdout + compact.stderr)
+        projected = json.loads(compact.stdout)['index']
+        self.assertNotIn('text', projected['sources'][0])
+        inspected = subprocess.run([sys.executable, str(ENTRY), 'context-artifact', 'inspect', '--root', str(self.root),
+                                    '--id', projected['artifact_id']], capture_output=True, text=True)
+        self.assertEqual(inspected.returncode, 0, inspected.stdout + inspected.stderr)
+        self.assertEqual(json.loads(inspected.stdout), index)
+        self.assertEqual(read_state(self.root)['version'], version)
     def test_metrics_use_delivery_acceptance_and_bound_usage_only(self):
         from workflow_lib.journal_domains import digest
         transact(self.root,0,'fixture',{'kind':'fixture','payload':{'runs':{

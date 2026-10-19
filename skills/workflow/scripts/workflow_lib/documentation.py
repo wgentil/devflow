@@ -58,6 +58,30 @@ def navigation(policy: dict, stage: str) -> str:
     return '\n'.join(lines + ['<!-- /devflow:routes -->'])
 
 
+def discover_documentation(package_root: Path, *, include_history: bool = False, required_ids: list[str] | None = None) -> dict:
+    policy = load_documentation_policy(package_root)
+    required = set()
+    def visit(sid):
+        if sid not in policy['sources']:
+            raise WorkflowError('CONTEXT_REQUIRED_SOURCE_MISSING', f'unknown documentation ID {sid}')
+        if sid in required:
+            return
+        required.add(sid)
+        for dependency in policy['sources'][sid]['dependencies']:
+            visit(dependency)
+    for sid in required_ids or []:
+        visit(sid)
+    selected, excluded = {}, []
+    for sid, source in sorted(policy['sources'].items()):
+        if source['classification'] == 'history' and not include_history and sid not in required:
+            excluded.append(sid)
+        else:
+            selected[sid] = source
+    from .document_units import digest
+    return {'sources': selected, 'excluded_ids': excluded, 'include_history': include_history,
+            'required_ids': sorted(required), 'policy_hash': digest(policy)}
+
+
 def check_documentation(package_root: Path, *, check_generated: bool = True) -> dict:
     root = Path(package_root)
     policy = load_documentation_policy(root)

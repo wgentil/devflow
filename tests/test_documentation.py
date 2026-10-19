@@ -6,7 +6,7 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'skills/workflow/scripts'))
-from workflow_lib.documentation import load_documentation_policy, check_documentation, navigation
+from workflow_lib.documentation import load_documentation_policy, check_documentation, navigation, discover_documentation
 from workflow_lib.store import WorkflowError
 
 
@@ -47,3 +47,11 @@ class DocumentationTests(unittest.TestCase):
         p.write_text(p.read_text().replace('"schema_version": 1', '"schema_version": 1, "schema_version": 1'))
         with self.assertRaises(WorkflowError):
             load_documentation_policy(self.root)
+
+    def test_discovery_history_and_required_dependency_exceptions(self):
+        self.policy['sources']['old'] = {**self.policy['sources']['guide'], 'classification': 'history'}
+        self.policy['sources']['guide']['dependencies'] = ['old']
+        self.write()
+        self.assertEqual(discover_documentation(self.root)['excluded_ids'], ['old'])
+        self.assertIn('old', discover_documentation(self.root, include_history=True)['sources'])
+        self.assertIn('old', discover_documentation(self.root, required_ids=['guide'])['sources'])

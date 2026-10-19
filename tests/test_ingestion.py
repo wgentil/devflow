@@ -20,3 +20,28 @@ class IngestionTests(unittest.TestCase):
         a={'sources':[{'path':'a.py','hash':'a','facts':[{'id':'x','value':1}]}]}; b={'sources':[{'path':'a.py','hash':'b','facts':[{'id':'x','value':2}]}]}
         merged=merge_digests([a,b]); self.assertTrue(merged['conflicts']); self.assertEqual(digest_coverage(merged,{'paths':['a.py','b.py']})['uncovered'],['b.py'])
         with self.assertRaises(ValueError): ingest_sources({'location':str(self.repo)},['../'],{'extensions':['.py']},{})
+
+    def test_active_history_explicit_and_required_dependency_exceptions(self):
+        history = self.repo / 'docs/superpowers/specs/old.md'
+        history.parent.mkdir(parents=True)
+        history.write_text('Historical rule')
+        repo = {'location': str(self.repo)}
+        policy = {'history': ['docs/superpowers/**'], 'include_history': False, 'required_paths': []}
+        out = ingest_sources(repo, ['.'], {}, {}, selection_policy=policy)
+        self.assertNotIn(history.relative_to(self.repo).as_posix(), [s['path'] for s in out['sources']])
+        self.assertEqual(out['selection']['excluded_count'], 1)
+        explicit = ingest_sources(repo, ['.'], {}, {}, selection_policy={**policy, 'include_history': True})
+        self.assertIn(history.relative_to(self.repo).as_posix(), [s['path'] for s in explicit['sources']])
+        required = ingest_sources(repo, ['a.py'], {'extensions': ['.py']}, {}, selection_policy={**policy, 'required_paths': [history.relative_to(self.repo).as_posix()]})
+        self.assertIn(history.relative_to(self.repo).as_posix(), [s['path'] for s in required['sources']])
+        self.assertNotEqual(out['fingerprint'], explicit['fingerprint'])
+
+    def test_projection_retains_metadata_and_inspection_restores_contents(self):
+        from workflow_lib.ingestion import project_source_index
+        from workflow_lib.context_artifacts import inspect_context_artifact
+        value = ingest_sources({'location': str(self.repo)}, ['.'], {}, {})
+        with tempfile.TemporaryDirectory() as control:
+            refs = project_source_index(value, Path(control))
+            self.assertNotIn('text', refs['sources'][0])
+            self.assertIn('hash', refs['sources'][0])
+            self.assertEqual(inspect_context_artifact(Path(control), refs['artifact_id']), value)

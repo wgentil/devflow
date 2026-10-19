@@ -19,6 +19,11 @@ The internal Python lifecycle runner defaults to five seconds and 8,192 output
 bytes. Required preparation stops on errors; advisory diagnostics preserve verifier
 outcomes. See [hook limits and behavior](context-efficiency.md#portable-lifecycle-hooks).
 
+Use `df docs --discover` for active documentation, `--include-history` for explicit
+history. Ingest supports `--include-history`, repeated `--required-path`, and
+`--output-mode refs`. Inspect returned content with
+`df context-artifact inspect --root "$CONTROL" --id ACTUAL_ARTIFACT_ID`.
+
 This optional reference is for contributors, diagnostics and direct helper use.
 Plugin users should start with the [user guide](setup-and-usage.md); they should
 not need these shell variables, path selections or helper commands.

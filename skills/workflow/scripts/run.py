@@ -756,7 +756,7 @@ def main(argv: list[str] | None = None) -> int:
                 result = initialize_project_documents(Path(parsed.project_dir), _json_file(parsed.choice), parsed.operation_id)
         elif parsed.command == "build":
             result = dispatch_command_group(parsed)
-        elif parsed.command in {"review", "delivery", "issues", "migrate", "stats", "ingest", "docs", "harden", "host", "repair", "improve", "pr"}:
+        elif parsed.command in {"review", "delivery", "issues", "migrate", "stats", "ingest", "docs", "harden", "host", "repair", "improve", "pr", "context-artifact"}:
             result = dispatch_command_group(parsed)
         else:
             parser.error("select a supported command")
