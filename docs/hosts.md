@@ -6,6 +6,12 @@ briefs, including live input checks and required-context byte limits.
 Preparation runs through the shared bounded Python hook; a required failure blocks
 the read/dispatch. Large complete views travel through content-addressed artifacts
 instead of overflowing the hook's inline response.
+Claude SessionStart always rebuilds full context, including after compaction.
+Ordinary repeated prompts still deduplicate only after live checks. An oversized
+inline view exposes its control envelope and complete artifact reference with
+`context_complete: false`; load that artifact before model work. Native workers
+always receive the complete view directly and never reuse a previous worker's
+checkpoint.
 
 One package contains `.codex-plugin/plugin.json`, `.claude-plugin/plugin.json`,
 `.claude-plugin/marketplace.json`, the shared `skills/`, helpers and all

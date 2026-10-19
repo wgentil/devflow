@@ -96,6 +96,20 @@ class NativeModelTests(unittest.TestCase):
                 result=invoke(root,request,'native');retry=invoke(root,request,'native')
             self.assertEqual(result['status'],'allow');self.assertEqual(result['scope']['token'],'t');self.assertEqual(result['observed']['effort'],'medium');self.assertTrue(retry['replayed']);backend.invoke.assert_called_once()
             self.assertEqual((root/result['output_ref']).read_text(encoding='utf-8'),'real bounded result');self.assertEqual(read_state(root)['data']['runs']['run']['active_attempt']['token'],'t')
+            sent = backend.configure.call_args.args[1] + backend.invoke.call_args.args[1]
+            self.assertEqual(sent.count('Fixture required behavior'), 1)
+            self.assertIn('actor a1', sent)
+            self.assertIn('stage implementation', sent)
+
+    def test_native_text_budget_and_single_full_view_for_each_host(self):
+        from workflow_lib.native_runtime import invocation_context
+        for host in ('codex', 'claude'):
+            binding = {'host': host, 'actor_id': 'a1'}
+            value = invocation_context(binding, 'implementation', {'marker': 'UNIQUE_CONTEXT'}, 'Do work', 20000)
+            self.assertEqual((value['configuration_text'] + value['prompt']).count('UNIQUE_CONTEXT'), 1)
+            self.assertEqual(value['known_text_bytes'], len((value['configuration_text'] + value['prompt']).encode('utf-8')))
+            with self.assertRaises(WorkflowError):
+                invocation_context(binding, 'implementation', {'large': 'é' * 1000}, 'Do work', 500)
     def test_transport_limits_output_and_timeout(self):
         from workflow_lib.native_models import run_bounded,NativeError
         with self.assertRaises(NativeError):run_bounded([sys.executable,'-c','import time; time.sleep(2)'],str(ROOT),.02)

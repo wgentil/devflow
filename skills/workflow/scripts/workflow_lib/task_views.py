@@ -173,7 +173,10 @@ def prepare_task_view(root: Path, run: dict, envelope: dict, item_ids: list[str]
     if run.get('plan', {}).get('spec_hash') != content_hash(spec):
         raise WorkflowError('PLAN_STALE', 'task context requires the currently approved plan specification')
     policy = load_documentation_policy(PACKAGE_ROOT)
-    stage = {'build': 'implementation', 'verification': 'implementation', 'branch-review': 'review'}.get(stage, stage)
+    stage = {'build': 'implementation', 'verification': 'implementation', 'branch-review': 'review',
+             'item-review': 'review', 'pr-review': 'review', 'pr-rework': 'implementation',
+             'scan': 'ingest', 'debugging': 'build-work', 'hardening': 'build-work',
+             'delivery': 'workflow', 'pr-opening': 'workflow', 'delivered': 'workflow', 'discarded': 'workflow'}.get(stage, stage)
     if stage not in policy['stage_reads']:
         raise WorkflowError('CONTEXT_STAGE_UNAVAILABLE', 'stage has no declared documentation read route')
     governing, sources = governing_selections(data.get('governing_input_receipt', {}), data.get('repositories', {}))

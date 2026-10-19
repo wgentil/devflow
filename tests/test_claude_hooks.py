@@ -42,6 +42,18 @@ class HookTests(unittest.TestCase):
         self.assertIn('additionalContext',first.stdout)
         self.assertEqual(self.call(event='UserPromptSubmit').stdout,'')
         self.assertEqual(read_state(self.root)['version'],3)
+    def test_session_start_rebuilds_even_when_fingerprint_unchanged(self):
+        self.attach()
+        self.assertIn('additionalContext', self.call(event='SessionStart').stdout)
+        self.assertIn('additionalContext', self.call(event='SessionStart').stdout)
+
+    def test_required_context_failure_is_visible_without_success_context(self):
+        self.attach()
+        state = read_state(self.root)
+        transact(self.root, state['version'], 'missing-spec', {'kind': 'fixture', 'payload': {'spec': None}})
+        result = self.call(event='SessionStart')
+        self.assertNotIn('additionalContext', result.stdout)
+        self.assertIn('SPEC_NOT_APPROVED', result.stderr)
     def test_corrupt_and_missing_locator_mapped_fail_closed(self):
         self.attach();path=locator_path(self.project,'claude','s1');path.write_text('{')
         self.assertEqual(self.call().returncode,2)

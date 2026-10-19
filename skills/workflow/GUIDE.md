@@ -2,6 +2,9 @@
 
 Run next/retry/brief now return complete bounded task views; attached clients can
 use `host brief`. See [context selection and limits](../../docs/context-efficiency.md).
+Session start/compaction/handoff rebuild full context. A reference-only hook
+response must be explicitly loaded before model work. Native invocations receive
+full context once, after required preparation succeeds.
 
 Start with the [complete setup and initialization guide](../../docs/setup-and-usage.md). Native Windows remains unsupported pending installed-hook, worker and real-host validation; the journal lock and pipe transport now use platform boundaries.
 

@@ -1,5 +1,12 @@
 # Native model work
 
+Every new worker receives a full checked task view. Codex sends it once in the
+turn input; configuration contains stable actor/stage instructions. Claude uses
+the same full view once. Required preparation failure prevents worker creation.
+Known configuration/turn text is measured together against `context_max_bytes`
+(default 20,000); protocol envelopes and hidden host content remain outside that
+measurement. Explicit overrides do not change workflow approval or spending gates.
+
 Invoke DevFlow from an initialized project with the plugin enabled. The agent uses
 bundled helpers and the host's existing CLI login. Users do not configure shell
 variables, Python commands, installation paths or API keys. Python 3.11+ and the

@@ -29,6 +29,20 @@ def _native_lease(path):
 
 def policy():return json.loads((PACKAGE_ROOT/'definitions/model-policy.json').read_text(encoding='utf-8'))
 
+
+def invocation_context(binding, stage, brief, task, max_bytes):
+    if type(max_bytes) is not int or max_bytes <= 0:
+        raise WorkflowError('NATIVE_CONTEXT_BUDGET_INVALID', 'context_max_bytes must be a positive integer')
+    actor = 'DevFlow actor ' + binding['actor_id'] + '; stage ' + stage + '.'
+    configuration = actor + ' Follow the scoped authoritative brief in the turn input.' if binding['host'] == 'codex' else ''
+    prompt = actor + '\nScoped authoritative brief:\n' + json.dumps(brief, ensure_ascii=False, separators=(',', ':')) + '\nTask:\n' + task
+    size = len(configuration.encode('utf-8')) + len(prompt.encode('utf-8'))
+    if size > max_bytes or len(prompt.encode('utf-8')) > 262144:
+        raise WorkflowError('NATIVE_CONTEXT_OVERFLOW', 'known configuration/turn text exceeds budget; rescope or explicitly increase context_max_bytes',
+            {'known_text_bytes': size, 'max_bytes': max_bytes, 'artifact_refs': brief.get('evidence_refs', [])})
+    return {'configuration_text': configuration, 'prompt': prompt, 'known_text_bytes': size,
+            'coverage': 'Known configuration/turn text; host/protocol envelopes and hidden context are outside coverage.'}
+
 def pointer_path(root,binding):
     name=hashlib.sha256((binding['host']+':'+binding['binding_id']).encode()).hexdigest()
     return Path(root)/'native-model-context'/f'{name}.json'
@@ -164,14 +178,20 @@ def invoke(root,request,operation_id):
             return {**run['model_receipts'][identifier],'replayed':True}
         binding=validate_binding(data,request['binding_id'],request['revision'])
         try:
+            from .context_checkpoints import checkpoint_read
+            context_limit = request.get('context_max_bytes', 20000)
+            full_view = host_brief(data, binding, control_root=root, max_bytes=context_limit, stage_override=stage)
+            full_view = checkpoint_read(root, full_view, {'consumer_id': identifier, 'run_id': binding['run_id'],
+                'binding_id': binding['binding_id'], 'session_id': binding['session_id'], 'revision': binding['revision'],
+                'stage': stage, 'role': binding['role'], 'task_ids': [item['id'] for item in full_view['work_items']]},
+                recovery_reason='new-native-worker')
+            native_input = invocation_context(binding, stage, full_view, prompt, context_limit)
             backend=(CodexBackend if binding['host']=='codex' else ClaudeBackend)(binding['project_dir'])
             context=discover(root,binding,request.get('refresh',False),backend)
             decision=resolve(data,binding,stage,context)
             if not decision.get('resolved'):decision=candidate_intent(data,binding,stage,context)
             if decision['status'] not in {'allow','pending-access'} or not decision.get('resolved'):return {**decision,'message':'Choose a permitted model or resolve the reported policy blocker before native work.'}
-            brief=json.dumps(host_brief(data,binding),ensure_ascii=False,separators=(',',':'))
-            prompt='DevFlow actor '+binding['actor_id']+'; stage '+stage+'.\nScoped authoritative brief:\n'+brief+'\nTask:\n'+prompt
-            if len(prompt.encode())>262144:raise WorkflowError('NATIVE_CONTEXT_OVERFLOW','Mandatory native context exceeds budget; inspect references and scope the task.')
+            prompt = native_input['prompt']
             start={'binding_id':binding['binding_id'],'revision':binding['revision'],'invocation_id':identifier,'stage':stage,'decision':decision,'request_hash':request_hash,'operation_id':operation_id,'policy_revision':len(run.get('model_overrides',[])),'expected_scope':invocation_scope(binding,run,stage,{}),'launcher_pid':os.getpid(),'account_key':context['account_key'],'replacement_of':request.get('replacement_of'),'replacement_authorization':request.get('replacement_authorization')}
             _commit(root,operation_id+':native-start','native-start',start,binding);started=True
             if request.get('task_id'):
@@ -184,7 +204,7 @@ def invoke(root,request,operation_id):
                 now=read_state(root)['data'];tasks=[t['task_id'] for t in now.get('host_tasks',{}).values() if t['host']==binding['host'] and t['session_id']==binding['session_id']]
                 write_task_index(Path(binding['project_dir']),binding['host'],binding['session_id'],root,tasks)
             if binding['host']=='codex':
-                configuration=backend.configure(decision['resolved'],brief,access)
+                configuration=backend.configure(decision['resolved'],native_input['configuration_text'],access)
                 observed=configuration['observed'];resolved=decision['resolved']
                 if any(observed.get(k)!=resolved.get(k) for k in ('model','effort','provider')):
                     result={**configuration,'status':'interrupted','error_kind':'unavailable','reason_code':'MODEL_SUBSTITUTED'}

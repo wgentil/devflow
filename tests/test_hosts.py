@@ -11,9 +11,14 @@ from workflow_lib.releases import release_descriptor
 from workflow_lib.store import WorkflowError, transact, read_state
 
 def host_state(project='/tmp/project'):
-    return {'repositories':{'repo':{'location':project}}, 'runs':{'run':{
+    from workflow_lib.specs import content_hash
+    spec = {'mode': 'new', 'requirements': [{'id': 'R1', 'title': 'Fixture behavior',
+        'text': 'Fixture required behavior', 'acceptance_criteria': ['fixture target passes'], 'provenance': {'kind': 'authored'}}]}
+    spec_hash = content_hash(spec)
+    return {'spec': spec, 'approval': {'confirmed': True, 'content_hash': spec_hash},
+        'repositories':{'repo':{'location':project}}, 'runs':{'run':{
         'id':'run', 'host_protocol_version':1, 'actors':{'implementer':'original'}, 'repositories':{'repo':{'location':project}},
-        'plan':{'work_items':[{'id':'W1','kind':'code','requirement_ids':['R1']}]},
+        'plan':{'spec_hash': spec_hash, 'work_items':[{'id':'W1','kind':'code','requirement_ids':['R1']}]},
         'items':{'W1':{'status':'pending','attempts':[{'token':'t'}]}},
         'active_attempt':{'item_id':'W1','token':'t'},'status':'active'}}}
 
