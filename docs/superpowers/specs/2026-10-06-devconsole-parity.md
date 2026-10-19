@@ -1,5 +1,10 @@
 # Devflow: DevConsole Functionality Parity Targets
 
+> Historical design or implementation record. Status, checkboxes, paths and
+> validation results describe the original work and may have been superseded.
+> Use the [current setup guide](../../setup-and-usage.md) and
+> [documentation index](../../README.md) for supported behavior.
+
 Status: design inventory, not verified implementation parity. Baseline: locally installed DevConsole source, catalog, schemas, and command reference inspected on 2026-10-06.
 
 **Match** means retain the functional contract. **Adapt** means preserve the purpose through Codex skills and scripts. **Conditional** means runtime data, tools, or authorization are necessary. **Exclude** means outside the Codex-only scope. Every row requires implementation evidence before it can be marked complete.

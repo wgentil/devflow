@@ -30,7 +30,12 @@ recorded in the specification; it does not detect semantic omissions. The helper
 validates structure and binds approval to content, but currently permits approval
 with unanswered recorded gaps. Any content change requires renewed approval.
 
-New approvals use a selected registered repository and visible JSON/Markdown pair, typically `docs/specs/0063-ios-safari-suite.json` and `.md`. The repository files are authoritative: approval checks deterministic Markdown and both recorded hashes immediately before journaling. Ignored paths, `.devflow`, and paths escaping the repository are rejected. Existing journal-only flows remain supported as explicit legacy behavior.
+New approvals use a selected registered repository and visible JSON/Markdown pair
+whose name matches the feature, such as `docs/specs/greeting.json` and `.md` for
+the greeting example. The repository files are authoritative: approval checks
+deterministic Markdown and both recorded hashes immediately before journaling.
+Ignored paths, `.devflow`, and paths escaping the repository are rejected.
+Existing journal-only flows remain supported as explicit legacy behavior.
 
 Always include at least one relevant Mermaid diagram when creating or revising a
 specification. Store each diagram as a titled `diagrams` entry in the authoritative

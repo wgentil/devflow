@@ -1,5 +1,10 @@
 # Journal integration acceptance
 
+> Historical audit of the implementation described below. Counts, findings and
+> delivery notes apply to that increment, not the current checkout. Use the
+> [setup guide](setup-and-usage.md), [cross-host validation](cross-host-validation.md)
+> and [documentation index](README.md) for current guidance.
+
 Scope: finish the previously documented persistence gap for auxiliary workflows.
 This audit covers local integration; provider actions, actual accessible runtime
 usage, and global harness enforcement remain conditional or explicitly excluded.

@@ -1,5 +1,10 @@
 # DevFlow shared Codex and Claude Code design
 
+> Historical design or implementation record. Status, checkboxes, paths and
+> validation results describe the original work and may have been superseded.
+> Use the [current setup guide](../../setup-and-usage.md) and
+> [documentation index](../../README.md) for supported behavior.
+
 Status: approved for implementation by the user. This document defines the target
 contracts; [implementation validation](../../cross-host-validation.md) records
 actual coverage, host verification and remaining limitations.

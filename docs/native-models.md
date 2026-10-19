@@ -131,5 +131,6 @@ host versions produce diagnostics rather than fabricated observations.
 
 Live smoke tests used Codex and Claude 2.1.284 existing logins, exact requested
 model identity, tiny no-tool outputs, immutable receipts and exact retry replay.
-This does not establish native Codex plugin installation or representative model
-capability validation. See [validation](cross-host-validation.md).
+Worker smoke is separate from the successful earlier isolated plugin-install
+checks and does not establish current-release install-to-workflow behavior or
+representative model capability. See [validation](cross-host-validation.md).

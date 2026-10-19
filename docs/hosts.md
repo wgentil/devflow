@@ -19,8 +19,10 @@ release when reading workflow instructions; after an upgrade, reload/restart and
 explicitly refresh attachment. Unknown loaded release blocks attachment/handoff.
 
 Codex uses explicit completion checks. Claude's completion adapter is implemented
-and has passed a real local-load smoke. Native Codex installation remains unverified; scoped native model workers
-have passed live CLI smoke tests; see the validation report.
+and has passed a real local-load smoke. Isolated Codex and Claude marketplace
+installs succeeded for earlier releases. Scoped native model workers also passed
+live CLI smoke tests; these are separate from current-release end-to-end workflow
+validation. See the [validation report](cross-host-validation.md).
 
 Packaging contracts: [Codex packaging](https://developers.openai.com/plugins/build/plugins)
 and [Claude manifest](https://code.claude.com/docs/en/plugins-reference).
@@ -204,7 +206,8 @@ control root; never edit authoritative history to make a task complete.
 Native discovery, selected-model probes and scoped launch are integrated. Hooks
 and portable read-only resolution never launch workers or contact providers.
 No representative capability-validated automatic mappings ship in this release.
-Native Codex plugin installation remains a separately unverified requirement.
+Earlier isolated native Codex installation checks succeeded; current-release
+install-to-workflow and repair validation remain separate evidence requirements.
 
 Governing policy approval alone does not resume a paused repository-backed run.
 Record plan and verification impact through explicit plan revalidation; a run

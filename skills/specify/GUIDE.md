@@ -45,7 +45,7 @@ must add one before approval. Legacy journal-only specs remain compatible.
 
 ```sh
 df repo register --root "$CONTROL" --repo-id app --location "$APP"
-df spec store --root "$CONTROL" --file spec.json --repo-id app --path docs/specs/0063-ios-safari-suite.json --operation-id greeting-spec-v1
+df spec store --root "$CONTROL" --file spec.json --repo-id app --path docs/specs/greeting.json --operation-id greeting-spec-v1
 HASH=$(df spec validate --file spec.json | python3 -c 'import sys,json; print(json.load(sys.stdin)["content_hash"])')
 # After the human approves the rendered specification:
 df spec approve --root "$CONTROL" --confirm-hash "$HASH" --actor-id human-1 --operation-id approve-greeting-v1

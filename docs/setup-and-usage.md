@@ -41,7 +41,10 @@ before a cross-host handoff; DevFlow checks exact installed release parity.
 For source development, `claude --plugin-dir` loads a local checkout for one
 session as described in the optional
 [developer guide](developer-cli.md#local-claude-package-check).
-Isolated Claude and Codex GitHub marketplace installs of 0.3.1 succeeded.
+Isolated Claude and Codex GitHub marketplace installs of 0.3.1 succeeded. These
+checks validate those earlier packages; they do not establish current-release
+end-to-end workflow, repair, or cross-OS behavior. The current package contains
+eleven skills, including the standalone UX reviewer.
 Host-specific verification and remaining limitations
 are recorded in [hosts](hosts.md) and [validation](cross-host-validation.md).
 The [evidence-loop acceptance review](evidence-loops-acceptance.md) separates
@@ -349,7 +352,7 @@ rather than a duplicate repository identity. Preserve the original journal.
 ### Repository-backed specifications
 
 Ask DevFlow to store the specification in the selected registered repository as a
-visible JSON/Markdown pair, for example `docs/specs/0063-ios-safari-suite.json`
+visible JSON/Markdown pair, for example `docs/specs/greeting.json`
 and `.md`, and review the rendered file before confirming its exact content hash.
 Include a titled `diagrams` entry with Mermaid source in the JSON; DevFlow renders
 it into the Markdown and requires it before approving new or edited content.
@@ -372,7 +375,7 @@ a fresh human approval. Journal inspection and replay remain available without
 repository files. A temporary change restored between checks is unobservable.
 
 Existing journal-backed specifications remain compatible. Ask “Migrate the legacy
-specification from this control root to `docs/specs/0063-ios-safari-suite.json` in
+specification from this control root to `docs/specs/greeting.json` in
 the registered repository.” The agent requires explicit source and target, uses
 a stable operation ID, preserves the recorded JSON content hash, and refuses to
 overwrite either companion. Migration creates a candidate requiring new human

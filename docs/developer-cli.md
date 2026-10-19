@@ -8,27 +8,28 @@ Update this reference whenever the documented CLI behavior changes.
 
 ## What DevFlow does today
 
-DevFlow combines ten agent skills with a shared Python helper. The agent conducts
+DevFlow combines eleven agent skills with a shared Python helper. The agent conducts
 interviews, implements work and arranges independent reviewers. The helper records
 context, approved requirements, dependent work items, attempts, verification,
 reviews, acceptance, hardening, delivery, issue workflows and usage reports.
 
-It is currently a Codex-oriented source bundle. Its helper can run directly from
-a checkout; no global executable, server, daemon or dependency installation is
-needed. This repository has a root `plugin.json`, but no bundled marketplace,
-published installation URL or automatic installer. Merely reading/loading a skill
-does not initialize a project or create state.
+Codex and Claude share one skill/helper tree, host attachment, task mapping and
+parity-checked sequential handoff. Claude completion hooks are implemented;
+Codex completion checks are explicit. The repository packages both host manifests
+and a marketplace served from `wgentil/devflow`. Isolated installs of earlier
+releases succeeded on both hosts; see the [validation report](cross-host-validation.md)
+for the evidence and remaining end-to-end checks. Users choose upgrades.
 
-Claude packaging, host attachment, completion hooks, cross-host handoff and release
-parity are [proposed in the design spec](superpowers/specs/2026-10-06-devflow-cross-host-design.md).
-They are not implemented. Do not use the proposed `host` commands as current CLI
-instructions. Upgrades are user-controlled; automatic installation updates are
-not part of the proposed design either.
+The helper also runs directly from a checkout with no global executable, server,
+daemon or Python package installation. Reading a skill alone creates no state;
+the agent explicitly calls `host init` to discover and initialize a project.
 
 ## Prerequisites and paths
 
-- Python 3.11 or newer on macOS/Linux. The helper uses `fcntl`; native Windows is
-  not currently supported.
+- Python 3.11 or newer available as `python3` on macOS/Linux. Locking and native
+  process transport have platform-aware implementations, but native Windows and
+  WSL2 are not supported releases pending the remaining
+  [host validation](windows-validation.md).
 - Git and an existing application checkout for proof, review and delivery checks.
 - A DevFlow source checkout or an accessible installed bundle containing all
   skills, helpers, docs and examples.
@@ -61,37 +62,58 @@ commands call `skills/workflow/scripts/run.py`. `df version` returns the plugin
 version and state schema version. You can use the absolute Python invocation
 instead of defining the function.
 
-Keep the control root and command input/output files outside the application
-checkout, as above. Test commands that create new tracked/untracked files can
-invalidate repository fingerprints. If you intentionally store state inside a
-checkout, exclude its runtime directories from Git and ingestion scope first.
-Never put mutable project state into an installed plugin/cache directory.
+This direct-helper walkthrough uses an external control root and input directory.
+The agent workflow instead defaults to excluded `.devflow/control` state in the
+application checkout. Test commands that create tracked/untracked files can
+invalidate repository fingerprints; keep transient inputs and outputs outside
+the checkout or in excluded runtime directories. `host init` configures the local
+Git runtime exclusion, and ingestion independently excludes `.devflow`. Never
+put mutable project state into an installed plugin/cache directory.
 
 ## Use through an agent or directly
 
-With DevFlow available in your Codex environment, invoke its `workflow` skill or
-ask the agent to use it for your project. Provide the application path and chosen
-control root. For example:
+With DevFlow enabled in Codex or Claude, open the application Git checkout and
+invoke `workflow` or ask the agent to use DevFlow. For example:
 
-> Use DevFlow for this checkout. Keep workflow state at my selected control root.
+> Start DevFlow in this checkout.
 > Resolve project context, clarify requirements and show me the rendered spec
 > before asking for approval. Resume existing work rather than starting a duplicate.
 
-If skill registration has not been configured in your environment, direct the
-agent to the source [workflow instructions](../skills/workflow/SKILL.md) and use the
-helper commands below. This is source usage, not an automatic plugin installation.
-For a host-installed bundle, point `DEVFLOW` at that bundle's actual root and use
-its supported skill registration/invocation mechanism.
+The agent resolves the bundled helper, discovers the project and initializes or
+resumes records. Plugin users need no shell setup or package path selection.
+An external control root is an optional advanced choice. Installation and upgrade
+commands are in the [primary guide](setup-and-usage.md#installation).
 
-Do not initialize Git, change remotes, install globally or create a marketplace
-merely to use the helper. Those are separate user choices. Actual host installation
-instructions will be added when supported packaging is implemented and verified.
+For source development, direct the agent to the
+[workflow instructions](../skills/workflow/SKILL.md), or use the helper examples
+below. Direct helper usage does not require installing the plugin. Do not initialize
+Git or change remotes just to use it; begin with an existing application repository.
 
 ## Initialize a project
 
-There is currently no `init` command. Initialization consists of selecting a
-control root, recording context and registering repository locations. The first
-stateful helper command creates the journal at the selected root automatically.
+`host init` discovers Git/worktree metadata, registers a stable repository ID,
+creates missing control records and preserves existing data. It reports resumable
+runs and document-setup readiness; it does not approve requirements or issue work.
+Choose either this guided initialization path or the manual walkthrough below;
+do not run both against the same control journal.
+
+```sh
+df host init --project-dir "$APP" --root "$CONTROL" --operation-id init-greeting-v1
+df setup inspect --project-dir "$APP"
+```
+
+Omit `--root` for the project-local default. Use the returned `repo_id` for subsequent
+repository-backed work. The manual sequence below uses the explicit ID `app` and
+is an alternative for direct helper experiments in a fresh external control root;
+do not register a second identity for a repository already registered by `host init`.
+Complete guided document setup and the first-use ground interview for new projects;
+see [setup helpers](#guided-setup-helpers-optional-developer-reference).
+
+## Manual helper walkthrough
+
+This alternative starts with a fresh external control root and explicitly
+registers repository ID `app`. It demonstrates the legacy slice-context inputs;
+it does not replace guided document setup for a newly initialized plugin project.
 
 ### 1. Record context and repository
 
@@ -129,7 +151,7 @@ cp "$EXAMPLES/spec.json" "$WORK/spec.json"
 df spec validate --file "$WORK/spec.json"
 df spec gaps --file "$WORK/spec.json"
 df spec render --file "$WORK/spec.json"
-df spec store --root "$CONTROL" --file "$WORK/spec.json" --repo-id app --path docs/specs/0063-ios-safari-suite.json --operation-id spec-v1
+df spec store --root "$CONTROL" --file "$WORK/spec.json" --repo-id app --path docs/specs/greeting.json --operation-id spec-v1
 SPEC_HASH=$(df spec validate --file "$WORK/spec.json" | python3 -c 'import json,sys; print(json.load(sys.stdin)["content_hash"])')
 ```
 
@@ -194,6 +216,10 @@ issued. Repeating the same request ID does not issue a second token.
 
 ```mermaid
 flowchart TD
+    Project["Existing Git checkout"] --> Mode{"Entry path"}
+    Mode -->|Agent workflow| Init["host init; guided document setup and ground interview"]
+    Init --> Setup
+    Mode -->|Manual helper walkthrough| Setup
     Setup["Context and registered repositories"] --> Spec["Refined and human-approved spec"]
     Spec --> Plan["Validated dependency plan"]
     Plan --> Attempt["Eligible item and attempt token"]
@@ -335,15 +361,24 @@ exact-hash apply. Neither operation is a shortcut around proof/review requiremen
 
 ## Delivery
 
-After acceptance and hardening pass, prepare a canonical manifest for local merge,
-PR or retained branch, verify the exact hash and repository heads, and ask for the
-human's delivery choice and authorization. Perform that authorized action using
-appropriate tools, then record the actual result with `delivery record`.
+After acceptance and hardening pass, establish the human's delivery choice,
+then prepare and verify the exact manifest and repository heads. Present that
+concrete result and obtain authorization bound to its `manifest_hash` and action
+before performing delivery. For retained branches and local merges, perform the
+authorized action using appropriate tools and record its actual result with
+`delivery record`.
 
-DevFlow does not execute merges, pushes, PR creation or cleanup automatically.
-A retained branch preserves exact heads; local merge records resulting commits;
-PR records need the actual provider request ID. Repositories must be clean for
-manifest preparation. See [workflow delivery commands](../skills/workflow/GUIDE.md#delivery-example).
+For a GitHub PR, verify the dedicated ruleset setup and use `pr open` with the
+verified pull-request manifest and explicit authorization. It creates or finds
+the exact-head PR and posts a pending required status. The run stays active for
+independent full-file review through `review pr-package` and `review record`,
+then `pr publish` and `pr complete` after confirmed success. `delivery record`
+does not accept new PR outcomes; historical PR records remain readable.
+Rework and external updates require renewed gates and exact-head review.
+
+The helper does not merge, push or clean up repositories. Repositories must be
+clean for manifest preparation. See [delivery examples](../skills/workflow/GUIDE.md#delivery-example)
+and [PR review and recovery](../skills/review-work/GUIDE.md#github-pr-full-review).
 
 ## Optional workflows
 
@@ -393,8 +428,10 @@ create arbitrary new IDs to bypass a scope, evidence or authorization failure.
 Users choose upgrades. Current helpers enforce explicit host ownership, task scope
 and exact release parity at handoff. Reload instructions and refresh an active
 binding, or explicitly resume a compatible detached binding with its revision.
-No automatic installer/updater is included. Claude hooks are implemented; native
-Codex local installation remains unverified. Native model launch/discovery is implemented; see [host contracts](hosts.md) and [requirement review](cross-host-validation.md).
+No background installer/updater is included. Claude hooks and native model
+launch/discovery are implemented. Isolated Codex/Claude package installation
+has succeeded for earlier releases; current-release end-to-end host validation
+has separate limits. See [host contracts](hosts.md) and [validation](cross-host-validation.md).
 
 ## Local Claude package check
 
@@ -409,16 +446,18 @@ and an isolated installation smoke.
 
 ## Reference and maintenance
 
-- [All ten skill guides](skills.md)
+- [All eleven skill guides](skills.md)
 - [Input examples and required edits](examples/README.md)
 - [Detailed CLI notes](usage.md)
 - [Durable auxiliary request contracts](journal-integration.md)
-- [Current integration acceptance](journal-integration-acceptance.md)
+- [Historical journal integration acceptance](journal-integration-acceptance.md)
 
 When DevFlow changes, update this guide, the affected skill guides/diagrams and
 examples together. Verify documented commands, links, fixture shapes and supported
 behavior before reporting completion. Clearly label design-only features until
 implemented and validated.
+
+## Host commands (optional developer reference)
 
 Host initialization developer command: invoke the bundled helper with
 `host init --project-dir <working-directory> --operation-id <unique-id>`.

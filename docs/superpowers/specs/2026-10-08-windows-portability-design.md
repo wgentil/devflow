@@ -1,5 +1,10 @@
 # DevFlow Windows portability design
 
+> Historical design or implementation record. Status, checkboxes, paths and
+> validation results describe the original work and may have been superseded.
+> Use the [current setup guide](../../setup-and-usage.md) and
+> [documentation index](../../README.md) for supported behavior.
+
 ## Outcome
 
 A user can install the same DevFlow release in Codex or Claude on Windows, open an existing Git repository, and run the normal workflow without setting DevFlow-specific environment variables, function aliases, helper paths, or Python commands. WSL2 is validated first as the lower-risk Windows path. Native Windows Python and PowerShell follow as a separate release gate. macOS and Linux behavior, journal integrity, host handoff, and existing project records remain compatible.

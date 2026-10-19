@@ -26,7 +26,8 @@ recovery notes. Start with [workflow](../skills/workflow/GUIDE.md).
 ### Optional developer shell setup
 
 The following is for direct helper use and contributor examples, not plugin-user
-onboarding. The intended plugin workflow resolves these paths automatically.
+onboarding. The agent resolves the bundled helper and discovers project paths during
+explicit initialization; reading a skill alone creates no records.
 See the [developer walkthrough](developer-cli.md) for current direct CLI setup.
 
 Use Python 3.11+ on macOS/Linux. The lock implementation is platform-aware,
@@ -61,9 +62,10 @@ Inspect response fields even when the command exits successfully: a verification
 response can say `passed: false`.
 
 Agents arrange interviews, implement changes and launch separate reviewers. The
-helper records and checks evidence; it does not automatically spawn workers,
-interview users, merge branches or open PRs. Record approval only after real user
-authorization. Configure only the external actions actually authorized.
+helper records and checks evidence. Explicit `host model-run` and opted-in
+`repair next` can launch scoped workers; an authorized `pr open` creates or finds
+a GitHub PR. The helper does not interview users or merge branches. Record approval
+only after real user authorization and configure only authorized external actions.
 
 ## Troubleshooting and scope
 
@@ -83,8 +85,9 @@ records. [CLI walkthrough](usage.md) provides additional commands. Use `df GROUP
 
 The [approved cross-host design](superpowers/specs/2026-10-06-devflow-cross-host-design.md)
 is partly implemented: shared skills, explicit ownership, task completion, Claude
-hooks and parity-checked sequential handoff are current. Native Codex installation
-remains unverified. Stage profiles, native account discovery, selected-model probes and scoped worker
+hooks and parity-checked sequential handoff are current. Isolated earlier-release
+Codex/Claude installs succeeded; current-release end-to-end host validation remains
+separate. Stage profiles, native account discovery, selected-model probes and scoped worker
 launch are implemented. See [native usage](native-models.md) and the
 [requirement report](cross-host-validation.md) for verification and remaining limits.
 

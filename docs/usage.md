@@ -3,10 +3,15 @@
 For complete setup, initialization and everyday usage, start with the
 [primary guide](setup-and-usage.md).
 
-Devflow is a skills-only Codex plugin. Run its helper from any working directory with Python 3.11+ on macOS or Linux. Mutating commands require an explicit `--root`; merely loading a skill does not create state. Repository paths may contain spaces.
+DevFlow shares one skills/helper tree between Codex and Claude. Run the helper
+from any working directory with Python 3.11+ on macOS/Linux. Direct journal
+commands use `--root`; `host init` can select the excluded `.devflow/control`
+default, while guided `setup` commands use `--project-dir`. Merely reading a
+skill creates no state. Repository paths may contain spaces.
 
 These commands are an optional developer reference, not plugin-user onboarding.
-The intended workflow resolves packaged helpers and project paths automatically.
+The agent workflow resolves packaged helpers and calls explicit project
+initialization; loading the plugin alone does not initialize a project.
 See the [developer walkthrough](developer-cli.md) for explicit shell examples.
 
 ## Basic sequence
@@ -61,7 +66,7 @@ python3 skills/workflow/scripts/run.py context set --root "$CONTROL_ROOT" --laye
 python3 skills/workflow/scripts/run.py context set --root "$CONTROL_ROOT" --layer project --file project.json
 python3 skills/workflow/scripts/run.py context resolve --root "$CONTROL_ROOT"
 python3 skills/workflow/scripts/run.py repo register --root "$CONTROL_ROOT" --repo-id service --location "$REPO_CHECKOUT"
-python3 skills/workflow/scripts/run.py spec store --root "$CONTROL_ROOT" --file spec.json --repo-id service --path docs/specs/0063-ios-safari-suite.json
+python3 skills/workflow/scripts/run.py spec store --root "$CONTROL_ROOT" --file spec.json --repo-id service --path docs/specs/greeting.json
 python3 skills/workflow/scripts/run.py spec validate --file spec.json
 python3 skills/workflow/scripts/run.py spec gaps --file spec.json
 python3 skills/workflow/scripts/run.py spec render --file spec.json
@@ -143,7 +148,12 @@ The checked brief fixture measured one complete `run next` response at 967 bytes
 
 The chosen control root stores a versioned append-only event journal and an atomically replaced, rebuildable `state.json` snapshot. Committed numbered event files are authoritative. Run attempts are journaled as compact deltas and replayed into the current run projection. The snapshot omits the journal's operation index to avoid storing each event twice. Incomplete `.tmp` files are ignored and identified during recovery. Corrupt or future-version journal events block further transactions with a stable error code. Repeating a mutation operation ID returns a replay receipt identifying the original committed event, with current committed run status where applicable. It does not apply new inputs or issue another token; active attempt replay returns its existing brief. Use a new operation ID for a new mutation. Keep the control root backed up with the project records it references.
 
-The implementation uses `fcntl` advisory locks and is supported on macOS/Linux. No package dependencies, daemon, MCP server, or default filesystem location are required.
+The implementation uses platform-aware advisory locks (`fcntl` on POSIX and
+`msvcrt` on Windows). Released host support remains macOS/Linux; portable source
+and Windows CI results do not establish complete installed-host support.
+`host init` defaults to `.devflow/control` with local Git and ingestion exclusions,
+or accepts an external control root. No Python package dependencies, daemon or MCP
+server are required. See [platform validation](windows-validation.md).
 
 ## Current limits
 
@@ -155,8 +165,10 @@ spec-gap interviews remain agent responsibilities. Optional bounded repair can
 dispatch the current implementer for failed configured hardening gates through
 an explicit command; other failures still need agent-led rework.
 Claude hooks, explicit attachment and parity-checked sequential handoff are
-implemented. Native Codex installation remains unverified; native model discovery,
-selection probes and workers are documented in [native usage](native-models.md). Never treat unsupported or unavailable gates as passing evidence.
+implemented. Earlier isolated Codex and Claude installs succeeded; current-release
+end-to-end host behavior has separate validation limits. Native model discovery,
+selection probes and workers are documented in [native usage](native-models.md)
+and [validation](cross-host-validation.md). Never treat unavailable gates as passing.
 
 The auxiliary commands are now routed and journal-backed. Mutations require a
 control root and explicit operation ID; retry receipts survive fresh sessions and

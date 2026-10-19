@@ -3,6 +3,20 @@
 This report distinguishes implemented policy, fixture validation and real host
 execution. The Claude marketplace is published in the private GitHub repository;
 no regular user installation was changed by this validation.
+
+## Current evidence limits
+
+The current package is v0.3.8 with eleven skills. Successful isolated native Codex
+and Claude installs are recorded below for earlier releases, including v0.3.1;
+they supersede the initial failed Codex discovery probe as installation evidence.
+They do not establish a current-release installed workflow or repair run. Native
+worker smoke, hook-script tests and end-to-end host execution are distinct checks.
+Windows/WSL2 support remains unreleased; see the
+[platform matrix](windows-validation.md). Historical counts and review findings
+below retain their original scope.
+
+## Recorded installation checks
+
 The Claude marketplace descriptor validates. An isolated `CLAUDE_CONFIG_DIR`
 smoke using the committed `git archive` successfully added the extracted
 package, installed `devflow@devflow-marketplace` version 0.2.0, and discovered
@@ -23,7 +37,7 @@ exact retry after another control root has taken over the old project locator.
 ## Evidence
 
 - Baseline: 158 unittest cases passed before changes.
-- Full current suite: 340 unittest cases PASS after the GitHub marketplace packaging
+- Historical suite: 340 unittest cases PASS after the GitHub marketplace packaging
   change and the evidence-loop implementation
   and independent-review fixes. Package/resource, host, hook, native transport,
   recovery, model-policy, evidence-loop and integration checks pass.
@@ -41,10 +55,11 @@ exact retry after another control root has taken over the old project locator.
   returned ITEM_VERIFIED, preserved the attempt token and returned STALE_BINDING
   for the old Claude task. Current-source CLI relocation/transfer regression is
   [test_host_integration.py:95](../tests/test_host_integration.py#L95).
-- Codex native discovery probe: `codex plugin list --json` from a disposable repo
+- Initial Codex native discovery probe: `codex plugin list --json` from a disposable repo
   marketplace did not list that local test package. No global marketplace/trust/
-  installation settings were altered to force discovery. Native install-to-workflow
-  remains unverified; shared command verification is not equivalent to installation.
+  installation settings were altered to force discovery. Later isolated installs
+  succeeded as recorded above. Current-release install-to-workflow remains
+  unverified; shared command verification is not equivalent to live host execution.
 - Provider defaults have not passed representative capability evaluation. No automatic
   mapping ships. Actual native Codex and Claude tiny worker invocations succeeded
   with existing logins and explicit advisory models; exact retries replayed receipts
@@ -56,10 +71,13 @@ exact retry after another control root has taken over the old project locator.
 
 Changed-file citations identify implementation/test evidence, not a claim that
 fixture-generated host identities or model names were real provider invocations.
+This table retains the original cross-host review scope; the packaging and install
+rows include the later successful isolated installation evidence. Historical
+skill counts and source line citations describe that increment.
 
 | Requirement | Status | Evidence and limits |
 | --- | --- | --- |
-| R1 shared packaging | CANNOT VERIFY | Both manifests and shared resources resolve; Claude local loading works. Full native Codex discovery is unverified. `.codex-plugin/plugin.json:1`; `tests/test_releases.py:11`. |
+| R1 shared packaging | MET for package layout and recorded earlier installs | Both manifests and shared resources resolve; isolated Codex/Claude installs succeeded through v0.3.1. Current-release end-to-end behavior remains separate. `.codex-plugin/plugin.json:1`; `tests/test_releases.py:11`. |
 | R2 shared instructions | MET | One skill tree, neutral reviewers and host contract links. `skills/review-work/SKILL.md:40`; `docs/hosts.md:1`. |
 | R3 opt-in | MET | Unattached/unmapped hooks are inert. `tests/test_claude_hooks.py:28`; `host_completion.py:29`. |
 | R4 durable ownership | MET | Journal/CAS, retry scope and multiprocess race. `tests/test_hosts.py:62`; `tests/test_host_integration.py:23`. |
@@ -80,7 +98,7 @@ fixture-generated host identities or model names were real provider invocations.
 | R19 recovery/parity | MET | Explicit refresh and exact-revision detached resume preserve history and compatibility, detached baseline and pre-binding-only legacy adoption; transfer rereads before locked commit. `tests/test_host_handoff.py:41`; `tests/test_host_integration.py:65`; `commands/host.py:1`. |
 | R20 no shell onboarding | MET | Workflow resolves bundled helpers and invokes initialization; interpreter detection diagnoses absence. `skills/workflow/SKILL.md:90`; `bootstrap.py:11`; `docs/setup-and-usage.md:1`. |
 | R21 safe initialization | MET | Local Git/worktree excludes, stable identity, preservation and root ingestion exclusion. `bootstrap.py:48`; `tests/test_host_bootstrap.py:16`. |
-| R22 install readiness | CANNOT VERIFY | Claude local load/protocol and private GitHub marketplace install verified; Codex native local discovery remains unverified. `docs/setup-and-usage.md:9`; `tests/test_package.py:60`. |
+| R22 install readiness | CANNOT VERIFY for current-release end-to-end workflow | Isolated native Codex/Claude installs succeeded for earlier releases. Current-release installed workflow and repair behavior have not been established by those checks. `docs/setup-and-usage.md:9`; `tests/test_package.py:60`. |
 | R23 profiles | MET | Stage/effort policy and deterministic no-dispatch. `definitions/model-policy.json:1`; `tests/test_model_policy.py:21`. |
 | R24 supported controls/honesty | MET | Bundled native discovery/probe/run applies supported controls and records host observations. Claude effort stays unknown and strict blocks. `skills/workflow/scripts/workflow_lib/native_models.py:133`; `skills/workflow/scripts/workflow_lib/native_runtime.py:124`; `tests/test_native_models.py:23`. |
 | R25 new models | MET | Account-scoped runtime access, explicit advisory candidate selection and honest unvalidated receipts; no automatic suitability promotion. `skills/workflow/scripts/workflow_lib/native_runtime.py:33`; `skills/workflow/scripts/workflow_lib/native_runtime.py:57`; `tests/test_native_models.py:42`. |
@@ -91,8 +109,9 @@ fixture-generated host identities or model names were real provider invocations.
 | R30 destination eligibility | MET | Profile decision and exact parity checked before transfer; source retained on block. `hosts.py:166`; `tests/test_host_handoff.py:32`. |
 
 Module shorthand above resolves under `skills/workflow/scripts/workflow_lib/`;
-`commands/host.py` resolves under `skills/workflow/scripts/`. Citations are updated
-if review fixes move their evidence. Full installation readiness is not claimed.
+`commands/host.py` resolves under `skills/workflow/scripts/`. Consult the named
+module/test when historical line numbers have moved. Full installation readiness
+is not claimed.
 
 ## Independent review and fix disposition
 
@@ -111,8 +130,9 @@ CLI resume and retry after refresh. All are in
 
 The user requested continuation of finding 8. Task 9 now supplies production native
 account discovery, selected-model probes, scoped launch and immutable actual result
-receipts. R24–R27/R29 are MET within the documented adapter limits; R1/R22 remain
-CANNOT VERIFY for native Codex plugin installation. The earlier deferred misleading
+receipts. R24–R27/R29 are MET within the documented adapter limits. Later isolated
+Codex installs established packaging/discovery; R22 still lacks current-release
+end-to-end evidence. The earlier deferred misleading
 candidate label is fixed to `UNVALIDATED_ADVISORY`, false capability validation and
 no validation reference.
 
@@ -122,6 +142,13 @@ CAS race, unbounded RPC writes, surviving descendants and null retry authorizati
 Each was reproduced RED and fixed GREEN in [native regression tests](../tests/test_native_models.py).
 No second review of those fixes was requested. Native process cleanup denial fails
 closed; it cannot certify a stopped child when the operating system denies inspection.
+
+Native workers use the installed host CLI and login. Access probes do not
+establish suitability, and the parent conversation's settings are not changed.
+Stopped-worker recovery requires explicit human confirmation plus lease and
+launcher checks; it does not use an unsupported cross-process worker query.
+Project relocation requires explicit repository/binding repair, rather than a
+second repository identity. These limits remain part of the current host contract.
 
 Live native invocation references: Codex
 `codex://01a11729-75e2-7301-8f99-b329ba6d7feb` used `gpt-6.1-sol`, observed low effort;

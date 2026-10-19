@@ -266,7 +266,7 @@ diagram remains usable until it changes.
 Legacy journal-backed specifications remain usable under their existing approval
 checks. To move one to visible files, ask the agent to migrate the specification
 from the explicit control root into a registered repository and a new relative
-JSON path (for example `docs/specs/0063-ios-safari-suite.json`). The agent uses
+JSON path (for example `docs/specs/greeting.json`). The agent uses
 `spec migrate --root <source-control-root> --repo-id <target-repo-id>
 --path <relative-json-target> --operation-id <stable-migration-id>`. It copies the
 actual recorded JSON, preserves its content hash, creates the Markdown companion,

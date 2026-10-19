@@ -1,5 +1,10 @@
 # Devflow Usage, Reporting and Compatibility Implementation Plan
 
+> Historical design or implementation record. Status, checkboxes, paths and
+> validation results describe the original work and may have been superseded.
+> Use the [current setup guide](../../setup-and-usage.md) and
+> [documentation index](../../README.md) for supported behavior.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox syntax for tracking.
 
 **Goal:** Implement conditional runtime usage import, explicit pricing and reproducible outcome/productivity reports; finish parity fixtures and optional legacy import.

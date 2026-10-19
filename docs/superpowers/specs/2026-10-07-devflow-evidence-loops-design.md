@@ -1,5 +1,10 @@
 # DevFlow evidence and improvement loops
 
+> Historical design or implementation record. Status, checkboxes, paths and
+> validation results describe the original work and may have been superseded.
+> Use the [current setup guide](../../setup-and-usage.md) and
+> [documentation index](../../README.md) for supported behavior.
+
 Status: approved design. This spec extends the approved cross-host design;
 implementation status is recorded in [evidence-loop acceptance](../../evidence-loops-acceptance.md). The change to
 automatic rework below supersedes that design's prohibition on launching rework

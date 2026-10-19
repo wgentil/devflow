@@ -1,5 +1,10 @@
 # UX reviewer Autowork design
 
+> Historical design or implementation record. Status, checkboxes, paths and
+> validation results describe the original work and may have been superseded.
+> Use the [current setup guide](../../setup-and-usage.md) and
+> [documentation index](../../README.md) for supported behavior.
+
 ## Intent and baseline
 
 Review the `ux-reviewer` skill released in DevFlow v0.3.6 through Autowork's

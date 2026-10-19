@@ -1,5 +1,10 @@
 # Devflow Design
 
+> Historical design or implementation record. Status, checkboxes, paths and
+> validation results describe the original work and may have been superseded.
+> Use the [current setup guide](../../setup-and-usage.md) and
+> [documentation index](../../README.md) for supported behavior.
+
 Status: approved design. The foundation increment is implemented and reviewed; later increments remain planned. See `docs/foundation-acceptance.md` and the parity inventory for achieved scope and open requirements.
 
 ## Purpose and scope

@@ -1,5 +1,10 @@
 # Foundation requirement acceptance audit
 
+> Historical audit of the implementation described below. Counts, findings and
+> delivery notes apply to that increment, not the current checkout. Use the
+> [setup guide](setup-and-usage.md), [cross-host validation](cross-host-validation.md)
+> and [documentation index](README.md) for current guidance.
+
 Source: the approved foundation implementation plan and the foundation portion of the Devflow design. Implementation baseline: `1b9a506`; reviewed implementation: `1c2be5b`.
 
 This is an implementer requirement audit. The independent whole-branch review covered `1b9a506..5ab07ac`; its eight findings were fixed in `1c2be5b`. This document does not relabel that code review as independent requirement acceptance or claim full DevConsole parity.
@@ -29,7 +34,7 @@ R20: MET — Mutation replay, stale projections, failure status and malformed bo
 R21: MET — Historical event payloads remain immutable — [tests/test_review_regressions.py:127](../tests/test_review_regressions.py#L127).
 R22: MET — Telemetry identity and normalized roots — [tests/test_review_regressions.py:136](../tests/test_review_regressions.py#L136).
 R23: MET — Explicit item selection including concurrent replay — [tests/test_review_regressions.py:162](../tests/test_review_regressions.py#L162).
-R24: MET — Supported interfaces, recovery, unavailable gates and measurement limits — [docs/usage.md:42](../docs/usage.md#L42).
+R24: MET — Supported interfaces, recovery, unavailable gates and measurement limits — [CLI reference](usage.md).
 
 ## Deferred full-design requirements
 

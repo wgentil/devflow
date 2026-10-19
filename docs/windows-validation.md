@@ -37,7 +37,11 @@ still prove that Claude dispatches each installed hook event as expected.
 Claude's validator warns that the repository's root `CLAUDE.md` is not loaded
 as plugin context; DevFlow's shipped instructions live in its skills.
 
-Run the [WSL2 plan](superpowers/plans/2026-10-08-wsl2-validation.md) and the
-[native Windows plan](superpowers/plans/2026-10-08-native-windows-port.md) before
-changing support language. Record actual OS, Python, Git, host CLI, plugin version,
-package fingerprint, commands and outcomes here. Keep unavailable cells explicit.
+Before changing support language, validate the candidate release against the open
+host checks in the matrix above. The historical
+[WSL2 plan](superpowers/plans/2026-10-08-wsl2-validation.md) and
+[native Windows plan](superpowers/plans/2026-10-08-native-windows-port.md) record
+the original scope; adapt their remaining host checks to the candidate release
+and its actual skill inventory. Record actual OS, Python, Git, host CLI, plugin
+version, package fingerprint, commands and outcomes here. Keep unavailable cells
+explicit.

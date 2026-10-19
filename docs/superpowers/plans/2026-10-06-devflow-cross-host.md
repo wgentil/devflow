@@ -1,5 +1,10 @@
 # DevFlow Cross-host Implementation Plan
 
+> Historical design or implementation record. Status, checkboxes, paths and
+> validation results describe the original work and may have been superseded.
+> Use the [current setup guide](../../setup-and-usage.md) and
+> [documentation index](../../README.md) for supported behavior.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Deliver shared Codex/Claude DevFlow packaging, project initialization, explicit ownership and handoff, completion enforcement and auditable model policy.
@@ -147,7 +152,7 @@ Tasks 1–8 are implemented and reviewed with the documented native Codex instal
 verification limit. The Task 5 native integration gap was completed by Task 9 after
 the user's continuation. The original unchecked steps preserve the original plan;
 current evidence is in [validation](../../cross-host-validation.md) and
-[execution review](../../cross-host-execution-review.md). No merge/push/install was
+[consolidated validation and review disposition](../../cross-host-validation.md#independent-review-and-fix-disposition). No merge/push/install was
 authorized or performed.
 
 ### Task 9: Complete native model integration (continuation)

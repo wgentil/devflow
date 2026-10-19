@@ -1,5 +1,10 @@
 # Independent journal integration review disposition
 
+> Historical audit of the implementation described below. Counts, findings and
+> delivery notes apply to that increment, not the current checkout. Use the
+> [setup guide](setup-and-usage.md), [cross-host validation](cross-host-validation.md)
+> and [documentation index](README.md) for current guidance.
+
 Reviewed implementation: `fe1e26e..60bb3a6` with whole-branch baseline context.
 Independent reviewer: separate `integration_reviewer` invocation, read-only.
 Initial assessment: changes required; no Critical findings, eight Important,

@@ -1,5 +1,10 @@
 # Repository-owned DevFlow specifications
 
+> Historical design or implementation record. Status, checkboxes, paths and
+> validation results describe the original work and may have been superseded.
+> Use the [current setup guide](../../setup-and-usage.md) and
+> [documentation index](../../README.md) for supported behavior.
+
 Status: approved design (2026-10-08). This changes where project specifications
 and governing documents are authored, reviewed and retained; it does not describe
 current behavior.

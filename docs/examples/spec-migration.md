@@ -11,7 +11,7 @@ source-package developers. Supply an existing control journal and a registered
 repository ID; choose two absent, visible and unignored target files.
 
 ```text
-spec migrate --root /path/to/project/.devflow/control --repo-id app --path docs/specs/0063-ios-safari-suite.json --operation-id migrate-spec-0063
+spec migrate --root /path/to/project/.devflow/control --repo-id app --path docs/specs/greeting.json --operation-id migrate-greeting-spec-v1
 ```
 
 The source is the actual `spec` object recorded in that explicit journal. The

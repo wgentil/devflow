@@ -1,5 +1,10 @@
 # Evidence-loop acceptance review
 
+> Historical audit of the implementation described below. Counts, findings and
+> delivery notes apply to that increment, not the current checkout. Use the
+> [setup guide](setup-and-usage.md), [cross-host validation](cross-host-validation.md)
+> and [documentation index](README.md) for current guidance.
+
 This review covers the approved [R1–R13 design](superpowers/specs/2026-10-07-devflow-evidence-loops-design.md), branch `feat/devflow-evidence-loops` after the independent review fixes. Local verification ran 339 unittest cases successfully. Fixture tests establish policy and replay behavior; they do not establish installed-host capability or real provider suitability. The independent reviewer found three important issues: a stranded repair claim, overstated migration isolation, and unverified candidate artifact labels. The claim is now terminally aborted for terminal worker/gate-runner failures; migration and candidate-eval trust boundaries are explicit in the guides.
 
 | Requirement | Verdict | Evidence and limit |

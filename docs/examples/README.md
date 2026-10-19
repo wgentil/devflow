@@ -69,7 +69,7 @@ binding and current policy selection; [native-reconcile.json](native-reconcile.j
 is only for a stopped orphan after human confirmation. Follow
 [native usage](../native-models.md); fixture identities do not grant ownership.
 
-The [spec.json](spec.json) example includes a titled Mermaid diagram. It can be stored in a registered `app` repository with `spec store --repo-id app --path docs/specs/0063-ios-safari-suite.json` (plus the control root and source file options). This creates the companion Markdown with the diagram for review; rerun store to repair an interrupted pair. New or edited repository specs need a diagram before approval.
+The [spec.json](spec.json) example includes a titled Mermaid diagram. It can be stored in a registered `app` repository with `spec store --repo-id app --path docs/specs/greeting.json` (plus the control root and source file options). This creates the companion Markdown with the diagram for review; rerun store to repair an interrupted pair. New or edited repository specs need a diagram before approval.
 
 [Specification migration](spec-migration.md) documents explicit legacy source/target,
 idempotent candidate creation and required human reapproval.

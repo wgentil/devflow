@@ -9,7 +9,8 @@ remain at the repository root for both Claude and Codex.
 The marketplace is available from the private GitHub repository
 `wgentil/devflow` on `main`. An isolated Claude installation from GitHub
 verified the earlier 0.2.0 package, all ten skills and all four hooks. The
-package version is `0.3.8`; see [release notes](releases/v0.3.8.md). An isolated GitHub install
+package version is `0.3.8` with eleven skills; see [release notes](releases/v0.3.8.md).
+The ten-skill inventories above describe the earlier tested releases. An isolated GitHub install
 of 0.3.0 succeeded for both Claude and Codex. Access requires Git
 credentials for the private repository.
 
@@ -49,7 +50,9 @@ An isolated native Codex CLI marketplace add and plugin install of version 0.3.0
 succeeded with all ten skills discoverable. The GitHub install smoke used a
 disposable Codex configuration and did not change the regular user installation.
 Both isolated GitHub checks have now succeeded and reported enabled version
-0.3.1; neither changed the regular user configuration.
+0.3.1; neither changed the regular user configuration. Earlier install success
+does not establish current-release end-to-end host validation; see the
+[validation report](cross-host-validation.md).
 
 Codex users can add this private repository with `codex plugin marketplace add
 wgentil/devflow`, then install `devflow@devflow-marketplace` through the Codex

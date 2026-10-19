@@ -1,5 +1,10 @@
 # UX Reviewer Autowork Implementation Plan
 
+> Historical design or implementation record. Status, checkboxes, paths and
+> validation results describe the original work and may have been superseded.
+> Use the [current setup guide](../../setup-and-usage.md) and
+> [documentation index](../../README.md) for supported behavior.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Audit and, where needed, correct the released UX reviewer skill against the approved eight-requirement spec on a review-ready branch.
