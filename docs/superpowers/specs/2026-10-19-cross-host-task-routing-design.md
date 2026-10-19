@@ -1,6 +1,7 @@
 # Task-based model and effort routing for Claude and Codex
 
-Status: draft for user review; implementation is not approved.
+Status: approved by the user after commit `ff09e6c`; implementation planning is
+authorized. Implementation awaits review of the written plan.
 Baseline: `d673deb` on `main`. Preserve the existing user edit to `AGENTS.md`.
 
 ## Outcome and scope
@@ -236,7 +237,7 @@ business-rule/category redesign or selective reuse of old verification proof.
 Existing read-only analysis and deterministic helpers remain available without
 introducing new model-selection approval prompts.
 
-This draft chooses conservative automation and preserves strict observability.
+This design chooses conservative automation and preserves strict observability.
 User approval of the written spec permits implementation planning; it does not
 approve implementation, live paid evaluation, merging, pushing or release.
 
