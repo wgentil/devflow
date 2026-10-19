@@ -36,7 +36,8 @@ flowchart TD
     SpecGate -->|Yes| Inputs
     Plan["plan-work: validate coverage and dependencies"]
     Plan --> Next["run next: eligible item, attempt token and complete bounded context"]
-    Next --> Model["Discover and resolve stage; launch eligible scoped worker"]
+    Next --> Recover["Full context or same-scope checkpoint; handoff rebuilds full"]
+    Recover --> Model["Discover and resolve stage; launch eligible scoped worker"]
     Model --> Build["build-work: implement and verify"]
     Build --> Item["review-work: independent item review"]
     Item --> More{"More work items?"}

@@ -55,6 +55,10 @@ def register_commands(parser):
     brief.add_argument('--max-bytes', type=int, default=20000)
     brief.add_argument('--representation', choices=('markdown', 'json'), default='markdown')
     brief.add_argument('--output-mode', choices=('full', 'refs'), default='full')
+    brief.add_argument('--consumer-id')
+    checkpoint_options = brief.add_mutually_exclusive_group()
+    checkpoint_options.add_argument('--since-checkpoint')
+    checkpoint_options.add_argument('--full-context', action='store_true')
 
 
 def dispatch(parsed):
@@ -72,8 +76,14 @@ def dispatch(parsed):
         from workflow_lib.host_completion import host_brief
         data = read_state(Path(parsed.root))['data']
         binding = validate_binding(data, parsed.binding_id, parsed.revision)
-        return host_brief(data, binding, control_root=Path(parsed.root), max_bytes=parsed.max_bytes,
+        view = host_brief(data, binding, control_root=Path(parsed.root), max_bytes=parsed.max_bytes,
                           representation=parsed.representation, output_mode=parsed.output_mode)
+        from workflow_lib.context_checkpoints import checkpoint_read
+        return checkpoint_read(Path(parsed.root), view, {'consumer_id': parsed.consumer_id or binding['session_id'],
+            'run_id': binding['run_id'], 'binding_id': binding['binding_id'], 'session_id': binding['session_id'],
+            'revision': binding['revision'], 'role': binding['role'], 'stage': view['stage'],
+            'task_ids': [item['id'] for item in view['work_items']]},
+            since=parsed.since_checkpoint, full=parsed.full_context)
     if parsed.host_command in {'model-run','model-reconcile'}:
         if not parsed.root or not parsed.operation_id_explicit:raise WorkflowError('OPERATION_ID_REQUIRED','Native invocation needs control root and explicit operation ID.')
         from workflow_lib.native_runtime import invoke, reconcile

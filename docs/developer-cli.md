@@ -10,6 +10,11 @@ returns complete bounded context. For attached hosts use
 `df host brief --root "$CONTROL" --binding-id BINDING --revision 1` with the
 actual binding. See the context reference for output modes and overflow behavior.
 
+For an explicit continuing CLI consumer, add `--consumer-id my-session` and later
+`--since-checkpoint` with the returned checkpoint ID. Use `--full-context` after
+compaction; handoffs and new workers require full context. A CLI without consumer
+identity returns full context even when given an old checkpoint ID.
+
 This optional reference is for contributors, diagnostics and direct helper use.
 Plugin users should start with the [user guide](setup-and-usage.md); they should
 not need these shell variables, path selections or helper commands.

@@ -152,6 +152,14 @@ class FoundationFlowTests(unittest.TestCase):
         self.assertEqual(read_only_brief["attempt_id"], token)
         self.assertEqual(read_only_brief["authorization_scope"]["action"], "local-test-only")
         self.assertEqual(read_only_brief["unresolved_findings"][0]["id"], "F-1")
+        checkpoint = self.cli('run', 'brief', '--root', self.control, '--run-id', 'flow-1', '--consumer-id', 'cli-session')
+        delta = self.cli('run', 'brief', '--root', self.control, '--run-id', 'flow-1', '--consumer-id', 'cli-session',
+                         '--since-checkpoint', checkpoint['checkpoint']['id'])
+        self.assertEqual(delta['context_mode'], 'delta')
+        self.assertEqual(delta['task_view']['changed_units'], [])
+        recovered = self.cli('run', 'brief', '--root', self.control, '--run-id', 'flow-1',
+                             '--since-checkpoint', checkpoint['checkpoint']['id'])
+        self.assertEqual(recovered['context_mode'], 'full')
         inspected = self.cli("run", "inspect", "--root", self.control, "--run-id", "flow-1")
         self.assertEqual(inspected["run"]["active_attempt"]["token"], token)
         self.assertNotIn("operations", inspected)

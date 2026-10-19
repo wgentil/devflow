@@ -52,3 +52,18 @@ only. Hidden host instructions, unrelated reads and history are outside coverage
 `--output-mode full|refs`. Validate the specification pair together, then emit
 one representation. Reference output preserves control blockers and required-ID
 coverage and points to complete content-addressed artifacts.
+
+## Checkpoints and recovery
+
+Run/host brief reads return full context by default. `--since-checkpoint ID`
+requests an exact-base delta; unattached CLI consumers also need `--consumer-id`.
+`--full-context` explicitly rebuilds full context and conflicts with `--since-checkpoint`.
+Reference output cannot request a delta. Each delta supplies changed units,
+removed IDs and the complete current control envelope; applying it to its exact
+base reconstructs the current document view.
+
+Unknown/corrupt checkpoints or consumer/run/session/binding revision/stage/role/task
+scope changes return full context with a reason. Session start, compaction,
+handoff and new native workers require full context. Checkpoints live under
+`context-checkpoints/` in the selected control root; they are advisory and never
+advance gates or transfer ownership.

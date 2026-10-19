@@ -239,6 +239,10 @@ def main(argv: list[str] | None = None) -> int:
             command.add_argument("--max-bytes", type=int, default=20000)
             command.add_argument('--representation', choices=('markdown', 'json'), default='markdown')
             command.add_argument('--output-mode', choices=('full', 'refs'), default='full')
+            command.add_argument('--consumer-id')
+            checkpoint_options = command.add_mutually_exclusive_group()
+            checkpoint_options.add_argument('--since-checkpoint')
+            checkpoint_options.add_argument('--full-context', action='store_true')
         command.add_argument("--run-id", required=True)
     abandon = run_commands.add_parser("abandon")
     abandon.add_argument("--root", required=True)
@@ -622,6 +626,10 @@ def main(argv: list[str] | None = None) -> int:
                 candidates = ready_items(run["plan"], completed)
                 selected = [candidates[0]["id"]] if candidates else []
             result = _run_brief(run, selected, parsed.max_bytes, root=root, representation=parsed.representation, output_mode=parsed.output_mode)
+            from workflow_lib.context_checkpoints import checkpoint_read
+            result = checkpoint_read(root, result, {'consumer_id': parsed.consumer_id, 'run_id': run['id'],
+                'stage': result['stage'], 'role': 'cli', 'task_ids': selected},
+                since=parsed.since_checkpoint, full=parsed.full_context)
         elif parsed.command == "run" and parsed.run_command == "inspect":
             root = Path(parsed.root).expanduser().resolve()
             run = read_state(root)["data"].get("runs", {}).get(parsed.run_id)
