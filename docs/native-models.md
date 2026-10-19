@@ -168,3 +168,14 @@ resolved and observed settings remain separate. Portable receipt imports cannot
 mint routed or trusted observations. Partial worker results are blocked and do
 not change the active attempt; a scoped worker report is navigation, not proof.
 Historical events without routing metadata retain their original interpretation.
+
+## Escalation boundaries
+
+Routing policy may recommend the next eligible entry for a recorded reasoning
+failure. Automatic dispatch requires explicit human authorization bound to the
+lineage, task, host/stage, policy and configuration, with exact permitted model/
+effort pairs. The shipped limit is one escalation; evidence, pins, allowlists and
+cost constraints remain required. Operational blockers do not justify escalation.
+The journal binds work-item/stage lineage across retries and handoff; a changed
+task label cannot reset its count. Network retries remain a separate counter.
+Policy loading itself grants no authorization and no new validated model mapping.

@@ -299,6 +299,8 @@ def apply_native_event(state,kind,req):
         if 'routing' in decision:
             from .routing_receipts import validate_routing_evidence
             validate_routing_evidence(decision['routing'], scope)
+            from .routing_escalation import validate_lineage_start
+            lineage = validate_lineage_start(run, decision['routing'], scope, decision['resolved'])
         prior=next((r for r in reversed(list(records.values())) if r.get('scope')==scope),None)
         retry_count=0
         if prior and prior.get('status')=='interrupted':
@@ -309,6 +311,10 @@ def apply_native_event(state,kind,req):
             explicit=auth.get('approved') is True and isinstance(auth.get('actor_id'),str) and bool(auth['actor_id'])
             require(explicit or prior.get('retry_allowed') is True and retry_count<=2, 'Replacement needs an explicit user decision; automatic retry allowance exhausted.', 'MODEL_REPLACEMENT_REQUIRED')
         record={**req,'scope':scope,'status':'running','retry_count':retry_count}
+        if 'routing' in decision:
+            lineage['last_invocation_id'] = identifier
+            run.setdefault('routing_lineages', {})[lineage['lineage_id']] = lineage
+            run.setdefault('routing_task_ids', {})[lineage['task_key']] = lineage['lineage_id']
         records[identifier]=record
         return deepcopy(record)
     record=records.get(identifier,{})

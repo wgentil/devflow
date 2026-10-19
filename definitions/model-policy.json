@@ -71,6 +71,13 @@
       "fast-analysis",
       "efficient-coding",
       "deep-reasoning"
+    ],
+    "max_escalations": 1,
+    "escalation_routes": [
+      {
+        "profile": "deep-reasoning",
+        "effort": "high"
+      }
     ]
   }
 }
