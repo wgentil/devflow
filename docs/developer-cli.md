@@ -5,6 +5,11 @@ Context selection and content-cache behavior are described in the
 `python3 scripts/check_documentation.py --check` checks documentation;
 `--write` regenerates marked navigation only.
 
+`df run brief --root "$CONTROL" --run-id greeting-run --representation markdown --output-mode full --max-bytes 20000`
+returns complete bounded context. For attached hosts use
+`df host brief --root "$CONTROL" --binding-id BINDING --revision 1` with the
+actual binding. See the context reference for output modes and overflow behavior.
+
 This optional reference is for contributors, diagnostics and direct helper use.
 Plugin users should start with the [user guide](setup-and-usage.md); they should
 not need these shell variables, path selections or helper commands.

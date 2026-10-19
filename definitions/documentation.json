@@ -12,7 +12,11 @@
     "guide.build-work": {
       "path": "skills/build-work/GUIDE.md",
       "selector": {
-        "kind": "whole"
+        "kind": "markdown",
+        "heading": [
+          "build-work usage guide",
+          "Purpose and prerequisites"
+        ]
       },
       "dependencies": [],
       "classification": "active"

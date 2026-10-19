@@ -34,3 +34,21 @@ conservatively. Immutable artifacts remain inspectable after index invalidation.
 The Python inspection helper accepts only validated content IDs. These caches
 never refresh verification evidence, clear governing reassessment or substitute
 for live authorization, approval and ownership checks.
+
+## Complete task views
+
+`run next`, `run retry` and `run brief` add `task_view` to their existing control
+envelope. `host brief` uses the same builder after validating the binding. The
+view includes task requirements and criteria, every applicable governing rule,
+stage documentation and supported dependency closure. Live spec-pair and governing
+checks run before cache reuse. Missing required sources or stale plans fail.
+
+Full views default to 20,000 exact UTF-8 bytes including envelope overhead;
+`--max-bytes` explicitly overrides it. Optional omissions are named; required
+overflow returns references and a rescoping action. Bytes/4 is a token estimate
+only. Hidden host instructions, unrelated reads and history are outside coverage.
+
+`run brief` and `host brief` support `--representation markdown|json` and
+`--output-mode full|refs`. Validate the specification pair together, then emit
+one representation. Reference output preserves control blockers and required-ID
+coverage and points to complete content-addressed artifacts.

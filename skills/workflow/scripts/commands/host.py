@@ -48,6 +48,13 @@ def register_commands(parser):
     goal_status = commands.add_parser('goal-status')
     goal_status.add_argument('--root', required=True)
     goal_status.add_argument('--binding-id', required=True)
+    brief = commands.add_parser('brief')
+    brief.add_argument('--root', required=True)
+    brief.add_argument('--binding-id', required=True)
+    brief.add_argument('--revision', required=True, type=int)
+    brief.add_argument('--max-bytes', type=int, default=20000)
+    brief.add_argument('--representation', choices=('markdown', 'json'), default='markdown')
+    brief.add_argument('--output-mode', choices=('full', 'refs'), default='full')
 
 
 def dispatch(parsed):
@@ -60,6 +67,13 @@ def dispatch(parsed):
                                   parsed.operation_id if parsed.operation_id_explicit else '', parsed.expected_version)
     from workflow_lib.store import read_state, WorkflowError
     from workflow_lib.hosts import binding_for_session
+    if parsed.host_command == 'brief':
+        from workflow_lib.hosts import validate_binding
+        from workflow_lib.host_completion import host_brief
+        data = read_state(Path(parsed.root))['data']
+        binding = validate_binding(data, parsed.binding_id, parsed.revision)
+        return host_brief(data, binding, control_root=Path(parsed.root), max_bytes=parsed.max_bytes,
+                          representation=parsed.representation, output_mode=parsed.output_mode)
     if parsed.host_command in {'model-run','model-reconcile'}:
         if not parsed.root or not parsed.operation_id_explicit:raise WorkflowError('OPERATION_ID_REQUIRED','Native invocation needs control root and explicit operation ID.')
         from workflow_lib.native_runtime import invoke, reconcile

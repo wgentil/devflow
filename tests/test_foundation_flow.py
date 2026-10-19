@@ -136,6 +136,9 @@ class FoundationFlowTests(unittest.TestCase):
         self.assertNotIn("operations", started)
 
         first = self.cli("run", "next", "--root", self.control, "--run-id", "flow-1")
+        self.assertEqual(first['task_view']['coverage']['missing_ids'], [])
+        self.assertIn('R1', first['task_view']['required_ids'])
+        self.assertTrue(first['task_view']['artifact_id'])
         self.assertEqual(first["context"]["values"]["architecture"], "hexagonal")
         self.assertEqual(first["work_items"][0]["acceptance_criteria"], work_plan["work_items"][0]["acceptance_criteria"])
         self.assertEqual(first["artifacts"], {"requirements": f"sha256:{digest}"})

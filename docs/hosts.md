@@ -1,5 +1,9 @@
 # DevFlow hosts
 
+`host brief` validates the current binding and uses the same
+[complete task-view builder](context-efficiency.md#complete-task-views) as run
+briefs, including live input checks and required-context byte limits.
+
 One package contains `.codex-plugin/plugin.json`, `.claude-plugin/plugin.json`,
 `.claude-plugin/marketplace.json`, the shared `skills/`, helpers and all
 guides/examples. The marketplace entry selects the repository root as the

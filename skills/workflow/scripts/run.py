@@ -64,9 +64,15 @@ def _replay_result(state: dict, event: dict) -> dict:
             "state_version": run["state_version"] if run else state["version"]}
 
 
-def _run_brief(run: dict, item_ids: list[str], max_bytes: int) -> dict:
+def _run_brief(run: dict, item_ids: list[str], max_bytes: int, *, root: Path | None = None,
+               representation: str = 'markdown', output_mode: str = 'full') -> dict:
     stage = run["plan"].get("stage", {"name": "implementation", "required_slices": []})
-    return assemble_brief(run, run.get("context", {}), stage, item_ids, max_bytes)
+    envelope = assemble_brief(run, run.get("context", {}), stage, item_ids, max_bytes)
+    if root is None:
+        return envelope
+    from workflow_lib.task_views import prepare_task_view
+    return prepare_task_view(root, run, envelope, item_ids, stage=stage.get('name', 'implementation'),
+                             max_bytes=max_bytes, representation=representation, output_mode=output_mode)
 
 
 def _measure_cli(parsed, result: dict, result_code: str, started: float, stdout_bytes: int, input_bytes: int) -> None:
@@ -231,6 +237,8 @@ def main(argv: list[str] | None = None) -> int:
         if name == "brief":
             command.add_argument("--item")
             command.add_argument("--max-bytes", type=int, default=20000)
+            command.add_argument('--representation', choices=('markdown', 'json'), default='markdown')
+            command.add_argument('--output-mode', choices=('full', 'refs'), default='full')
         command.add_argument("--run-id", required=True)
     abandon = run_commands.add_parser("abandon")
     abandon.add_argument("--root", required=True)
@@ -538,7 +546,7 @@ def main(argv: list[str] | None = None) -> int:
                         and previous.get("payload", {}).get("run_id") == parsed.run_id
                         and run.get("active_attempt")
                         and run["active_attempt"].get("token") == prior_attempt.get("token")):
-                    result = _run_brief(run, [run["active_attempt"]["item_id"]], parsed.max_bytes)
+                    result = _run_brief(run, [run["active_attempt"]["item_id"]], parsed.max_bytes, root=root)
                 else:
                     result = {**run_summary(run), "replayed": True,
                               "operation_id": operation_id, "event_sequence": previous["sequence"],
@@ -554,7 +562,7 @@ def main(argv: list[str] | None = None) -> int:
                     if run.get("active_attempt"):
                         raise WorkflowError("ATTEMPT_ACTIVE", "finish or abandon the active attempt first")
                 elif run.get("active_attempt"):
-                    result = _run_brief(run, [run["active_attempt"]["item_id"]], parsed.max_bytes)
+                    result = _run_brief(run, [run["active_attempt"]["item_id"]], parsed.max_bytes, root=root)
                 if not run.get("active_attempt"):
                     if parsed.run_command != "retry" and parsed.item:
                         item_id = parsed.item
@@ -567,7 +575,7 @@ def main(argv: list[str] | None = None) -> int:
                 if not run.get("active_attempt"):
                     updated = issue_attempt(run, item_id)
                     token = updated["active_attempt"]["token"]
-                    brief_result = _run_brief(updated, [item_id], parsed.max_bytes)
+                    brief_result = _run_brief(updated, [item_id], parsed.max_bytes, root=root)
                     response = transact(root, state["version"], operation_id,
                         {"kind": "run.attempt.issued", "payload": {"run_id": parsed.run_id,
                                                                        "attempt": updated["active_attempt"]}})
@@ -584,7 +592,7 @@ def main(argv: list[str] | None = None) -> int:
                                 and committed_run.get("active_attempt")
                                 and committed_run["active_attempt"].get("token") == committed_attempt.get("token")):
                             result = _run_brief(committed_run, [committed_run["active_attempt"]["item_id"]],
-                                                parsed.max_bytes)
+                                                parsed.max_bytes, root=root)
                         else:
                             result = {**run_summary(committed_run), "replayed": True,
                                       "operation_id": operation_id, "event_sequence": response["event"]["sequence"],
@@ -613,7 +621,7 @@ def main(argv: list[str] | None = None) -> int:
                 completed = {key for key, value in run["items"].items() if value["status"] == "complete"}
                 candidates = ready_items(run["plan"], completed)
                 selected = [candidates[0]["id"]] if candidates else []
-            result = _run_brief(run, selected, parsed.max_bytes)
+            result = _run_brief(run, selected, parsed.max_bytes, root=root, representation=parsed.representation, output_mode=parsed.output_mode)
         elif parsed.command == "run" and parsed.run_command == "inspect":
             root = Path(parsed.root).expanduser().resolve()
             run = read_state(root)["data"].get("runs", {}).get(parsed.run_id)

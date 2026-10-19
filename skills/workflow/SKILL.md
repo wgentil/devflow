@@ -35,7 +35,7 @@ flowchart TD
     Reapprove --> Approval
     SpecGate -->|Yes| Inputs
     Plan["plan-work: validate coverage and dependencies"]
-    Plan --> Next["run next: eligible item and attempt token"]
+    Plan --> Next["run next: eligible item, attempt token and complete bounded context"]
     Next --> Model["Discover and resolve stage; launch eligible scoped worker"]
     Model --> Build["build-work: implement and verify"]
     Build --> Item["review-work: independent item review"]

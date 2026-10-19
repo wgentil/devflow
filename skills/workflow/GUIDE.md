@@ -1,5 +1,8 @@
 # workflow usage guide
 
+Run next/retry/brief now return complete bounded task views; attached clients can
+use `host brief`. See [context selection and limits](../../docs/context-efficiency.md).
+
 Start with the [complete setup and initialization guide](../../docs/setup-and-usage.md). Native Windows remains unsupported pending installed-hook, worker and real-host validation; the journal lock and pipe transport now use platform boundaries.
 
 Read the [shared setup and conventions](../../docs/skills.md#shared-setup) first.

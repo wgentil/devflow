@@ -1,5 +1,9 @@
 # project-context usage guide
 
+Run/host briefs include all applicable rules and declared documentation through
+the [shared task view](../../docs/context-efficiency.md#complete-task-views).
+Retrieval selections never grant irrelevance or replace governing approval.
+
 Read the [shared setup and conventions](../../docs/skills.md#shared-setup) first.
 Plugin users invoke project-context by name; the agent performs initialization and helper calls. The legacy shell examples below are optional developer reference.
 

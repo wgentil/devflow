@@ -97,7 +97,8 @@ def check_completion(state: dict, binding: dict, task_id: str, live: bool = True
     return _decision('allow','DELIVERY_RECORDED',evidence_refs=[{'manifest_hash':delivery['manifest_hash']}])
 
 
-def host_brief(state: dict, binding: dict) -> dict:
+def host_brief(state: dict, binding: dict, *, control_root: Path | None = None,
+               max_bytes: int = 20000, representation: str = 'markdown', output_mode: str = 'full') -> dict:
     run=state.get('runs',{}).get(binding['run_id'],{})
     tasks=[t for t in state.get('host_tasks',{}).values() if t['binding_id']==binding['binding_id']]
     selected={t.get('item_id') for t in tasks if t.get('revision')==binding['revision']}
@@ -116,8 +117,17 @@ def host_brief(state: dict, binding: dict) -> dict:
               'budget':run.get('context',{}).get('budgets',{}),'proofs':run.get('verification_proofs',{}),
               'reviews':run.get('reviews',{}),'acceptances':run.get('acceptances',[]),'delivery':run.get('delivery')}
     digest=hashlib.sha256(json.dumps(relevant,sort_keys=True,separators=(',',':')).encode()).hexdigest()
-    return {'fingerprint':digest,'binding_id':binding['binding_id'],'revision':binding['revision'],
+    envelope = {'fingerprint':digest,'binding_id':binding['binding_id'],'revision':binding['revision'],
             'run_id':binding['run_id'],'role':binding['role'],'stage':relevant['stage']['stage'],
             'active_attempt':run.get('active_attempt'),'mapped_tasks':[t['task_id'] for t in tasks],
             'unmapped_tasks':'unaffected','blockers':relevant['stage']['blocking_findings'],
             'budget':relevant['budget'],'work_items':work_items,'context':context,'package_hash':binding.get('package_hash'),'evidence_refs':['journal:'+binding['run_id']]}
+    if control_root is None:
+        return envelope
+    from .task_views import prepare_task_view
+    from .document_units import digest as content_digest
+    view = prepare_task_view(control_root, run, envelope, [item['id'] for item in work_items],
+                             stage=envelope['stage'], max_bytes=max_bytes,
+                             representation=representation, output_mode=output_mode)
+    view['fingerprint'] = content_digest({'envelope': digest, 'context': view['task_view'].get('artifact_id')})
+    return view
