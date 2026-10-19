@@ -120,9 +120,13 @@ Build verification and configured hardening responses add advisory failure
 digests beside original results. JSON/JUnit/unittest reports yield measured
 failure/error/skip counts, affected IDs, grouped excerpts and complete artifact
 references. Raw evidence and original verdict/exit/attempt/hash stay authoritative.
-Malformed/incomplete reports never imply zero failures. Reads are bounded to
+Unittest digests require a terminal summary and matching test totals; partial
+output leaves totals unavailable. Malformed/incomplete reports never imply zero failures. Reads are bounded to
 1 MiB per log plus the hook deadline; omissions and unknown totals are explicit.
 Output overflow or digest failure preserves the verifier result unchanged.
+
+Governing Markdown projections use the same stable-ID rule boundaries as approval
+resolution, including ordinary headings and fenced examples within each rule.
 
 ## Measurements
 

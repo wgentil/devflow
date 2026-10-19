@@ -51,7 +51,8 @@ class HookTests(unittest.TestCase):
         self.attach()
         state = read_state(self.root)
         transact(self.root, state['version'], 'missing-spec', {'kind': 'fixture', 'payload': {'spec': None}})
-        result = self.call(event='SessionStart')
+        result = self.call(event='UserPromptSubmit')
+        self.assertEqual(result.returncode, 2, result.stderr)
         self.assertNotIn('additionalContext', result.stdout)
         self.assertIn('SPEC_NOT_APPROVED', result.stderr)
     def test_corrupt_and_missing_locator_mapped_fail_closed(self):
@@ -67,6 +68,11 @@ class HookTests(unittest.TestCase):
     def test_oversized_known_completion_event_blocks(self):
         raw=json.dumps({'hook_event_name':'TaskCompleted','session_id':'s1','cwd':str(self.project),'task_id':'task','task_subject':'x'*70000})
         self.assertEqual(self.call(raw=raw).returncode,2)
+    def test_oversized_known_prompt_event_blocks(self):
+        raw = json.dumps({'hook_event_name': 'UserPromptSubmit', 'session_id': 's1',
+                          'cwd': str(self.project), 'prompt': 'x' * 70000})
+        self.assertEqual(self.call(raw=raw).returncode, 2)
+
     def test_binding_project_mismatch_blocks_only_mapped_task(self):
         self.attach();state=read_state(self.root)
         state['data']['host_bindings']['b1']['project_dir']='/tmp/other-project'

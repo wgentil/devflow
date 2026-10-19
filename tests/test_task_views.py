@@ -17,7 +17,7 @@ class TaskViewTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         (self.root / 'guide.md').write_text('# Guide\n\nRequired 東京\n')
-        (self.root / 'rules.md').write_text('# Rules\n## G1: Safety\nNever skip checks.\n## G2: Optional\nOther rule.\n')
+        (self.root / 'rules.md').write_text('# Rules\n## G1: Safety\nNever skip checks.\n## Additional constraints\nNever skip credentials.\n## G2: Optional\nOther rule.\n')
         self.sources = {'guide': {'root': str(self.root), 'path': 'guide.md'},
                         'rules': {'root': str(self.root), 'path': 'rules.md'}}
         self.spec = {'mode': 'new', 'requirements': [
@@ -85,8 +85,8 @@ class TaskViewTests(unittest.TestCase):
         import base64
         def encoded(text):
             return base64.b64encode(text.encode()).decode()
-        local = {'documents': [{'path': 'rules.md', 'category': 'testing', 'rule_ids': ['G1', 'G2']}], 'overrides': {'G1': 'rules.md'}}
-        org = {'documents': [{'path': 'org.md', 'category': 'testing', 'rule_ids': ['G1'], 'sealed_rule_ids': []}]}
+        local = {'documents': [{'path': 'rules.md', 'category': 'test-strategy', 'rule_ids': ['G1', 'G2']}], 'overrides': {'G1': 'rules.md'}}
+        org = {'documents': [{'path': 'org.md', 'category': 'test-strategy', 'rule_ids': ['G1'], 'sealed_rule_ids': []}]}
         receipt = {'applicable_rule_ids': ['G1'], 'files': {
             'app:manifest': {'repo_id': 'app', 'path': 'docs/devflow-context.json', 'content_base64': encoded(json.dumps(local))},
             'org:manifest': {'repo_id': 'org', 'path': 'docs/devflow-org.json', 'content_base64': encoded(json.dumps(org))},
@@ -95,3 +95,28 @@ class TaskViewTests(unittest.TestCase):
         self.assertEqual(set(selected), {'G1'})
         self.assertEqual(selected['G1']['source_id'], 'governing:app:rules.md')
         self.assertIn('governing:app:rules.md', sources)
+
+    def test_governing_rule_projection_preserves_non_rule_heading_constraints(self):
+        import base64
+        import subprocess
+        from workflow_lib.governing_docs import _rules
+        text = (self.root / 'rules.md').read_text().replace('Never skip credentials.', 'Never skip credentials.\n```markdown\n## Example heading\nPreserve fenced details.\n```')
+        (self.root / 'rules.md').write_text(text)
+        subprocess.run(['git', 'init', '-q', str(self.root)], check=True)
+        subprocess.run(['git', '-C', str(self.root), 'add', '.'], check=True)
+        subprocess.run(['git', '-C', str(self.root), '-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '-qm', 'fixture'], check=True)
+        manifest = {'documents': [{'path': 'rules.md', 'category': 'test-strategy', 'rule_ids': ['G1', 'G2']}]}
+        def file(path, text):
+            return {'repo_id': 'app', 'path': path, 'content_base64': base64.b64encode(text.encode()).decode()}
+        receipt = {'applicable_rule_ids': ['G1'], 'files': {
+            'manifest': file('docs/devflow-context.json', json.dumps(manifest)),
+            'rules': file('rules.md', (self.root / 'rules.md').read_text())}}
+        selected, sources = governing_selections(receipt, {'app': {'location': str(self.root)}})
+        selection = {**self.selection, 'governing': selected}
+        view = build_task_view(self.run, self.envelope, selection, {**self.sources, **sources}, {}, root=None)
+        text = canonical(view).decode()
+        self.assertIn('Never skip credentials.', text)
+        self.assertIn('Preserve fenced details.', text)
+        self.assertNotIn('Other rule.', text)
+        unit = next(unit for unit in view['task_view']['units'] if unit['source_id'] == 'governing:app:rules.md')
+        self.assertEqual(unit['content'], _rules(self.root.resolve(), manifest, 'project')['G1']['content'])

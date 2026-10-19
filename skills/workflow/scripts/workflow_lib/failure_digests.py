@@ -56,6 +56,21 @@ def build_failure_digest(result: dict, artifacts: dict, *, max_bytes: int = 8192
         if complete and outputs:
             try:
                 outcomes = _report(outputs.get('stdout_ref', ''), outputs.get('stderr_ref', ''), result.get('report_format', 'json'))
+                if result.get('report_format') == 'unittest':
+                    report = outputs.get('stdout_ref', '') + '\n' + outputs.get('stderr_ref', '')
+                    totals = re.findall(r'^Ran (\d+) tests?(?: in .*)?$', report, re.M)
+                    finished = re.findall(r'^(OK|FAILED)(?: \(([^\n]*)\))?[ \t]*$', report, re.M)
+                    valid_summary = len(finished) == 1
+                    if valid_summary:
+                        status, details = finished[0]
+                        declared = dict(re.findall(r'(failures|errors|skipped)=(\d+)', details))
+                        observed = {name: sum(value == outcome for value in outcomes.values())
+                                    for name, outcome in [('failures', 'failed'), ('errors', 'error'), ('skipped', 'skipped')]}
+                        valid_summary = all(int(declared.get(name, 0)) == count for name, count in observed.items())
+                        valid_summary = valid_summary and ((status == 'FAILED') == bool(observed['failures'] + observed['errors']))
+                    if (len(totals) != 1 or not valid_summary
+                            or int(totals[0]) != len(outcomes)):
+                        outcomes = None
                 if not outcomes:
                     outcomes = None
             except WorkflowError:

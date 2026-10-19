@@ -5,7 +5,8 @@ bundled helpers and initializes the project. Capture the actual session ID from 
 metadata; never derive it from a task title or model text. Explicitly attach and map
 host task IDs before enforcement applies. See [hosts](../../docs/hosts.md).
 
-SessionStart/UserPromptSubmit emit a compact brief only when relevant state changes.
+SessionStart rebuilds full context. UserPromptSubmit emits context when relevant
+state changes and blocks submission if required context preparation fails.
 TaskCompleted checks mapped tasks and exits 2 with feedback on blockers. Unmapped
 tasks remain unaffected. Stop is always nonblocking; pausing does not trigger rework.
 The hook adapter uses Claude command-hook exec form with `python3` and a

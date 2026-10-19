@@ -30,6 +30,13 @@ class IngestionTests(unittest.TestCase):
         out = ingest_sources(repo, ['.'], {}, {}, selection_policy=policy)
         self.assertNotIn(history.relative_to(self.repo).as_posix(), [s['path'] for s in out['sources']])
         self.assertEqual(out['selection']['excluded_count'], 1)
+        for scope in (['docs'], ['docs/superpowers/..']):
+            broad = ingest_sources(repo, scope, {}, {}, selection_policy=policy)
+            self.assertNotIn('docs/superpowers/specs/old.md', [s['path'] for s in broad['sources']])
+        broad = ingest_sources(repo, ['docs'], {}, {}, selection_policy=policy)
+        self.assertNotIn('docs/superpowers/specs/old.md', [s['path'] for s in broad['sources']])
+        scoped = ingest_sources(repo, ['docs/superpowers'], {}, {}, selection_policy=policy)
+        self.assertIn('docs/superpowers/specs/old.md', [s['path'] for s in scoped['sources']])
         explicit = ingest_sources(repo, ['.'], {}, {}, selection_policy={**policy, 'include_history': True})
         self.assertIn(history.relative_to(self.repo).as_posix(), [s['path'] for s in explicit['sources']])
         required = ingest_sources(repo, ['a.py'], {'extensions': ['.py']}, {}, selection_policy={**policy, 'required_paths': [history.relative_to(self.repo).as_posix()]})

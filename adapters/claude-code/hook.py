@@ -14,7 +14,8 @@ def main():
     event=None
     try:
         raw=sys.stdin.buffer.read(LIMIT+1)
-        if re.search(rb'"hook_event_name"\s*:\s*"TaskCompleted"',raw):event='TaskCompleted'
+        known_event = re.search(rb'"hook_event_name"\s*:\s*"(TaskCompleted|UserPromptSubmit)"', raw)
+        if known_event:event=known_event[1].decode('ascii')
         if len(raw)>LIMIT:raise ValueError('hook input exceeds 64 KiB')
         payload=json.loads(raw)
         if not isinstance(payload,dict):raise ValueError('hook payload must be an object')
@@ -33,14 +34,14 @@ def main():
         if result.returncode or decision.get('status') == 'block':
             reason=decision.get('reason_code') or decision.get('error') or 'HOST_CHECK_FAILED'
             print('DevFlow: '+reason+'. '+decision.get('message','Inspect host status and rework the mapped task.'),file=sys.stderr)
-            return 2 if event == 'TaskCompleted' else 0
+            return 2 if event in {'TaskCompleted', 'UserPromptSubmit'} else 0
         if decision.get('brief'):
             print(json.dumps({'hookSpecificOutput':{'hookEventName':event,'additionalContext':'DevFlow resume: '+json.dumps(decision['brief'],separators=(',',':'))}},separators=(',',':')))
         elif decision.get('message'):print('DevFlow: '+decision['message'],file=sys.stderr)
         return 0
     except (OSError,ValueError,TypeError,subprocess.TimeoutExpired) as exc:
         print('DevFlow hook diagnostic: '+str(exc)[:1000]+'. Inspect attachment before completing mapped work.',file=sys.stderr)
-        return 2 if event == 'TaskCompleted' else 0
+        return 2 if event in {'TaskCompleted', 'UserPromptSubmit'} else 0
 
 
 if __name__ == '__main__':raise SystemExit(main())

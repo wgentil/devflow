@@ -43,18 +43,7 @@ def governing_selections(receipt: dict, repositories: dict) -> tuple[dict, dict]
                             'git_head': next(f.get('git_head') for f in files.values() if f['repo_id'] == repo_id and f['path'] == path)}
             selector = {'kind': 'whole'}
             if Path(path).suffix.lower() == '.md':
-                # Receipt rule extraction uses exactly these level-two stable-ID headings.
-                heading = re.search(r'^## (' + re.escape(rid) + r': .+)$', text, re.M)
-                if not heading:
-                    raise ValueError('missing governing heading')
-                from .document_units import markdown_section
-                # Include ancestor headings when present; use the same fence-aware parser.
-                ancestors = []
-                for line in text[:heading.start()].splitlines():
-                    if re.match(r'^# [^#]', line):
-                        ancestors = [line[2:].strip()]
-                selector = {'kind': 'markdown', 'heading': ancestors + [heading[1]]}
-                markdown_section(text, selector['heading'])
+                selector = {'kind': 'governing-rule', 'rule_id': rid}
             selections[rid] = {'source_id': sid, 'selector': selector,
                                'category': document['category'], 'sealed': rid in document.get('sealed_rule_ids', [])}
         # Register all approved machine-readable files for safe relative reference closure.

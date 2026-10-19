@@ -17,7 +17,7 @@ def ingest_sources(repo: dict, scope: list[str], profile: dict, cache: dict, *, 
     policy = selection_policy or {}
     required = set(policy.get('required_paths', []))
     history = policy.get('history', [])
-    explicit_history = [item for item in scope if any(fnmatchcase(item, pattern) or pattern.startswith(item.rstrip('/') + '/') for pattern in history) and item not in {'.', './'}]
+    explicit_history = [item for item in scope if any(fnmatchcase(item.rstrip('/'), pattern) or item.rstrip('/') == pattern.removesuffix('/**') for pattern in history) and item not in {'.', './'}]
     for item in [*scope, *sorted(required)]:
         path=(root/item).resolve()
         if not path.is_relative_to(root): raise ValueError('scope path leaves registered repository')

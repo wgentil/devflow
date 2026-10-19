@@ -68,6 +68,14 @@ def load_project_manifest(project_repo: Path) -> dict:
     return _load(project_repo, 'devflow-context')
 
 
+def markdown_rule_sections(content: str) -> list[tuple[str, str]]:
+    """Authoritative rule extents, including intervening ordinary headings."""
+    matches = list(re.finditer(r'^## ([A-Za-z0-9_.-]+): .+$', content, re.M))
+    return [(match.group(1), content[match.start(): matches[index + 1].start()
+             if index + 1 < len(matches) else len(content)].strip())
+            for index, match in enumerate(matches)]
+
+
 def _rules(repo: Path, manifest: dict, source: str) -> dict:
     head = _git(repo, 'rev-parse', 'HEAD')
     if head.returncode:
@@ -95,11 +103,11 @@ def _rules(repo: Path, manifest: dict, source: str) -> dict:
         except (OSError, UnicodeError) as exc:
             raise WorkflowError('INVALID_GOVERNING_DOCS', 'document cannot be read') from exc
         if target.suffix.lower() == '.md':
-            matches = list(re.finditer(r'^## ([A-Za-z0-9_.-]+): .+$', content, re.M))
-            found = [m.group(1) for m in matches]
+            sections = markdown_rule_sections(content)
+            found = [rule_id for rule_id, _ in sections]
             if len(set(found)) != len(found) or set(found) != set(ids):
                 _fail('Markdown headings must exactly match declared rule IDs')
-            bodies = {m.group(1): content[m.start(): matches[n + 1].start() if n + 1 < len(matches) else len(content)].strip() for n, m in enumerate(matches)}
+            bodies = dict(sections)
         else:
             if len(ids) != 1:
                 _fail('machine-readable documents must declare one rule')

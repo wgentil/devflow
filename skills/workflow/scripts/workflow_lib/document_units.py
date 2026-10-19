@@ -165,6 +165,13 @@ def select_document_units(sources: dict, selections: list[dict], policy: dict) -
                 raise WorkflowError('CONTEXT_SOURCE_INVALID', f'invalid JSON source {sid}') from exc
         if kind == 'whole':
             content = text
+        elif kind == 'governing-rule' and path.suffix.lower() == '.md':
+            from .governing_docs import markdown_rule_sections
+            matches = [body for rule_id, body in markdown_rule_sections(text)
+                       if rule_id == selector.get('rule_id')]
+            if len(matches) != 1:
+                raise WorkflowError('CONTEXT_SECTION_UNAVAILABLE', 'governing rule missing or ambiguous')
+            content = matches[0]
         elif kind == 'markdown' and path.suffix.lower() == '.md':
             content = markdown_section(text, selector.get('heading'))
         elif kind == 'json-pointer' and path.suffix.lower() == '.json':

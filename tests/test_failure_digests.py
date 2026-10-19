@@ -68,3 +68,23 @@ class FailureDigestTests(unittest.TestCase):
         self.assertEqual(projected['passed'], False)
         self.assertEqual(projected['exit_code'], 5)
         self.assertEqual(value, {'passed': False, 'exit_code': 5})
+
+    def test_interrupted_unittest_output_does_not_claim_complete_totals(self):
+        result = self.result('', 'test_a (Suite) ... ok\ntest_b (Suite) ... ')
+        result.update(report_format='unittest', failure='TIMEOUT', exit_code=None)
+        digest = build_failure_digest(result, {'root': str(self.root)})
+        self.assertEqual(digest['status'], 'unavailable')
+        self.assertIsNone(digest['counts'])
+        self.assertTrue(digest['omissions'])
+
+    def test_unittest_missing_summary_or_count_mismatch_has_unknown_totals(self):
+        for report in ('test_a (Suite) ... ok\nRan 2 tests\nOK',
+                       'test_a (Suite) ... ok\nRan 1 test',
+                       'test_a (Suite) ... ok\nOK',
+                       'test_a (Suite) ... ok\nRan 1 test\nFAILED (errors=1)'):
+            with self.subTest(report=report):
+                result = self.result('', report)
+                result['report_format'] = 'unittest'
+                digest = build_failure_digest(result, {'root': str(self.root)})
+                self.assertEqual(digest['status'], 'unavailable')
+                self.assertIsNone(digest['counts'])
