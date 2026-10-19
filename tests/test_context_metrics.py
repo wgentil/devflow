@@ -37,6 +37,12 @@ class ContextMetricTests(unittest.TestCase):
             result = record_context_view(self.root, self.view, operation_id='x', operation='native.input')
         self.assertFalse(result['recorded'])
 
+    def test_source_index_inspection_counts_emitted_text_without_storing_it(self):
+        value = {'sources': [{'path': 'a.py', 'hash': 'hash', 'text': 'secret indexed text'}]}
+        event = measure_context_view(value, operation_id='inspect', operation='context-artifact.inspect')
+        self.assertGreater(event['document_bytes'], 0)
+        self.assertNotIn('secret indexed text', json.dumps(event))
+
     def test_partial_coverage_attribution_and_measurement_gaps(self):
         event = measure_context_view(self.view, operation_id='one', operation='native.input', duration_ms=7)
         event['missing_required_ids'] = ['R2']

@@ -32,7 +32,7 @@ def document_path(source: dict) -> Path:
         if any(p.is_symlink() for p in (lexical, *lexical.parents) if p.is_relative_to(root)):
             raise ValueError('symlink source path')
         # Package fixtures may be plain directories; registered Git sources obey ignore policy.
-        if (root / '.git').exists():
+        if any((parent / '.git').exists() for parent in (root, *root.parents)):
             result = subprocess.run(['git', '-C', str(root), 'check-ignore', '--no-index', '--', relative],
                                     capture_output=True, timeout=5)
             if result.returncode != 1:
@@ -110,6 +110,14 @@ def _references(value):
             yield from _references(child)
 
 
+def _contains_reference_scope(value):
+    if isinstance(value, dict):
+        return bool(value.get('$id') or value.get('$anchor') or value.get('$dynamicAnchor')) or any(_contains_reference_scope(v) for v in value.values())
+    if isinstance(value, list):
+        return any(_contains_reference_scope(v) for v in value)
+    return False
+
+
 def select_document_units(sources: dict, selections: list[dict], policy: dict) -> dict:
     units, hashes, edges, loaded, files = {}, {}, {}, {}, {}
     path_ids = {}
@@ -148,9 +156,11 @@ def select_document_units(sources: dict, selections: list[dict], policy: dict) -
         text = loaded[sid]
         kind = selector.get('kind')
         value = None
+        full_value = None
         if path.suffix.lower() == '.json':
             try:
                 value = json.loads(text)
+                full_value = value
             except ValueError as exc:
                 raise WorkflowError('CONTEXT_SOURCE_INVALID', f'invalid JSON source {sid}') from exc
         if kind == 'whole':
@@ -169,11 +179,17 @@ def select_document_units(sources: dict, selections: list[dict], policy: dict) -
         for dependency in definition.get('dependencies', []):
             edges[uid].append(visit(dependency, None, 'dependency:' + uid))
         if value is not None:
-            for ref in _references(value):
+            references = list(_references(value))
+            if references and _contains_reference_scope(full_value):
+                raise WorkflowError('CONTEXT_DEPENDENCY_UNSUPPORTED', 'schema $id/anchor scope changes are not supported by this projection')
+            for ref in references:
                 parsed = urlsplit(ref)
                 if parsed.scheme or parsed.netloc or parsed.query or parsed.fragment and not unquote(parsed.fragment).startswith('/'):
                     raise WorkflowError('CONTEXT_DEPENDENCY_UNSUPPORTED', f'unsupported reference {ref}')
                 target = (path.parent / unquote(parsed.path)).resolve() if parsed.path else path
+                if (parsed.path.startswith('/') or '\\' in parsed.path
+                        or not target.is_relative_to(Path(sources[sid]['root']).resolve())):
+                    raise WorkflowError('CONTEXT_DEPENDENCY_UNSUPPORTED', 'reference leaves its registered repository')
                 ids = path_ids.get(str(target), [])
                 if not ids:
                     raise WorkflowError('CONTEXT_DEPENDENCY_UNREGISTERED', f'unregistered reference {ref}')

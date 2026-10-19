@@ -12,7 +12,10 @@ Markdown selectors use an exact heading path and ignore headings inside fenced
 code. JSON selectors use RFC 6901 pointers and include the transitive closure of
 local or registered repository-relative `$ref` targets. Cycles are supported.
 Missing, remote, unregistered or unsupported references fail explicitly. Sources
-must stay within visible registered paths; private, ignored and symlinked sources
+with `$id`/anchor scope changes or dynamic references are not projected as if
+their reference semantics were supported. References cannot escape their owning
+registered repository, even when another repository is registered.
+Sources must stay within visible registered paths; private, ignored and symlinked sources
 are rejected. YAML remains a whole-file input with no additional parser.
 
 Skill entries route to one common invariant reference and exact domain sections.

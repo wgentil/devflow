@@ -103,6 +103,8 @@ class RepoInputGateTests(unittest.TestCase):
         from test_hosts import host_state, attachment
         from workflow_lib.hosts import apply_host_event
         data = host_state(str(self.repo))
+        data.update(spec=self.spec, approval={**self.pair, 'confirmed': True, 'actor_id': 'human'})
+        data['runs']['run']['plan']['spec_hash'] = content_hash(self.spec)
         data['repositories']['r'] = {'location': str(self.repo)}
         apply_host_event(data, 'attach', attachment(project=str(self.repo)))
         self.write(data)

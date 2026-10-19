@@ -16,16 +16,20 @@ TEXT = ('operation_id', 'operation', 'run_id', 'stage', 'work_item', 'invocation
 
 
 def measure_context_view(view: dict, *, operation_id: str, operation: str, duration_ms: int = 0) -> dict:
-    task = view.get('task_view', view if 'units' in view else {})
+    task = view.get('task_view', view.get('brief', {}).get('task_view', view if 'units' in view else {}))
     units = task.get('changed_units', task.get('units', []))
-    documents = len(canonical(units)) if units else 0
+    source_records = view.get('sources', [])
+    source_records = [source for source in source_records if isinstance(source.get('text'), str)]
+    if source_records:
+        units = [{'id': source['path'], 'content': source['text'], 'content_hash': source['hash']} for source in source_records]
+    documents = len(canonical(source_records or units)) if units else 0
     unit_records = [{'id': u['id'], 'content_hash': u['content_hash'], 'bytes': len(canonical(u.get('content', ''))) - 2}
                     for u in units if u.get('content_hash')]
     coverage = task.get('coverage', {})
     return {'operation_id': operation_id, 'operation': operation, 'run_id': view.get('run_id'), 'stage': view.get('stage'),
             'document_bytes': documents, 'envelope_bytes': max(0, len(canonical(view)) - documents),
             'helper_calls': 1, 'retrieval_calls': task.get('retrieval_calls', 0), 'duration_ms': duration_ms,
-            'context_mode': view.get('context_mode', 'full'), 'cache_outcome': task.get('cache_outcome', 'unknown'),
+            'context_mode': view.get('context_mode', 'full' if task else 'not-context'), 'cache_outcome': task.get('cache_outcome', 'unknown'),
             'units': unit_records, 'required_ids': task.get('required_ids', []),
             'supplied_ids': coverage.get('supplied_ids', []), 'missing_required_ids': coverage.get('missing_ids', [])}
 

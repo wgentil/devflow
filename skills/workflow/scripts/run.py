@@ -80,10 +80,11 @@ def _measure_cli(parsed, result: dict, result_code: str, started: float, stdout_
     if root_value:
         try:
             from workflow_lib.context_metrics import measure_context_view, record_context_measurement
-            view = result if 'task_view' in result or 'units' in result else result.get('brief', {})
-            if view:
+            view = result
+            if not (parsed.command == 'stats' and getattr(parsed, 'operation', None) == 'context'):
                 event = measure_context_view(view, operation_id=parsed.operation_id, operation=parsed.command + '.context-output',
                     duration_ms=max(0, int((time.monotonic() - started) * 1000)))
+                event['run_id'] = getattr(parsed, 'run_id', None) or event.get('run_id')
                 record_context_measurement(Path(root_value), event)
         except Exception as exc:
             print('devflow: context measurement gap: ' + str(exc)[:200], file=sys.stderr)

@@ -31,7 +31,7 @@ class SpecTests(unittest.TestCase):
         self.assertIn('## R1\n\nPersist the user setting\n', render_spec(spec()))
 
     def test_invalid_requirement_title(self):
-        for title in ('', '  ', 'a\nb', 'a\rb', 4, None, 'a\u2028b'):
+        for title in ('', '  ', 'a\nb', 'a\rb', 'a\n', 'a\r', 'a\u2028', 4, None, 'a\u2028b'):
             with self.subTest(title=title):
                 value = spec()
                 value['requirements'][0]['title'] = title

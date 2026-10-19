@@ -108,6 +108,9 @@ def resolve_cached_units(root: Path, selection: dict) -> dict:
         validation_reads = len(hashes)
         if hashes == entry['source_hashes']:
             try:
+                stored = _read(_directory(root) / (entry['artifact_id'] + '.json'))
+                if digest(stored) != entry['artifact_id'] or stored['identity'].get('scope') != scope:
+                    raise ValueError('artifact does not bind the requested selection scope')
                 value = inspect_context_artifact(root, entry['artifact_id'])
                 if value['source_hashes'] != hashes or value.get('dependencies') != entry.get('dependencies'):
                     raise ValueError('cache graph mismatch')
@@ -121,7 +124,7 @@ def resolve_cached_units(root: Path, selection: dict) -> dict:
     hashes, provenance = _current_sources(sources, value['source_hashes'])
     if hashes != value['source_hashes']:
         raise WorkflowError('CONTEXT_SOURCE_CHANGED', 'source changed during context assembly')
-    ref = store_context_artifact(root, value, {'policy': digest(policy), 'builder_version': VERSION,
+    ref = store_context_artifact(root, value, {'scope': scope, 'policy': digest(policy), 'builder_version': VERSION,
         'source_hashes': hashes, 'selectors': [u['selector'] for u in value['units']], 'closure': value['dependencies']})
     index['entries'][scope] = {**ref, 'policy_hash': digest(policy), 'source_hashes': hashes,
                                'dependencies': value['dependencies']}
@@ -152,4 +155,5 @@ def invalidate_context_artifacts(root: Path, observed_sources: dict, policy_hash
     _atomic_json(_directory(root) / 'index.json', index)
     return {'status': 'ok', 'reason_code': 'CONSERVATIVE_INVALIDATION' if unknown or not valid else 'DEPENDENCIES_CHECKED',
             'affected_ids': sorted(affected), 'reasons': {key: sorted(set(value)) for key, value in sorted(affected.items())},
-            'retained_entries': len(retained), 'scope': 'retrieval-only'}
+            'retained_entries': len(retained), 'scope': 'retrieval-only', 'affected_ids_complete': valid,
+            'affected_scope': 'all-index-entries' if unknown or not valid else 'dependency-closure'}

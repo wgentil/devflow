@@ -1,0 +1,4 @@
+{
+  "request": {"properties": {"user": {"$ref": "schema.json#/User"}}},
+  "optionalDocumentation": "This section is outside the selected request contract. It is present in the full-file baseline, alongside the JSON and Markdown representations of the same specification, to measure an explicitly equivalent full-fact retrieval baseline. It is not a token or cost measurement and is not a claim that old incomplete helper briefs supplied these facts."
+}

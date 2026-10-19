@@ -176,6 +176,7 @@ def prepare_task_view(root: Path, run: dict, envelope: dict, item_ids: list[str]
     stage = {'build': 'implementation', 'verification': 'implementation', 'branch-review': 'review',
              'item-review': 'review', 'pr-review': 'review', 'pr-rework': 'implementation',
              'scan': 'ingest', 'debugging': 'build-work', 'hardening': 'build-work',
+             'architecture': 'project-context', 'security': 'review-work',
              'delivery': 'workflow', 'pr-opening': 'workflow', 'delivered': 'workflow', 'discarded': 'workflow'}.get(stage, stage)
     if stage not in policy['stage_reads']:
         raise WorkflowError('CONTEXT_STAGE_UNAVAILABLE', 'stage has no declared documentation read route')

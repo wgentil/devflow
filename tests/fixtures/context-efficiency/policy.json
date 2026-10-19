@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "baseline_entry_bytes": 65937,
+  "required_ids": ["G1", "R1", "guide", "contract"],
+  "required_source_ids": ["guide", "rules", "contract", "schema"],
+  "required_facts": ["Accept Unicode input", "Keep every applicable constraint", "minLength", "user"],
+  "budgets": {
+    "full_bytes": 15000,
+    "delta_bytes": 9000,
+    "cold_retrieval_calls": 8,
+    "warm_retrieval_calls": 4,
+    "duplicate_content_bytes": 0,
+    "native_context_copies": 1
+  }
+}

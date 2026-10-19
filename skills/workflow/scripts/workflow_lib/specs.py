@@ -48,7 +48,7 @@ def validate_spec(spec: dict) -> dict:
             raise WorkflowError("INVALID_REQUIREMENT", f"requirement {rid} needs text")
         if 'title' in requirement:
             title = requirement['title']
-            if not isinstance(title, str) or not title.strip() or len(title.splitlines()) != 1:
+            if not isinstance(title, str) or not title.strip() or title.splitlines() != [title]:
                 raise WorkflowError('INVALID_REQUIREMENT_TITLE', f'requirement {rid} title must be a nonempty single line')
         criteria = requirement.get("acceptance_criteria")
         if not isinstance(criteria, list) or not criteria or any(not isinstance(item, str) or not item.strip() for item in criteria):

@@ -105,3 +105,17 @@ class ArtifactTests(unittest.TestCase):
         selected = resolve_cached_units(self.control, {**self.selection, 'selections': [
             {'source_id': 'a', 'selector': {'kind': 'json-pointer', 'pointer': '/x'}}]})
         self.assertNotEqual(renamed['artifact_id'], selected['artifact_id'])
+
+    def test_redirected_advisory_index_cannot_substitute_another_valid_scope(self):
+        first = resolve_cached_units(self.control, self.selection)
+        other_selection = {**self.selection, 'selections': [{'source_id': 'other'}]}
+        other = resolve_cached_units(self.control, other_selection)
+        path = self.control / 'context-artifacts/index.json'
+        index = json.loads(path.read_text())
+        first_key = next(k for k, v in index['entries'].items() if v['artifact_id'] == first['artifact_id'])
+        other_entry = next(v for v in index['entries'].values() if v['artifact_id'] == other['artifact_id'])
+        index['entries'][first_key] = other_entry
+        path.write_text(json.dumps(index))
+        rebuilt = resolve_cached_units(self.control, self.selection)
+        self.assertEqual(rebuilt['cache_outcome'], 'miss')
+        self.assertEqual(set(rebuilt['source_hashes']), {'a', 'b'})

@@ -59,6 +59,19 @@ class DocumentUnitTests(unittest.TestCase):
             with self.subTest(ref=ref), self.assertRaises(WorkflowError):
                 self.select('api')
 
+    def test_unsupported_id_scopes_and_cross_repository_escape_fail(self):
+        self.source('api', 'api.json', '{"$id":"https://example.test/base/","pick":{"$ref":"b.json#/B"}}')
+        self.source('b', 'b.json', '{"B":{}}')
+        with self.assertRaises(WorkflowError):
+            self.select('api', {'kind': 'json-pointer', 'pointer': '/pick'})
+        with tempfile.TemporaryDirectory() as other:
+            outside = Path(other)
+            (outside / 'b.json').write_text('{"B":{}}')
+            self.sources['outside'] = {'root': str(outside), 'path': 'b.json'}
+            self.source('api', 'api.json', json.dumps({'$ref': str(outside / 'b.json') + '#/B'}))
+            with self.assertRaises(WorkflowError):
+                self.select('api')
+
     def test_yaml_whole_file_and_private_or_symlink_paths(self):
         self.source('yaml', 'api.yaml', 'openapi: 3.0.0\n')
         self.assertIn('openapi', self.select('yaml')['units'][0]['content'])
