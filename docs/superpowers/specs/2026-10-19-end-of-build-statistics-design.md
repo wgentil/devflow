@@ -1,6 +1,7 @@
 # Automatic end-of-build statistics
 
-Status: draft for user approval. No implementation authorized by this document.
+Status: approved by the user on 2026-10-20, after commit `351ec4e`.
+Implementation follows written-plan review using the preserved Native preference.
 
 ## Intended outcome
 
@@ -9,7 +10,7 @@ the current run and cumulative statistics for its project. Users do not invoke a
 skill or helper manually. Reuse existing metrics, usage/pricing, context and
 routing reporting rather than introduce another telemetry system.
 
-Assumption for approval: “end of build” means after recording terminal delivery
+Approved completion boundary: “end of build” means after recording terminal delivery
 (local merge, retained branch or a PR reaching the existing recorded delivery
 boundary), including documentation-only work. Finishing one item is not the end
 of the run. Blocked or interrupted work remains resumable and is not reported as
