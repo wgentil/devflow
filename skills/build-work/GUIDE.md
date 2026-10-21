@@ -101,3 +101,10 @@ To verify an existing implementation under a new attempt, keep the test runner,
 tests and target IDs unchanged and pass `--red-proof-id` to GREEN. For an explicit
 cross-run source also pass `--red-run-id`. See [eligibility and provenance](REFERENCE.md#reusing-recorded-red).
 A matching source does not skip GREEN execution or repository-freshness checks.
+
+## Stale completed items
+
+`run reverify` opens a fresh attempt for completed code work after later commits
+invalidate its proof. Use [the final-head recovery sequence](REFERENCE.md#reverify-completed-work);
+do not remove implementation files to manufacture RED. Reported recovery actions
+name affected items. A qualifying recorded RED is explicit, not assumed.

@@ -102,14 +102,19 @@ def gate_status(run: dict, live: bool = True) -> dict:
             accepted = run.get("acceptances", [])
             if accepted and accepted[-1].get("complete") is True and accepted[-1].get("fresh", True):
                 stage = "delivery" if hardening_ready(run, live) else "hardening"
+    actions = [{'item_id':item['id'],'command':'run reverify',
+                'reason':'Completed code proof no longer matches the repository; issue a fresh attempt and GREEN proof.'}
+               for item in run.get('plan',{}).get('work_items',[]) if item['id'] in unverified
+               and item.get('kind') == 'code' and run.get('items',{}).get(item['id'],{}).get('status') == 'complete']
+    recovery = {'reverification_actions':actions} if actions else {}
     mandatory_blockers = [finding.get("id") for finding in run.get("unresolved_findings", [])
                           if finding.get("mandatory") is True and finding.get("status") != "waived"]
     if mandatory_blockers:
         return {"stage": stage, "can_advance": False, "blocking_findings": mandatory_blockers,
-                "unverified_items": unverified}
+                "unverified_items": unverified, **recovery}
     can_advance = stage in {"delivery"}
     return {"stage": stage, "can_advance": can_advance, "blocking_findings": [],
-            "unverified_items": unverified}
+            "unverified_items": unverified, **recovery}
 
 
 def amend_item(run: dict, item_id: str, replacement: dict, ruling: dict) -> dict:

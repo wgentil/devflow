@@ -1,9 +1,9 @@
 {
-  "aggregate_entry_bytes": 24112,
+  "aggregate_entry_bytes": 24297,
   "baseline": {
     "aggregate_entry_bytes": 65937
   },
-  "duplicate_prose_bytes": 11150,
+  "duplicate_prose_bytes": 10817,
   "entry_bytes": {
     "skills/build-work/SKILL.md": 2722,
     "skills/ingest/SKILL.md": 2093,
@@ -15,11 +15,11 @@
     "skills/specify/SKILL.md": 2244,
     "skills/stats/SKILL.md": 1981,
     "skills/ux-reviewer/SKILL.md": 1872,
-    "skills/workflow/SKILL.md": 3046
+    "skills/workflow/SKILL.md": 3231
   },
   "schema_version": 1,
   "stage_load_bytes": {
-    "acceptance": 9528,
+    "acceptance": 9713,
     "build-work": 10083,
     "context": 6116,
     "implementation": 10083,
@@ -35,7 +35,7 @@
     "specify": 9707,
     "stats": 7710,
     "ux-reviewer": 6674,
-    "workflow": 9528
+    "workflow": 9713
   },
   "unit_bytes": {
     "common#1e6f0adae858d8e7": 3702,
@@ -106,7 +106,7 @@
     "guide.workflow.11#e51607672fb9549d": 2834,
     "guide.workflow.12#1757cf0219546475": 171,
     "guide.workflow.13#278bd7a38c4da35a": 3359,
-    "guide.workflow.14#5757257bae0a9550": 172,
+    "guide.workflow.14#5757257bae0a9550": 173,
     "guide.workflow.2#13c2946a4c9760f9": 966,
     "guide.workflow.3#92cc562d71c0787c": 957,
     "guide.workflow.4#de1accfbb23f866a": 1639,
@@ -116,7 +116,7 @@
     "guide.workflow.8#1fab5625e73a1d08": 3049,
     "guide.workflow.9#fcc8d853fb00b40d": 700,
     "host-lifecycle.1#cfedd292c1723bfb": 3109,
-    "procedure.build-work#1e6f0adae858d8e7": 5728,
+    "procedure.build-work#1e6f0adae858d8e7": 6645,
     "procedure.build-work.1#8802045e96dc9375": 4897,
     "procedure.ingest#1e6f0adae858d8e7": 977,
     "procedure.issues#1e6f0adae858d8e7": 698,
@@ -131,9 +131,9 @@
     "procedure.specify.1#148cd2d22847083f": 3389,
     "procedure.stats#1e6f0adae858d8e7": 1930,
     "procedure.ux-reviewer#1e6f0adae858d8e7": 2837,
-    "procedure.workflow#1e6f0adae858d8e7": 12124,
+    "procedure.workflow#1e6f0adae858d8e7": 12225,
     "procedure.workflow.1#8d1f71859ff19c32": 11410,
-    "procedure.workflow.2#2cf878c42c6d0ea9": 691,
+    "procedure.workflow.2#2cf878c42c6d0ea9": 792,
     "routing.escalation#8b77941fdf1f0989": 1579,
     "routing.host-controls#85503ba0e4c8d586": 1701,
     "routing.outcomes#9e7b29b98e841dd6": 1628,
@@ -148,6 +148,6 @@
     "skill.specify#1e6f0adae858d8e7": 2244,
     "skill.stats#1e6f0adae858d8e7": 1981,
     "skill.ux-reviewer#1e6f0adae858d8e7": 1872,
-    "skill.workflow#1e6f0adae858d8e7": 3046
+    "skill.workflow#1e6f0adae858d8e7": 3231
   }
 }

@@ -341,3 +341,10 @@ custom pinned older revisions are not currently supported.
 ## Governing input reassessment
 
 Read [canonical guidance](../../docs/reference/governing-inputs.md#governing-input-reassessment). Stage routing is declared in this skill.
+
+## Completed-item verification recovery
+
+After all implementation commits, inspect the gates. For completed code items
+whose proof is stale, use [reverification](../build-work/REFERENCE.md#reverify-completed-work)
+with qualified recorded RED and freshly executed GREEN. The same run and its
+history are retained; there is no need to abandon it or remove implementation.

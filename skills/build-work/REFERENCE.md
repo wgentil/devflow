@@ -73,3 +73,17 @@ target IDs, argv and report format, with a real failed target in the source RED.
 GREEN still executes freshly under the current token. Legacy proofs missing this
 contract cannot be reused. No manual implementation removal is required when a
 qualifying recorded RED exists. A changed test or verifier requires new RED.
+
+## Reverify completed work
+
+When later commits make a completed code item's exact-head proof stale, use
+`run reverify --root CONTROL --run-id RUN --item ITEM`. It issues a fresh token
+and makes that item pending. Keep implementation files in place; run GREEN with
+`--red-proof-id` (and explicit `--red-run-id` for another run) only when its
+recorded contract qualifies, then submit `passed` with the new proof ID.
+Old tokens/proofs cannot complete the new attempt. Affected item and higher-level
+review/acceptance evidence remains in history but requires renewal. Existing same-token workflows
+still work. Unrelated commits are not assumed harmless: exact repository freshness
+remains required. Finish all planned commits, then reverify stale code items at
+that final state without further commits between checks. Stop/reconcile active
+workers or repairs first. Non-code items require their existing verifier flows.

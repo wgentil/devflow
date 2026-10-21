@@ -91,6 +91,25 @@ def _apply_event(state: dict, event: dict) -> None:
         if not isinstance(run, dict) or not run.get("id") or run["id"] in data.setdefault("runs", {}):
             raise WorkflowError("INVALID_EVENT", "invalid or duplicate run.started event")
         data["runs"][run["id"]] = run
+    elif kind == 'run.reverification.started':
+        from .reverification import validate_reverification, invalidate_item_reviews
+        run = data.get('runs',{}).get(payload.get('run_id'))
+        attempt = payload.get('attempt')
+        if not run or not isinstance(attempt,dict):
+            raise WorkflowError('INVALID_EVENT','Known run and attempt required.')
+        item_id = attempt.get('item_id')
+        validate_reverification(run,item_id)
+        prior = run['items'][item_id]['attempts'][-1]
+        if (payload.get('prior_token') != prior.get('token') or attempt.get('mode') != 'reverify'
+                or attempt.get('state_version') != run['state_version']+1 or attempt.get('status') != 'active'
+                or attempt.get('result') is not None or not isinstance(attempt.get('token'),str) or not attempt['token']
+                or any(old.get('token') == attempt['token'] for item in run['items'].values() for old in item.get('attempts',[]))):
+            raise WorkflowError('INVALID_EVENT','Reverification must bind the prior attempt and a fresh token.')
+        run['items'][item_id]['status']='pending'
+        invalidate_item_reviews(run,item_id)
+        run['items'][item_id]['attempts'].append(attempt)
+        run['active_attempt']=attempt
+        run['state_version']=attempt['state_version']
     elif kind == "run.attempt.issued":
         run = data.setdefault("runs", {}).get(payload.get("run_id"))
         attempt = payload.get("attempt")
@@ -503,6 +522,8 @@ def _validate_event_shape(event: dict) -> None:
     kind, payload = event["kind"], event["payload"]
     requirements = {
         "run.started": isinstance(payload.get("run"), dict) and bool(payload["run"].get("id")),
+        'run.reverification.started': (isinstance(payload.get('run_id'),str) and isinstance(payload.get('attempt'),dict)
+                                       and isinstance(payload.get('prior_token'),str)),
         "run.attempt.issued": (isinstance(payload.get("run_id"), str)
                                and isinstance(payload.get("attempt"), dict)),
         "run.attempt.abandoned": (isinstance(payload.get("run_id"), str)

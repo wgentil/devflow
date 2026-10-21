@@ -17,6 +17,7 @@ flowchart LR
     Checks --> Work[Stage responsibility]
     Work --> Result{Worker outcome}
     Result -->|Complete scoped report| Evidence[Current evidence and next gate]
+    Result -->|Stale completed proof| Reverify[Reverify with fresh token and GREEN]
     Result -->|Partial or blocked| Recover[Resolve missing facts or controls]
 ```
 
@@ -26,6 +27,8 @@ flowchart LR
 - `guide.workflow`: `skills/workflow/GUIDE.md` → workflow usage guide / Purpose and prerequisites
 - `routing.task-decisions`: `docs/reference/task-routing.md` → Task routing / Task decisions
 <!-- /devflow:routes -->
+
+For stale completed code, use [reverification](../build-work/REFERENCE.md#reverify-completed-work).
 
 ## Documentation
 

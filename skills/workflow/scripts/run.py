@@ -232,6 +232,12 @@ def main(argv: list[str] | None = None) -> int:
     start.add_argument("--run-id", required=True)
     start.add_argument("--actor-id")
     start.add_argument("--operation-id")
+    reverify = run_commands.add_parser('reverify')
+    reverify.add_argument('--root',required=True)
+    reverify.add_argument('--run-id',required=True)
+    reverify.add_argument('--item',required=True)
+    reverify.add_argument('--max-bytes',type=int,default=20000)
+    reverify.add_argument('--operation-id')
     for name in ("next", "retry"):
         command = run_commands.add_parser(name)
         command.add_argument("--root", required=True)
@@ -350,20 +356,24 @@ def main(argv: list[str] | None = None) -> int:
                     or getattr(parsed, "plan_command", None) == "validate"
                     or getattr(parsed, "build_command", None) not in {None, 'validation-plan'}
                     or getattr(parsed, "review_command", None) in {"package", "record"}
-                    or run_command in {"start", "abandon", "result"})
+                    or run_command in {"start", "abandon", "result", "reverify"})
         mutation = mutation or run_command in {"amend-item", "discard", "accept", "park-finding", "waive-finding", "adjudicate", "resolve-finding"}
         mutation = mutation or getattr(parsed, "delivery_command", None) == "record"
         if mutation and getattr(parsed, "root", None):
             initial_state = read_state(Path(parsed.root))
             previous = initial_state["operations"].get(parsed.operation_id)
             if previous is not None:
+                if run_command == 'reverify' and (previous.get('kind') != 'run.reverification.started'
+                        or previous['payload'].get('run_id') != parsed.run_id
+                        or previous['payload'].get('attempt',{}).get('item_id') != parsed.item):
+                    raise WorkflowError('OPERATION_CONFLICT','Reverification operation belongs to different run/item input.')
                 raise _OperationReplay(_replay_result(initial_state, previous))
         # One live preflight for all approval-consuming command transitions.
         # Replay above deliberately returns historical receipts without filesystem reads.
         phase = None
         if getattr(parsed, 'plan_command', None) == 'validate': phase = 'plan-validation'
         if getattr(parsed, 'plan_command', None) == 'ready': phase = 'plan-ready'
-        if run_command in {'start', 'next', 'retry', 'result', 'accept'}: phase = 'run-' + run_command
+        if run_command in {'start', 'next', 'retry', 'result', 'accept', 'reverify'}: phase = 'run-' + run_command
         if getattr(parsed, 'build_command', None) not in {None, 'validation-plan'}: phase = 'build'
         if getattr(parsed, 'review_command', None): phase = 'review'
         if getattr(parsed, 'delivery_command', None): phase = 'delivery'
@@ -613,6 +623,19 @@ def main(argv: list[str] | None = None) -> int:
                             result = {**run_summary(committed_run), "replayed": True,
                                       "operation_id": operation_id, "event_sequence": response["event"]["sequence"],
                                       "attempt_issued": False}
+        elif parsed.command == 'run' and parsed.run_command == 'reverify':
+            from workflow_lib.reverification import begin_reverification
+            root = Path(parsed.root).expanduser().resolve()
+            state = initial_state if initial_state is not None else read_state(root)
+            run = state['data'].get('runs',{}).get(parsed.run_id)
+            if run is None: raise WorkflowError('RUN_NOT_FOUND','Known run required.')
+            updated = begin_reverification(run,parsed.item)
+            _run_brief(updated,[parsed.item],parsed.max_bytes,root=root)
+            receipt = _commit(root,state['version'],parsed.operation_id,{'kind':'run.reverification.started',
+                'payload':{'run_id':parsed.run_id,'attempt':updated['active_attempt'],
+                    'prior_token':run['items'][parsed.item]['attempts'][-1]['token']}})
+            committed = read_state(root)['data']['runs'][parsed.run_id]
+            result = {**_run_brief(committed,[parsed.item],parsed.max_bytes,root=root),**receipt}
         elif parsed.command == "run" and parsed.run_command in {"status", "summary"}:
             root = Path(parsed.root).expanduser().resolve()
             state = initial_state if initial_state is not None else read_state(root)
