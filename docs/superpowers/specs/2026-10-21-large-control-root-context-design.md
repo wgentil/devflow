@@ -1,7 +1,7 @@
 # Context preparation on large control roots
 
-Status: proposed specification, awaiting written-spec approval. The user approved
-this design direction on 2026-10-21. Implementation has not started.
+Status: written specification approved by the user on 2026-10-21 after commit
+`817dc07`. The implementation plan awaits review; implementation has not started.
 
 Source: [GitHub issue #2](https://github.com/wgentil/devflow/issues/2), reported
 against DevFlow 0.3.11. This specification is independent of the completed,
