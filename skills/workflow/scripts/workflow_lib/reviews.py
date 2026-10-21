@@ -151,7 +151,7 @@ def record_review(run: dict, package_hash: str, reviewer: dict, report: dict) ->
                 or finding["id"] in finding_ids or finding.get("severity") not in {"critical", "important", "minor", "info"}
                 or not isinstance(finding.get("path"), str) or type(finding.get("line")) is not int
                 or finding["line"] < 1):
-            raise ValueError("each finding needs a unique ID, supported severity, path, and positive line")
+            raise ValueError("each finding needs a unique ID, severity critical|important|minor|info, path, and positive line")
         finding_ids.add(finding["id"])
     if report["verdict"] == "request-changes" and not finding_ids:
         raise ValueError("request-changes requires at least one finding")

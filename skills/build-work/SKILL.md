@@ -7,7 +7,7 @@ description: Record fresh, attempt-bound verification evidence for Devflow work 
 
 Implement the current eligible work item and record fresh attempt-bound evidence. For code, prove actual target RED then GREEN with unchanged locked test hashes. IaC needs plan/policy proof and explicit exact-scope apply authorization; agent configuration needs the recorded baseline/post evaluation.
 
-Read the matching verification/rework procedure before running checks. Focused validation plans never replace full required checks. Preserve original failure verdicts and raw evidence when a digest is unavailable. Changes require renewed evidence; a reported result alone does not complete an item.
+Read the matching verification/rework procedure before running checks. Focused validation plans never replace full required checks. Preserve original failure verdicts and raw evidence when a digest is unavailable. Changes require renewed evidence; completion needs `outcome: passed` and the current `verifier_proof_id`; a result alone does not complete an item.
 
 Read [shared invariants](../../docs/reference/workflow-invariants.md) and the declared stage sections before work. The harness runs helpers and guides the user. For delegated work read [task routing](../../docs/reference/task-routing.md#task-decisions); use the actual stage and preserve user constraints.
 

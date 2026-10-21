@@ -345,9 +345,11 @@ def _apply_event(state: dict, event: dict) -> None:
         actors = run.setdefault("actors", {})
         reviewer_key = review["role"] + "_reviewer"
         if (review.get("actor_id") in run.get("implementer_actors", []) or review.get("actor_id") == actors.get("implementer")
-                or any(key != reviewer_key and actor == review.get("actor_id") for key, actor in actors.items())
-                or reviewer_key in actors and actors[reviewer_key] != review.get("actor_id") and review['role'] != 'pr'):
+                or any(key != reviewer_key and actor == review.get("actor_id") for key, actor in actors.items())):
             raise WorkflowError("INVALID_EVENT", "reviewer actor is not independent for this role")
+        if reviewer_key in actors and actors[reviewer_key] != review.get('actor_id') and review['role'] != 'pr':
+            raise WorkflowError('REVIEWER_ROLE_IDENTITY_CONFLICT',
+                f"Use the established {review['role']} reviewer actor {actors[reviewer_key]} with a genuinely separate invocation; one actor is bound per role per run.")
         actors[reviewer_key] = review["actor_id"]
         if review['role'] == 'pr' and sorted(review.get('reviewed_files', [])) != package.get('changed_files'):
             raise WorkflowError('INVALID_EVENT', 'PR review must cover every changed file')

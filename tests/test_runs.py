@@ -55,12 +55,13 @@ class RunTests(unittest.TestCase):
 
     def test_unverified_result_does_not_complete_code_item(self):
         issued = issue_attempt(self.run, "W1")
-        attempted = record_result(issued, issued["active_attempt"]["token"], {"outcome": "passed"})
-        self.assertEqual(attempted["items"]["W1"]["status"], "pending")
-        self.assertEqual(attempted["items"]["W1"]["attempts"][0]["status"], "result_recorded")
         with self.assertRaises(WorkflowError) as caught:
-            issue_attempt(attempted, "W2")
-        self.assertEqual(caught.exception.code, "ITEM_INELIGIBLE")
+            record_result(issued, issued["active_attempt"]["token"], {"outcome": "passed"})
+        self.assertEqual(caught.exception.code, 'VERIFIER_PROOF_REQUIRED')
+        self.assertEqual(issued['active_attempt']['item_id'],'W1')
+        with self.assertRaises(WorkflowError) as caught:
+            issue_attempt(issued, "W2")
+        self.assertEqual(caught.exception.code, "ATTEMPT_ACTIVE")
 
     def test_passing_proof_cannot_override_a_failed_result(self):
         issued = issue_attempt(self.run, "W1")

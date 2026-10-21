@@ -95,6 +95,10 @@ def record_result(run: dict, token: str, result: dict) -> dict:
     if not isinstance(result, dict) or not isinstance(result.get("outcome"), str):
         raise WorkflowError("INVALID_RESULT", "result requires an outcome string")
     source = _active(run, token)
+    success_labels = {'passed','success','successful','succeeded','complete','completed'}
+    if result['outcome'] in success_labels and (result['outcome'] != 'passed' or not result.get('verifier_proof_id')):
+        raise WorkflowError('VERIFIER_PROOF_REQUIRED',
+            'Verified completion requires outcome: passed and verifier_proof_id from fresh passing verification; the attempt remains active.')
     updated = deepcopy(run)
     attempt = updated["active_attempt"]
     proof_id = result.get("verifier_proof_id")

@@ -39,8 +39,10 @@ RED and GREEN. Run from your documentation shell:
 ```sh
 df build verify --root "$CONTROL" --run-id greeting-run --attempt-id "$ATTEMPT" --phase red --argv-json '["python3","-B","test_runner.py"]' --test-path tests/test_greeting.py --target-id test_greeting.GreetingTests.test_name --report-format json
 # Implement greet(name) as in docs/examples/greeting.py, then:
-df build verify --root "$CONTROL" --run-id greeting-run --attempt-id "$ATTEMPT" --phase green --argv-json '["python3","-B","test_runner.py"]' --test-path tests/test_greeting.py --target-id test_greeting.GreetingTests.test_name --report-format json
-df run result --root "$CONTROL" --run-id greeting-run --attempt-id "$ATTEMPT" --result '{"outcome":"success","detail":"Greeting targets verified"}' --operation-id result-W1
+GREEN_JSON=$(df build verify --root "$CONTROL" --run-id greeting-run --attempt-id "$ATTEMPT" --phase green --argv-json '["python3","-B","test_runner.py"]' --test-path tests/test_greeting.py --target-id test_greeting.GreetingTests.test_name --report-format json)
+GREEN_PROOF=$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["proof_id"])' "$GREEN_JSON")
+RESULT_JSON=$(python3 -c 'import json,sys; print(json.dumps({"outcome":"passed","verifier_proof_id":sys.argv[1]}))' "$GREEN_PROOF")
+df run result --root "$CONTROL" --run-id greeting-run --attempt-id "$ATTEMPT" --result "$RESULT_JSON" --operation-id result-W1
 ```
 
 The proof captures IDs, repository fingerprint, test hashes, command, timestamps
@@ -108,3 +110,12 @@ A matching source does not skip GREEN execution or repository-freshness checks.
 invalidate its proof. Use [the final-head recovery sequence](REFERENCE.md#reverify-completed-work);
 do not remove implementation files to manufacture RED. Reported recovery actions
 name affected items. A qualifying recorded RED is explicit, not assumed.
+
+## Proof-bound result contract
+
+Successful code verification returns `proof_id` and the identical legacy `id`.
+For completion submit `outcome: passed` with `verifier_proof_id`. Success-like
+labels without that contract fail before consuming the token; correct the request
+and retry. Deliberate nonpassing labels such as `failed`, `blocked`, `skipped`
+or `error` record an unverified result and leave the item pending. Other
+non-success labels likewise never complete work. No proof is selected implicitly.

@@ -87,3 +87,10 @@ still work. Unrelated commits are not assumed harmless: exact repository freshne
 remains required. Finish all planned commits, then reverify stale code items at
 that final state without further commits between checks. Stop/reconcile active
 workers or repairs first. Non-code items require their existing verifier flows.
+
+## Result proof identity
+
+Capture `proof_id` (alias of `id`) from successful verification and submit it as
+`verifier_proof_id` with `outcome: passed`. Missing/mismatched proof or success-like
+aliases do not consume the token. Deliberate nonpassing outcomes are unverified;
+no reported result alone completes work. The stored proof schema is unchanged.

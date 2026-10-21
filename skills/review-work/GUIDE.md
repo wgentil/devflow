@@ -172,3 +172,13 @@ and record a new proof-bound passing result before preparing a new item package.
 Affected higher-level reviews/acceptance require renewal; history and correction
 limits remain. Old packages retain their old semantics; stale completed code can
 use [reverification](../build-work/REFERENCE.md#reverify-completed-work).
+
+## Reviewer identity and finding errors
+
+Use one stable actor ID per reviewer role per run, with a genuinely separate
+invocation for each review. Reuse the item-reviewer actor for different items;
+never reuse the implementer or another role's actor. A role-identity conflict
+names the established actor. Finding severities are `critical`, `important`,
+`minor`, `info`; each finding also needs a unique `id`, `path` and positive `line`.
+The [report example](../../docs/examples/review-report.json) includes a finding;
+replace its content with the reviewer's actual judgment and current package hash.

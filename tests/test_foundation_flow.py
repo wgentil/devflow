@@ -177,8 +177,12 @@ class FoundationFlowTests(unittest.TestCase):
         retry = self.cli("run", "retry", "--root", self.control, "--run-id", "flow-1", "--item", "W1")
         self.assertNotEqual(retry["attempt_id"], token)
         version_before = len(list((self.control / "events").glob("[0-9]*.json")))
+        rejected = self.cli("run", "result", "--root", self.control, "--run-id", "flow-1",
+                            "--attempt-id", retry["attempt_id"], "--result", '{"outcome":"passed"}', ok=False)
+        self.assertEqual(json.loads(rejected.stdout)['error'],'VERIFIER_PROOF_REQUIRED')
+        self.assertEqual(len(list((self.control / "events").glob("[0-9]*.json"))),version_before)
         summary = self.cli("run", "result", "--root", self.control, "--run-id", "flow-1",
-                           "--attempt-id", retry["attempt_id"], "--result", '{"outcome":"passed"}')
+                           "--attempt-id", retry["attempt_id"], "--result", '{"outcome":"blocked"}')
         version_after = len(list((self.control / "events").glob("[0-9]*.json")))
         self.assertEqual(version_after, version_before + 1)
         self.assertEqual(summary["pending_items"], ["W1"])

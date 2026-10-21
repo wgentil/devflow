@@ -90,6 +90,8 @@ def register_commands(parser: argparse.ArgumentParser) -> None:
 
 def dispatch(parsed: argparse.Namespace) -> dict:
     result = _dispatch(parsed)
+    if parsed.build_command == 'verify' and result.get('passed') is True and result.get('id'):
+        result = {**result,'proof_id':result['id']}
     if parsed.build_command.startswith('verify'):
         from workflow_lib.lifecycle_hooks import verification_projection
         return verification_projection(Path(parsed.root), result, report_format=getattr(parsed, 'report_format', 'json'))

@@ -53,7 +53,7 @@ renewed. Adjudication does not manufacture missing verification or acceptance.
 
 Use the active run ID and registered repository IDs. Prepare a read-only package for the item, branch, or acceptance role. Supply each repository's base and exact current head. The package includes the complete commit range, Work-Item attribution, working-tree and untracked changes, artifact references, criteria, prior findings, and a content hash.
 
-Review the package in a separate host invocation. A reviewer must use a stable actor ID distinct from the implementer and every other reviewer role. Record the real invocation reference and a structured report bound to the package hash. If independent review tooling or the separate invocation is unavailable, leave the gate blocked; do not record a self-review as independent.
+Review the package in a separate host invocation. A reviewer must use one stable actor ID per role per run, distinct from the implementer and every other reviewer role. Reuse that role actor across items, with a fresh genuine invocation each time. Record the real invocation reference and a structured report bound to the package hash. If independent review tooling or the separate invocation is unavailable, leave the gate blocked; do not record a self-review as independent.
 
 ```sh
 python3 <plugin-root>/skills/workflow/scripts/run.py review package \
