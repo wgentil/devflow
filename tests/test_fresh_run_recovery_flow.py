@@ -73,6 +73,11 @@ class FreshRunRecoveryFlowTests(unittest.TestCase):
         for item in ('W1','W2'):
             token=self.run_cli('reverify','--item',item)['attempt_id'];self.result(token,self.verify(item,token,'green',red[item]))
         self.review('item','W1',changes=True)
+        for rebuild in (False,True):
+            if rebuild:(self.control/'state.json').unlink()
+            gate=self.run_cli('gate-status')
+            self.assertEqual(gate['stage'],'implementation')
+            self.assertIn('W1',gate['unverified_items'])
         token=self.run_cli('retry','--item','W1')['attempt_id']
         (self.repo/'app_w1.py').write_text("def value(): return ['ok']\n",encoding='utf-8')
         self.git('add','.');self.git('commit','-qm','Fix isolation\n\nWork-Item: W1')

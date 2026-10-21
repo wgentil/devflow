@@ -187,7 +187,7 @@ replace its content with the reviewer's actual judgment and current package hash
 
 Use an explicit item package and [complete repository-specific input scope](REFERENCE.md#scoped-item-review-liveness)
 when the next item's unrelated files may change during review. Check the returned
-liveness mode: incomplete scope falls back to whole-tree checks. A changed
+liveness mode: include current dirty/index inputs too; incomplete scope falls back to whole-tree checks. A changed
 packaged input still blocks with paths and requires a new package. Branch and
 acceptance packages always retain conservative whole-tree behavior.
 

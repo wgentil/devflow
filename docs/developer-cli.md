@@ -587,18 +587,19 @@ Plugin users invoke the skill; the agent supplies these arguments.
 
 For an existing organization source, copy
 [setup-attach-org.json](examples/setup-attach-org.json), replace its URL, and run
-`setup initialize` with that choice. The response contains `manifest.org.id` and
-`org_checkout`. Register the project and that checkout as separate repositories
-before storing the visible spec pair. After a human reviews the pair, `spec approve`
-records its exact hash. The first `plan validate` can then report
-`DOCUMENT_APPROVAL_REQUIRED` for `docs/devflow-context.json`. Use `document propose`
-on the project repository and that path, show the returned diff and before/after
-hashes to the human, then `document approve` with its `proposal_hash` and actor ID.
-Retry plan validation with a fresh operation ID. A later change to an applicable
-organization policy requires the same proposal and approval process in the
-organization repository before a new handoff; the current host keeps ownership
-while blocked. An unreachable URL or stale organization HEAD must be recovered
-first. A local path or `file://` URL is local-only.
+`setup initialize` with that choice. The response contains `manifest.org.id`, `org_checkout`, `repo_id` and the selected
+`control_root`. Setup registers project/organization identities when unambiguous
+and prepares exact governing proposals. Inspect `approval_status` and any pending
+reason; use the returned identities instead of registering duplicate owners.
+Show the proposal diff and before/after hashes to the human, then use
+`document approve` with its exact `proposal_hash` and actual approving actor.
+Approve changed organization inputs through their owning repository's additional
+proposal. Resolve pending prerequisites and retry setup before specification or
+planning; setup never grants approval itself. An unchanged applicable approval
+is retained. Separately store/review the visible specification pair and record
+its human approval with `spec approve`. Later applicable policy edits require
+new exact governing approval and reassessment. Recover unreachable or stale
+organization sources first; a local path or `file://` URL remains local-only.
 
 ## Governing reassessment after policy changes
 
@@ -627,3 +628,16 @@ for the project's default control root. Inspect `approval_status`, `approval_pro
 `additional_approval_proposals`, `review_diff` and omission count; resolve pending
 prerequisites and obtain human approval before specification/planning. See
 [approval-ready setup](../skills/project-context/GUIDE.md#approval-ready-setup).
+
+
+## Fresh verification and correction recovery
+
+Use `run reverify --root CONTROL --run-id RUN --item ITEM` for stale completed code.
+Keep files in place and capture the fresh attempt token. Run `build verify --phase
+green --red-proof-id ID` with the original declared test/target/argv/report contract;
+add `--red-run-id RUN` only for an explicit same-control-root source run. Capture
+returned `proof_id` and submit `run result --result
+'{"outcome":"passed","verifier_proof_id":"PROOF"}'` for the current token. See
+[qualification and full command context](../skills/build-work/REFERENCE.md#reusing-recorded-red).
+Item-bound request-changes instead returns `run retry`; pending items route to
+implementation even while historical GREEN remains recorded.

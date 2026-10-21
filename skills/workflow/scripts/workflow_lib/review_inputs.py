@@ -3,7 +3,7 @@ import hashlib
 from pathlib import Path
 import subprocess
 from .document_units import digest
-from .git_paths import resolve_repo_path
+from .git_paths import resolve_repo_path, git_paths
 
 
 def _git_bytes(repo, *args):
@@ -51,12 +51,16 @@ def compare_review_inputs(repo: Path, snapshot: dict) -> dict:
             'reason':'REVIEW_INPUTS_CHANGED' if changed else None}
 
 
-def item_scope_complete(run, item_id, repo_id, paths, commits):
+def item_scope_complete(run, item_id, repo_id, paths, commits, repo):
     """Check declared coverage against attributed changes, tests and artifact paths."""
     item=next((row for row in run['plan']['work_items'] if row['id']==item_id),{})
     if not item.get('repo_id'):return False,'ITEM_REPOSITORY_UNKNOWN'
     token=run['items'][item_id]['attempts'][-1]['token']
     required={name for commit in commits if item_id in commit['work_item_ids'] or not commit['work_item_ids'] for name in commit['files']}
+    # The package includes the full dirty/index diff without item attribution.
+    # Keep every such input bound, including both sides of renames.
+    required.update(git_paths(repo,'diff','--no-renames','--name-only','HEAD'))
+    required.update(git_paths(repo,'diff','--cached','--no-renames','--name-only','HEAD'))
     if repo_id == item['repo_id']:
         proofs=[proof for proof in run.get('verification_proofs',{}).values() if proof.get('kind')=='code'
                 and proof.get('phase')=='GREEN' and proof.get('passed') is True and proof.get('repo_id')==repo_id

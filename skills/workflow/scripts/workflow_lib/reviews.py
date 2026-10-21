@@ -80,7 +80,7 @@ def prepare_review(run: dict, role: str, repo_heads: dict,
         scope_reason = 'WHOLE_REPOSITORY_DEFAULT'
         if scope_request is not None and repo_id in scope_request:
             candidate = capture_review_inputs(repo,scope_request[repo_id])
-            complete,scope_reason = item_scope_complete(run,item_id,repo_id,scope_request[repo_id],commits)
+            complete,scope_reason = item_scope_complete(run,item_id,repo_id,scope_request[repo_id],commits,repo)
             if complete:
                 scoped = candidate
                 input_paths.update(scoped['paths'])

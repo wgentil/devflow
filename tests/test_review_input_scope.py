@@ -128,3 +128,24 @@ class ReviewInputScopeTests(unittest.TestCase):
         self.assertTrue(compare_review_inputs(f.f.repo,snapshot)['current'])
         (f.f.repo/name).write_text('after',encoding='utf-8')
         self.assertEqual(compare_review_inputs(f.f.repo,snapshot)['changed_paths'],[name])
+
+    def test_omitted_dirty_index_inputs_fall_back_and_stay_bound(self):
+        for mode in ('staged-add','tracked-edit','tracked-delete','tracked-rename'):
+            with self.subTest(mode=mode):
+                f=self.fixture();repo=f.f.repo;dirty=repo/'dirty.py'
+                if mode!='staged-add':
+                    dirty.write_text('before',encoding='utf-8')
+                    subprocess.run(['git','add','.'],cwd=repo,check=True)
+                    subprocess.run(['git','commit','-qm','Other work\n\nWork-Item: W2'],cwd=repo,check=True)
+                    f.repos['repo-1']['head']=subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True).strip()
+                if mode=='tracked-delete':dirty.unlink()
+                elif mode=='tracked-rename':dirty.rename(repo/'renamed.py')
+                else:dirty.write_text('dirty',encoding='utf-8')
+                if mode!='tracked-edit':subprocess.run(['git','add','-A'],cwd=repo,check=True)
+                pkg=self.package(f)
+                self.assertEqual(pkg['repositories']['repo-1']['liveness_mode'],'whole')
+                self.assertEqual(pkg['repositories']['repo-1']['scope_reason'],'DECLARED_INPUT_SCOPE_INCOMPLETE')
+                dirty.write_text('changed after packaging',encoding='utf-8')
+                subprocess.run(['git','add','-A'],cwd=repo,check=True)
+                with self.assertRaises(ValueError):self.pass_review(f,pkg)
+                self.assertFalse(package_current(f.run,pkg))

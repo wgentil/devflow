@@ -37,8 +37,22 @@ Final Task 7 validation: full suite **631 tests, OK (one platform skip)** in 145
 
 ## Execution rulings
 
-- Task 5: Apply the same scoped liveness contract in host_completion.package_current as in review recording — the enclosing host otherwise rejects an item review that the command correctly accepts — cost if wrong: this adds a second affected consumer beyond the plan's file list; common snapshot comparison and regression tests must keep both consistent.
+- Apply the same scoped liveness contract in host_completion.package_current as in review recording — the enclosing host otherwise rejects an item review that the command correctly accepts — cost if wrong: this adds a second affected consumer beyond the plan's file list; common snapshot comparison and regression tests must keep both consistent.
+- Regrade developer setup contradiction from Minor to Important — obsolete manual owner registration and delayed approval instructions recreate the onboarding failure this change addresses, so correct the walkthrough in the same fix pass — cost if wrong: expands the fix pass by one documentation correction and validation.
+- Live provider invocation and production delivery were set aside — this branch provides reproducible offline lifecycle validation and explicitly discloses fixture reviewer seats, so live integration remains unverified — cost if wrong: host/provider-specific failures can remain undiscovered until installed-host validation.
+- Native Windows parity was set aside — Windows remains explicitly unreleased and this change adds UTF-8 fixtures without claiming parity — cost if wrong: platform-specific failures remain until a separate Windows validation effort.
+- Stricter legacy same-token RED matching was set aside — preserve existing compatibility while requiring complete target coverage for explicit RED reuse and GREEN — cost if wrong: legacy same-token RED can still qualify on one observed declared failure without all targets reported.
 
 ## Independent review
 
-Pending the one whole-branch Native review and final disposition.
+A fresh independent gpt-6-astra reviewer examined the seven-commit implementation and ran six focused modules (36 tests passed). No Critical issues. Two Important findings were reproduced: pending reopened work retained old proof-based review routing, and omitted dirty/index inputs did not force whole-tree review liveness. A developer setup contradiction was graded Minor by the reviewer and regraded Important by the executor because it recreated delayed approval/manual-owner onboarding errors.
+
+The single fix pass adds gate-status assertions before and after journal rebuild to the actual three-item CLI lifecycle. They failed with item-review instead of implementation before the fix. Gate routing now requires item completion as well as eligible proof, preserving historical proof bytes.
+
+The new `test_omitted_dirty_index_inputs_fall_back_and_stay_bound` failed for staged addition, tracked edit, deletion and rename. Scope coverage now includes all dirty/index paths in the package, with rename detection disabled so both old/new names bind. All four cases now fall back to whole-tree mode and reject later changes in review recording and host completion. Existing scoped unrelated-work tests still pass.
+
+The documented setup contradiction was the reviewer's direct behavioral RED: the walkthrough instructed duplicate manual registrations and approval discovery during planning. It now uses returned identities/proposals and requires approval during setup; the developer reference also links the reverify/RED/result contracts. Documentation validation is the GREEN check for this prose correction.
+
+Reviewer declined to judge live-provider/production behavior, Windows parity and stricter legacy same-token RED coverage. Each disposition and cost is recorded above. No deferred Minor findings remain after regrading. No second reviewer was dispatched; fixes use regression evidence.
+
+Final fix-pass verification: **632 tests, OK (one platform skip)** in 143.191 seconds. Documentation `--check` has no problems; **277 relative links resolve**; `git diff --check` passes. All Important/Critical findings are addressed. R1–R8 remain MET with the correction-routing and dirty/index coverage regressions described above. Delivery remains a user decision; no merge, push or release performed.

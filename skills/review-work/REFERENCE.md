@@ -90,7 +90,8 @@ are repository-specific; directories, escaping/symlinked inputs and `.git` files
 are not scoped source inputs. Up to 1,024 paths per repository are accepted.
 
 The helper verifies known coverage against commit attribution and the item's
-recorded GREEN test paths. Missing/unknown coverage retains whole-tree mode with
+recorded GREEN test paths, plus all dirty/index paths included in the package
+(their item attribution is unknown). Missing/unknown coverage retains whole-tree mode with
 an explicit reason; inspect each repository's `liveness_mode` and `scope_reason`.
 Explicit scope does not relax verifier freshness or branch/acceptance review.
 

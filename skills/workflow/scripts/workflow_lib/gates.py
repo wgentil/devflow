@@ -88,7 +88,9 @@ def gate_status(run: dict, live: bool = True) -> dict:
         return {'stage': 'pr-opening', 'can_advance': False, 'blocking_findings': [],
                 'unverified_items': []}
     items = run.get("plan", {}).get("work_items", [])
-    unverified = [item["id"] for item in items if not _required_proof(run, item, live)]
+    unverified = [item["id"] for item in items
+                  if run.get("items", {}).get(item["id"], {}).get("status") != "complete"
+                  or not _required_proof(run, item, live)]
     if unverified:
         stage = "implementation"
     else:

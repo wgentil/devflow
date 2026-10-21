@@ -364,3 +364,5 @@ proceeding; no content is auto-approved. See [approval-ready setup](../project-c
 ## Deployment compatibility questions
 
 For unresolved deployment-release and performance-reliability topics, the ground-interview helper returns prompts about cached clients meeting new pages or APIs, static asset versioning and rollback, and reliability under mixed asset versions. Establish actual project behavior from evidence or ask the user; these are guidance within existing topics, not additional readiness gates. Answered and justified not-applicable topics stay resolved.
+
+After item-bound request-changes, gate status routes the pending item to implementation/retry even if its historical GREEN still matches the repository. Only a new proof-bound passing result completes the retry.
