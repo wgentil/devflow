@@ -23,6 +23,7 @@ def register_commands(parser: argparse.ArgumentParser) -> None:
     package.add_argument("--role", choices=("item", "branch", "acceptance"), required=True)
     package.add_argument("--repositories-json", required=True)
     package.add_argument("--prior-findings-json", default="[]")
+    package.add_argument("--item")
     package.add_argument("--operation-id")
     pr_package = actions.add_parser('pr-package')
     pr_package.add_argument('--root', required=True)
@@ -89,7 +90,7 @@ def dispatch(parsed: argparse.Namespace) -> dict:
         return {'package': package, 'state_version': response['state']['version'], 'replayed': response['replayed']}
     if parsed.review_command == "package":
         package = prepare_review(run, parsed.role, json.loads(parsed.repositories_json),
-                                 json.loads(parsed.prior_findings_json))
+                                 json.loads(parsed.prior_findings_json), item_id=parsed.item)
         operation_id = (parsed.operation_id if getattr(parsed, "operation_id_explicit", False)
                         else f"review-package:{parsed.run_id}:{package['package_hash']}")
         previous = state["operations"].get(operation_id)
@@ -124,7 +125,10 @@ def dispatch(parsed: argparse.Namespace) -> dict:
             review = record_review(run, parsed.package_hash, reviewer, report)
         response = transact(root, state["version"], operation_id,
             {"kind": "review.recorded", "payload": {"run_id": parsed.run_id, "review": review}})
-        return {**review, "state_version": response["state"]["version"], "replayed": response["replayed"]}
+        recovery = {}
+        if review.get('schema_version') == 2 and review.get('verdict') == 'request-changes':
+            recovery = {'item_status':'pending','next_action':{'command':'run retry','item_id':review['item_id']}}
+        return {**review, **recovery, "state_version": response["state"]["version"], "replayed": response["replayed"]}
     if parsed.review_command == 'pr-human-decision':
         package = run.get('review_packages', {}).get(parsed.package_hash)
         from workflow_lib.host_completion import package_current

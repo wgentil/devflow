@@ -22,7 +22,7 @@ Set `REPOSITORIES_JSON` to an object such as:
 Use actual Git SHAs. Work commits should include `Work-Item: W1` in their message.
 
 ```sh
-df review package --root "$CONTROL" --run-id greeting-run --role item --repositories-json "$REPOSITORIES_JSON" --operation-id item-package-v1 > package.json
+df review package --root "$CONTROL" --run-id greeting-run --role item --item W1 --repositories-json "$REPOSITORIES_JSON" --operation-id item-package-v1 > package.json
 ```
 
 Send the returned package to a separate reviewer invocation. Have it address W1,
@@ -161,3 +161,14 @@ Read [canonical guidance](../../docs/reference/governing-inputs.md#governing-doc
 ## Governing input reassessment
 
 Read [canonical guidance](../../docs/reference/governing-inputs.md#governing-input-reassessment). Stage routing is declared in this skill.
+
+## Item correction recovery
+
+Prepare item packages with explicit `--item ID` so the package binds the completed
+item and its current attempt. A valid `request-changes` record reopens only that
+item and returns `run retry` as the next action. Fix findings, issue the new
+attempt, run fresh GREEN with an explicitly qualified recorded RED when eligible,
+and record a new proof-bound passing result before preparing a new item package.
+Affected higher-level reviews/acceptance require renewal; history and correction
+limits remain. Old packages retain their old semantics; stale completed code can
+use [reverification](../build-work/REFERENCE.md#reverify-completed-work).

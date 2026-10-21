@@ -41,9 +41,16 @@ def _commit_records(repo: Path, base: str, head: str) -> tuple[list[dict], list[
 
 
 def prepare_review(run: dict, role: str, repo_heads: dict,
-                   prior_findings: list[dict] | None = None) -> dict:
+                   prior_findings: list[dict] | None = None, item_id: str | None = None,
+                   input_paths: dict | None = None) -> dict:
     if role not in ROLES or not isinstance(repo_heads, dict) or not repo_heads:
         raise ValueError("review role and repository head manifest are required")
+    if item_id is not None:
+        item = run.get('items',{}).get(item_id,{})
+        if role != 'item' or item.get('status') != 'complete' or not item.get('attempts'):
+            raise ValueError('Explicit item review requires a completed item with recorded attempt.')
+    if input_paths is not None:
+        raise ValueError('Scoped inputs require the scoped package preparation path.')
     repositories = {}
     input_paths = set()
     for repo_id, source in sorted(repo_heads.items()):
@@ -82,6 +89,9 @@ def prepare_review(run: dict, role: str, repo_heads: dict,
             "repositories": repositories, "artifacts": run.get("artifacts", {}),
             "criteria": criteria, "requirements": requirements if role == "acceptance" else [],
             "prior_findings": prior_findings or [], "input_paths": sorted(input_paths)}
+    if item_id is not None:
+        body.update(schema_version=2,item_id=item_id,item_attempt_token=run['items'][item_id]['attempts'][-1]['token'],
+                    governing_digest=run.get('governing_digest'))
     body["package_hash"] = hashlib.sha256(_canonical(body).encode()).hexdigest()
     return body
 
@@ -117,6 +127,8 @@ def record_review(run: dict, package_hash: str, reviewer: dict, report: dict) ->
             raise ValueError("review untracked inputs changed after package preparation")
     if report.get("package_hash") != package_hash or report.get("verdict") not in {"pass", "request-changes", "block"}:
         raise ValueError("review report must bind the package and use a supported verdict")
+    if package.get('schema_version') == 2:
+        validate_item_review_scope(run,package,report)
     reviews = run.get("reviews", {}).get(role, [])
     for prior_role, entries in run.get("reviews", {}).items():
         if prior_role != role and any(entry.get("actor_id") == actor for entry in entries):
@@ -150,6 +162,9 @@ def record_review(run: dict, package_hash: str, reviewer: dict, report: dict) ->
                               "report": report}).encode()).hexdigest()}
     if item_id:
         review["item_id"] = item_id
+    if package.get('schema_version') == 2:
+        review['schema_version']=2
+        review['item_attempt_token']=package['item_attempt_token']
     return review
 
 
@@ -189,3 +204,13 @@ def record_adjudication(run: dict, role: str, actor_id: str, decision: str, rati
               "correction_rounds": rounds}
     record["id"] = hashlib.sha256(_canonical(record).encode()).hexdigest()
     return record
+
+
+def validate_item_review_scope(run: dict, package: dict, report: dict) -> None:
+    item_id = package.get('item_id')
+    item = run.get('items',{}).get(item_id,{})
+    if (package.get('role') != 'item' or report.get('item_id') != item_id
+            or item.get('status') != 'complete' or not item.get('attempts')
+            or item['attempts'][-1].get('token') != package.get('item_attempt_token')
+            or package.get('governing_digest') != run.get('governing_digest')):
+        raise ValueError('Item review must match the completed item, current attempt and governing inputs.')

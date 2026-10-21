@@ -348,3 +348,9 @@ After all implementation commits, inspect the gates. For completed code items
 whose proof is stale, use [reverification](../build-work/REFERENCE.md#reverify-completed-work)
 with qualified recorded RED and freshly executed GREEN. The same run and its
 history are retained; there is no need to abandon it or remove implementation.
+
+## Item review corrections
+
+Item packages prepared with `--item ID` reopen that item on a valid independent
+`request-changes` verdict. Follow the returned retry action; fix findings, renew
+verification and prepare a fresh item package. See [correction recovery](../review-work/GUIDE.md#item-correction-recovery).

@@ -17,6 +17,7 @@ flowchart LR
     Checks --> Work[Stage responsibility]
     Work --> Result{Worker outcome}
     Result -->|Complete scoped report| Evidence[Current evidence and next gate]
+    Result -->|Item request-changes| Retry[Reopen item and renew verification]
     Result -->|Partial or blocked| Recover[Resolve missing facts or controls]
 ```
 
@@ -26,6 +27,8 @@ flowchart LR
 - `guide.review-work`: `skills/review-work/GUIDE.md` → review-work usage guide / Purpose and prerequisites
 - `routing.task-decisions`: `docs/reference/task-routing.md` → Task routing / Task decisions
 <!-- /devflow:routes -->
+
+For item reviews, pass `--item ID`; valid request-changes reopens only that item for retry and fresh verification.
 
 ## Documentation
 

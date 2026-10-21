@@ -332,6 +332,16 @@ def _apply_event(state: dict, event: dict) -> None:
                 raise WorkflowError('INVALID_EVENT', str(exc)) from exc
             if expected != review:
                 raise WorkflowError('INVALID_EVENT', 'PR review record does not match validated report')
+        if review.get('schema_version') == 2:
+            from .reviews import validate_item_review_scope
+            try:
+                validate_item_review_scope(run,package,review)
+            except ValueError as exc:
+                raise WorkflowError('INVALID_EVENT',str(exc)) from exc
+            if (package.get('schema_version') != 2 or review.get('item_attempt_token') != package.get('item_attempt_token')
+                    or not isinstance(review.get('findings'),list)
+                    or review.get('verdict') == 'request-changes' and not review['findings']):
+                raise WorkflowError('INVALID_EVENT','Versioned item review requires scoped findings and current attempt.')
         actors = run.setdefault("actors", {})
         reviewer_key = review["role"] + "_reviewer"
         if (review.get("actor_id") in run.get("implementer_actors", []) or review.get("actor_id") == actors.get("implementer")
@@ -341,6 +351,10 @@ def _apply_event(state: dict, event: dict) -> None:
         actors[reviewer_key] = review["actor_id"]
         if review['role'] == 'pr' and sorted(review.get('reviewed_files', [])) != package.get('changed_files'):
             raise WorkflowError('INVALID_EVENT', 'PR review must cover every changed file')
+        if review.get('schema_version') == 2 and review.get('verdict') == 'request-changes':
+            from .reverification import invalidate_item_reviews
+            run['items'][review['item_id']]['status']='pending'
+            invalidate_item_reviews(run,review['item_id'])
         run.setdefault("reviews", {}).setdefault(review["role"], []).append(review)
         run["review_ids"].append(review["review_id"])
     elif kind == "review.adjudicated":
