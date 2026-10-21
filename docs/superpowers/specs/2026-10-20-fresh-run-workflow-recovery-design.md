@@ -1,6 +1,7 @@
 # Fresh-run workflow recovery and guidance
 
-Status: draft for user review. Implementation has not started.
+Status: approved by the user on 2026-10-20, after commit `06ab7ed`.
+Implementation awaits written-plan review; Native execution remains selected.
 
 ## Intent and evidence
 
