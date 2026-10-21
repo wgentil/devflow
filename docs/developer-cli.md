@@ -617,3 +617,6 @@ returns `OPERATION_CONFLICT`; this historical receipt does not authorize current
 drift. New approvals still require a current exact proposal.
 
 Interactive delegation can be inspected with `host delegation-prepare --root CONTROL --file REQUEST.json`; see [native worker limitations](native-models.md#interactive-delegation-preparation). The command prepares only and accepts no bridge or trusted observations from JSON.
+
+Item review packages may use `--item ID --input-paths-json '{"app":["src/greeting.py","tests/test_greeting.py"]}'`.
+Inspect per-repository `liveness_mode` and coverage reasons; see [scoped input contracts](../skills/review-work/REFERENCE.md#scoped-item-review-liveness).

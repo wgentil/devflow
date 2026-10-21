@@ -79,3 +79,25 @@ correction-limit and independent-actor checks pass; it does not reopen other ite
 or erase prior proof. Use the returned retry action and renew verification before
 another package. Legacy packages keep their previous behavior and cannot imply
 this transition. Branch and acceptance gates require renewed affected evidence.
+
+## Scoped item review liveness
+
+For an explicitly item-bound package, `--input-paths-json` accepts a repository-ID
+map of exact relative file paths, for example `{"app":["src/greeting.py","tests/test_greeting.py"]}`.
+Include every item-attributed changed source, declared test and local criterion/
+artifact input. List dependency/configuration inputs the reviewer needs too. Paths
+are repository-specific; directories, escaping/symlinked inputs and `.git` files
+are not scoped source inputs. Up to 1,024 paths per repository are accepted.
+
+The helper verifies known coverage against commit attribution and the item's
+recorded GREEN test paths. Missing/unknown coverage retains whole-tree mode with
+an explicit reason; inspect each repository's `liveness_mode` and `scope_reason`.
+Explicit scope does not relax verifier freshness or branch/acceptance review.
+
+Scoped snapshots bind worktree content/type, index and HEAD entries, including
+packaged untracked or absent optional inputs. Unrelated next-item files/commits
+can advance while that snapshot stays identical and the packaged head remains an
+ancestor. Changed packaged inputs, history rewrite, plan/governing/attempt or
+artifact changes require a fresh package. Both host completion and review record
+use this same check. Diagnostics list up to 64 changed paths with omission count;
+old whole-tree packages can disclose unavailable per-path detail for legacy metadata.

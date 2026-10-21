@@ -17,6 +17,11 @@ def package_current(run, package):
     from .reviews import _git
     plan_hash=hashlib.sha256(json.dumps(run.get('plan',{}),sort_keys=True,ensure_ascii=False,separators=(',',':')).encode()).hexdigest()
     if package.get('plan_hash') != plan_hash or package.get('spec_hash') != run.get('plan',{}).get('spec_hash'):return False
+    if package.get('schema_version') == 2:
+        item=run.get('items',{}).get(package.get('item_id'),{})
+        if (not item.get('attempts') or item['attempts'][-1].get('token') != package.get('item_attempt_token')
+                or package.get('governing_digest') != run.get('governing_digest')
+                or package.get('artifacts') != run.get('artifacts',{})):return False
     if package.get('role') == 'pr':
         from .pr_reviews import _git, _hash
         if package.get('run_governing_digest') != run.get('governing_digest'):return False
@@ -32,6 +37,10 @@ def package_current(run, package):
     try:
         for repo in package.get('repositories',{}).values():
             location=Path(repo['location'])
+            if package.get('schema_version') == 2 and repo.get('liveness_mode') == 'scoped':
+                from .review_inputs import scoped_repository_current
+                if not scoped_repository_current(location,repo)['current']:return False
+                continue
             if not repo.get('head_verified') or _git(location,'rev-parse','HEAD').strip() != repo['head'] or _git(location,'status','--porcelain','--untracked-files=all') != repo['worktree_status'] or _git(location,'diff','--binary','HEAD') != repo['worktree_diff']: return False
             current={name:hashlib.sha256(resolve_repo_path(location,name).read_bytes()).hexdigest() for name in git_paths(location,'ls-files','--others','--exclude-standard')}
             if current != repo['untracked_hashes']:return False

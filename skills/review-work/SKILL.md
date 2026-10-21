@@ -14,7 +14,8 @@ Read [shared invariants](../../docs/reference/workflow-invariants.md) and the de
 ```mermaid
 flowchart LR
     Scope[Current task and declared inputs] --> Checks[Live checks and shared invariants]
-    Checks --> Work[Stage responsibility]
+    Checks --> Inputs[Complete scoped item inputs or whole-tree checks]
+    Inputs --> Work[Stage responsibility]
     Work --> Result{Worker outcome}
     Result -->|Complete scoped report| Evidence[Current evidence and next gate]
     Result -->|Item request-changes| Retry[Reopen item and renew verification]
@@ -28,7 +29,7 @@ flowchart LR
 - `routing.task-decisions`: `docs/reference/task-routing.md` → Task routing / Task decisions
 <!-- /devflow:routes -->
 
-For item reviews, pass `--item ID`; valid request-changes reopens only that item for retry and fresh verification.
+For item reviews, pass `--item ID`; explicit complete [input scopes](REFERENCE.md#scoped-item-review-liveness) can isolate unrelated work; valid request-changes reopens only that item for retry and fresh verification.
 
 ## Documentation
 

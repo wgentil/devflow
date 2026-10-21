@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 import hashlib
 import json
 from pathlib import Path
@@ -49,8 +50,11 @@ def prepare_review(run: dict, role: str, repo_heads: dict,
         item = run.get('items',{}).get(item_id,{})
         if role != 'item' or item.get('status') != 'complete' or not item.get('attempts'):
             raise ValueError('Explicit item review requires a completed item with recorded attempt.')
-    if input_paths is not None:
-        raise ValueError('Scoped inputs require the scoped package preparation path.')
+    scope_request = input_paths
+    if scope_request is not None:
+        if item_id is None or role != 'item' or not isinstance(scope_request,dict) or set(scope_request)-set(repo_heads):
+            raise ValueError('Scoped input paths require an explicit item and known repository IDs.')
+        from .review_inputs import capture_review_inputs, item_scope_complete
     repositories = {}
     input_paths = set()
     for repo_id, source in sorted(repo_heads.items()):
@@ -61,7 +65,17 @@ def prepare_review(run: dict, role: str, repo_heads: dict,
         commits, unattributed = _commit_records(repo, source["base"], source["head"])
         status = _git(repo, "status", "--porcelain", "--untracked-files=all")
         diff = _git(repo, "diff", "--binary", "HEAD")
+        scoped = None
+        scope_reason = 'WHOLE_REPOSITORY_DEFAULT'
+        if scope_request is not None and repo_id in scope_request:
+            candidate = capture_review_inputs(repo,scope_request[repo_id])
+            complete,scope_reason = item_scope_complete(run,item_id,repo_id,scope_request[repo_id],commits)
+            if complete:
+                scoped = candidate
+                input_paths.update(scoped['paths'])
         untracked_names = git_paths(repo, "ls-files", "--others", "--exclude-standard")
+        if scoped is not None:
+            untracked_names = [name for name in untracked_names if name in scoped['paths']]
         untracked = {}
         for name in sorted(untracked_names):
             path = resolve_repo_path(repo, name)
@@ -79,6 +93,9 @@ def prepare_review(run: dict, role: str, repo_heads: dict,
             "worktree_status": status, "worktree_diff": diff, "untracked_hashes": untracked,
             "input_hash": hashlib.sha256(_canonical({"head": source["head"], "status": status,
                 "diff": diff, "untracked": untracked, "commits": commits}).encode()).hexdigest()}
+        if scope_request is not None:
+            repositories[repo_id].update(liveness_mode='scoped' if scoped is not None else 'whole',scope_reason=scope_reason)
+            if scoped is not None:repositories[repo_id]['input_scope']=scoped
     requirements = sorted({requirement for item in run.get("plan", {}).get("work_items", [])
                            for requirement in item.get("requirement_ids", [])})
     criteria = {item["id"]: item.get("acceptance_criteria", [])
@@ -92,6 +109,7 @@ def prepare_review(run: dict, role: str, repo_heads: dict,
     if item_id is not None:
         body.update(schema_version=2,item_id=item_id,item_attempt_token=run['items'][item_id]['attempts'][-1]['token'],
                     governing_digest=run.get('governing_digest'))
+    body = deepcopy(body)
     body["package_hash"] = hashlib.sha256(_canonical(body).encode()).hexdigest()
     return body
 
@@ -113,18 +131,28 @@ def record_review(run: dict, package_hash: str, reviewer: dict, report: dict) ->
     current_plan_hash = hashlib.sha256(_canonical(run.get("plan", {})).encode()).hexdigest()
     if package.get("plan_hash") != current_plan_hash or package.get("spec_hash") != run.get("plan", {}).get("spec_hash"):
         raise ValueError("review package is stale after a plan or specification amendment")
-    for repo in package.get("repositories", {}).values():
+    if package.get('schema_version') == 2 and package.get('artifacts') != run.get('artifacts',{}):
+        raise ValueError('Review artifact inputs changed after package preparation.')
+    for repo_id,repo in package.get("repositories", {}).items():
         location = Path(repo["location"])
+        if package.get('schema_version') == 2 and repo.get('liveness_mode') == 'scoped':
+            from .review_inputs import scoped_repository_current
+            checked=scoped_repository_current(location,repo)
+            if not checked['current']:
+                raise ValueError(f"Review inputs changed in {repo_id}: {checked['changed_paths']}; omitted={checked['omitted_count']}; {checked['reason']}")
+            continue
         if (repo.get("head_verified") is not True
                 or _git(location, "rev-parse", "HEAD").strip() != repo["head"]
                 or _git(location, "status", "--porcelain", "--untracked-files=all") != repo["worktree_status"]
                 or _git(location, "diff", "--binary", "HEAD") != repo["worktree_diff"]):
-            raise ValueError("review inputs changed after package preparation")
+            from .review_inputs import whole_review_change_diagnostics
+            raise ValueError('Review inputs changed after package preparation: '+str(whole_review_change_diagnostics(location,repo)))
         current = {}
         for name in git_paths(location, "ls-files", "--others", "--exclude-standard"):
             current[name] = hashlib.sha256(resolve_repo_path(location, name).read_bytes()).hexdigest()
         if current != repo["untracked_hashes"]:
-            raise ValueError("review untracked inputs changed after package preparation")
+            from .review_inputs import whole_review_change_diagnostics
+            raise ValueError('Review untracked inputs changed after package preparation: '+str(whole_review_change_diagnostics(location,repo)))
     if report.get("package_hash") != package_hash or report.get("verdict") not in {"pass", "request-changes", "block"}:
         raise ValueError("review report must bind the package and use a supported verdict")
     if package.get('schema_version') == 2:

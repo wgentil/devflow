@@ -24,6 +24,7 @@ def register_commands(parser: argparse.ArgumentParser) -> None:
     package.add_argument("--repositories-json", required=True)
     package.add_argument("--prior-findings-json", default="[]")
     package.add_argument("--item")
+    package.add_argument("--input-paths-json")
     package.add_argument("--operation-id")
     pr_package = actions.add_parser('pr-package')
     pr_package.add_argument('--root', required=True)
@@ -90,7 +91,8 @@ def dispatch(parsed: argparse.Namespace) -> dict:
         return {'package': package, 'state_version': response['state']['version'], 'replayed': response['replayed']}
     if parsed.review_command == "package":
         package = prepare_review(run, parsed.role, json.loads(parsed.repositories_json),
-                                 json.loads(parsed.prior_findings_json), item_id=parsed.item)
+                                 json.loads(parsed.prior_findings_json), item_id=parsed.item,
+                                 input_paths=json.loads(parsed.input_paths_json) if parsed.input_paths_json else None)
         operation_id = (parsed.operation_id if getattr(parsed, "operation_id_explicit", False)
                         else f"review-package:{parsed.run_id}:{package['package_hash']}")
         previous = state["operations"].get(operation_id)
