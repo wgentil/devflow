@@ -1,8 +1,8 @@
 # Project learning from historical DevFlow runs
 
-Status: draft for written-specification review. The user approved the conversational
-architecture and all nine learning areas on 2026-10-21. Implementation and its
-written plan have not yet been approved.
+Status: written specification approved by the user on 2026-10-21 after commit
+`5da5466`. All nine learning areas are in scope. The implementation plan awaits
+user review; implementation has not started.
 
 ## Intent and success criteria
 
