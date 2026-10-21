@@ -360,3 +360,7 @@ verification and prepare a fresh item package. See [correction recovery](../revi
 Use the setup response's exact proposal/diff and selected control root to obtain
 required human governing approval during setup. Handle a pending proposal before
 proceeding; no content is auto-approved. See [approval-ready setup](../project-context/GUIDE.md#approval-ready-setup).
+
+## Deployment compatibility questions
+
+For unresolved deployment-release and performance-reliability topics, the ground-interview helper returns prompts about cached clients meeting new pages or APIs, static asset versioning and rollback, and reliability under mixed asset versions. Establish actual project behavior from evidence or ask the user; these are guidance within existing topics, not additional readiness gates. Answered and justified not-applicable topics stay resolved.

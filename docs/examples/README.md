@@ -83,8 +83,7 @@ workflow for plugin onboarding; helper commands are in the optional developer CL
 `setup-attach-org.json` requires a reachable Git URL with a committed
 `docs/devflow-org.json` and its declared documents. A filesystem path or `file://`
 URL is local-only and must be reachable on another host. Setup returns an excluded
-runtime checkout path; register that checkout under the organization ID before
-inherited policy is checked. Review the new project manifest and approve its
+runtime checkout path; setup registers the checkout under the organization identity when unambiguous; resolve any returned pending registration before inherited policy is checked. Review the new project manifest and approve its
 exact diff separately from the visible specification pair. See the
 [governing approval sequence](governing-approval.md).
 
@@ -98,3 +97,5 @@ files authored, and the organization URL must be replaced. Contract formats and
 existing repository paths may be retained. These fixtures are not approval evidence.
 
 [delegation-request.json](delegation-request.json) illustrates prepared task facts; replace identities and add `item_id` for item-bound work. [routing-evaluation-report.json](routing-evaluation-report.json) is synthetic offline output, not measured savings.
+
+Runner report shapes: [JSON](target-test-report.json) and [JUnit](target-test-report.junit.xml) describe the same target. They are format examples, not proof; project runners must execute actual tests. [Prior findings](prior-findings.json) supplies reviewer context, not automatic resolution. See [runner requirements](../../skills/build-work/REFERENCE.md#runner-reports-and-executable-failures).

@@ -94,3 +94,9 @@ Capture `proof_id` (alias of `id`) from successful verification and submit it as
 `verifier_proof_id` with `outcome: passed`. Missing/mismatched proof or success-like
 aliases do not consume the token. Deliberate nonpassing outcomes are unverified;
 no reported result alone completes work. The stored proof schema is unchanged.
+
+## Runner reports and executable failures
+
+JSON target IDs are exact strings. JUnit IDs use `classname.name`, or `name` when classname is absent. See the format-only [JSON](../../docs/examples/target-test-report.json) and [JUnit](../../docs/examples/target-test-report.junit.xml) examples for the same non-Python target. A project-owned runner must execute real tests and translate their actual results; no Node, pytest or PHPUnit adapter is shipped. Include project-owned runner scripts among the locked `--test-path` values so their bytes are bound too.
+
+GREEN and reusable RED must report every requested target. A process/import failure alone is not RED: arrange the smallest executable interface so the intended assertion runs and fails. Preserve meaningful assertions; do not fabricate reports. Existing same-token RED behavior still accepts an observed declared-target failure without requiring all targets to appear.

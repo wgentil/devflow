@@ -1,0 +1,10 @@
+[
+  {
+    "id": "F1",
+    "item_id": "W1",
+    "severity": "important",
+    "path": "greeting.py",
+    "line": 1,
+    "message": "Example prior finding: verify the required edge case before accepting the correction."
+  }
+]

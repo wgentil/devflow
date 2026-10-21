@@ -61,7 +61,7 @@ package. Four item correction waves and one branch/acceptance wave are allowed;
 further unresolved requests require independent `run adjudicate`, including
 role, actor, decision, rationale and cost if wrong. Use `review impact` with
 `--changed-inputs-json` to assess invalidation. Missing independent tooling,
-reused actors or stale package content keep the gate blocked. The helper checks
+actors reused across roles or stale package content keep the gate blocked. The helper checks
 record relationships; it cannot prove a supplied invocation reference is real.
 
 ## GitHub PR full review
@@ -166,8 +166,8 @@ Read [canonical guidance](../../docs/reference/governing-inputs.md#governing-inp
 
 Prepare item packages with explicit `--item ID` so the package binds the completed
 item and its current attempt. A valid `request-changes` record reopens only that
-item and returns `run retry` as the next action. Fix findings, issue the new
-attempt, run fresh GREEN with an explicitly qualified recorded RED when eligible,
+item and returns `run retry` as the next action. Issue the new attempt, fix findings,
+run fresh GREEN with an explicitly qualified recorded RED when eligible,
 and record a new proof-bound passing result before preparing a new item package.
 Affected higher-level reviews/acceptance require renewal; history and correction
 limits remain. Old packages retain their old semantics; stale completed code can
@@ -190,3 +190,7 @@ when the next item's unrelated files may change during review. Check the returne
 liveness mode: incomplete scope falls back to whole-tree checks. A changed
 packaged input still blocks with paths and requires a new package. Branch and
 acceptance packages always retain conservative whole-tree behavior.
+
+## Prior findings as reviewer context
+
+Pass `--prior-findings-json` an array like [prior-findings.json](../../docs/examples/prior-findings.json). Each entry needs a unique nonempty `id`; optional severity must be `critical`, `important`, `minor` or `info`, optional path must be nonempty, and optional line must be a positive integer. Legacy minimal ID objects remain accepted. The reviewer checks prior findings against current code; the array does not automatically resolve findings or waive gates.

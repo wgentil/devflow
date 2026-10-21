@@ -1,0 +1,8 @@
+{
+  "tests": [
+    {
+      "id": "sync.upserts_existing_row",
+      "outcome": "failed"
+    }
+  ]
+}

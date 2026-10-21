@@ -193,3 +193,7 @@ human approval. `pending` means setup created/preserved files but proposal/conte
 preparation needs recovery; follow its reason and retry without rewriting files.
 If later setup/interview work changes a governing input, prepare a fresh exact
 proposal before requesting approval. Planning still requires current approval.
+
+## Deployment compatibility questions
+
+For unresolved deployment-release and performance-reliability topics, the ground-interview helper returns prompts about cached clients meeting new pages or APIs, static asset versioning and rollback, and reliability under mixed asset versions. Establish actual project behavior from evidence or ask the user; these are guidance within existing topics, not additional readiness gates. Answered and justified not-applicable topics stay resolved.

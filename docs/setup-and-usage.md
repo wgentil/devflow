@@ -550,3 +550,7 @@ JSON syntax is checked; contract semantic/schema validation uses the project's
 own tools. These documents are distinct from DevFlow host/verification contracts.
 
 The harness supplies task facts and guides model/effort decisions within your constraints. You do not need to learn skill names or control syntax. Unsupported controls or missing observations are reported as unresolved; see [routing limits](reference/task-routing.md#host-controls).
+
+## Recovering verification and review
+
+The harness guides recovery within the current run when later commits stale completed code evidence or an item reviewer requests a correction. It can issue a fresh attempt, explicitly reuse a qualifying recorded RED, run fresh GREEN and bind the result to its proof. Keep implementation files in place. Exact repository freshness still applies; finish planned commits before renewing stale proofs. See [build recovery](../skills/build-work/REFERENCE.md#reverify-completed-work) and [item review corrections](../skills/review-work/GUIDE.md#item-correction-recovery).

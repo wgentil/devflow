@@ -100,3 +100,5 @@ shows the separate specification and governing-document approvals; the
 attachment choices.
 
 Task model/effort guidance lives in the bounded [task routing reference](reference/task-routing.md); initial stage reads select its relevant section.
+
+Recovery details load only when needed: [recorded RED](../skills/build-work/REFERENCE.md#reusing-recorded-red), [completed-item verification](../skills/build-work/REFERENCE.md#reverify-completed-work), [scoped review](../skills/review-work/REFERENCE.md#scoped-item-review-liveness), and [runner/prior-finding examples](examples/README.md).

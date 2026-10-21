@@ -1240,6 +1240,90 @@
       },
       "dependencies": [],
       "classification": "active"
+    },
+    "recovery.red-source": {
+      "path": "skills/build-work/REFERENCE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "build-work procedures",
+          "Reusing recorded RED"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "recovery.reverification": {
+      "path": "skills/build-work/REFERENCE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "build-work procedures",
+          "Reverify completed work"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "recovery.item-reviews": {
+      "path": "skills/review-work/REFERENCE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "review-work procedures",
+          "Item-bound correction packages"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "recovery.input-scope": {
+      "path": "skills/review-work/REFERENCE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "review-work procedures",
+          "Scoped item review liveness"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "setup.approval": {
+      "path": "skills/project-context/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "project-context usage guide",
+          "Approval-ready setup"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "review.findings": {
+      "path": "skills/review-work/GUIDE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "review-work usage guide",
+          "Prior findings as reviewer context"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
+    },
+    "recovery.runner": {
+      "path": "skills/build-work/REFERENCE.md",
+      "selector": {
+        "kind": "markdown",
+        "heading": [
+          "build-work procedures",
+          "Runner reports and executable failures"
+        ]
+      },
+      "dependencies": [],
+      "classification": "active"
     }
   },
   "stage_reads": {

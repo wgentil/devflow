@@ -77,7 +77,7 @@ implementer for failed configured hardening gates and rerun those gates; see
 replace item RED/GREEN proof or independent review. Timeout, changed files or
 unsupported reports do not complete the item. If abandoning an attempt, use
 `run abandon --attempt-id "$ATTEMPT"`, then `run retry --item W1`, with root/run
-and distinct operation IDs. A new token needs its own verification.
+and distinct operation IDs. A new token needs fresh GREEN; an explicitly qualified recorded RED may be reused.
 
 Locked-test correction uses `build test-change propose --patch-file --reason
 --item`, then separate `approve --proposal-id --confirm-hash --actor-id` and

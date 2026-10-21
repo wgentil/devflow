@@ -46,6 +46,17 @@ def prepare_review(run: dict, role: str, repo_heads: dict,
                    input_paths: dict | None = None) -> dict:
     if role not in ROLES or not isinstance(repo_heads, dict) or not repo_heads:
         raise ValueError("review role and repository head manifest are required")
+    if prior_findings is not None:
+        if not isinstance(prior_findings,list):raise ValueError('prior findings must be an array of finding objects with unique IDs.')
+        seen=set()
+        for finding in prior_findings:
+            if (not isinstance(finding,dict) or not isinstance(finding.get('id'),str) or not finding['id'].strip()
+                    or finding['id'] in seen
+                    or 'severity' in finding and (not isinstance(finding['severity'],str) or finding['severity'] not in {'critical','important','minor','info'})
+                    or 'path' in finding and (not isinstance(finding['path'],str) or not finding['path'])
+                    or 'line' in finding and (type(finding['line']) is not int or finding['line']<1)):
+                raise ValueError('prior findings need unique IDs and valid optional severity critical|important|minor|info, path and positive line.')
+            seen.add(finding['id'])
     if item_id is not None:
         item = run.get('items',{}).get(item_id,{})
         if role != 'item' or item.get('status') != 'complete' or not item.get('attempts'):

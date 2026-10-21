@@ -82,12 +82,12 @@
     "performance-reliability": {
       "status": "answered",
       "material": true,
-      "decision": "Example decision for performance-reliability; replace with the project-specific answer before use."
+      "decision": "Illustrative placeholder: establish caching and mixed-asset-version reliability for returning clients; replace with actual project evidence and decisions before use."
     },
     "deployment-release": {
       "status": "answered",
       "material": true,
-      "decision": "Example decision for deployment-release; replace with the project-specific answer before use."
+      "decision": "Illustrative placeholder: establish whether old cached clients can meet new pages or APIs, and how static assets are versioned and rolled back; replace with actual project decisions before use."
     },
     "operations": {
       "status": "answered",

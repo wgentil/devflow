@@ -35,6 +35,8 @@ flowchart TD
     Recover --> Model["Discover and resolve stage; launch eligible scoped worker"]
     Model --> Build["build-work: implement and verify"]
     Build --> Item["review-work: independent item review"]
+    Item -->|Request changes: retry| Build
+    More -->|Stale code: reverify| Build
     Item --> More{"More work items?"}
     More -->|Yes| Next
     More -->|No| Branch["Independent branch review"]
@@ -142,7 +144,7 @@ Resume by run ID with `run status`; the active attempt token remains bound to th
 
 Deterministic operations record best-effort byte and duration measurements under the chosen root. Read `offload.jsonl` to inspect the measures; these bytes do not establish actual tokens saved. Reuse context projections only when source and resolver fingerprints match.
 
-Use the focused Devflow skills for project context, specification, planning, build verification, and independent review. Prepare and verify delivery manifests, then ask for the human's local-merge / pull-request / retained-branch decision. Only a chosen, authorized PR path uses GitHub. After `pr open`, prepare a complete `review pr-package`, invoke a distinct `pr-reviewer`, record its full-file verdict, then `pr publish` and `pr complete` only after a fresh pass and confirmed status. Changes need renewed evidence and a new package. The helper never merges a PR. Treat event journal state and evidence as authoritative. The dispatcher requires Python 3.11+ on macOS/Linux; no daemon or dependencies are required. A portable lock boundary exists, but native Windows host support remains unverified.
+Use the focused Devflow skills for project context, specification, planning, build verification, and independent review. Prepare and verify delivery manifests, then ask for the human's local-merge / pull-request / retained-branch decision. Only a chosen, authorized PR path uses GitHub. After `pr open`, prepare a complete `review pr-package`, invoke a distinct `pr-reviewer`, record its full-file verdict, then `pr publish` and `pr complete` only after a fresh pass and confirmed status. Changes need renewed evidence and a new package. The helper never merges a PR. Treat event journal state and evidence as authoritative. Requires Python 3.11+ on macOS/Linux, without a daemon or dependencies. Native Windows remains unverified.
 
 After recording each completed build's delivery outcome, including a ready-to-merge PR, ask once: “Would you like me to update the [DevFlow Codex site](https://devflow-field-guide.waygent.chatgpt.site/) with this build?” Ask even when the build made only documentation changes. A declined or unanswered offer does not block delivery. Do not update or publish the site unless the user accepts; the site is outside DevFlow's delivery journal and has no automatic sync. Do not offer this as a substitute for resolving a blocked or failed build.
 

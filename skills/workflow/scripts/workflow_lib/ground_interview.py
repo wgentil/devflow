@@ -15,6 +15,16 @@ TOPICS = (
 )
 INTERVIEW_PATH = 'docs/devflow-ground-interview.json'
 
+PROMPTS = {
+    'deployment-release': ['Can an old cached client asset meet a new page or API during deployment?',
+                           'How are static assets versioned and rolled back?'],
+    'performance-reliability': ['How do caching and mixed asset versions affect reliability for returning clients?'],
+}
+
+
+def _prompts(topics):
+    return {name:list(PROMPTS[name]) for name in topics if name in PROMPTS}
+
 
 def _invalid(message):
     raise WorkflowError('INVALID_GROUND_INTERVIEW', message)
@@ -28,13 +38,13 @@ def inspect_ground_interview(project_dir: Path) -> dict:
         declaration = manifest.get('ground_interview')
         if declaration is None:
             return {'required': False, 'ready': True, 'path': None,
-                    'missing_topics': [], 'unresolved_material': []}
+                    'missing_topics': [], 'unresolved_material': [], 'prompts':{}}
         if not isinstance(declaration, dict) or declaration.get('path') != INTERVIEW_PATH:
             _invalid('ground_interview must name the visible standard interview path')
     path = _path(project, INTERVIEW_PATH)
     if not path.is_file():
         return {'required': True, 'ready': False, 'path': INTERVIEW_PATH,
-                'missing_topics': list(TOPICS), 'unresolved_material': []}
+                'missing_topics': list(TOPICS), 'unresolved_material': [], 'prompts':_prompts(TOPICS)}
     try:
         interview = json.loads(path.read_text(encoding='utf-8'))
     except (OSError, UnicodeError, ValueError) as exc:
@@ -69,7 +79,7 @@ def inspect_ground_interview(project_dir: Path) -> dict:
             _invalid(f'{name} has unsupported status')
     return {'required': True, 'ready': not missing and not unresolved,
             'path': INTERVIEW_PATH, 'missing_topics': missing,
-            'unresolved_material': sorted(unresolved)}
+            'unresolved_material': sorted(unresolved), 'prompts':_prompts([*missing,*sorted(unresolved)])}
 
 
 def require_ground_interview(project_dir: Path) -> dict:
