@@ -162,6 +162,7 @@ def main(argv: list[str] | None = None) -> int:
     setup_initialize.add_argument('--project-dir', default='.')
     setup_initialize.add_argument('--choice', required=True, help='JSON setup choice file')
     setup_initialize.add_argument('--operation-id', required=True)
+    setup_initialize.add_argument('--root')
     context = commands.add_parser("context")
     context_commands = context.add_subparsers(dest="context_command")
     resolve = context_commands.add_parser("resolve")
@@ -788,7 +789,8 @@ def main(argv: list[str] | None = None) -> int:
                 from workflow_lib.ground_interview import inspect_ground_interview
                 result = inspect_ground_interview(Path(parsed.project_dir))
             else:
-                result = initialize_project_documents(Path(parsed.project_dir), _json_file(parsed.choice), parsed.operation_id)
+                result = initialize_project_documents(Path(parsed.project_dir), _json_file(parsed.choice), parsed.operation_id,
+                                                      Path(parsed.root) if parsed.root else None)
         elif parsed.command == "build":
             result = dispatch_command_group(parsed)
         elif parsed.command in {"review", "delivery", "issues", "migrate", "stats", "ingest", "docs", "harden", "host", "repair", "improve", "pr", "context-artifact"}:

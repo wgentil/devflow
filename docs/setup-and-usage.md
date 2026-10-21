@@ -80,6 +80,12 @@ An advanced external control root is optional. Initialization does not approve a
 spec/plan, create an attempt or grant permission for provider writes or delivery.
 Ordinary host work stays inert until explicit attachment and task mapping.
 
+Guided document setup returns an exact manifest/policy approval proposal. The
+harness shows the changes and requests required human approval during setup,
+before specification and planning. Generated content is not auto-approved.
+Pending proposal preparation is reported with recovery guidance; completed file
+creation alone does not mean governing approval is complete.
+
 ## Requirements, planning and work
 
 Ask for a UX review of a live interface, design, screenshot, or requirements to

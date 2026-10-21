@@ -354,3 +354,9 @@ history are retained; there is no need to abandon it or remove implementation.
 Item packages prepared with `--item ID` reopen that item on a valid independent
 `request-changes` verdict. Follow the returned retry action; fix findings, renew
 verification and prepare a fresh item package. See [correction recovery](../review-work/GUIDE.md#item-correction-recovery).
+
+## Approve generated manifests during setup
+
+Use the setup response's exact proposal/diff and selected control root to obtain
+required human governing approval during setup. Handle a pending proposal before
+proceeding; no content is auto-approved. See [approval-ready setup](../project-context/GUIDE.md#approval-ready-setup).

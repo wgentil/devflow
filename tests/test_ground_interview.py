@@ -90,7 +90,7 @@ class GroundInterviewTests(unittest.TestCase):
 
     def test_plan_preflight_blocks_new_project_until_material_choices_resolved(self):
         control = self.project / '.devflow/control'
-        transact(control, 0, 'seed', {'kind': 'fixture', 'payload': {
+        transact(control, read_state(control)['version'], 'seed', {'kind': 'fixture', 'payload': {
             'repositories': {'app': {'location': str(self.project.resolve())}},
             'spec_pair': {'repo_id': 'app'}}})
         with patch('workflow_lib.repo_input_gate.require_current_spec', return_value={}):

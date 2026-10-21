@@ -52,3 +52,12 @@ syntax validation; YAML/OpenAPI semantics and JSON Schema conformance are not
 validated by this helper. Setup inspection includes `.yaml` and `.yml` files.
 This category does not add a legacy journal context slice and does not describe
 DevFlow's operational verification or host contracts.
+
+## Setup approval proposals
+
+After manifest creation, guided setup returns owning repository/control identity,
+exact file/proposal hashes and a bounded diff. Use `approval_status` to distinguish
+required, approved, not-required and pending. Resolve pending prerequisites and
+obtain explicit human approval for changed governing content before specification/
+planning. New content or changed baselines require a new proposal; never reuse a
+stale approval. See [setup response and recovery](GUIDE.md#approval-ready-setup).

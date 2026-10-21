@@ -142,7 +142,8 @@ flowchart TD
     Create --> Adopt
     Project --> Adopt
     Adopt --> Manifest[Create or preserve visible manifest]
-    Manifest --> Ground[Inspect ground interview readiness]
+    Manifest --> Proposal[Prepare exact diff and approval proposal]
+    Proposal --> Ground[Inspect ground interview readiness]
     Ground --> Fresh{Organization HEAD current?}
     Fresh -->|No| Recover[Block stale checkout; explicit recovery]
     Fresh -->|Yes| Human[Human policy review and approval]
@@ -174,3 +175,21 @@ DevFlow's operational verification or host contracts.
 On native Windows, governing-document comparisons canonicalize checkout CRLF to LF
 to avoid a false approval request after Git text conversion. Native host parity
 and installed plugin behavior remain unverified; see [validation](../../docs/windows-validation.md).
+
+## Approval-ready setup
+
+Guided setup uses the selected control root (pass `--root` when using an external
+one) to register project/organization ownership and prepare exact document
+proposals. The response includes `approval_status`, `approval_proposal`, file
+hashes, `review_diff`, `review_diff_omitted_bytes` and a next action. Review the
+actual manifest/adopted-policy diff with the user during setup, before drafting
+the specification or planning. Obtain ordinary explicit `document approve` evidence;
+generated files are never automatically approved. Unchanged applicable approval
+is preserved. Organization edits have separately owned additional proposals.
+
+A diff excerpt may be bounded at 32,768 UTF-8 bytes; omitted bytes are explicit,
+and the full proposal remains bound to its hash. Read full changed inputs before
+human approval. `pending` means setup created/preserved files but proposal/context
+preparation needs recovery; follow its reason and retry without rewriting files.
+If later setup/interview work changes a governing input, prepare a fresh exact
+proposal before requesting approval. Planning still requires current approval.

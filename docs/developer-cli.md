@@ -620,3 +620,10 @@ Interactive delegation can be inspected with `host delegation-prepare --root CON
 
 Item review packages may use `--item ID --input-paths-json '{"app":["src/greeting.py","tests/test_greeting.py"]}'`.
 Inspect per-repository `liveness_mode` and coverage reasons; see [scoped input contracts](../skills/review-work/REFERENCE.md#scoped-item-review-liveness).
+
+`setup initialize --project-dir APP --root CONTROL --choice CHOICE.json --operation-id ID`
+uses the selected control root for exact governing approval proposals. Omit `--root`
+for the project's default control root. Inspect `approval_status`, `approval_proposal`,
+`additional_approval_proposals`, `review_diff` and omission count; resolve pending
+prerequisites and obtain human approval before specification/planning. See
+[approval-ready setup](../skills/project-context/GUIDE.md#approval-ready-setup).

@@ -14,7 +14,8 @@ Read [shared invariants](../../docs/reference/workflow-invariants.md) and the de
 ```mermaid
 flowchart LR
     Scope[Current task and declared inputs] --> Checks[Live checks and shared invariants]
-    Checks --> Work[Stage responsibility]
+    Checks --> Proposal[Review exact setup proposal and obtain human approval]
+    Proposal --> Work[Stage responsibility]
     Work --> Evidence[Current evidence and next gate]
 ```
 
@@ -23,6 +24,8 @@ flowchart LR
 - `common`: `docs/reference/workflow-invariants.md`
 - `guide.project-context`: `skills/project-context/GUIDE.md` → project-context usage guide / Purpose and prerequisites
 <!-- /devflow:routes -->
+
+During setup, review returned exact governing proposals with the user before specification/planning; generated content is not automatically approved.
 
 ## Documentation
 
