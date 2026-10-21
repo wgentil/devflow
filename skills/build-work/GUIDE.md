@@ -94,3 +94,10 @@ Read [canonical guidance](../../docs/reference/governing-inputs.md#governing-doc
 ## Governing input reassessment
 
 Read [canonical guidance](../../docs/reference/governing-inputs.md#governing-input-reassessment). Stage routing is declared in this skill.
+
+## Recorded RED reuse
+
+To verify an existing implementation under a new attempt, keep the test runner,
+tests and target IDs unchanged and pass `--red-proof-id` to GREEN. For an explicit
+cross-run source also pass `--red-run-id`. See [eligibility and provenance](REFERENCE.md#reusing-recorded-red).
+A matching source does not skip GREEN execution or repository-freshness checks.

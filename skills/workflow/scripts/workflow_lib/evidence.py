@@ -67,7 +67,8 @@ def repository_fingerprint(location: Path) -> dict:
     return {"head": head, "worktree_digest": digest.hexdigest()}
 
 
-def _report(stdout: str, stderr: str = "", report_format: str = "json") -> dict:
+def _report(stdout: str, stderr: str = "", report_format: str = "json", red_proof_id: str | None = None,
+                     red_run_id: str | None = None) -> dict:
     if report_format == "unittest":
         import re
         result = {}
@@ -118,7 +119,8 @@ def _report(stdout: str, stderr: str = "", report_format: str = "json") -> dict:
 
 def capture_evidence(root: Path, run_id: str, token: str, phase: str, command: list[str],
                      test_paths: list[str], target_ids: list[str], timeout: int,
-                     report_format: str = "json") -> dict:
+                     report_format: str = "json", red_proof_id: str | None = None,
+                     red_run_id: str | None = None) -> dict:
     if phase not in {"RED", "GREEN"} or not isinstance(command, list) or not command or any(not isinstance(arg, str) for arg in command):
         raise WorkflowError("INVALID_EVIDENCE_REQUEST", "phase and argv are invalid")
     if (type(timeout) is not int or timeout <= 0 or not isinstance(test_paths, list)
@@ -150,6 +152,14 @@ def capture_evidence(root: Path, run_id: str, token: str, phase: str, command: l
             raise WorkflowError("TEST_FILE_NOT_FOUND", f"test file does not exist: {name}")
         resolved_paths[name] = source
     before_tests = {name: _sha(path.read_bytes()) for name, path in resolved_paths.items()}
+    from .red_reuse import verification_contract, select_red_source
+    from .document_units import digest
+    contract = verification_contract(run,work_item,repo_id,before_tests,target_ids,command,report_format)
+    red_source = None
+    if red_run_id and not red_proof_id or red_proof_id and phase != 'GREEN':
+        raise WorkflowError('RED_REUSE_MISMATCH', 'Explicit RED source is valid only for GREEN verification.')
+    if red_proof_id:
+        red_source = select_red_source(state['data'],run_id,item_id,contract,red_proof_id,red_run_id)
     before_repo = repository_fingerprint(repo)
     started = _now()
     try:
@@ -190,7 +200,7 @@ def capture_evidence(root: Path, run_id: str, token: str, phase: str, command: l
         red = [proof for proof in run.get("verification_proofs", {}).values()
                if proof.get("phase") == "RED" and proof.get("token") == token
                and proof.get("item_id") == item_id and proof.get("passed") is True]
-        same_baseline = any(proof.get("test_hashes") == before_tests for proof in red)
+        same_baseline = red_source is not None or any(proof.get("test_hashes") == before_tests for proof in red)
         after_tests = {name: _sha(path.read_bytes()) for name, path in resolved_paths.items()}
         passed = (exit_code == 0 and all(target_outcomes.get(name) == "passed" for name in target_ids)
                   and before_tests == after_tests and same_baseline)
@@ -206,6 +216,8 @@ def capture_evidence(root: Path, run_id: str, token: str, phase: str, command: l
              "repository_head": before_repo["head"], "worktree_digest": before_repo["worktree_digest"],
              "test_hashes": before_tests, "target_outcomes": target_outcomes, "test_counts": test_counts, "passed": True,
              "stdout_ref": _blob(root, stdout), "stderr_ref": _blob(root, stderr)}
+    proof.update(verification_contract=contract, contract_hash=digest(contract))
+    if red_source is not None: proof['red_source'] = red_source
     response = transact(root, state["version"], f"verification:{proof['id']}",
                         {"kind": "verification.recorded", "payload": {"run_id": run_id, "proof": proof}})
     return proof

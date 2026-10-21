@@ -158,6 +158,18 @@ def _apply_event(state: dict, event: dict) -> None:
         if (not active or proof.get("token") != active.get("token")
                 or proof.get("item_id") != active.get("item_id") or proof.get("id") in run.setdefault("verification_proofs", {})):
             raise WorkflowError("INVALID_EVENT", "verification proof does not match the active attempt")
+        if proof.get('red_source') is not None:
+            from .red_reuse import select_red_source, verification_contract
+            from .document_units import digest
+            source = proof['red_source']
+            item = next((row for row in run['plan']['work_items'] if row['id'] == proof['item_id']), {})
+            contract = verification_contract(run,item,proof['repo_id'],proof['test_hashes'],
+                (proof.get('verification_contract') or {}).get('target_ids',[]),proof['argv'],
+                (proof.get('verification_contract') or {}).get('report_format'))
+            if (proof.get('phase') != 'GREEN' or proof.get('verification_contract') != contract
+                    or proof.get('contract_hash') != digest(contract)
+                    or select_red_source(data,run['id'],proof['item_id'],contract,source.get('proof_id'),source.get('run_id')) != source):
+                raise WorkflowError('INVALID_EVENT', 'Reused RED lineage differs from recorded proof.')
         run["verification_proofs"][proof["id"]] = proof
         if proof.get("phase") == "GREEN":
             run.setdefault("verifier_proofs", {})[proof["id"]] = {

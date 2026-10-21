@@ -14,7 +14,8 @@ Read [shared invariants](../../docs/reference/workflow-invariants.md) and the de
 ```mermaid
 flowchart LR
     Scope[Current task and declared inputs] --> Checks[Live checks and shared invariants]
-    Checks --> Work[Stage responsibility]
+    Checks --> Source[Same-token RED or explicit qualified recorded RED]
+    Source --> Work[Fresh verification]
     Work --> Result{Worker outcome}
     Result -->|Complete scoped report| Evidence[Current evidence and next gate]
     Result -->|Partial or blocked| Recover[Resolve missing facts or controls]
@@ -26,6 +27,8 @@ flowchart LR
 - `guide.build-work`: `skills/build-work/GUIDE.md` → build-work usage guide / Purpose and prerequisites
 - `routing.task-decisions`: `docs/reference/task-routing.md` → Task routing / Task decisions
 <!-- /devflow:routes -->
+
+Recorded RED can support a fresh GREEN attempt only through [explicit qualified reuse](REFERENCE.md#reusing-recorded-red).
 
 ## Documentation
 
