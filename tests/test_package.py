@@ -32,7 +32,7 @@ class PackageTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         descriptor = json.loads(result.stdout)
         self.assertEqual(descriptor['plugin'], 'devflow')
-        self.assertEqual(descriptor['plugin_version'], '0.3.10')
+        self.assertEqual(descriptor['plugin_version'], '0.3.11')
         self.assertEqual(descriptor['state_schema_version'], 1)
         self.assertEqual(len(descriptor['fingerprint']), 64)
 
