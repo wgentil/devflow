@@ -15,6 +15,16 @@ Windows/WSL2 support remains unreleased; see the
 [platform matrix](windows-validation.md). Historical counts and review findings
 below retain their original scope.
 
+## v0.3.11 package checks (2026-10-21)
+
+Claude marketplace validation passed with the existing warning that root
+`CLAUDE.md` is not installed project context. An isolated local install from the
+committed v0.3.11 source archive enabled the plugin, discovered all eleven skills,
+and passed all ten hook behavior tests against the installed copy. All seven
+package checks and documentation budget checks passed. Temporary configuration
+left regular user installations unchanged. These checks do not establish live
+provider workflows or Windows/WSL2 parity.
+
 ## v0.3.10 package checks (2026-10-19)
 
 Claude marketplace validation passed with the existing warning that root
