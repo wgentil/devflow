@@ -24,8 +24,8 @@ skills, helpers, adapters, policy and manifests; relocated copies have the same 
 
 The package requires an existing Python 3.11+ interpreter on macOS/Linux. It does
 not provision Python. Claude hooks now use shell-free exec form with `python3`
-and a plugin-root argument; native Windows installed-hook behavior is pending
-validation. Missing runtime is an installation diagnostic; no environment
+and a plugin-root argument; native Windows script checks and actual host event dispatch are separate
+[validation gates](windows-validation.md). Live installed event acceptance remains unverified. Missing runtime is an installation diagnostic; no environment
 variables or manual helper paths are part of user onboarding.
 
 Invoke workflow from the project after enabling the plugin. Capture the loaded

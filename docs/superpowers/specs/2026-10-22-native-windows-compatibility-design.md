@@ -1,7 +1,8 @@
 # Native Windows compatibility
 
 Status: written specification approved by the user on 2026-10-22 after
-`fce6870`. The implementation plan awaits review; implementation has not started.
+`fce6870`. The implementation plan was subsequently approved; Native implementation and
+platform verification are in progress.
 Baseline: DevFlow v0.3.12, `0893a2f`. This updates the remaining work from the
 [historical portability design](2026-10-08-windows-portability-design.md).
 

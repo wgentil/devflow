@@ -100,3 +100,27 @@ class PortableHookTests(unittest.TestCase):
             handler=hooks[event][0]['hooks'][0]
             self.assertEqual(handler['command'],'python3')
             self.assertEqual(handler['args'],['-B','${CLAUDE_PLUGIN_ROOT}/adapters/claude-code/hook.py'])
+
+class CrossPlatformPackageIdentityTests(unittest.TestCase):
+    def test_release_identity_survives_git_checkout_with_autocrlf(self):
+        sys.path.insert(0, str(ROOT / 'skills/workflow/scripts'))
+        from workflow_lib.releases import release_descriptor
+        with tempfile.TemporaryDirectory(prefix='devflow-package-identity-') as directory:
+            root = Path(directory)
+            source = root / 'source'
+            source.mkdir()
+            for name in ('skills', 'adapters', 'definitions', '.claude-plugin', '.codex-plugin'):
+                shutil.copytree(ROOT / name, source / name, ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
+            shutil.copy2(ROOT / 'plugin.json', source / 'plugin.json')
+            if (ROOT / '.gitattributes').exists():
+                shutil.copy2(ROOT / '.gitattributes', source / '.gitattributes')
+            # Auto text policy must preserve binary package assets byte-for-byte.
+            binary = b'\x00asset\r\n\xff\x00'
+            (source / 'adapters/binary-fixture.bin').write_bytes(binary)
+            for argv in (['init', '-q'], ['config', 'core.autocrlf', 'false'], ['add', '.'],
+                         ['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', 'package']):
+                subprocess.run(['git', *argv], cwd=source, check=True, capture_output=True)
+            clone = root / 'windows-checkout'
+            subprocess.run(['git', '-c', 'core.autocrlf=true', 'clone', '--no-local', '-q', str(source), str(clone)], check=True, capture_output=True)
+            self.assertEqual(release_descriptor(clone), release_descriptor(source))
+            self.assertEqual((clone / 'adapters/binary-fixture.bin').read_bytes(), binary)

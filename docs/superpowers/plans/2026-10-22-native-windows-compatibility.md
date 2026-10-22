@@ -140,9 +140,10 @@ are internal/test/maintainer contracts; no trusted-state public inputs are added
 Each Review Focus has named owning tests. The plan keeps full CI evidence,
 unauthenticated install/startup and signed-in task execution distinct.
 
-The written spec is approved; this implementation plan awaits user review.
-Native execution is preserved. No product code, implementation worktree,
-candidate-branch push or external CI run has been created in this planning step.
+The written spec and implementation plan were approved on 2026-10-22.
+Native execution is in progress on `fix/native-windows-compatibility`; candidate CI
+is authorized verification, separate from integration/release. The following
+checks describe the earlier planning handoff.
 Planning checks: documentation policy/budgets, relative links, referenced existing
 test modules and diff whitespace pass. Primary setup was reviewed; its current
 Windows limitations remain accurate, so this planning change needs no setup edit.

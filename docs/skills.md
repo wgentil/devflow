@@ -39,6 +39,8 @@ See the [developer walkthrough](developer-cli.md) for current direct CLI setup.
 The canonical shell setup is in the [optional developer reference](developer-cli.md).
 Do not ask plugin users to define variables/functions or run Python helpers.
 
+The [Windows acceptance procedure](examples/windows-host-acceptance.md) is an optional maintainer reference; platform evidence does not replace signed-in host acceptance.
+
 The [example input catalog](examples/README.md) lists fixtures and required edits.
 
 Examples assume this setup. Copy JSON fixtures to your own working directory

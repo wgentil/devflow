@@ -1,0 +1,8 @@
+# Exact package identity must survive native Windows and Unix Git checkouts.
+# Auto-detection leaves binary assets untouched; text keeps its Git LF bytes.
+plugin.json text eol=lf
+skills/** text=auto eol=lf
+adapters/** text=auto eol=lf
+definitions/** text=auto eol=lf
+.claude-plugin/** text=auto eol=lf
+.codex-plugin/** text=auto eol=lf

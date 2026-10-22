@@ -19,8 +19,9 @@ you do not need to learn skill names or helper commands. The
 The bundled helper requires Python 3.11+ on macOS/Linux. Claude completion
 hooks, attachment, parity-checked handoff and scoped native model workers are
 implemented. Isolated GitHub installs have validated both Claude and Codex packaging. Users control
-upgrades; no background installer/updater is bundled. Native Windows and WSL2
-remain outside released support; see the [platform validation matrix](docs/windows-validation.md).
+upgrades; no background installer/updater is bundled. Native Windows core/runtime, installed-package and signed-in host acceptance
+are separate gates; see the [platform validation matrix](docs/windows-validation.md).
+Signed-in Windows workflows remain unverified; WSL2 requires its own validation.
 
 Claude's GitHub marketplace descriptor is packaged in
 [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json). It lists

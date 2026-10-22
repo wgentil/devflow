@@ -14,8 +14,9 @@ selected host CLI must already be available; Claude provider identity is support
 only for first-party authentication in this adapter; missing executables/authentication
 produce diagnostics. Native workers are new scoped conversations; they do not
 change the current parent conversation. A threaded pipe transport is present for
-Windows, with processes attached to a Job Object before their initial thread resumes; installed-host behavior and native Windows
-acceptance have not been verified; Windows support is not yet released.
+Windows, with processes attached to a Job Object before their initial thread resumes; installed startup and transport evidence is listed separately from signed-in
+worker execution in the [platform matrix](windows-validation.md). Signed-in
+Windows worker acceptance remains unverified.
 
 Say “Use my permitted model for implementation, advisory with unvalidated
 suitability explicitly allowed; preserve the spending cap and show actual settings.”

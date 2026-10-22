@@ -68,3 +68,10 @@ These are developer checks, not plugin onboarding steps.
 The [signed-in Windows acceptance procedure](examples/windows-host-acceptance.md)
 records remaining workflow/event/worker/handoff gates. No suitable signed-in
 Windows environment is available in this execution; those rows remain NOT_RUN.
+
+The initial Windows candidate installation passed but exposed a cross-OS package
+identity defect: Git automatic CRLF conversion changed fingerprinted text bytes.
+A real autocrlf checkout reproduced the exact Windows fingerprint. Package-scoped
+Git attributes now retain LF text and unchanged binary assets; a real clone
+regression checks exact release parity. Updated candidate CI must establish the
+resulting package fingerprint before this becomes a completed gate.

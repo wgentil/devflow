@@ -8,10 +8,17 @@ Install/enable DevFlow, open your Git project and invoke workflow. The agent cal
 bundled helpers, discovers the project and initializes or resumes its records.
 No shell variables, CLI function, installation paths or Python commands are user
 setup steps. Existing Python 3.11+ available as `python3` on macOS/Linux is
-required; this package does not provision an interpreter. Native Windows is outside current support. The source tree now has a
-portable lock and pipe boundaries, and Claude hooks use shell-free exec form,
-but live Windows hook dispatch and worker validation remain incomplete. See the
-[platform validation matrix](windows-validation.md) for observed results.
+required; this package does not provision an interpreter. Native Windows core
+runtime, installed-package/startup checks and signed-in workflows are separate
+validation gates. See the [platform matrix](windows-validation.md) for exact
+candidate evidence; signed-in Windows event/worker/handoff acceptance remains
+unverified, and WSL2 is a separate target. The native Windows Claude profile
+requires Python 3.11+ available as `python3` and Claude Code 2.1.295+ for mandatory
+launcher-failure blocking. DevFlow does not install Python or create aliases.
+Npm host installations also need native Node; native host `.exe` installations
+use their executable directly. Detailed maintainer checks stay in the
+[acceptance procedure](examples/windows-host-acceptance.md).
+
 
 ## Installation
 

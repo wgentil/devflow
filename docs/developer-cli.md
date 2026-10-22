@@ -705,3 +705,10 @@ Verification captures stdout/stderr bytes as immutable evidence. JSON/XML report
 require UTF-8; invalid report bytes return a failed encoding result and cannot
 establish RED or GREEN proof. Git text identities decode as UTF-8; raw Git blobs,
 patch bytes and canonical tracked-CRLF identity retain their existing contracts.
+
+Package Git attributes keep fingerprinted text files at LF on Windows and Unix,
+while auto-detected binary assets retain their exact bytes. This preserves raw
+release identity across checkouts without relaxing handoff fingerprint checks.
+These attributes apply to the DevFlow package, not application documents or their
+existing tracked-CRLF approval identities. Refresh a checkout/install that predates
+the policy before comparing package parity; do not rewrite journal receipts.

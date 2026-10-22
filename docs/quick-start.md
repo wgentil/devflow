@@ -1,7 +1,7 @@
 # Start with DevFlow
 
 Use Codex or Claude Code on macOS/Linux with Git and Python 3.11+ available as
-`python3`. You need access to the current private `wgentil/devflow` marketplace.
+`python3`. For native Windows, check the [tested profiles and remaining gates](windows-validation.md); signed-in workflows remain unverified. You need access to the current private `wgentil/devflow` marketplace.
 
 ## 1. Add the marketplace and install the plugin
 

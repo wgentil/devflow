@@ -6,7 +6,7 @@ Session start/compaction/handoff rebuild full context. A reference-only hook
 response must be explicitly loaded before model work. Native invocations receive
 full context once, after required preparation succeeds.
 
-Start with the [complete setup and initialization guide](../../docs/setup-and-usage.md). Native Windows remains unsupported pending installed-hook, worker and real-host validation; the journal lock and pipe transport now use platform boundaries.
+Start with the [complete setup and initialization guide](../../docs/setup-and-usage.md). For native Windows, distinguish core/runtime, installed-package and signed-in gates in the [platform matrix](../../docs/windows-validation.md). Live Windows event/worker/handoff acceptance remains unverified; WSL2 is a separate target.
 
 Read the [shared setup and conventions](../../docs/skills.md#shared-setup) first.
 Commands below use its `df` function and path variables.
