@@ -65,7 +65,7 @@ def run_benchmark(*,events=4370,delivered_runs=40,history_bytes=79691776):
         report={'fixture':fixture['statistics'],'environment':{'platform':platform.platform(),'python':platform.python_version()},
             'initial_replay_ms':initial,'preflight_ms':view['preparation']['preflight_ms'],'worker_ms':view['preparation']['worker_ms'],
             'total_ms':total,'commit_ms':sum(commits),'exact_retry_ms':retry_ms,
-            'replay_counts':{**counts,'worker':len(worker_reads.read_text().splitlines()) if worker_reads.exists() else 0},
+            'replay_counts':{**counts,'worker':len(worker_reads.read_text(encoding='utf-8').splitlines()) if worker_reads.exists() else 0},
             'selected_context_bytes':view['task_view']['content_bytes'],'small_selected_context_bytes':small_view['task_view']['content_bytes'],
             'component_bytes':view['budget']['component_bytes'],'token_issued':bool(view.get('attempt_id')),
             'exact_retry_same_token':bool(view.get('attempt_id')) and view.get('attempt_id')==retry.get('attempt_id'),

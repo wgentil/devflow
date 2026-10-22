@@ -14,4 +14,4 @@ def dispatch(parsed):
   if parsed.catalog or parsed.profiles:raise WorkflowError('INVALID_INPUT','discovery and catalog generation are separate modes')
   return discover_documentation(Path(__file__).resolve().parents[4],include_history=parsed.include_history,required_ids=parsed.required_source_id)
  if not parsed.catalog or not parsed.profiles:raise WorkflowError('INVALID_INPUT','catalog generation requires --catalog and --profiles')
- return generate_docs(json.loads(Path(parsed.catalog).read_text()),json.loads(Path(parsed.profiles).read_text()))
+ return generate_docs(json.loads(Path(parsed.catalog).read_text(encoding='utf-8')),json.loads(Path(parsed.profiles).read_text(encoding='utf-8')))

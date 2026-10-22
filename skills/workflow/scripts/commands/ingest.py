@@ -21,7 +21,7 @@ def register_commands(parser):
 
 
 def dispatch(parsed):
-    profile = json.loads(Path(parsed.profile_json).read_text())
+    profile = json.loads(Path(parsed.profile_json).read_text(encoding='utf-8'))
     policy = load_documentation_policy(Path(__file__).resolve().parents[4])
     discovery = {'include_history': parsed.include_history, 'required_paths': sorted(set(parsed.required_path))}
     selection = {'history': policy['history'], **discovery}
@@ -30,7 +30,7 @@ def dispatch(parsed):
             raise WorkflowError('INVALID_INPUT', 'read-only indexing requires --repo-json')
         if parsed.output_mode == 'refs':
             raise WorkflowError('CONTROL_ROOT_REQUIRED', 'reference indexing requires a selected control root')
-        return ingest_sources(json.loads(Path(parsed.repo_json).read_text()), parsed.scope, profile, {}, selection_policy=selection)
+        return ingest_sources(json.loads(Path(parsed.repo_json).read_text(encoding='utf-8')), parsed.scope, profile, {}, selection_policy=selection)
     state = read_state(Path(parsed.root))
     repository = state['data'].get('repositories', {}).get(parsed.repo_id)
     if repository is None:

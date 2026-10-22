@@ -96,7 +96,7 @@ def dispatch(parsed):
     if parsed.host_command in {'model-run','model-reconcile'}:
         if not parsed.root or not parsed.operation_id_explicit:raise WorkflowError('OPERATION_ID_REQUIRED','Native invocation needs control root and explicit operation ID.')
         from workflow_lib.native_runtime import invoke, reconcile
-        request=json.loads(Path(parsed.file).read_text())
+        request=json.loads(Path(parsed.file).read_text(encoding='utf-8'))
         if not isinstance(request,dict):raise WorkflowError('NATIVE_INPUT_REQUIRED','Native request must be an object.')
         return (invoke if parsed.host_command=='model-run' else reconcile)(Path(parsed.root),request,parsed.operation_id)
     if parsed.host_command in {'model-discover','model-probe'}:
@@ -139,11 +139,11 @@ def dispatch(parsed):
         state=read_state(Path(parsed.root))
         binding=validate_binding(state['data'],parsed.binding_id,parsed.revision)
         return _resolve_model(state['data'],binding,parsed.stage,parsed.root)
-    request = json.loads(Path(parsed.file).read_text())
+    request = json.loads(Path(parsed.file).read_text(encoding='utf-8'))
     if not isinstance(request,dict):raise ValueError('host request must be an object')
     from workflow_lib.journal_domains import digest
     client={'kind':parsed.host_command,'request':request}
-    if getattr(parsed,'loaded_release',None):client['loaded_release']=json.loads(Path(parsed.loaded_release).read_text())
+    if getattr(parsed,'loaded_release',None):client['loaded_release']=json.loads(Path(parsed.loaded_release).read_text(encoding='utf-8'))
     client_hash=digest(client)
     if getattr(parsed,'operation_id_explicit',False) and parsed.root:
         prior_state=read_state(Path(parsed.root))
@@ -181,7 +181,7 @@ def dispatch(parsed):
         from workflow_lib.bootstrap import discover_project
         from workflow_lib.releases import release_descriptor, check_release
         installed = release_descriptor()
-        loaded = json.loads(Path(parsed.loaded_release).read_text())
+        loaded = json.loads(Path(parsed.loaded_release).read_text(encoding='utf-8'))
         decision = check_release(loaded,installed,1)
         if decision['status'] != 'allow': raise WorkflowError('RELEASE_MISMATCH',decision['message'],decision)
         target = request if parsed.host_command in {'attach','legacy-adopt'} else request['destination']

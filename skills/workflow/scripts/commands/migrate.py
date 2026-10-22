@@ -20,7 +20,7 @@ def dispatch(parsed):
         return read_state(Path(parsed.root))['data'].get('migration', {})
     if not parsed.input:
         raise WorkflowError('INVALID_INPUT', '--input is required')
-    request = json.loads(Path(parsed.input).read_text())
+    request = json.loads(Path(parsed.input).read_text(encoding='utf-8'))
     if parsed.operation == 'validate':
         return validate_increments(request['increments'], request['parity'])
     if parsed.operation == 'review-spec':

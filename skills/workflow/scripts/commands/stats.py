@@ -53,7 +53,7 @@ def dispatch(parsed):
         raise WorkflowError('INVALID_INPUT', '--input is required')
     if parsed.operation == 'legacy-import':
         return commit(parsed, 'domain.stats.legacy-import', {'record': import_legacy(Path(parsed.input), opts.get('schema_version', 1))})
-    request = json.loads(Path(parsed.input).read_text())
+    request = json.loads(Path(parsed.input).read_text(encoding='utf-8'))
     if parsed.operation == 'usage-import':
         return commit(parsed, 'domain.stats.usage-import', {'records': request,
                       'adapter_version': opts.get('adapter_version', 'v1'), 'bindings': opts.get('bindings', {})})

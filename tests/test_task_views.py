@@ -16,8 +16,8 @@ class TaskViewTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        (self.root / 'guide.md').write_text('# Guide\n\nRequired 東京\n')
-        (self.root / 'rules.md').write_text('# Rules\n## G1: Safety\nNever skip checks.\n## Additional constraints\nNever skip credentials.\n## G2: Optional\nOther rule.\n')
+        (self.root / 'guide.md').write_text('# Guide\n\nRequired 東京\n', encoding='utf-8')
+        (self.root / 'rules.md').write_text('# Rules\n## G1: Safety\nNever skip checks.\n## Additional constraints\nNever skip credentials.\n## G2: Optional\nOther rule.\n', encoding='utf-8')
         self.sources = {'guide': {'root': str(self.root), 'path': 'guide.md'},
                         'rules': {'root': str(self.root), 'path': 'rules.md'}}
         self.spec = {'mode': 'new', 'requirements': [
@@ -71,7 +71,7 @@ class TaskViewTests(unittest.TestCase):
         self.assertEqual(caught.exception.code, 'CONTEXT_BUDGET_EXCEEDED')
         self.assertTrue(caught.exception.details['artifact_refs'])
         self.assertIn('rescope', caught.exception.details['action'].lower())
-        (self.root / 'optional.md').write_text('x' * 10000)
+        (self.root / 'optional.md').write_text('x' * 10000, encoding='utf-8')
         self.sources['optional'] = {'root': str(self.root), 'path': 'optional.md'}
         self.selection['documents'].append({'source_id': 'optional', 'required': False})
         value = self.build(max_bytes=8000)
@@ -90,7 +90,7 @@ class TaskViewTests(unittest.TestCase):
         receipt = {'applicable_rule_ids': ['G1'], 'files': {
             'app:manifest': {'repo_id': 'app', 'path': 'docs/devflow-context.json', 'content_base64': encoded(json.dumps(local))},
             'org:manifest': {'repo_id': 'org', 'path': 'docs/devflow-org.json', 'content_base64': encoded(json.dumps(org))},
-            'app:rules': {'repo_id': 'app', 'path': 'rules.md', 'content_base64': encoded((self.root/'rules.md').read_text())}}}
+            'app:rules': {'repo_id': 'app', 'path': 'rules.md', 'content_base64': encoded((self.root/'rules.md').read_text(encoding='utf-8'))}}}
         selected, sources = governing_selections(receipt, {'app': {'location': str(self.root)}, 'org': {'location': str(self.root)}})
         self.assertEqual(set(selected), {'G1'})
         self.assertEqual(selected['G1']['source_id'], 'governing:app:rules.md')
@@ -100,8 +100,8 @@ class TaskViewTests(unittest.TestCase):
         import base64
         import subprocess
         from workflow_lib.governing_docs import _rules
-        text = (self.root / 'rules.md').read_text().replace('Never skip credentials.', 'Never skip credentials.\n```markdown\n## Example heading\nPreserve fenced details.\n```')
-        (self.root / 'rules.md').write_text(text)
+        text = (self.root / 'rules.md').read_text(encoding='utf-8').replace('Never skip credentials.', 'Never skip credentials.\n```markdown\n## Example heading\nPreserve fenced details.\n```')
+        (self.root / 'rules.md').write_text(text, encoding='utf-8')
         subprocess.run(['git', 'init', '-q', str(self.root)], check=True)
         subprocess.run(['git', '-C', str(self.root), 'add', '.'], check=True)
         subprocess.run(['git', '-C', str(self.root), '-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '-qm', 'fixture'], check=True)
@@ -110,7 +110,7 @@ class TaskViewTests(unittest.TestCase):
             return {'repo_id': 'app', 'path': path, 'content_base64': base64.b64encode(text.encode()).decode()}
         receipt = {'applicable_rule_ids': ['G1'], 'files': {
             'manifest': file('docs/devflow-context.json', json.dumps(manifest)),
-            'rules': file('rules.md', (self.root / 'rules.md').read_text())}}
+            'rules': file('rules.md', (self.root / 'rules.md').read_text(encoding='utf-8'))}}
         selected, sources = governing_selections(receipt, {'app': {'location': str(self.root)}})
         selection = {**self.selection, 'governing': selected}
         view = build_task_view(self.run, self.envelope, selection, {**self.sources, **sources}, {}, root=None)

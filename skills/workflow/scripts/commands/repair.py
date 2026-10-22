@@ -30,7 +30,7 @@ def dispatch(parsed):
         raise WorkflowError('CONTROL_ROOT_REQUIRED', 'repair requires --root')
     root = Path(parsed.root)
     if parsed.repair_command == 'configure':
-        policy = json.loads(Path(parsed.input).read_text())
+        policy = json.loads(Path(parsed.input).read_text(encoding='utf-8'))
         return commit(parsed, 'domain.repair.configure', {'run_id': parsed.run_id, 'policy': policy})
     if parsed.repair_command == 'next':
         if not parsed.operation_id_explicit:

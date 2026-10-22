@@ -26,7 +26,7 @@ def dispatch(parsed):
 
 
 def _dispatch(parsed):
-    request = json.loads(Path(parsed.input).read_text())
+    request = json.loads(Path(parsed.input).read_text(encoding='utf-8'))
     if parsed.operation == 'schedule':
         return repository_schedule(request['plan'], request['repositories'])
     if parsed.operation == 'configure':

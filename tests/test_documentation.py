@@ -44,7 +44,7 @@ class DocumentationTests(unittest.TestCase):
     def test_duplicate_json_ids_rejected(self):
         self.write()
         p = self.root / 'definitions/documentation.json'
-        p.write_text(p.read_text().replace('"schema_version": 1', '"schema_version": 1, "schema_version": 1'))
+        p.write_text(p.read_text(encoding='utf-8').replace('"schema_version": 1', '"schema_version": 1, "schema_version": 1'), encoding='utf-8')
         with self.assertRaises(WorkflowError):
             load_documentation_policy(self.root)
 
@@ -59,11 +59,11 @@ class DocumentationTests(unittest.TestCase):
     def test_checker_rejects_broken_links_routes_and_unicode_overflow(self):
         self.write()
         guide = self.root / 'guide.md'
-        guide.write_text('# Guide\n\n[missing](missing.md)\n' + 'é' * 7000)
+        guide.write_text('# Guide\n\n[missing](missing.md)\n' + 'é' * 7000, encoding='utf-8')
         report = check_documentation(self.root)
         self.assertTrue(any('link' in problem for problem in report['problems']))
         self.assertTrue(any('exceeds' in problem for problem in report['problems']))
-        guide.write_text('# Guide\n<!-- devflow:routes:build -->\nstale\n<!-- /devflow:routes -->\n')
+        guide.write_text('# Guide\n<!-- devflow:routes:build -->\nstale\n<!-- /devflow:routes -->\n', encoding='utf-8')
         self.assertTrue(any('drifted' in problem for problem in check_documentation(self.root)['problems']))
 
     def test_shipped_entry_budgets_and_complete_initial_read_routes(self):

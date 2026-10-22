@@ -688,3 +688,9 @@ on the available platform; routine tests assert structural counts, not speed.
 Timing limitation: public lifecycle-hook preparation and `run reverify` can omit
 their initial journal read from `preflight_ms`. Measure full CLI elapsed time when
 diagnosing those paths; the separate worker limit still starts at dispatch.
+
+## Text file contract
+
+Helper JSON requests, document sources, reports and patch files use strict UTF-8,
+independent of the system locale. Invalid UTF-8 is rejected; binary artifacts and
+Git content hashes retain their original bytes. See [Windows validation](windows-validation.md).

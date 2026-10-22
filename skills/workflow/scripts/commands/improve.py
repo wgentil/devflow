@@ -31,7 +31,7 @@ def dispatch(parsed):
     if parsed.improve_command == 'inspect':
         return {'feedback': data.get('improvement_feedback', {}),
                 'approved_cases': data.get('improvement_cases', {})}
-    request = json.loads(Path(parsed.input).read_text())
+    request = json.loads(Path(parsed.input).read_text(encoding='utf-8'))
     if parsed.improve_command in {'feedback', 'case-approve'}:
         return commit(parsed, 'domain.improve.' + parsed.improve_command, request)
     if parsed.improve_command == 'run-cases':

@@ -189,7 +189,7 @@ def _dispatch(parsed: argparse.Namespace) -> dict:
             repository = state["data"].get("repositories", {}).get(repo_id) if repo_id else None
             if not repository:
                 raise WorkflowError("REPOSITORY_NOT_REGISTERED", "work item has no registered repository")
-            proposal = propose_test_change(run, parsed.item, Path(parsed.patch_file).read_text(), parsed.reason,
+            proposal = propose_test_change(run, parsed.item, Path(parsed.patch_file).read_text(encoding='utf-8'), parsed.reason,
                                            Path(repository["location"]))
             operation_id = (parsed.operation_id if getattr(parsed, "operation_id_explicit", False)
                             else f"test-change:propose:{parsed.run_id}:{proposal['id']}")

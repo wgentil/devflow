@@ -49,7 +49,7 @@ def _validate_documents(project: Path, manifest: dict, org_repo: Path | None = N
         _rules(temp,manifest,'project')
         if effective:
             (temp/'docs').mkdir(exist_ok=True)
-            (temp/'docs/devflow-context.json').write_text(json.dumps(manifest))
+            (temp/'docs/devflow-context.json').write_text(json.dumps(manifest), encoding='utf-8')
             resolve_governing_docs(temp,org_repo)
 
 
@@ -107,7 +107,7 @@ def initialize_project_documents(project_dir: Path, choice: dict, operation_id: 
         try:
             if _git(org,'init','-q').returncode: raise WorkflowError('ORG_INIT_FAILED','Git initialization failed')
             org_manifest={'schema_version':1,'id':'org-'+hashlib.sha256(name.encode()).hexdigest()[:24],'name':name,'documents':[]}
-            (org/'docs').mkdir();(org/'docs/devflow-org.json').write_text(json.dumps(org_manifest,indent=2)+'\n')
+            (org/'docs').mkdir();(org/'docs/devflow-org.json').write_text(json.dumps(org_manifest,indent=2)+'\n', encoding='utf-8')
             _git(org,'add','docs/devflow-org.json')
             if _git(org,'-c','user.name=DevFlow','-c','user.email=devflow@localhost','commit','-qm','Initialize organization manifest').returncode:
                 raise WorkflowError('ORG_INIT_FAILED','Local organization commit failed')

@@ -21,7 +21,7 @@ def dispatch(parsed):
         return {k: data.get(k, {}) for k in ('issues','snapshots','groups','issue_runs','classifications','outbox')}
     if not parsed.input:
         raise WorkflowError('INVALID_INPUT', '--input is required')
-    request = json.loads(Path(parsed.input).read_text())
+    request = json.loads(Path(parsed.input).read_text(encoding='utf-8'))
     if parsed.operation == 'validate-snapshot':
         return validate_snapshot(request['snapshot'])
     return commit(parsed, 'domain.issues.' + parsed.operation, request)
