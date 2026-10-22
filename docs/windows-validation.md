@@ -64,3 +64,7 @@ modules; `--start-dir` selects an owned fixture directory for runner tests. An
 empty suite fails. The installed-package check is
 `python scripts/verify_windows_install.py --source-root PACKAGE --codex-list CODEX.json --codex-cache CACHE --claude-list CLAUDE.json --output REPORT.json`.
 These are developer checks, not plugin onboarding steps.
+
+The [signed-in Windows acceptance procedure](examples/windows-host-acceptance.md)
+records remaining workflow/event/worker/handoff gates. No suitable signed-in
+Windows environment is available in this execution; those rows remain NOT_RUN.

@@ -217,3 +217,12 @@ four-stage live corpus or released provider mapping was available, so live
 model suitability and a validated strict default are **CANNOT VERIFY**.
 Earlier native worker smoke confirms access at that time only. Claude effective
 effort remains unknown and strict dispatch remains blocked.
+
+## Native Windows candidate acceptance
+
+The [Windows acceptance procedure](examples/windows-host-acceptance.md) separates
+isolated packages/startup/hook-script checks from signed-in workflows, real event
+dispatch, independent reviews and cross-host handoff. Those authenticated Windows
+rows are NOT_RUN: no suitable signed-in Windows environment is available to this
+execution. CI account-status startup submits no model turn and proves none of
+those rows. Use exact candidate fingerprints, not just the unchanged 0.3.12 label.
