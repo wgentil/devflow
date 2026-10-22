@@ -14,7 +14,11 @@ selected host CLI must already be available; Claude provider identity is support
 only for first-party authentication in this adapter; missing executables/authentication
 produce diagnostics. Native workers are new scoped conversations; they do not
 change the current parent conversation. A threaded pipe transport is present for
-Windows, with processes attached to a Job Object before their initial thread resumes; installed startup and transport evidence is listed separately from signed-in
+Windows, with processes attached to a Job Object before their initial thread
+resumes. Cleanup retains verified member handles, terminates and waits for them,
+rescans for descendants, and confirms the job has no active processes. A failed
+query or five-second timeout reports unconfirmed cleanup and blocks
+replacement work. Installed startup and transport evidence is listed separately from signed-in
 worker execution in the [platform matrix](windows-validation.md). Signed-in
 Windows worker acceptance remains unverified.
 

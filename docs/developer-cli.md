@@ -700,9 +700,14 @@ Windows console code page. Consumers should decode that protocol as UTF-8.
 In-process text streams retain Unicode without global stream reconfiguration.
 If a downstream write fails after a durable operation, retry the same operation
 ID to recover its receipt; the write failure does not roll back the journal.
+Successful output byte accounting is recorded after the response is written.
+Optional telemetry diagnostics use UTF-8 and never mask the operation when their
+diagnostic stream also fails.
 
 Verification captures stdout/stderr bytes as immutable evidence. JSON/XML reports
-require UTF-8; invalid report bytes return a failed encoding result and cannot
+require UTF-8 on their structured pipe; exit-status-only output and diagnostic
+stderr may contain arbitrary bytes. Raw hardening artifacts and hashes preserve
+CRLF and legacy log bytes. Invalid report bytes return a failed encoding result and cannot
 establish RED or GREEN proof. Git text identities decode as UTF-8; raw Git blobs,
 patch bytes and canonical tracked-CRLF identity retain their existing contracts.
 

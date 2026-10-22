@@ -14,7 +14,7 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
 
-from workflow_lib.utf8_io import write_utf8
+from workflow_lib.utf8_io import write_utf8, warn_utf8
 from workflow_lib import STATE_SCHEMA_VERSION  # noqa: E402
 from workflow_lib.context import register_repo, resolve_context, resolve_repository_context, validate_context_layer  # noqa: E402
 from workflow_lib.context import resolve_context_cached, context_sources_hash  # noqa: E402
@@ -88,7 +88,7 @@ def _measure_cli(parsed, result: dict, result_code: str, started: float, stdout_
                 event['run_id'] = getattr(parsed, 'run_id', None) or event.get('run_id')
                 record_context_measurement(Path(root_value), event)
         except Exception as exc:
-            write_utf8('devflow: context measurement gap: ' + str(exc)[:200] + '\n', stream=sys.stderr)
+            warn_utf8('devflow: context measurement gap: ' + str(exc)[:200])
     if parsed and parsed.command == "host": return
     root_value = getattr(parsed, "root", None) if parsed else None
     if not root_value:
@@ -814,19 +814,19 @@ def main(argv: list[str] | None = None) -> int:
         code = "error"
         result = {"error": exc.code, "message": exc.message, **exc.details}
         serialized = json.dumps(result, separators=(",", ":"), ensure_ascii=False)
-        _measure_cli(parsed, result, code, started, len((serialized + "\n").encode("utf-8")), input_bytes)
-        write_utf8(serialized + "\n")
+        emitted_bytes = write_utf8(serialized + "\n")
+        _measure_cli(parsed, result, code, started, emitted_bytes, input_bytes)
         return 2
     except (OSError, json.JSONDecodeError, ValueError) as exc:
         code = "error"
         result = {"error": "INVALID_INPUT", "message": str(exc)}
         serialized = json.dumps(result, separators=(",", ":"), ensure_ascii=False)
-        _measure_cli(parsed, result, code, started, len((serialized + "\n").encode("utf-8")), input_bytes)
-        write_utf8(serialized + "\n")
+        emitted_bytes = write_utf8(serialized + "\n")
+        _measure_cli(parsed, result, code, started, emitted_bytes, input_bytes)
         return 2
     serialized = json.dumps(result, separators=(",", ":"), ensure_ascii=False)
-    _measure_cli(parsed, result, code, started, len((serialized + "\n").encode("utf-8")), input_bytes)
-    write_utf8(serialized + "\n")
+    emitted_bytes = write_utf8(serialized + "\n")
+    _measure_cli(parsed, result, code, started, emitted_bytes, input_bytes)
     return 0
 
 

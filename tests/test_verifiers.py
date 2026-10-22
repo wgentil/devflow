@@ -39,6 +39,18 @@ class TypedVerifierTests(unittest.TestCase):
         self.assertFalse(blocked["passed"])
         self.assertEqual(blocked["failure"], "POLICY_VIOLATIONS")
 
+    def test_arbitrary_iac_logs_and_policy_diagnostics_are_not_reports(self):
+        plan, apply, evaluate = self.module()
+        raw = [sys.executable, '-c', "import sys;sys.stdout.buffer.write(b'caf\\xe9\\r\\n')"]
+        body = b'{"violations":[]}'
+        diagnostic = b"caf\xe9"
+        clean = [sys.executable, '-c', f'import sys;sys.stdout.buffer.write({body!r});sys.stderr.buffer.write({diagnostic!r})']
+        self.assertTrue(plan(raw, clean, self.cwd, 10)['passed'])
+        authorization = {"approved": True, "action": "infrastructure.apply", "cwd": str(self.cwd.resolve()), "argv": [raw, clean]}
+        self.assertTrue(apply(raw, clean, self.cwd, authorization, 10)['passed'])
+        self.assertEqual(plan(raw, raw, self.cwd, 10)['failure'], 'INVALID_REPORT_ENCODING')
+        self.assertEqual(evaluate(raw, self.cwd, 'baseline', None, 1, 10)['failure'], 'INVALID_REPORT_ENCODING')
+
     def test_iac_apply_requires_exact_explicit_authorization(self):
         _, apply, _ = self.module()
         argv = self.command({"violations": []})

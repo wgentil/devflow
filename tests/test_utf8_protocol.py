@@ -80,6 +80,7 @@ class UTF8ProtocolTests(unittest.TestCase):
         with contextlib.redirect_stdout(BrokenStream()), self.assertRaises(OSError):
             run.main(self.registration())
         self.assertEqual(read_state(self.root / 'control')['version'], 1)
+        self.assertFalse((self.root / 'control' / 'offload.jsonl').exists(), 'failed output must not be counted as emitted')
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
             self.assertEqual(run.main(self.registration()), 0)
@@ -99,3 +100,29 @@ class UTF8ProtocolTests(unittest.TestCase):
             status = hook.main()
         self.assertEqual(status, 2)
         self.assertIn('missing-é東京', stderr.buffer.getvalue().decode('utf-8'))
+
+    def test_optional_telemetry_diagnostics_are_utf8_and_cannot_mask_success(self):
+        control = self.root / 'control'
+        control.mkdir()
+        for name in ('offload.jsonl', 'context-metrics.jsonl'):
+            (control / name).mkdir()
+        result = self.child(self.registration())
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout.decode('utf-8'))['repo_id'], 'é東京')
+        self.assertIn('é東京', result.stderr.decode('utf-8'))
+        class BrokenStream(io.StringIO):
+            def write(self, value):
+                raise OSError('closed diagnostic pipe')
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output), contextlib.redirect_stderr(BrokenStream()):
+            self.assertEqual(run.main(self.registration()), 0)
+        self.assertTrue(json.loads(output.getvalue())['replayed'])
+        self.assertEqual(read_state(control)['version'], 1)
+
+    def test_context_view_diagnostic_does_not_raise(self):
+        from workflow_lib.context_metrics import record_context_view
+        stderr = io.TextIOWrapper(io.BytesIO(), encoding='cp1252')
+        with contextlib.redirect_stderr(stderr), patch('workflow_lib.context_metrics.measure_context_view', side_effect=ValueError('é東京')):
+            result = record_context_view(self.root, {}, operation_id='v', operation='view')
+        self.assertFalse(result['recorded'])
+        self.assertIn('é東京', stderr.buffer.getvalue().decode('utf-8'))

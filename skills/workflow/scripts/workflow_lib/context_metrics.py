@@ -5,11 +5,11 @@ from collections import Counter
 import json
 import os
 from pathlib import Path
-import sys
 import time
 
 from .document_units import canonical
 from .platform_lock import exclusive_file
+from .utf8_io import warn_utf8
 
 NUMBERS = ('document_bytes', 'envelope_bytes', 'configuration_bytes', 'turn_bytes', 'helper_calls', 'retrieval_calls', 'duration_ms')
 TEXT = ('operation_id', 'operation', 'run_id', 'stage', 'work_item', 'invocation_id', 'consumer_id', 'context_mode', 'cache_outcome')
@@ -88,7 +88,7 @@ def record_context_measurement(root: Path, measurement: dict) -> dict:
             raise ValueError('measurement exceeds bounded metadata size')
         return _append(root, entry)
     except Exception as exc:
-        print('devflow: context telemetry gap: ' + str(exc)[:300], file=sys.stderr)
+        warn_utf8('devflow: context telemetry gap: ' + str(exc)[:300])
         return {'recorded': False, 'gap': str(exc)}
 
 
@@ -110,7 +110,7 @@ def record_context_view(root: Path, view: dict, *, operation_id: str, operation:
                                       duration_ms=extra.pop('duration_ms', 0))
         return record_context_measurement(root, {**event, **extra})
     except Exception as exc:
-        print('devflow: context telemetry gap: ' + str(exc)[:300], file=sys.stderr)
+        warn_utf8('devflow: context telemetry gap: ' + str(exc)[:300])
         return {'recorded': False, 'gap': str(exc)}
 
 

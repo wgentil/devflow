@@ -43,6 +43,18 @@ class ImprovementEvalTests(unittest.TestCase):
         self.assertTrue(result['case_results'][0]['passed'])
         self.assertGreaterEqual(result['case_results'][0]['elapsed_ms'], 0)
 
+    def test_candidate_report_stdout_is_strict_but_diagnostic_bytes_are_not_reports(self):
+        with tempfile.TemporaryDirectory() as directory:
+            body = b'{"status":"pass"}'
+            diagnostic = b"caf\xe9\r\n"
+            case = self.case()
+            case['command'] = [sys.executable, '-c', f'import sys;sys.stdout.buffer.write({body!r});sys.stderr.buffer.write({diagnostic!r})']
+            result = run_candidate_cases({'artifact_hash': 'a'}, [case], Path(directory))
+            self.assertTrue(result['case_results'][0]['passed'])
+            case['command'] = [sys.executable, '-c', f'import sys;sys.stdout.buffer.write({diagnostic!r})']
+            result = run_candidate_cases({'artifact_hash': 'a'}, [case], Path(directory))
+            self.assertEqual(result['case_results'][0]['outcome'], 'unavailable')
+
     def test_retrospective_cites_observation_owner(self):
         report = retrospective([{'run_id': 'r'}], [{'feedback_id': 'f', 'run_id': 'r',
             'trace_hash': 't', 'feedback': {'owner': 'validator', 'observation': 'missed gate'}}])

@@ -10,23 +10,25 @@ import uuid
 
 from .store import WorkflowError, read_state, transact
 
-def _run(argv: list[str], cwd: Path, timeout: int) -> dict:
+def _run(argv: list[str], cwd: Path, timeout: int, *, structured: bool = False) -> dict:
     if not isinstance(argv, list) or not argv or any(not isinstance(value, str) for value in argv):
         return {"passed": False, "failure": "INVALID_COMMAND"}
     try:
-        result = subprocess.run(argv, cwd=cwd, capture_output=True, text=True, timeout=timeout, check=False, encoding='utf-8')
+        result = subprocess.run(argv, cwd=cwd, capture_output=True, timeout=timeout, check=False)
     except subprocess.TimeoutExpired:
         return {"passed": False, "failure": "TIMEOUT"}
-    except UnicodeError:
-        return {"passed": False, "failure": "INVALID_REPORT_ENCODING"}
     except OSError as exc:
         return {"passed": False, "failure": "COMMAND_FAILED", "detail": str(exc)}
-    return {"exit_code": result.returncode, "stdout": result.stdout, "stderr": result.stderr,
+    try:
+        stdout = result.stdout.decode("utf-8", "strict" if structured else "replace")
+    except UnicodeError:
+        return {"passed": False, "failure": "INVALID_REPORT_ENCODING", "exit_code": result.returncode}
+    return {"exit_code": result.returncode, "stdout": stdout, "stderr": result.stderr.decode("utf-8", "replace"),
             "passed": result.returncode == 0}
 
 
 def _policy(argv: list[str], cwd: Path, timeout: int) -> dict:
-    result = _run(argv, cwd, timeout)
+    result = _run(argv, cwd, timeout, structured=True)
     if not result["passed"]:
         return result
     try:
@@ -79,7 +81,7 @@ def verify_iac_apply(apply_command: list[str], policy_command: list[str], cwd: P
 
 
 def _cases(command: list[str], cwd: Path, timeout: int) -> tuple[dict | None, dict]:
-    result = _run(command, cwd, timeout)
+    result = _run(command, cwd, timeout, structured=True)
     if not result["passed"]:
         return None, result
     try:

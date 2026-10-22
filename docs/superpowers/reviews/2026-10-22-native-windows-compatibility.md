@@ -83,11 +83,40 @@ reference wording was shortened to remain below its existing limit.
 
 ## Independent review
 
-Pending. No findings have been fabricated or treated as reviewed.
+One fresh read-only whole-branch review of `6a76e4c..2ea8c29` used
+`gpt-6-astra` at `xhigh` effort. It found no Critical issues, three Important
+issues and one Minor issue. The reviewer independently reproduced the encoding
+and accounting defects and checked Windows cleanup against Microsoft's
+[termination contract](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-terminateprocess).
+
+The single Native correction pass addresses:
+
+1. Optional telemetry diagnostics: real child CP1252 stderr was invalid UTF-8;
+   strict in-process diagnostics could mask a committed registration. New CLI,
+   broken-diagnostic-stream and context-view tests failed before the fix.
+   Diagnostics now use the UTF-8 writer with best-effort failure handling.
+2. Arbitrary logs versus reports: exit-status gates and IaC commands rejected
+   CP1252 logs; valid JSON stdout with legacy stderr failed; CRLF gate artifacts
+   were rewritten. Real command regressions failed before the fix. Capture is
+   binary; structured stdout alone decodes strictly; artifacts retain exact bytes.
+3. Windows cleanup: deterministic delayed/query/timeout tests failed before the
+   fix. Cleanup retains verified job-member process handles, terminates/waits,
+   rescans for descendants and confirms zero active processes within five seconds.
+   A second adversarial test failed against accounting-only polling: zero job
+   accounting cannot replace waiting on process handles. Native CI must also prove
+   the exited-leader descendant handle is signaled immediately when close returns.
+4. Output accounting was regraded Important because R2 requires actual emitted
+   bytes. The failed-pipe retry regression now checks that failed output does not
+   create a successful byte measurement; it failed before the write/account order
+   was corrected. The operation stays committed and its exact retry remains valid.
+
+Focused correction checks: 41 tests OK, one native-Windows-only skip, followed by
+the additional process-handle barrier regression. Final full native gates remain
+pending. No second independent review is represented.
 
 ## Deferred minors
 
-None recorded yet; review is pending.
+None. The output-accounting finding was regraded Important and enters the correction pass.
 
 ## Unavailable acceptance gates
 

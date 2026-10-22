@@ -22,9 +22,9 @@ def run_candidate_cases(candidate: dict, cases: list[dict], cwd: Path) -> dict:
             raise WorkflowError('INVALID_CASE', 'case argv required')
         started = time.monotonic()
         try:
-            result = subprocess.run(command, cwd=Path(cwd), capture_output=True, text=True,
-                                    timeout=case.get('timeout_seconds', 60), check=False, encoding='utf-8')
-            observed = json.loads(result.stdout)
+            result = subprocess.run(command, cwd=Path(cwd), capture_output=True,
+                                    timeout=case.get('timeout_seconds', 60), check=False)
+            observed = json.loads(result.stdout.decode("utf-8"))
             passed = result.returncode == 0 and isinstance(observed, dict) and all(
                 observed.get(key) == value for key, value in case['expected'].items())
             outcome = 'passed' if passed else 'failed'

@@ -21,3 +21,11 @@ def write_utf8(text: str, *, stream: TextIO | None = None) -> int:
             raise OSError('incomplete text protocol write')
         stream.flush()
     return len(data)
+
+
+def warn_utf8(text: str) -> None:
+    """Best-effort diagnostics must never change the measured operation."""
+    try:
+        write_utf8(text + '\n', stream=sys.stderr)
+    except Exception:
+        pass

@@ -13,10 +13,9 @@ def verify_gate(root:Path,run_id:str,gate_id:str,command:list[str],contract:dict
   from .evidence import repository_fingerprint
   before=repository_fingerprint(root)
  except Exception: return {'passed':False,'failure':'REPOSITORY_NOT_REGISTERED','run_id':run_id,'gate_id':gate_id}
- try: result=subprocess.run(command,cwd=root,capture_output=True,text=True,timeout=900,check=False, encoding='utf-8')
- except UnicodeError: return {'passed':False,'failure':'INVALID_REPORT_ENCODING'}
+ try: result=subprocess.run(command,cwd=root,capture_output=True,timeout=900,check=False)
  except (OSError,subprocess.TimeoutExpired): return {'passed':False,'failure':'COMMAND_UNAVAILABLE'}
- digest=hashlib.sha256((result.stdout+result.stderr).encode()).hexdigest()
+ digest=hashlib.sha256(result.stdout+result.stderr).hexdigest()
  try: after=repository_fingerprint(root)
  except Exception: after=None
  refs={}
@@ -24,7 +23,12 @@ def verify_gate(root:Path,run_id:str,gate_id:str,command:list[str],contract:dict
   from .evidence import _blob
   refs={'stdout_ref':_blob(artifacts_root,result.stdout),'stderr_ref':_blob(artifacts_root,result.stderr),'exit_code':result.returncode}
  if after!=before:return {'passed':False,'failure':'STALE_CONFIGURATION','run_id':run_id,'gate_id':gate_id,'output_hash':digest,**refs}
- report=parse_gate_report(contract or {'kind':'exit-status'},result.stdout,result.stderr,result.returncode)
+ selected=contract or {'kind':'exit-status'}
+ try:
+  stdout=result.stdout.decode('utf-8') if selected.get('kind')=='json-report' else ''
+ except UnicodeError:
+  return {'passed':False,'failure':'INVALID_REPORT_ENCODING','run_id':run_id,'gate_id':gate_id,'output_hash':digest,**refs}
+ report=parse_gate_report(selected,stdout,'',result.returncode)
  return {**report,'run_id':run_id,'gate_id':gate_id,'argv':command,'output_hash':digest,**refs}
 
 def repository_schedule(plan:dict,repositories:dict)->dict:

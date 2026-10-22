@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import json
 import os
-import sys
 from pathlib import Path
 from .platform_lock import exclusive_file
+from .utf8_io import warn_utf8
 
 REQUIRED = {"operation_id", "operation", "duration_ms", "result", "input_bytes", "output_bytes"}
 
@@ -37,5 +37,5 @@ def record_offload(root: Path, measurement: dict) -> dict:
                 os.fsync(handle.fileno())
         return {"recorded": True, "duplicate": False}
     except Exception as exc:  # telemetry never masks the measured operation
-        print(f"devflow: warning: offload telemetry gap: {exc}", file=sys.stderr)
+        warn_utf8(f"devflow: warning: offload telemetry gap: {exc}")
         return {"recorded": False, "gap": str(exc)}

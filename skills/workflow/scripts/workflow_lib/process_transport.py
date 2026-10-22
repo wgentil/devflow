@@ -1,6 +1,7 @@
 """Pipe transports that do not rely on selector support for anonymous pipes."""
 from __future__ import annotations
 import json
+import ctypes
 import os
 from pathlib import Path
 import queue
@@ -8,6 +9,20 @@ import signal
 import subprocess
 import threading
 import time
+
+
+class JobAccounting(ctypes.Structure):
+    # Fixed Windows ABI sizes also permit protocol tests on non-Windows hosts.
+    _fields_ = [(name, ctypes.c_int64) for name in
+                ('TotalUserTime', 'TotalKernelTime', 'ThisPeriodTotalUserTime', 'ThisPeriodTotalKernelTime')] + [
+                (name, ctypes.c_uint32) for name in
+                ('TotalPageFaultCount', 'TotalProcesses', 'ActiveProcesses', 'TotalTerminatedProcesses')]
+
+
+class JobProcessIds(ctypes.Structure):
+    _fields_ = [('NumberOfAssignedProcesses', ctypes.c_uint32),
+                ('NumberOfProcessIdsInList', ctypes.c_uint32),
+                ('ProcessIdList', ctypes.c_size_t * 4096)]
 
 
 class WindowsJob:
@@ -22,9 +37,22 @@ class WindowsJob:
             api.AssignProcessToJobObject.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
             api.TerminateJobObject.restype = ctypes.c_int
             api.TerminateJobObject.argtypes = [ctypes.c_void_p, ctypes.c_uint]
+            api.QueryInformationJobObject.restype = ctypes.c_int
+            api.QueryInformationJobObject.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p,
+                                                     ctypes.c_uint32, ctypes.POINTER(ctypes.c_uint32)]
+            api.OpenProcess.restype = ctypes.c_void_p
+            api.OpenProcess.argtypes = [ctypes.c_uint32, ctypes.c_int, ctypes.c_uint32]
+            api.IsProcessInJob.restype = ctypes.c_int
+            api.IsProcessInJob.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.POINTER(ctypes.c_int)]
+            api.TerminateProcess.restype = ctypes.c_int
+            api.TerminateProcess.argtypes = [ctypes.c_void_p, ctypes.c_uint]
+            api.WaitForSingleObject.restype = ctypes.c_uint32
+            api.WaitForSingleObject.argtypes = [ctypes.c_void_p, ctypes.c_uint32]
+            api.GetLastError.restype = ctypes.c_uint32
             api.CloseHandle.restype = ctypes.c_int
             api.CloseHandle.argtypes = [ctypes.c_void_p]
         self.api = api
+        self.members = {}
         self.handle = api.CreateJobObjectW(None, None)
         if not self.handle:
             raise OSError('CreateJobObjectW failed')
@@ -33,15 +61,65 @@ class WindowsJob:
             self.handle = None
             raise OSError('AssignProcessToJobObject failed')
 
+    def _drain_members(self, deadline):
+        # TerminateJobObject may detach members before their handles are signaled.
+        # Retain verified member handles, terminate individually, and rescan for
+        # children created during the previous snapshot before draining the Job.
+        while True:
+            info = JobProcessIds()
+            if not self.api.QueryInformationJobObject(self.handle, 3, ctypes.byref(info), ctypes.sizeof(info), None):
+                raise OSError('QueryInformationJobObject failed; tree cleanup is unconfirmed')
+            if info.NumberOfAssignedProcesses > info.NumberOfProcessIdsInList or info.NumberOfProcessIdsInList > 4096:
+                raise OSError('Windows process list exceeds cleanup bound')
+            pids = list(info.ProcessIdList[:info.NumberOfProcessIdsInList])
+            for pid in pids:
+                if pid not in self.members:
+                    handle = self.api.OpenProcess(0x00101001, False, pid)  # synchronize/query/terminate
+                    if not handle:
+                        if self.api.GetLastError() == 87:  # process exited during query
+                            continue
+                        raise OSError('OpenProcess failed; tree cleanup is unconfirmed')
+                    member = ctypes.c_int()
+                    if not self.api.IsProcessInJob(handle, self.handle, ctypes.byref(member)) or not member.value:
+                        self.api.CloseHandle(handle)
+                        raise OSError('Process job identity is unconfirmed')
+                    self.members[pid] = handle
+            for handle in self.members.values():
+                if self.api.WaitForSingleObject(handle, 0) != 0:
+                    if not self.api.TerminateProcess(handle, 1) and self.api.WaitForSingleObject(handle, 0) != 0:
+                        raise OSError('TerminateProcess failed; tree cleanup is unconfirmed')
+                    remaining = max(0, int((deadline - time.monotonic()) * 1000))
+                    if self.api.WaitForSingleObject(handle, remaining) != 0:
+                        raise TimeoutError('Windows tree cleanup is unconfirmed')
+            if not pids:
+                return
+            if time.monotonic() >= deadline:
+                raise TimeoutError('Windows tree cleanup is unconfirmed')
+            time.sleep(0.01)
+
     def stop(self):
         if self.handle is None:
             return
-        try:
-            if not self.api.TerminateJobObject(self.handle, 1):
-                raise OSError('TerminateJobObject failed')
-        finally:
-            self.api.CloseHandle(self.handle)
-            self.handle = None
+        deadline = time.monotonic() + 5
+        self._drain_members(deadline)
+        if not self.api.TerminateJobObject(self.handle, 1):
+            raise OSError('TerminateJobObject failed; tree cleanup is unconfirmed')
+        while True:
+            info = JobAccounting()
+            if not self.api.QueryInformationJobObject(self.handle, 1, ctypes.byref(info), ctypes.sizeof(info), None):
+                raise OSError('QueryInformationJobObject failed; tree cleanup is unconfirmed')
+            if info.ActiveProcesses == 0:
+                break
+            if time.monotonic() >= deadline:
+                raise TimeoutError('Windows tree cleanup is unconfirmed')
+            time.sleep(0.01)
+        for pid, handle in list(self.members.items()):
+            if not self.api.CloseHandle(handle):
+                raise OSError("CloseHandle failed after process cleanup")
+            del self.members[pid]
+        if not self.api.CloseHandle(self.handle):
+            raise OSError('CloseHandle failed after tree cleanup')
+        self.handle = None
 
 
 def resume_suspended_process(process: subprocess.Popen) -> None:

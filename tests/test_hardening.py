@@ -12,3 +12,37 @@ class HardeningTests(unittest.TestCase):
    stale=verify_gate(root,'r','g',command); self.assertEqual(stale['failure'],'STALE_CONFIGURATION')
  def test_multi_repo_dependencies_and_proofs(self):
   schedule=repository_schedule({'work_items':[{'id':'a','repo_id':'r1','dependencies':[]},{'id':'b','repo_id':'r2','dependencies':['a']}]},{'r1':{'location':'/tmp/a'},'r2':{'location':'/tmp/b'}}); self.assertEqual(schedule['order'],['a','b'])
+
+ def test_arbitrary_gate_logs_stay_raw_and_structured_stdout_is_strict(self):
+  import hashlib, subprocess
+  with tempfile.TemporaryDirectory() as d, tempfile.TemporaryDirectory() as a:
+   root=Path(d); artifacts=Path(a)
+   subprocess.run(['git','init','-q'],cwd=root,check=True)
+   subprocess.run(['git','-c','user.name=x','-c','user.email=x@y','commit','--allow-empty','-qm','base'],cwd=root,check=True)
+   raw=b'caf\xe9\r\n'
+   command=[sys.executable,'-c',f'import sys;sys.stdout.buffer.write({raw!r})']
+   result=verify_gate(root,'r','g',command,artifacts_root=artifacts)
+   self.assertTrue(result['passed'], result)
+   self.assertEqual(result['output_hash'],hashlib.sha256(raw).hexdigest())
+   self.assertEqual((artifacts/result['stdout_ref']).read_bytes(),raw)
+   invalid=verify_gate(root,'r','g',command,{'kind':'json-report','version':1},artifacts_root=artifacts)
+   self.assertEqual(invalid['failure'],'INVALID_REPORT_ENCODING')
+   self.assertEqual((artifacts/invalid['stdout_ref']).read_bytes(),raw)
+   body=b'{"findings":[]}'
+   command=[sys.executable,'-c',f'import sys;sys.stdout.buffer.write({body!r});sys.stderr.buffer.write({raw!r})']
+   valid=verify_gate(root,'r','g',command,{'kind':'json-report','version':1},artifacts_root=artifacts)
+   self.assertTrue(valid['passed'],valid)
+   self.assertEqual((artifacts/valid['stderr_ref']).read_bytes(),raw)
+
+ def test_structured_gate_preserves_raw_crlf(self):
+  import hashlib, subprocess
+  with tempfile.TemporaryDirectory() as d, tempfile.TemporaryDirectory() as a:
+   root=Path(d); artifacts=Path(a)
+   subprocess.run(['git','init','-q'],cwd=root,check=True)
+   subprocess.run(['git','-c','user.name=x','-c','user.email=x@y','commit','--allow-empty','-qm','base'],cwd=root,check=True)
+   raw=b'{"findings":[]}\r\n'
+   command=[sys.executable,'-c',f'import sys;sys.stdout.buffer.write({raw!r})']
+   result=verify_gate(root,'r','g',command,{'kind':'json-report','version':1},artifacts_root=artifacts)
+   self.assertTrue(result['passed'],result)
+   self.assertEqual((artifacts/result['stdout_ref']).read_bytes(),raw)
+   self.assertEqual(result['output_hash'],hashlib.sha256(raw).hexdigest())
