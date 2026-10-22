@@ -216,6 +216,8 @@ df delivery record --root "$CONTROL" --run-id greeting-run --manifest-file verif
 
 ## Outputs and recovery
 
+If required context preparation blocks, use [preparation recovery](../../docs/context-efficiency.md#preparation-recovery). Distinguish worker time from input preflight and byte limits; resolve the reported phase before starting work.
+
 Expect durable run status, attempt tokens, gate stage and bound delivery records.
 Fresh sessions resume by root/run ID. Missing verification, mandatory unresolved
 findings or incomplete acceptance prevent delivery. Historical delivered records

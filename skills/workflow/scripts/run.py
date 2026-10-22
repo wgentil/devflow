@@ -65,14 +65,14 @@ def _replay_result(state: dict, event: dict) -> dict:
 
 
 def _run_brief(run: dict, item_ids: list[str], max_bytes: int, *, root: Path | None = None,
-               representation: str = 'markdown', output_mode: str = 'full') -> dict:
+               representation: str = 'markdown', output_mode: str = 'full',state:dict|None=None,prepared=None) -> dict:
     stage = run["plan"].get("stage", {"name": "implementation", "required_slices": []})
     envelope = assemble_brief(run, run.get("context", {}), stage, item_ids, max_bytes)
     if root is None:
         return envelope
     from workflow_lib.lifecycle_hooks import prepared_context
     return prepared_context(root, run, envelope, item_ids, stage=stage.get('name', 'implementation'),
-                             max_bytes=max_bytes, representation=representation, output_mode=output_mode)
+                             max_bytes=max_bytes, representation=representation, output_mode=output_mode,state=state,prepared=prepared)
 
 
 def _measure_cli(parsed, result: dict, result_code: str, started: float, stdout_bytes: int, input_bytes: int) -> None:
@@ -374,7 +374,7 @@ def main(argv: list[str] | None = None) -> int:
         phase = None
         if getattr(parsed, 'plan_command', None) == 'validate': phase = 'plan-validation'
         if getattr(parsed, 'plan_command', None) == 'ready': phase = 'plan-ready'
-        if run_command in {'start', 'next', 'retry', 'result', 'accept', 'reverify'}: phase = 'run-' + run_command
+        if run_command in {'start', 'result', 'accept'}: phase = 'run-' + run_command
         if getattr(parsed, 'build_command', None) not in {None, 'validation-plan'}: phase = 'build'
         if getattr(parsed, 'review_command', None): phase = 'review'
         if getattr(parsed, 'delivery_command', None): phase = 'delivery'
@@ -557,7 +557,8 @@ def main(argv: list[str] | None = None) -> int:
                 result = {**receipt, **run_summary(run_state)}
         elif parsed.command == "run" and parsed.run_command in {"next", "retry"}:
             root = Path(parsed.root).expanduser().resolve()
-            state = initial_state if initial_state is not None else read_state(root)
+            from workflow_lib.context_preparation import read_context_state,prepare_context,commit_prepared_attempt
+            state = initial_state if initial_state is not None else read_context_state(root)
             data = state["data"]
             run = data.get("runs", {}).get(parsed.run_id)
             if run is None:
@@ -573,7 +574,7 @@ def main(argv: list[str] | None = None) -> int:
                         and previous.get("payload", {}).get("run_id") == parsed.run_id
                         and run.get("active_attempt")
                         and run["active_attempt"].get("token") == prior_attempt.get("token")):
-                    result = _run_brief(run, [run["active_attempt"]["item_id"]], parsed.max_bytes, root=root)
+                    result = _run_brief(run, [run["active_attempt"]["item_id"]], parsed.max_bytes, root=root,state=state)
                 else:
                     result = {**run_summary(run), "replayed": True,
                               "operation_id": operation_id, "event_sequence": previous["sequence"],
@@ -589,7 +590,7 @@ def main(argv: list[str] | None = None) -> int:
                     if run.get("active_attempt"):
                         raise WorkflowError("ATTEMPT_ACTIVE", "finish or abandon the active attempt first")
                 elif run.get("active_attempt"):
-                    result = _run_brief(run, [run["active_attempt"]["item_id"]], parsed.max_bytes, root=root)
+                    result = _run_brief(run, [run["active_attempt"]["item_id"]], parsed.max_bytes, root=root,state=state)
                 if not run.get("active_attempt"):
                     if parsed.run_command != "retry" and parsed.item:
                         item_id = parsed.item
@@ -602,8 +603,11 @@ def main(argv: list[str] | None = None) -> int:
                 if not run.get("active_attempt"):
                     updated = issue_attempt(run, item_id)
                     token = updated["active_attempt"]["token"]
-                    brief_result = _run_brief(updated, [item_id], parsed.max_bytes, root=root)
-                    response = transact(root, state["version"], operation_id,
+                    stage=updated['plan'].get('stage',{'name':'implementation','required_slices':[]})
+                    envelope=assemble_brief(updated,updated.get('context',{}),stage,[item_id],parsed.max_bytes)
+                    prepared=prepare_context(root,updated,envelope,[item_id],stage=stage.get('name','implementation'),state=state,max_bytes=parsed.max_bytes)
+                    brief_result = _run_brief(updated,[item_id],parsed.max_bytes,root=root,prepared=prepared)
+                    response = commit_prepared_attempt(root,prepared,operation_id,
                         {"kind": "run.attempt.issued", "payload": {"run_id": parsed.run_id,
                                                                        "attempt": updated["active_attempt"]}})
                     if not response["replayed"]:
@@ -619,7 +623,7 @@ def main(argv: list[str] | None = None) -> int:
                                 and committed_run.get("active_attempt")
                                 and committed_run["active_attempt"].get("token") == committed_attempt.get("token")):
                             result = _run_brief(committed_run, [committed_run["active_attempt"]["item_id"]],
-                                                parsed.max_bytes, root=root)
+                                                parsed.max_bytes, root=root,state=response['state'])
                         else:
                             result = {**run_summary(committed_run), "replayed": True,
                                       "operation_id": operation_id, "event_sequence": response["event"]["sequence"],
@@ -627,16 +631,21 @@ def main(argv: list[str] | None = None) -> int:
         elif parsed.command == 'run' and parsed.run_command == 'reverify':
             from workflow_lib.reverification import begin_reverification
             root = Path(parsed.root).expanduser().resolve()
-            state = initial_state if initial_state is not None else read_state(root)
+            from workflow_lib.context_preparation import read_context_state,prepare_context,commit_prepared_attempt
+            state = initial_state if initial_state is not None else read_context_state(root)
             run = state['data'].get('runs',{}).get(parsed.run_id)
             if run is None: raise WorkflowError('RUN_NOT_FOUND','Known run required.')
             updated = begin_reverification(run,parsed.item)
-            _run_brief(updated,[parsed.item],parsed.max_bytes,root=root)
-            receipt = _commit(root,state['version'],parsed.operation_id,{'kind':'run.reverification.started',
+            stage=updated['plan'].get('stage',{'name':'implementation','required_slices':[]})
+            envelope=assemble_brief(updated,updated.get('context',{}),stage,[parsed.item],parsed.max_bytes)
+            prepared=prepare_context(root,updated,envelope,[parsed.item],stage=stage.get('name','implementation'),state=state,max_bytes=parsed.max_bytes)
+            view=_run_brief(updated,[parsed.item],parsed.max_bytes,root=root,prepared=prepared)
+            response=commit_prepared_attempt(root,prepared,parsed.operation_id,{'kind':'run.reverification.started',
                 'payload':{'run_id':parsed.run_id,'attempt':updated['active_attempt'],
                     'prior_token':run['items'][parsed.item]['attempts'][-1]['token']}})
-            committed = read_state(root)['data']['runs'][parsed.run_id]
-            result = {**_run_brief(committed,[parsed.item],parsed.max_bytes,root=root),**receipt}
+            if response['replayed']:raise _OperationReplay(_replay_result(response['state'],response['event']))
+            result={**view,'state_version':response['state']['version'],'event_sequence':response['event']['sequence'],
+                'operation_id':parsed.operation_id,'replayed':False}
         elif parsed.command == "run" and parsed.run_command in {"status", "summary"}:
             root = Path(parsed.root).expanduser().resolve()
             state = initial_state if initial_state is not None else read_state(root)
@@ -646,7 +655,8 @@ def main(argv: list[str] | None = None) -> int:
             result = run_summary(run)
         elif parsed.command == "run" and parsed.run_command == "brief":
             root = Path(parsed.root).expanduser().resolve()
-            state = initial_state if initial_state is not None else read_state(root)
+            from workflow_lib.context_preparation import read_context_state
+            state = initial_state if initial_state is not None else read_context_state(root)
             run = state["data"].get("runs", {}).get(parsed.run_id)
             if run is None:
                 raise WorkflowError("RUN_NOT_FOUND", f"unknown run {parsed.run_id}")
@@ -661,7 +671,7 @@ def main(argv: list[str] | None = None) -> int:
                 completed = {key for key, value in run["items"].items() if value["status"] == "complete"}
                 candidates = ready_items(run["plan"], completed)
                 selected = [candidates[0]["id"]] if candidates else []
-            result = _run_brief(run, selected, parsed.max_bytes, root=root, representation=parsed.representation, output_mode=parsed.output_mode)
+            result = _run_brief(run, selected, parsed.max_bytes, root=root, representation=parsed.representation, output_mode=parsed.output_mode,state=state)
             from workflow_lib.context_checkpoints import checkpoint_read
             result = checkpoint_read(root, result, {'consumer_id': parsed.consumer_id, 'run_id': run['id'],
                 'stage': result['stage'], 'role': 'cli', 'task_ids': selected},

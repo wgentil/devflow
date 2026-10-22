@@ -1,11 +1,11 @@
 {
-  "aggregate_entry_bytes": 24962,
+  "aggregate_entry_bytes": 25540,
   "baseline": {
     "aggregate_entry_bytes": 65937
   },
-  "duplicate_prose_bytes": 10726,
+  "duplicate_prose_bytes": 10959,
   "entry_bytes": {
-    "skills/build-work/SKILL.md": 2785,
+    "skills/build-work/SKILL.md": 3074,
     "skills/ingest/SKILL.md": 2093,
     "skills/issues/SKILL.md": 1682,
     "skills/migrate/SKILL.md": 1707,
@@ -15,14 +15,14 @@
     "skills/specify/SKILL.md": 2244,
     "skills/stats/SKILL.md": 1981,
     "skills/ux-reviewer/SKILL.md": 1872,
-    "skills/workflow/SKILL.md": 3231
+    "skills/workflow/SKILL.md": 3520
   },
   "schema_version": 1,
   "stage_load_bytes": {
-    "acceptance": 9713,
-    "build-work": 10146,
+    "acceptance": 10002,
+    "build-work": 10435,
     "context": 6348,
-    "implementation": 10146,
+    "implementation": 10435,
     "ingest": 9352,
     "issues": 5622,
     "migrate": 5680,
@@ -35,7 +35,7 @@
     "specify": 9707,
     "stats": 7710,
     "ux-reviewer": 6674,
-    "workflow": 9713
+    "workflow": 10002
   },
   "unit_bytes": {
     "common#1e6f0adae858d8e7": 3702,
@@ -44,7 +44,7 @@
     "guide.build-work#d6b04ec338c60770": 1368,
     "guide.build-work.2#3cf9471e25e2d33e": 1997,
     "guide.build-work.3#2442c5736d701f7a": 722,
-    "guide.build-work.4#988d2a52506b7fd2": 1047,
+    "guide.build-work.4#988d2a52506b7fd2": 1282,
     "guide.build-work.5#fe47ae7f915c4030": 113,
     "guide.build-work.6#ee128e80192a6a78": 171,
     "guide.build-work.7#2e96e8e3b7e4d739": 173,
@@ -114,7 +114,7 @@
     "guide.workflow.6#d6a8ea53db16da72": 2352,
     "guide.workflow.7#efe49938aab31de8": 867,
     "guide.workflow.8#1fab5625e73a1d08": 3049,
-    "guide.workflow.9#fcc8d853fb00b40d": 700,
+    "guide.workflow.9#fcc8d853fb00b40d": 935,
     "host-lifecycle.1#cfedd292c1723bfb": 3109,
     "procedure.build-work#1e6f0adae858d8e7": 7924,
     "procedure.build-work.1#8802045e96dc9375": 4897,
@@ -145,7 +145,7 @@
     "routing.outcomes#9e7b29b98e841dd6": 1628,
     "routing.task-decisions#c888a6b16adcb56f": 2291,
     "setup.approval#c627a7acf47a5d98": 1149,
-    "skill.build-work#1e6f0adae858d8e7": 2785,
+    "skill.build-work#1e6f0adae858d8e7": 3074,
     "skill.ingest#1e6f0adae858d8e7": 2093,
     "skill.issues#1e6f0adae858d8e7": 1682,
     "skill.migrate#1e6f0adae858d8e7": 1707,
@@ -155,6 +155,6 @@
     "skill.specify#1e6f0adae858d8e7": 2244,
     "skill.stats#1e6f0adae858d8e7": 1981,
     "skill.ux-reviewer#1e6f0adae858d8e7": 1872,
-    "skill.workflow#1e6f0adae858d8e7": 3231
+    "skill.workflow#1e6f0adae858d8e7": 3520
   }
 }

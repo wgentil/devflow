@@ -82,10 +82,11 @@ def dispatch(parsed):
     if parsed.host_command == 'brief':
         from workflow_lib.hosts import validate_binding
         from workflow_lib.host_completion import host_brief
-        data = read_state(Path(parsed.root))['data']
+        from workflow_lib.context_preparation import read_context_state
+        authoritative=read_context_state(Path(parsed.root));data=authoritative['data']
         binding = validate_binding(data, parsed.binding_id, parsed.revision)
         view = host_brief(data, binding, control_root=Path(parsed.root), max_bytes=parsed.max_bytes,
-                          representation=parsed.representation, output_mode=parsed.output_mode)
+                          representation=parsed.representation, output_mode=parsed.output_mode,authoritative_state=authoritative)
         from workflow_lib.context_checkpoints import checkpoint_read
         return checkpoint_read(Path(parsed.root), view, {'consumer_id': parsed.consumer_id or binding['session_id'],
             'run_id': binding['run_id'], 'binding_id': binding['binding_id'], 'session_id': binding['session_id'],

@@ -173,6 +173,7 @@ flowchart LR
     Scoped --> Worker[Five-second composition worker]
     Worker --> Live[Recheck source and version bindings]
     Live --> View[Complete context or bounded inspection reference]
+    View --> Commit[Locked version and source guard before a new token]
 ```
 
 
@@ -192,3 +193,29 @@ binding and budget metadata plus punctuation; categories sum to `serialized_byte
 Required overflow retains `CONTEXT_BUDGET_EXCEEDED` and adds composition phase,
 component sizes and a supported recovery action. A real oversized required fact
 still blocks; references do not silently replace mandatory context.
+
+## Preparation recovery
+
+The harness explains the failed phase and guides the next action. It must resolve
+required preparation before issuing a new attempt or starting model work.
+
+- `HOOK_DEADLINE_EXCEEDED`: inspect the returned worker `limits.deadline_seconds`
+  and elapsed time. The `worker` phase starts after authoritative input preflight;
+  raising context bytes does not extend it. Retry from current inputs; if bounded
+  composition still times out, retain the diagnostic and report the failure.
+- `CONTEXT_PREPARATION_STALE` or `CONTEXT_SOURCE_CHANGED`: rebuild from current
+  inputs. Diagnostics identify `preflight`, `freshness` or `commit`; a final locked
+  guard checks journal version, approved sources and host identity before writing
+  a new attempt. A failed live guard does not consume the operation's retry key.
+- `CONTEXT_BUDGET_EXCEEDED`: inspect component sizes, then explicitly request
+  sufficient context bytes or reduce task scope while preserving applicable shared
+  rules and dependencies. Inspection references do not waive mandatory content.
+
+Successful views report `preparation.preflight_ms` (including caller replay when
+reused), `worker_ms`, their sum `total_ms`, `journal_version` and `binding_hash`.
+`total_ms` covers those measured phases, not the final locked replay or every
+parent artifact/freshness operation. Full CLI time is measured separately. Ordinary
+journal replay still grows with history; no journal compaction/archive command is
+provided. Preserve the journal rather than deleting history to advance a gate.
+Exact historical operation receipts retain their existing replay semantics; new
+attempts always use the live guard.

@@ -53,13 +53,33 @@ def _accept_run(actual,proposed):
     _require(expected==proposed,'Proposed run differs from the authorized attempt transition.')
 
 
+def _validate_envelope(data,run,envelope,item_ids,max_bytes):
+    _require(isinstance(envelope,dict),'Context control envelope must be an object.')
+    if set(envelope)<= {'run_id'}:
+        _require(envelope.get('run_id',run['id'])==run['id'],'Context envelope belongs to another run.','CONTEXT_SCOPE_CHANGED')
+        return
+    if envelope.get('binding_id'):
+        from .hosts import validate_binding
+        from .host_completion import host_brief
+        binding=validate_binding(data,envelope['binding_id'],envelope.get('revision'))
+        expected=host_brief(data,binding)
+    else:
+        from .briefs import assemble_brief
+        stage=run['plan'].get('stage',{'name':'implementation','required_slices':[]})
+        expected=assemble_brief(run,run.get('context',{}),stage,item_ids,max_bytes)
+    _require(set(envelope)<=set(expected) and all(value==expected[key] for key,value in envelope.items()),
+        'Context control facts differ from authoritative run or host state.','CONTEXT_SCOPE_CHANGED')
+
+
 def prepare_context(root:Path,run:dict,envelope:dict,item_ids:list[str],*,stage:str,state:dict|None=None,
                     max_bytes:int=20000,representation:str='markdown',output_mode:str='full')->PreparedContext:
     started=time.monotonic();root=Path(root).resolve()
+    borrowed_read_ms=state.get('_context_read_ms',0) if state is not None else 0
     state=read_state(root) if state is None else state
     checked=preflight_inputs(root,state,'context-preparation',run['id']);state=checked['state'];data=state['data']
     actual=data.get('runs',{}).get(run['id'])
     _require(isinstance(actual,dict),'Context preparation needs a current run.','RUN_NOT_FOUND');_accept_run(actual,run)
+    _validate_envelope(data,run,envelope,item_ids,max_bytes)
     binding_id=envelope.get('binding_id')
     if binding_id:
         from .hosts import validate_binding
@@ -88,18 +108,29 @@ def prepare_context(root:Path,run:dict,envelope:dict,item_ids:list[str],*,stage:
     selection={'spec':selected_spec,'spec_hash':content_hash(spec),'item_ids':list(item_ids),'stage':stage,'governing':governing,
                'documents':[{'source_id':sid} for sid in policy['stage_reads'][stage]]}
     scope={'run_id':run['id'],'item_ids':list(item_ids),'stage':stage,'attempt_id':(run.get('active_attempt') or {}).get('token'),
-        'binding_id':binding_id,'revision':envelope.get('revision'),'representation':representation,'output_mode':output_mode,'context_max_bytes':max_bytes}
+        'attempt':deepcopy(run.get('active_attempt')),'binding_id':binding_id,'revision':envelope.get('revision'),'representation':representation,'output_mode':output_mode,'context_max_bytes':max_bytes}
     files={}
     for source in sources.values():
-        path=document_path(source);files[str(path)]=_file_hash(path)
+        path=document_path(source)
+        if str(path) not in files:files[str(path)]=_file_hash(path)
+    policy_path=PACKAGE_ROOT/'definitions/documentation.json'
+    files[str(policy_path)]=_file_hash(policy_path)
+    _require(load_documentation_policy(PACKAGE_ROOT)==policy,'Documentation policy changed during preflight.','CONTEXT_SOURCE_CHANGED')
     pair=data.get('spec_pair')
     if pair:
         repo=Path(data['repositories'][pair['repo_id']]['location']).resolve();locations[pair['repo_id']]=str(repo)
+        import json
         for key in ('json_path','markdown_path'):
-            path=repo/pair[key];files[str(path)]=_file_hash(path)
+            path=repo/pair[key];current_hash=_file_hash(path)
+            if key=='markdown_path':_require(current_hash==pair['markdown_hash'],'Specification Markdown changed during preflight.','SPEC_APPROVAL_STALE')
+            else:
+                try:current_spec=json.loads(path.read_text(encoding='utf-8'))
+                except (OSError,ValueError) as exc:raise WorkflowError('SPEC_APPROVAL_STALE','Specification changed during preflight.') from exc
+                _require(current_spec==spec and content_hash(current_spec)==pair['content_hash'] and _file_hash(path)==current_hash,'Specification JSON changed during preflight.','SPEC_APPROVAL_STALE')
+            files[str(path)]=current_hash
         for name in ('docs/devflow-context.json','docs/devflow-ground-interview.json'):
             path=repo/name
-            if path.exists():files[str(path)]=_file_hash(path)
+            files[str(path)]=_file_hash(path) if path.exists() else None
     tail=next((event for event in state['operations'].values() if event['sequence']==state['version']),None)
     bindings={'run_hash':digest(actual),'locations':locations,'spec_pair':deepcopy(pair),'approval_hash':digest(data.get('approval')),
         'governing_hash':digest(data.get('governing_input_receipt')),'files':files,'tail_hash':digest(tail) if tail else None}
@@ -108,11 +139,17 @@ def prepare_context(root:Path,run:dict,envelope:dict,item_ids:list[str],*,stage:
     # Reserve diagnostic shape before optional content spends the byte budget.
     scoped_envelope['preparation']={'preflight_ms':9999999999999,'worker_ms':9999999999999,'total_ms':9999999999999,'journal_version':state['version'],'binding_hash':'0'*64}
     payload={'root':str(root),'scope':scope,'run':projected,'envelope':scoped_envelope,'selection':selection,'sources':sources,'policy':policy}
-    elapsed=max(int((time.monotonic()-started)*1000),checked['timing']['preflight_ms'])
+    elapsed=borrowed_read_ms+max(int((time.monotonic()-started)*1000),checked['timing']['preflight_ms'])
     return PreparedContext(str(root),state['version'],scope,payload,bindings,elapsed,_identity(str(root),state['version'],scope,payload,bindings),state)
 
 
-def assert_preparation_current(root:Path,prepared:PreparedContext,state:dict)->None:
+def assert_preparation_current(root:Path,prepared:PreparedContext,state:dict,*,phase='freshness')->None:
+    try:_assert_preparation_current(root,prepared,state)
+    except WorkflowError as exc:
+        raise WorkflowError(exc.code,str(exc),{**exc.details,'phase':phase}) from exc
+
+
+def _assert_preparation_current(root:Path,prepared:PreparedContext,state:dict)->None:
     _require(isinstance(prepared,PreparedContext) and str(Path(root).resolve())==prepared.root,'Prepared context belongs to another root.')
     _require(prepared.binding_hash==_identity(prepared.root,prepared.journal_version,prepared.scope,prepared.payload,prepared.source_bindings),'Prepared context content changed.')
     _require(state['version']==prepared.journal_version,'Journal advanced after preparation.')
@@ -136,7 +173,9 @@ def assert_preparation_current(root:Path,prepared:PreparedContext,state:dict)->N
         binding=validate_binding(data,prepared.scope['binding_id'],prepared.scope['revision'])
         _require(binding['run_id']==prepared.scope['run_id'],'Host scope changed.','CONTEXT_SCOPE_CHANGED')
     for path,wanted in prepared.source_bindings['files'].items():
-        _require(_file_hash(path)==wanted,'Context source changed after preparation.','CONTEXT_SOURCE_CHANGED')
+        if wanted is None:
+            _require(not Path(path).exists() and not Path(path).is_symlink(),'A new governing input appeared after preparation.','CONTEXT_SOURCE_CHANGED')
+        else:_require(_file_hash(path)==wanted,'Context source changed after preparation.','CONTEXT_SOURCE_CHANGED')
 
 
 def compose_prepared(prepared_payload:dict)->dict:
@@ -160,3 +199,27 @@ def normalize_stage(stage):
     return {'build':'implementation','verification':'implementation','branch-review':'review','item-review':'review',
         'pr-review':'review','pr-rework':'implementation','scan':'ingest','debugging':'build-work','hardening':'build-work',
         'architecture':'project-context','security':'review-work','delivery':'workflow','pr-opening':'workflow','delivered':'workflow','discarded':'workflow'}.get(stage,stage)
+
+
+def read_context_state(root:Path)->dict:
+    """Internal caller timing, kept outside the public replayed state shape."""
+    started=time.perf_counter();state=read_state(root)
+    return {**state,'_context_read_ms':max(0,int((time.perf_counter()-started)*1000))}
+
+
+def commit_prepared_attempt(root:Path,prepared:PreparedContext,operation_id:str,event:dict)->dict:
+    from .store import transact
+    _require(isinstance(prepared,PreparedContext),'An internal prepared context is required.')
+    request=event.get('payload',{});attempt=prepared.scope.get('attempt') or {}
+    kind='run.reverification.started' if attempt.get('mode')=='reverify' else 'run.attempt.issued'
+    _require(event.get('kind')==kind and request.get('run_id')==prepared.scope['run_id']
+        and request.get('attempt')==attempt,'Attempt event differs from the prepared transition.')
+    try:
+        result=transact(root,prepared.journal_version,operation_id,event,
+            precommit=lambda state:assert_preparation_current(root,prepared,state,phase='commit'))
+    except WorkflowError as exc:
+        if exc.code=='STALE_STATE':raise WorkflowError('CONTEXT_PREPARATION_STALE','Journal advanced after context preparation; retry with current inputs.',{'phase':'commit','action':'Rebuild current context before retrying.'}) from exc
+        raise
+    _require(result['event']['kind']==kind and result['event']['payload'].get('run_id')==prepared.scope['run_id'],
+        'Operation ID belongs to another transition.','OPERATION_CONFLICT')
+    return result

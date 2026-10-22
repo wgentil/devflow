@@ -70,6 +70,8 @@ complete arguments and the current verifier contracts before configuring tools.
 
 ## Failure and recovery
 
+If required context preparation blocks, use [preparation recovery](../../docs/context-efficiency.md#preparation-recovery). Distinguish worker time from input preflight and byte limits; resolve the reported phase before starting work.
+
 Check `passed` and `failure`, not just shell exit status. Fix failed implementation
 and rerun. An opted-in, explicit bounded repair cycle can launch the current
 implementer for failed configured hardening gates and rerun those gates; see

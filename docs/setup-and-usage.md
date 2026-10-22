@@ -567,4 +567,5 @@ For a context byte-budget error, the harness can explain which components are
 large. Explicitly allow a larger context budget or split the task while retaining
 all applicable rules. Unrelated delivered history is not task prompt content.
 There is no automatic journal compaction or archival step. See the
-[context limits and diagnostics](context-efficiency.md#mandatory-context-byte-diagnostics).
+[context limits and diagnostics](context-efficiency.md#mandatory-context-byte-diagnostics)
+and [preparation recovery](context-efficiency.md#preparation-recovery).

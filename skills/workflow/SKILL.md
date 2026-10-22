@@ -14,7 +14,9 @@ Read [shared invariants](../../docs/reference/workflow-invariants.md) and the de
 ```mermaid
 flowchart LR
     Scope[Current task and declared inputs] --> Checks[Live checks and shared invariants]
-    Checks --> Work[Stage responsibility]
+    Checks --> Prep{Required context ready?}
+    Prep -->|Blocked| Context[Explain phase and resolve preparation]
+    Prep -->|Ready| Work[Stage responsibility]
     Work --> Result{Worker outcome}
     Result -->|Complete scoped report| Evidence[Current evidence and next gate]
     Result -->|Stale completed proof| Reverify[Reverify with fresh token and GREEN]
@@ -29,6 +31,8 @@ flowchart LR
 <!-- /devflow:routes -->
 
 For stale completed code, use [reverification](../build-work/REFERENCE.md#reverify-completed-work).
+
+For context timeout, stale preparation or mandatory overflow, follow [preparation recovery](../../docs/context-efficiency.md#preparation-recovery) before starting work.
 
 ## Documentation
 

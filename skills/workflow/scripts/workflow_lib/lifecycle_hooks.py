@@ -58,7 +58,7 @@ def _dispatch_worker(name: str, request: dict, *, deadline_seconds: float = 5,
             if len(canonical(body)) > max_bytes:
                 body = {'status': 'block', 'reason_code': 'HOOK_OUTPUT_OVERFLOW'}
         except TimeoutError:
-            body = {'status': 'block', 'reason_code': 'HOOK_DEADLINE_EXCEEDED'}
+            body = {'status': 'block', 'reason_code': 'HOOK_DEADLINE_EXCEEDED', 'details': {'phase': 'worker', 'action': 'Retry from current inputs; retain diagnostics if bounded composition still times out.'}}
         except (ValueError, EOFError, OSError, RuntimeError, TypeError):
             body = {'status': 'block', 'reason_code': 'HOOK_OUTPUT_INVALID'}
     result = _finish(body, name, request, started, deadline_seconds, max_bytes, required)
@@ -125,7 +125,7 @@ def execute_hook(name: str, request: dict, *, max_bytes: int, deadline_seconds: 
 def _prepared_response(root,prepared,*,deadline_seconds=5,max_bytes=8192,required=True):
     from .context_transport import store_preparation,remove_preparation
     from .context_preparation import assert_preparation_current,finish_prepared
-    assert_preparation_current(root,prepared,prepared._state)
+    assert_preparation_current(root,prepared,prepared._state,phase='preflight')
     reference=store_preparation(root,prepared)
     try:
         response=_dispatch_worker('prepare-context',{'root':str(Path(root).resolve()),'run_id':prepared.scope['run_id'],

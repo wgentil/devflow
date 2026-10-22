@@ -177,7 +177,8 @@ def invoke(root,request,operation_id):
     lease=root/'native-invocations'/hashlib.sha256((binding['run_id']+':'+identifier).encode()).hexdigest();lease.parent.mkdir(parents=True,exist_ok=True)
     with _native_lease(lease) as lock:
         # Another launcher may have completed between the initial read and lease acquisition.
-        data=read_state(root)['data'];run=data['runs'][binding['run_id']]
+        from .context_preparation import read_context_state
+        authoritative=read_context_state(root);data=authoritative['data'];run=data['runs'][binding['run_id']]
         prior=run.get('native_invocations',{}).get(identifier)
         if prior:
             if prior.get('request_hash')!=request_hash or prior.get('operation_id')!=operation_id:raise WorkflowError('OPERATION_CONFLICT','Invocation ID belongs to another request.')
@@ -187,7 +188,7 @@ def invoke(root,request,operation_id):
         try:
             from .context_checkpoints import checkpoint_read
             context_limit = request.get('context_max_bytes', 20000)
-            full_view = host_brief(data, binding, control_root=root, max_bytes=context_limit, stage_override=stage)
+            full_view = host_brief(data, binding, control_root=root, max_bytes=context_limit, stage_override=stage,authoritative_state=authoritative)
             full_view = checkpoint_read(root, full_view, {'consumer_id': identifier, 'run_id': binding['run_id'],
                 'binding_id': binding['binding_id'], 'session_id': binding['session_id'], 'revision': binding['revision'],
                 'stage': stage, 'role': binding['role'], 'task_ids': [item['id'] for item in full_view['work_items']]},

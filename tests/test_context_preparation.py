@@ -65,3 +65,34 @@ class ContextPreparationTests(unittest.TestCase):
         self.assertEqual(response['status'],'allow')
         self.assertLessEqual(len(canonical(response)),8192)
         self.assertEqual(response['output_bytes'],len(canonical(response)))
+
+    def test_untrusted_envelope_cannot_inject_approval_or_history(self):
+        from workflow_lib.context_preparation import prepare_context
+        for extra in ({'authorization_scope':{'write':True}},{'reviews':{'raw_history':'must not cross worker boundary'}},{'run_id':'foreign'}):
+            with self.subTest(extra=extra):
+                with self.assertRaises(WorkflowError):prepare_context(self.f['root'],self.f['run'],{'run_id':'current',**extra},['W1'],stage='implementation')
+
+    def test_required_worker_timeout_identifies_phase_and_keeps_token_absent(self):
+        from workflow_lib.lifecycle_hooks import run_lifecycle_hook
+        from workflow_lib.process_liveness import process_alive
+        worker=self.f['repo']/'slow.py';pid=self.f['root']/'worker.pid'
+        worker.write_text('import os,sys,time\nfrom pathlib import Path\nsys.stdin.readline()\nPath('+repr(str(pid))+').write_text(str(os.getpid()))\ntime.sleep(30)\n')
+        with patch('workflow_lib.lifecycle_hooks.WORKER_PATH',worker):
+            response=run_lifecycle_hook('prepare-context',{'root':str(self.f['root']),'run_id':'current','item_ids':['W1']},required=True,deadline_seconds=0.3)
+        self.assertEqual(response['reason_code'],'HOOK_DEADLINE_EXCEEDED')
+        self.assertFalse(process_alive(int(pid.read_text())))
+        self.assertIsNone(read_state(self.f['root'])['data']['runs']['current']['active_attempt'])
+        self.assertEqual(response['details']['phase'],'worker')
+        self.assertEqual(response['limits']['deadline_seconds'],0.3)
+
+    def test_parent_elapsed_preflight_over_five_seconds_preserves_worker_allowance(self):
+        import time
+        from workflow_lib.repo_input_gate import preflight_inputs
+        from workflow_lib.lifecycle_hooks import run_lifecycle_hook
+        clock=time.monotonic;offset=[0]
+        def costly(*args,**kw):
+            value=preflight_inputs(*args,**kw);offset[0]=6;return value
+        with patch('time.monotonic',side_effect=lambda:clock()+offset[0]),patch('workflow_lib.context_preparation.preflight_inputs',side_effect=costly):
+            response=run_lifecycle_hook('prepare-context',{'root':str(self.f['root']),'run_id':'current','item_ids':['W1']},required=True)
+        self.assertEqual(response['status'],'allow',response)
+        self.assertGreaterEqual(response['result']['preparation']['preflight_ms'],6000)

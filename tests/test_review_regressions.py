@@ -165,15 +165,15 @@ class ReviewRegressions(unittest.TestCase):
         transact(self.control, 0, 'seed', {'kind': 'fixture', 'payload': fixture})
         self.cli('run', 'start', '--root', self.control, '--run-id', 'r')
 
-        def concurrent_issue(root, version, operation_id, event):
+        def concurrent_issue(root, version, operation_id, event, **kwargs):
             run = read_state(root)['data']['runs']['r']
             issued = issue_attempt(run, 'W1')
             transact(root, version, operation_id, {'kind': 'run.attempt.issued',
                      'payload': {'run_id': 'r', 'attempt': issued['active_attempt']}})
-            return transact(root, version, operation_id, event)
+            return transact(root, version, operation_id, event, **kwargs)
 
         stdout = io.StringIO()
-        with patch.object(dispatcher, 'transact', side_effect=concurrent_issue), redirect_stdout(stdout):
+        with patch('workflow_lib.store.transact', side_effect=concurrent_issue), redirect_stdout(stdout):
             code = dispatcher.main(['run', 'next', '--root', str(self.control), '--run-id', 'r',
                                     '--item', 'W2', '--operation-id', 'race'])
         self.assertEqual(code, 2)

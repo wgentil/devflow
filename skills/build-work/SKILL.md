@@ -14,7 +14,9 @@ Read [shared invariants](../../docs/reference/workflow-invariants.md) and the de
 ```mermaid
 flowchart LR
     Scope[Current task and declared inputs] --> Checks[Live checks and shared invariants]
-    Checks --> Source[Same-token RED or explicit qualified recorded RED]
+    Checks --> Prep{Required context ready?}
+    Prep -->|Blocked| Context[Explain phase and resolve preparation]
+    Prep -->|Ready| Source[Same-token RED or explicit qualified recorded RED]
     Source --> Work[Fresh verification]
     Work --> Result{Worker outcome}
     Result -->|Complete scoped report| Evidence[Current evidence and next gate]
@@ -29,6 +31,8 @@ flowchart LR
 <!-- /devflow:routes -->
 
 Recorded RED can support a fresh GREEN attempt only through [explicit qualified reuse](REFERENCE.md#reusing-recorded-red).
+
+For context timeout, stale preparation or mandatory overflow, follow [preparation recovery](../../docs/context-efficiency.md#preparation-recovery) before starting work.
 
 ## Documentation
 

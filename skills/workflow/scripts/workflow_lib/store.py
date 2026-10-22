@@ -679,7 +679,7 @@ def _atomic_json(path: Path, value: dict) -> None:
         raise
 
 
-def transact(root: Path, expected_version: int, operation_id: str, event: dict) -> dict:
+def transact(root: Path, expected_version: int, operation_id: str, event: dict, *, precommit=None) -> dict:
     """Append one idempotent event if the caller's state version is current."""
     root = Path(root)
     if not isinstance(operation_id, str) or not operation_id:
@@ -716,6 +716,7 @@ def transact(root: Path, expected_version: int, operation_id: str, event: dict) 
             return {"state": state, "event": previous, "replayed": True}
         if expected_version != state["version"]:
             raise WorkflowError("STALE_STATE", f"expected state version {expected_version}, current version is {state['version']}")
+        if precommit is not None:precommit(state)
         if event["kind"] == "spec.approved" and state["data"].get("spec_pair"):
             from .repo_specs import assert_repo_spec_approval
             from .specs import require_mermaid_diagram
