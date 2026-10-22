@@ -132,6 +132,33 @@ class WindowsJobCompletionTests(unittest.TestCase):
         api.TerminateJobObject.assert_not_called()
         api.CloseHandle.assert_not_called()
 
+    def test_exit_race_waits_for_handle_when_terminate_reports_already_exiting(self):
+        job, api = self.job([0])
+        snapshots = iter([[123], []])
+        def query(handle, kind, info, size, returned):
+            if kind == 3:
+                ids = next(snapshots)
+                info._obj.NumberOfAssignedProcesses = len(ids)
+                info._obj.NumberOfProcessIdsInList = len(ids)
+                for index, pid in enumerate(ids):
+                    info._obj.ProcessIdList[index] = pid
+            return 1
+        api.QueryInformationJobObject.side_effect = query
+        api.OpenProcess.return_value = 99
+        api.IsProcessInJob.side_effect = lambda handle, job_handle, member: (setattr(member._obj, 'value', 1) or 1)
+        api.TerminateProcess.return_value = 0
+        completed = False
+        def wait(handle, milliseconds):
+            nonlocal completed
+            if milliseconds:
+                completed = True
+            return 0 if completed else 258
+        api.WaitForSingleObject.side_effect = wait
+        job.stop()
+        self.assertIsNone(job.handle)
+        api.TerminateProcess.assert_called_once_with(99, 1)
+        self.assertEqual(api.CloseHandle.call_count, 2)
+
     @unittest.skipUnless(sys.platform == 'win32', 'requires native Windows Job and process handles')
     def test_exited_leader_descendant_is_signaled_before_close_returns(self):
         import ctypes

@@ -86,8 +86,10 @@ class WindowsJob:
                     self.members[pid] = handle
             for handle in self.members.values():
                 if self.api.WaitForSingleObject(handle, 0) != 0:
-                    if not self.api.TerminateProcess(handle, 1) and self.api.WaitForSingleObject(handle, 0) != 0:
-                        raise OSError('TerminateProcess failed; tree cleanup is unconfirmed')
+                    # A process already exiting may reject TerminateProcess
+                    # before its handle is signaled. Only the bounded wait
+                    # establishes completion, regardless of termination's return.
+                    self.api.TerminateProcess(handle, 1)
                     remaining = max(0, int((deadline - time.monotonic()) * 1000))
                     if self.api.WaitForSingleObject(handle, remaining) != 0:
                         raise TimeoutError('Windows tree cleanup is unconfirmed')
