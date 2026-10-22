@@ -99,3 +99,7 @@ existing repository paths may be retained. These fixtures are not approval evide
 [delegation-request.json](delegation-request.json) illustrates prepared task facts; replace identities and add `item_id` for item-bound work. [routing-evaluation-report.json](routing-evaluation-report.json) is synthetic offline output, not measured savings.
 
 Runner report shapes: [JSON](target-test-report.json) and [JUnit](target-test-report.junit.xml) describe the same target. They are format examples, not proof; project runners must execute actual tests. [Prior findings](prior-findings.json) supplies reviewer context, not automatic resolution. See [runner requirements](../../skills/build-work/REFERENCE.md#runner-reports-and-executable-failures).
+
+[Context preparation diagnostics](context-preparation-diagnostics.json) is synthetic
+output from an intentionally oversized required item. Paths are placeholders;
+component totals describe that fixture, not a performance claim.

@@ -63,8 +63,12 @@ def assemble_brief(run: dict, context: dict, stage: dict, selected_ids: list[str
     required_artifacts = stage.get("required_artifacts")
     if required_artifacts is not None:
         artifacts = {key: artifacts[key] for key in required_artifacts if key in artifacts}
+    resume=resume_status(run)
+    if selected:
+        relevant=set(selected_ids)|{dependency for item in selected for dependency in item.get('dependencies',[])}
+        resume['latest_attempts']={key:value for key,value in resume['latest_attempts'].items() if key in relevant}
     brief = {
-        **resume_status(run),
+        **resume,
         "run_id": run["id"], "stage": stage.get("name", ""), "attempt_id": attempt_id,
         "work_items": [{key: item[key] for key in ("id", "kind", "requirement_ids", "acceptance_criteria", "dependencies") if key in item}
                        for item in selected],

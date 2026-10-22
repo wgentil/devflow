@@ -147,11 +147,11 @@ def compose_prepared(prepared_payload:dict)->dict:
 
 
 def finish_prepared(prepared,result,worker_ms=0):
-    from .briefs import _size_and_estimate
+    from .task_views import _measure_view
     result=deepcopy(result)
     result['preparation']={'preflight_ms':prepared.preflight_ms,'worker_ms':worker_ms,'total_ms':prepared.preflight_ms+worker_ms,
         'journal_version':prepared.journal_version,'binding_hash':prepared.binding_hash}
-    result=_size_and_estimate(result,prepared.scope['context_max_bytes'],result.get('budget',{}).get('optional_omitted',[]))
+    result=_measure_view({k:v for k,v in result.items() if k!='task_view'},result['task_view'],prepared.scope['context_max_bytes'],result.get('budget',{}).get('optional_omitted',[]))
     _require(result['budget']['serialized_bytes']<=prepared.scope['context_max_bytes'],'Prepared context exceeds its byte budget.','CONTEXT_BUDGET_EXCEEDED')
     return result
 

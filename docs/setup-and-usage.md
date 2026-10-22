@@ -554,3 +554,17 @@ The harness supplies task facts and guides model/effort decisions within your co
 ## Recovering verification and review
 
 The harness guides recovery within the current run when later commits stale completed code evidence or an item reviewer requests a correction. It can issue a fresh attempt, explicitly reuse a qualifying recorded RED, run fresh GREEN and bind the result to its proof. Keep implementation files in place. Exact repository freshness still applies; finish planned commits before renewing stale proofs. See [build recovery](../skills/build-work/REFERENCE.md#reverify-completed-work) and [item review corrections](../skills/review-work/GUIDE.md#item-correction-recovery).
+
+
+## Context preparation on long-lived projects
+
+The harness checks journal and approved inputs before starting its bounded context
+worker. Total preparation can take longer than the worker's five-second limit.
+A stale-preparation result means inputs changed; ask the harness to rebuild current
+context before trying again. Required context errors do not issue a new attempt.
+
+For a context byte-budget error, the harness can explain which components are
+large. Explicitly allow a larger context budget or split the task while retaining
+all applicable rules. Unrelated delivered history is not task prompt content.
+There is no automatic journal compaction or archival step. See the
+[context limits and diagnostics](context-efficiency.md#mandatory-context-byte-diagnostics).

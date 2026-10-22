@@ -174,3 +174,21 @@ flowchart LR
     Worker --> Live[Recheck source and version bindings]
     Live --> View[Complete context or bounded inspection reference]
 ```
+
+
+## Mandatory context byte diagnostics
+
+Selected-item briefs include the selected work and its declared dependencies'
+latest attempts, not unrelated items' result bodies. Task views preserve selected
+requirements and shared specification facts in both Markdown and JSON, including
+unclassified shared metadata. Governing rules and required dependency closure are
+never dropped to make a view fit. Optional whole units are omitted first, after
+reserving artifact references and diagnostics.
+
+`budget.component_bytes` partitions actual serialized UTF-8 bytes into requirements,
+shared specification, governing, stage documents, control envelope, artifact
+references, optional content and serialization overhead. The latter includes graph,
+binding and budget metadata plus punctuation; categories sum to `serialized_bytes`.
+Required overflow retains `CONTEXT_BUDGET_EXCEEDED` and adds composition phase,
+component sizes and a supported recovery action. A real oversized required fact
+still blocks; references do not silently replace mandatory context.

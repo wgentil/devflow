@@ -64,6 +64,53 @@ def governing_selections(receipt: dict, repositories: dict) -> tuple[dict, dict]
         raise WorkflowError('CONTEXT_GOVERNING_INCOMPLETE', 'applicable governing receipt cannot be projected completely') from exc
 
 
+def _spec_content(subset,representation):
+    if representation=='json':
+        content=canonical(subset).decode('utf-8')
+        requirements=canonical(subset['requirements']).decode('utf-8')
+        return content,len(canonical(requirements))-2
+    content=render_spec(subset)
+    extras={k:v for k,v in subset.items() if k not in {'mode','title','requirements','diagrams'}}
+    requirement_extras={r['id']:{k:v for k,v in r.items() if k not in {'id','title','text','acceptance_criteria','provenance'}} for r in subset['requirements']}
+    requirement_extras={k:v for k,v in requirement_extras.items() if v}
+    if requirement_extras:extras['requirement_metadata']=requirement_extras
+    if extras:content+='\n## Shared specification facts\n\n```json\n'+canonical(extras).decode('utf-8')+'\n```\n'
+    prefix=render_spec({'mode':subset['mode'],'requirements':[]})
+    requirement_bytes=sum(len(canonical(render_spec({'mode':subset['mode'],'requirements':[r]})[len(prefix):]))-2 for r in subset['requirements'])
+    return content,requirement_bytes
+
+
+def context_component_bytes(envelope:dict,task:dict)->dict:
+    """Partition actual wire bytes; punctuation and binding metadata remain explicit."""
+    total=len(canonical({**envelope,'task_view':task}))
+    parts={k:0 for k in ('requirements','shared_spec','governing','stage_documents','control_envelope','artifact_references','optional','serialization_overhead')}
+    governed={v['source_id'] for v in task.get('governing',{}).values()}
+    for unit in task.get('units',[]):
+        size=len(canonical(unit))
+        if unit.get('source_id')=='specification':
+            requirements=unit.get('requirement_content_bytes',0)
+            parts['requirements']+=requirements;parts['shared_spec']+=size-requirements
+        elif unit.get('required') is False:parts['optional']+=size
+        elif unit.get('source_id') in governed:parts['governing']+=size
+        else:parts['stage_documents']+=size
+    parts['control_envelope']=sum(len(canonical({k:v}))-2 for k,v in envelope.items() if k!='budget')
+    parts['artifact_references']=sum(len(canonical({k:task[k]}))-2 for k in ('artifact_id','artifact_ref','content_bytes','inspection') if k in task)
+    parts['serialization_overhead']=total-sum(parts.values())
+    parts['serialized_bytes']=total
+    return parts
+
+
+def _measure_view(envelope,task,max_bytes,omitted):
+    value=_size_and_estimate({**deepcopy(envelope),'task_view':deepcopy(task)},max_bytes,omitted)
+    for _ in range(20):
+        parts=context_component_bytes({k:v for k,v in value.items() if k!='task_view'},value['task_view'])
+        value['budget']['component_bytes']=parts
+        size=len(canonical(value));value['budget'].update(serialized_bytes=size,estimated_tokens=(size+3)//4)
+        if (parts==context_component_bytes({k:v for k,v in value.items() if k!='task_view'},value['task_view'])
+                and size==len(canonical(value))):return value
+    raise WorkflowError('CONTEXT_ACCOUNTING_INVALID','Context byte accounting did not converge.')
+
+
 def build_task_view(run: dict, envelope: dict, selection: dict, sources: dict, policy: dict, *,
                     root: Path | None, max_bytes: int = 20000, representation: str = 'markdown',
                     output_mode: str = 'full') -> dict:
@@ -84,8 +131,9 @@ def build_task_view(run: dict, envelope: dict, selection: dict, sources: dict, p
     if set(required_requirements) - requirement_map.keys():
         raise WorkflowError('CONTEXT_REQUIREMENT_MISSING', 'task references missing specification requirements')
     subset = {**spec, 'requirements': [requirement_map[rid] for rid in required_requirements]}
-    spec_content = render_spec(subset) if representation == 'markdown' else canonical(subset).decode('utf-8')
+    spec_content,requirement_bytes = _spec_content(subset,representation)
     spec_unit = {'id': 'specification', 'source_id': 'specification', 'content': spec_content,
+                 'required':True,'requirement_content_bytes':requirement_bytes,
                  'content_hash': hashlib.sha256(spec_content.encode('utf-8')).hexdigest(),
                  'source_hash': selection.get('spec_hash',content_hash(spec)), 'reasons': ['task-requirements'], 'requirement_ids': required_requirements}
     governing = selection.get('governing', {})
@@ -108,7 +156,7 @@ def build_task_view(run: dict, envelope: dict, selection: dict, sources: dict, p
     required_document_ids = {d['source_id'] for d in mandatory if not str(d.get('reason', '')).startswith('governing:')}
     required_ids = sorted(set(required_requirements) | set(governing) | required_document_ids)
     task = {'schema_version': 1, 'representation': representation, 'required_ids': required_ids,
-            'units': [spec_unit, *selected['units']], 'dependencies': selected['dependencies'],
+            'units': [spec_unit, *[{**u,'required':True} for u in selected['units']]], 'dependencies': selected['dependencies'],
             'source_hashes': {'specification': selection.get('spec_hash',content_hash(spec)), **selected['source_hashes']},
             'source_provenance': selected['source_provenance'], 'governing': governing,
             'coverage': {'supplied_ids': required_ids, 'missing_ids': [], 'semantic_omissions': 'unknown'},
@@ -120,10 +168,13 @@ def build_task_view(run: dict, envelope: dict, selection: dict, sources: dict, p
             extra = resolve([document])
             candidate = deepcopy(task)
             present = {u['id'] for u in candidate['units']}
-            candidate['units'].extend(u for u in extra['units'] if u['id'] not in present)
+            candidate['units'].extend({**u,'required':False} for u in extra['units'] if u['id'] not in present)
             candidate['dependencies'].update(extra['dependencies'])
             candidate['source_hashes'].update(extra['source_hashes'])
-            projected = _size_and_estimate({**deepcopy(envelope), 'task_view': candidate}, max_bytes, omitted)
+            preview=deepcopy(candidate)
+            if root is not None:
+                preview.update(artifact_id='0'*64,artifact_ref=str(Path(root).resolve()/'context-artifacts'/('0'*64+'.json')),content_bytes=len(canonical(candidate)))
+            projected = _measure_view(envelope,preview,max_bytes,omitted)
             if projected['budget']['serialized_bytes'] > max_bytes:
                 raise WorkflowError('CONTEXT_OPTIONAL_OVERFLOW', 'optional document exceeds load budget')
             task = candidate
@@ -137,10 +188,11 @@ def build_task_view(run: dict, envelope: dict, selection: dict, sources: dict, p
             raise WorkflowError('CONTROL_ROOT_REQUIRED', 'reference output needs a selected control root')
         task = {key: task[key] for key in ('schema_version', 'artifact_id', 'artifact_ref', 'required_ids', 'coverage', 'representation')}
         task['inspection'] = 'context-artifact inspect --root CONTROL --id ' + refs['artifact_id']
-    result = _size_and_estimate({**deepcopy(envelope), 'task_view': task}, max_bytes, omitted)
+    result = _measure_view(envelope,task,max_bytes,omitted)
     if result['budget']['serialized_bytes'] > max_bytes:
         raise WorkflowError('CONTEXT_BUDGET_EXCEEDED', 'mandatory task context exceeds max_bytes', {
             'required_bytes': result['budget']['serialized_bytes'], 'max_bytes': max_bytes,
+            'phase':'composition','component_bytes':result['budget']['component_bytes'],
             'artifact_refs': refs or {sid: source['path'] for sid, source in sources.items()},
             'action': 'Rescope the task or explicitly increase the context byte budget; do not truncate required facts.'})
     return result

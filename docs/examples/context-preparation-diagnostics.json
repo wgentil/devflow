@@ -1,0 +1,27 @@
+{
+  "example_only": true,
+  "error": "CONTEXT_BUDGET_EXCEEDED",
+  "message": "mandatory task context exceeds max_bytes",
+  "details": {
+    "required_bytes": 40130,
+    "max_bytes": 20000,
+    "phase": "composition",
+    "component_bytes": {
+      "requirements": 37090,
+      "shared_spec": 362,
+      "governing": 387,
+      "stage_documents": 340,
+      "control_envelope": 92,
+      "artifact_references": 282,
+      "optional": 0,
+      "serialization_overhead": 1577,
+      "serialized_bytes": 40130
+    },
+    "artifact_refs": {
+      "artifact_id": "929f15f89ae8e208ecd8de41aa0412d0ba5d178e0a0fd32e08e949be034439e2",
+      "artifact_ref": "CONTROL/context-artifacts/929f15f89ae8e208ecd8de41aa0412d0ba5d178e0a0fd32e08e949be034439e2.json",
+      "content_bytes": 39353
+    },
+    "action": "Rescope the task or explicitly increase the context byte budget; do not truncate required facts."
+  }
+}

@@ -650,3 +650,14 @@ limit excludes parent journal/input checks; these fields do not promise total
 five-second CLI latency. Scoped worker inputs are internal and never approve work.
 `CONTEXT_PREPARATION_STALE` requires fresh preparation from current inputs. Existing
 helper calls remain live-validating; no trusted-snapshot CLI flag is provided.
+
+
+A selected-item `run brief` scopes latest attempts to the selected work and its
+dependencies. `budget.component_bytes` reports actual UTF-8 wire costs. On
+`CONTEXT_BUDGET_EXCEEDED`, inspect `required_bytes`, `max_bytes`, `phase`,
+`component_bytes` and `action`. Explicit `run next/brief --max-bytes` can raise
+that request's context allowance; otherwise reduce task scope without omitting
+required rules. No journal archive/compaction command is provided by this change.
+
+See the [synthetic required-overflow response](examples/context-preparation-diagnostics.json)
+for the diagnostic field shape; it is not evidence for a real project.
