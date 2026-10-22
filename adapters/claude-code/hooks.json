@@ -25,7 +25,8 @@
             "args": [
               "-B",
               "${CLAUDE_PLUGIN_ROOT}/adapters/claude-code/hook.py"
-            ]
+            ],
+            "onFailure": "block"
           }
         ]
       }
@@ -40,7 +41,8 @@
             "args": [
               "-B",
               "${CLAUDE_PLUGIN_ROOT}/adapters/claude-code/hook.py"
-            ]
+            ],
+            "onFailure": "block"
           }
         ]
       }

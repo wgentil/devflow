@@ -230,3 +230,13 @@ acceptance. Retain it for audit and attach a fresh run from the revalidated plan
 The source host stays active when a handoff is rejected.
 
 For delegated workers, use [task facts and host controls](reference/task-routing.md). Prepared interactive input is not execution; no production interactive bridge ships.
+
+## Claude launcher failure policy
+
+Mandatory `UserPromptSubmit` and `TaskCompleted` exec hooks declare
+`onFailure: block`, requiring Claude Code 2.1.295+ for this policy. A host-side
+launcher failure therefore cannot silently bypass those mandatory hooks on that
+supported host profile. SessionStart/Stop retain their diagnostic policy. Python
+3.11+ must be available through the descriptor's `python3` executable; DevFlow does
+not create an alias or install a runtime. Script tests, host schema validation and
+actual installed event dispatch are separate [acceptance gates](windows-validation.md).

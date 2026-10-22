@@ -80,3 +80,34 @@ class HookTests(unittest.TestCase):
         result=self.call();self.assertEqual(result.returncode,2)
         self.assertIn('PROJECT_BINDING_MISMATCH',result.stderr)
         self.assertEqual(self.call(task='ordinary').returncode,0)
+
+    def test_descriptor_launch_from_unicode_package_root(self):
+        import shutil
+        package = Path(self.temp.name) / 'installed plugin é東京'
+        source = HOOK.resolve().parents[2]
+        package.mkdir()
+        for folder in ('skills', 'adapters', 'definitions', '.claude-plugin', '.codex-plugin'):
+            if (source / folder).exists():
+                shutil.copytree(source / folder, package / folder, ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
+        shutil.copy2(source / 'plugin.json', package / 'plugin.json')
+        descriptor = json.loads((package / 'adapters/claude-code/hooks.json').read_text(encoding='utf-8'))
+        handler = descriptor['hooks']['TaskCompleted'][0]['hooks'][0]
+        argv = [handler['command'], *[arg.replace('${CLAUDE_PLUGIN_ROOT}', str(package)) for arg in handler['args']]]
+        result = subprocess.run(argv, input=json.dumps({'hook_event_name': 'TaskCompleted', 'cwd': str(self.project),
+            'session_id': 'é東京', 'task_id': 'é東京'}).encode('utf-8'), capture_output=True, timeout=handler['timeout'])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse((self.project / '.devflow').exists())
+
+    def test_hook_launcher_failure_blocks_mandatory_events(self):
+        import contextlib
+        import importlib.util
+        import io
+        from unittest.mock import patch
+        spec = importlib.util.spec_from_file_location('installed_hook_launch_failure', HOOK)
+        hook = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(hook)
+        for event in ('UserPromptSubmit', 'TaskCompleted'):
+            payload = {'hook_event_name': event, 'cwd': str(self.project), 'session_id': 's1', 'task_id': 'task'}
+            stdin = io.TextIOWrapper(io.BytesIO(json.dumps(payload).encode('utf-8')), encoding='utf-8')
+            with self.subTest(event=event), patch.object(sys, 'stdin', stdin), patch.object(sys, 'executable', str(self.project / 'missing-python')), contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(hook.main(), 2)

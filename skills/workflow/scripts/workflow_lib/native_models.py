@@ -16,6 +16,7 @@ from .host_models import delegated_configuration
 from .host_route_controls import execution_path_capabilities, collect_claude_overrides
 from .releases import PACKAGE_ROOT
 from .process_transport import JsonLineProcess, bounded_capture, stop_tree
+from .native_executables import resolve_native_argv
 
 MAX_OUTPUT=2*1024*1024
 
@@ -63,7 +64,7 @@ def _stop(process):
 def run_bounded(argv, cwd, timeout=30):
     """Bound bytes during capture, not after an unbounded communicate()."""
     if os.name == 'nt':
-        try: return bounded_capture(argv, cwd, timeout, MAX_OUTPUT)
+        try: return bounded_capture(resolve_native_argv(argv), cwd, timeout, MAX_OUTPUT)
         except TimeoutError as exc: raise NativeError('network', str(exc)) from exc
         except ValueError as exc: raise NativeError('context', str(exc)) from exc
         except (OSError, RuntimeError) as exc: raise NativeError('unavailable', str(exc)) from exc
@@ -96,7 +97,7 @@ class RPC:
     def __init__(self,cwd,argv=None):
         self.transport = None
         if os.name == 'nt':
-            try: self.transport = JsonLineProcess(argv or ['codex','app-server'], cwd, MAX_OUTPUT)
+            try: self.transport = JsonLineProcess(argv if argv is not None else resolve_native_argv(['codex','app-server']), cwd, MAX_OUTPUT)
             except OSError as exc: raise NativeError('unavailable','Codex app-server is unavailable.') from exc
             self.process = self.transport.process
             self.sequence=0;self.notifications=[];self.total=0

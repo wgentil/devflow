@@ -175,3 +175,25 @@ No production interactive bridge ships; see [host control limits](reference/task
 
 See [outcomes and evaluation](reference/task-routing.md#outcomes-and-evaluation)
 for scoped worker reports, `stats routing` and reviewed offline comparisons.
+
+## Native Windows executable forms
+
+Windows host transport resolves Codex/Claude native `.exe` installations directly.
+For recognized global-prefix or local `.bin` npm wrappers, it reads the matching
+package's declared entry and starts that JavaScript file with native `node.exe`.
+Node is required for this npm form; native `.exe` installs do not require it.
+Missing, ambiguous or escaping package entries block startup. Arguments remain
+literal, including spaces, Unicode and shell metacharacters. Batch wrappers are
+never evaluated by the transport. Installed-host evidence and remaining acceptance
+gates are listed in [Windows validation](windows-validation.md).
+
+```mermaid
+flowchart TD
+    Host[Native Windows host launch] --> Resolve{Installed form}
+    Resolve -->|Native exe| Transport[Existing bounded Job Object transport]
+    Resolve -->|Recognized npm shim| Entry[Validate matching package and contained bin]
+    Entry --> Node[Native node.exe with literal argument vector]
+    Node --> Transport
+    Resolve -->|Unavailable or unsupported| Block[Report unavailable; preserve attempt]
+    Entry -->|Missing or escaping| Block
+```
