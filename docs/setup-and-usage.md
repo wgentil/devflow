@@ -17,7 +17,7 @@ but live Windows hook dispatch and worker validation remain incomplete. See the
 
 Codex and Claude have separate installations of the same shared package. Users
 choose when to upgrade. Both manifests and one skills/helper tree are included;
-the package version is `0.3.11`;
+the package version is `0.3.12`;
 the Claude marketplace descriptor is packaged at `.claude-plugin/marketplace.json`.
 The private GitHub repository `wgentil/devflow` serves the marketplace from
 `main`. Codex users with access to that repository can install it:

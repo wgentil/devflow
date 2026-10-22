@@ -28,7 +28,7 @@ the repository root as the plugin source, preserving the shared Codex/Claude
 skill tree. See the [setup guide](docs/setup-and-usage.md#installation) for
 install commands. The private GitHub repository
 `wgentil/devflow` serves the marketplace from `main`. The package version is
-`0.3.11`; see [release notes](docs/releases/v0.3.11.md). Users choose when to upgrade each host.
+`0.3.12`; see [release notes](docs/releases/v0.3.12.md). Users choose when to upgrade each host.
 
 Repository maintenance instructions are in [AGENTS.md](AGENTS.md). Every DevFlow
 change must review and update the affected setup guide, skill guides and examples.
