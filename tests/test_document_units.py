@@ -19,7 +19,7 @@ class DocumentUnitTests(unittest.TestCase):
     def source(self, name, path, content):
         target = self.root / path
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(content, encoding='utf-8')
+        target.write_text(content, encoding='utf-8', newline='\n')
         self.sources[name] = {'root': str(self.root), 'path': path}
         return name
 
@@ -66,7 +66,7 @@ class DocumentUnitTests(unittest.TestCase):
             self.select('api', {'kind': 'json-pointer', 'pointer': '/pick'})
         with tempfile.TemporaryDirectory() as other:
             outside = Path(other)
-            (outside / 'b.json').write_text('{"B":{}}')
+            (outside / 'b.json').write_text('{"B":{}}', newline='\n')
             self.sources['outside'] = {'root': str(outside), 'path': 'b.json'}
             self.source('api', 'api.json', json.dumps({'$ref': str(outside / 'b.json') + '#/B'}))
             with self.assertRaises(WorkflowError):

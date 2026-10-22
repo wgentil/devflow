@@ -16,8 +16,8 @@ class TaskViewTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        (self.root / 'guide.md').write_text('# Guide\n\nRequired 東京\n', encoding='utf-8')
-        (self.root / 'rules.md').write_text('# Rules\n## G1: Safety\nNever skip checks.\n## Additional constraints\nNever skip credentials.\n## G2: Optional\nOther rule.\n', encoding='utf-8')
+        (self.root / 'guide.md').write_text('# Guide\n\nRequired 東京\n', encoding='utf-8', newline='\n')
+        (self.root / 'rules.md').write_text('# Rules\n## G1: Safety\nNever skip checks.\n## Additional constraints\nNever skip credentials.\n## G2: Optional\nOther rule.\n', encoding='utf-8', newline='\n')
         self.sources = {'guide': {'root': str(self.root), 'path': 'guide.md'},
                         'rules': {'root': str(self.root), 'path': 'rules.md'}}
         self.spec = {'mode': 'new', 'requirements': [
@@ -71,7 +71,7 @@ class TaskViewTests(unittest.TestCase):
         self.assertEqual(caught.exception.code, 'CONTEXT_BUDGET_EXCEEDED')
         self.assertTrue(caught.exception.details['artifact_refs'])
         self.assertIn('rescope', caught.exception.details['action'].lower())
-        (self.root / 'optional.md').write_text('x' * 10000, encoding='utf-8')
+        (self.root / 'optional.md').write_text('x' * 10000, encoding='utf-8', newline='\n')
         self.sources['optional'] = {'root': str(self.root), 'path': 'optional.md'}
         self.selection['documents'].append({'source_id': 'optional', 'required': False})
         value = self.build(max_bytes=8000)
@@ -101,7 +101,7 @@ class TaskViewTests(unittest.TestCase):
         import subprocess
         from workflow_lib.governing_docs import _rules
         text = (self.root / 'rules.md').read_text(encoding='utf-8').replace('Never skip credentials.', 'Never skip credentials.\n```markdown\n## Example heading\nPreserve fenced details.\n```')
-        (self.root / 'rules.md').write_text(text, encoding='utf-8')
+        (self.root / 'rules.md').write_text(text, encoding='utf-8', newline='\n')
         subprocess.run(['git', 'init', '-q', str(self.root)], check=True)
         subprocess.run(['git', '-C', str(self.root), 'add', '.'], check=True)
         subprocess.run(['git', '-C', str(self.root), '-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '-qm', 'fixture'], check=True)

@@ -17,7 +17,7 @@ class ReviewInputScopeTests(unittest.TestCase):
         (repo/'test_scope.py').write_text('# stable test 東京\n',encoding='utf-8')
         subprocess.run(['git','add','.'],cwd=repo,check=True)
         subprocess.run(['git','commit','-qm','tests\n\nWork-Item: W1'],cwd=repo,check=True)
-        f.repos['repo-1']['head']=subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True).strip()
+        f.repos['repo-1']['head']=subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True,encoding='utf-8').strip()
         f.run['verification_proofs']={'green':{'kind':'code','phase':'GREEN','item_id':'W1','token':'t1','repo_id':'repo-1',
             'passed':True,'test_hashes':{'test_scope.py':hashlib.sha256((repo/'test_scope.py').read_bytes()).hexdigest()}}}
         return f
@@ -111,13 +111,13 @@ class ReviewInputScopeTests(unittest.TestCase):
         argv=[sys.executable,str(entry),'review','package','--root',str(f.root),'--run-id','run-1',
             '--role','item','--item','W1','--repositories-json',json.dumps(f.repos),
             '--input-paths-json',json.dumps({'repo-1':['src/app.py','test_scope.py']})]
-        result=subprocess.run(argv,capture_output=True,text=True);self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        result=subprocess.run(argv,capture_output=True,text=True,encoding='utf-8');self.assertEqual(result.returncode,0,result.stdout+result.stderr)
         pkg=json.loads(result.stdout)['package'];self.assertEqual(pkg['repositories']['repo-1']['liveness_mode'],'scoped')
         (f.f.repo/'next-item.py').write_text('# unrelated',encoding='utf-8')
         report={'package_hash':pkg['package_hash'],'item_id':'W1','verdict':'pass','findings':[]}
         result=subprocess.run([sys.executable,str(entry),'review','record','--root',str(f.root),'--run-id','run-1',
             '--package-hash',pkg['package_hash'],'--actor-id','item-reviewer','--invocation-ref','fixture://independent',
-            '--tool-available','--report-json',json.dumps(report)],capture_output=True,text=True)
+            '--tool-available','--report-json',json.dumps(report)],capture_output=True,text=True,encoding='utf-8')
         self.assertEqual(result.returncode,0,result.stdout+result.stderr)
 
     def test_unicode_and_spaced_scoped_paths_are_literal(self):
@@ -137,7 +137,7 @@ class ReviewInputScopeTests(unittest.TestCase):
                     dirty.write_text('before',encoding='utf-8')
                     subprocess.run(['git','add','.'],cwd=repo,check=True)
                     subprocess.run(['git','commit','-qm','Other work\n\nWork-Item: W2'],cwd=repo,check=True)
-                    f.repos['repo-1']['head']=subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True).strip()
+                    f.repos['repo-1']['head']=subprocess.check_output(['git','rev-parse','HEAD'],cwd=repo,text=True,encoding='utf-8').strip()
                 if mode=='tracked-delete':dirty.unlink()
                 elif mode=='tracked-rename':dirty.rename(repo/'renamed.py')
                 else:dirty.write_text('dirty',encoding='utf-8')

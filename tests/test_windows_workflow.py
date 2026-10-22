@@ -148,3 +148,28 @@ class WindowsWorkflowTests(unittest.TestCase):
             report = run_candidate_cases({'artifact_hash': 'fixture'}, [{'case_id': 'case', 'case_hash': 'hash',
                 'scoring_version': 1, 'approved_by': 'fixture-human', 'command': command, 'expected': {'label': 'é東京'}}], self.repo)
         self.assertTrue(report['case_results'][0]['passed'], report)
+
+
+    def test_owned_fixtures_under_windows_text_defaults(self):
+        from encoding_fixtures import legacy_path_defaults
+        from test_context_input_continuity import ContextInputContinuityTests
+        from test_repo_specs import RepoSpecTests
+        from test_document_units import DocumentUnitTests
+        from test_task_views import TaskViewTests
+        cases = [(ContextInputContinuityTests, 'test_windows_checkout_conversion_matches_validated_receipt'),
+                 (RepoSpecTests, 'test_frozen_legacy_pair_remains_valid_until_rewritten'),
+                 (DocumentUnitTests, 'test_fence_aware_exact_markdown_heading'),
+                 (TaskViewTests, 'test_governing_rule_projection_preserves_non_rule_heading_constraints')]
+        for cls, method in cases:
+            with self.subTest(fixture=cls.__name__), legacy_path_defaults(codec='utf-8', newline='\r\n'):
+                result = unittest.TestResult()
+                cls(method).run(result)
+                self.assertEqual(result.errors + result.failures, [])
+
+
+    def test_utf8_review_cli_clients_under_legacy_default(self):
+        from test_review_input_scope import ReviewInputScopeTests
+        with legacy_subprocess_defaults():
+            result = unittest.TestResult()
+            ReviewInputScopeTests('test_scoped_cli_package_and_record_allow_unrelated_next_item').run(result)
+        self.assertEqual(result.errors + result.failures, [])

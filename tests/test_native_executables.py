@@ -60,8 +60,10 @@ class NativeExecutableTests(unittest.TestCase):
             resolve([str(shim)], platform_name='nt')
         outside = self.root / 'outside.js'
         outside.write_bytes(b'outside')
-        (package / 'package.json').write_text(json.dumps({'name': '@openai/codex', 'bin': {'codex': '../../../outside.js'}}), encoding='utf-8')
-        with self.assertRaises(OSError):
+        (package / 'package.json').write_text(json.dumps({'name': '@openai/codex', 'bin': {'codex': '../../../../outside.js'}}), encoding='utf-8')
+        node = self.prefix / 'node.exe'
+        node.write_bytes(b'fixture native executable')
+        with patch('workflow_lib.native_executables.shutil.which', return_value=str(node)), self.assertRaises(OSError):
             resolve([str(shim)], platform_name='nt')
         shim.unlink()
         with self.assertRaises(OSError):

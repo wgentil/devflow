@@ -227,3 +227,8 @@ journal replay still grows with history; no journal compaction/archive command i
 provided. Preserve the journal rather than deleting history to advance a gate.
 Exact historical operation receipts retain their existing replay semantics; new
 attempts always use the live guard.
+
+Scoped preparation files use POSIX 0700 directory/0600 file modes where supported.
+On native Windows, filesystem access follows the containing directory's inherited
+ACLs; POSIX mode bits do not enforce NTFS ACLs. Root/run/hash/size and symlink
+binding checks apply on both platforms, and temporary inputs are removed after use.

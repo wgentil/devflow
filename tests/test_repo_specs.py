@@ -18,14 +18,14 @@ class RepoSpecTests(unittest.TestCase):
         receipt = write_spec_pair(self.repo, self.path, self.spec)
         md = self.repo / receipt['markdown_path']
         old = '# Safari\n\nMode: new\n\n## R1: Say hello\n\nProvenance: authored\n\nAcceptance criteria:\n- greeting returned\n'
-        md.write_text(old, encoding='utf-8')
+        md.write_text(old, encoding='utf-8', newline='\n')
         legacy = read_spec_pair(self.repo, self.path)
         legacy.pop('spec')
         self.assertEqual(assert_repo_spec_approval(self.repo, legacy)['spec'], self.spec)
         current = write_spec_pair(self.repo, self.path, self.spec)
         self.assertNotEqual(current['markdown_hash'], legacy['markdown_hash'])
         self.error('SPEC_APPROVAL_STALE', assert_repo_spec_approval, self.repo, legacy)
-        md.write_text(old + '\nUnapproved detail\n', encoding='utf-8')
+        md.write_text(old + '\nUnapproved detail\n', encoding='utf-8', newline='\n')
         self.error('SPEC_PAIR_MISMATCH', read_spec_pair, self.repo, self.path)
 
     def setUp(self):
@@ -55,7 +55,7 @@ class RepoSpecTests(unittest.TestCase):
     def test_changed_or_missing_half(self):
         receipt = write_spec_pair(self.repo, self.path, self.spec)
         md = self.repo / receipt['markdown_path']
-        md.write_text('changed')
+        md.write_text('changed', newline='\n')
         self.error('SPEC_PAIR_MISMATCH', read_spec_pair, self.repo, self.path)
         write_spec_pair(self.repo, self.path, self.spec)
         altered = {**self.spec, 'title': 'Changed'}
@@ -72,7 +72,7 @@ class RepoSpecTests(unittest.TestCase):
             (self.repo / 'escape').symlink_to(outside, target_is_directory=True)
             self.error('SPEC_PATH_ESCAPE', write_spec_pair, self.repo, 'escape/spec.json', self.spec)
         self.error('SPEC_PATH_ESCAPE', write_spec_pair, self.repo, '../spec.json', self.spec)
-        (self.repo / '.gitignore').write_text('docs/specs/\n')
+        (self.repo / '.gitignore').write_text('docs/specs/\n', newline='\n')
         self.error('SPEC_PATH_IGNORED', write_spec_pair, self.repo, self.path, self.spec)
         self.assertFalse((self.repo / self.path).exists())
 
@@ -100,11 +100,11 @@ class RepoSpecTests(unittest.TestCase):
         target = hidden / visible.name
         visible.replace(target)
         visible.symlink_to(target)
-        (self.repo / '.gitignore').write_text('private/\n')
+        (self.repo / '.gitignore').write_text('private/\n', newline='\n')
         self.error('SPEC_PATH_IGNORED', read_spec_pair, self.repo, self.path)
         self.error('SPEC_PATH_IGNORED', assert_repo_spec_approval, self.repo, receipt)
         visible.unlink()
-        (self.repo / '.gitignore').write_text('docs/specs/*.md\n')
+        (self.repo / '.gitignore').write_text('docs/specs/*.md\n', newline='\n')
         self.error('SPEC_PATH_IGNORED', write_spec_pair, self.repo, self.path, self.spec)
 
     def test_absolute_and_excluded_paths_are_rejected(self):

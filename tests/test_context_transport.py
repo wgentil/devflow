@@ -1,5 +1,6 @@
 import copy
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -18,7 +19,9 @@ class ContextTransportTests(unittest.TestCase):
         from workflow_lib.context_transport import store_preparation,load_preparation
         p=self.prepare();ref=store_preparation(self.f['root'],p)
         self.assertEqual(load_preparation(self.f['root'],ref,p.binding_hash)['scope']['run_id'],'current')
-        path=self.f['root']/'context-preparations'/(ref['id']+'.json');self.assertEqual(path.stat().st_mode&0o777,0o600)
+        path=self.f['root']/'context-preparations'/(ref['id']+'.json')
+        if os.name != 'nt':self.assertEqual(path.stat().st_mode&0o777,0o600)
+        else:self.assertTrue(os.access(path,os.R_OK|os.W_OK))  # NTFS access follows directory ACLs, not POSIX mode bits.
         for root,reference,binding in ((self.base/'foreign',ref,p.binding_hash),(self.f['root'],{**ref,'id':'../bad'},p.binding_hash),(self.f['root'],ref,'0'*64)):
             with self.subTest(root=root):
                 with self.assertRaises(WorkflowError):load_preparation(root,reference,binding)

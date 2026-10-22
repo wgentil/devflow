@@ -18,19 +18,37 @@ Branch: `fix/native-windows-compatibility`.
   package fingerprints, CLI startup, Codex initialize/account RPC and twelve
   installed hook-script tests pass. No model turn or live host event is implied.
 - [Initial candidate CI](https://github.com/wgentil/devflow/actions/runs/39798471005)
-  tests `2a8e7df5b196e80cc3375248647849e59349841a`; Ubuntu, macOS and native
-  Windows installed-host checks passed; both full Windows suites are pending. Final source/package evidence must be recorded before completion.
+  at `2a8e7df`: Ubuntu/macOS/Windows installed-host jobs passed. Full Windows
+  Python 3.11.9 collected 717 tests, six failures plus three errors (1239.532s);
+  Python 3.15.0 collected 717 tests, six failures plus two errors (1263.321s).
+  Both skipped only the POSIX newline-filename case. Ordinary 3.11 used CP1252
+  with UTF-8 mode off; 3.15 used UTF-8 mode. The explicit legacy jobs used CP1252
+  with UTF-8 mode off and collected eighteen tests each; their one failure was
+  an OS-specific diagnostic filename assumption.
+- The full native failure lists exposed fixture/client assumptions: double-CR
+  fixture conversion, implicit CRLF writes in exact-LF fixtures, a legacy-codepage
+  review test client, POSIX mode bits on NTFS, package checkout documentation
+  budgets, and a CreateProcess diagnostic filename expectation. Exact-byte fixture
+  assertions are preserved by explicit LF writers. CRLF construction is idempotent;
+  genuine tracked-CRLF and binary hashes remain unchanged. The same real fixtures
+  fail locally under scoped Windows-default simulation before the corrections.
+- [Updated installed-package CI](https://github.com/wgentil/devflow/actions/runs/39801355478)
+  at `f100903` passed both actual Windows packages, eleven skills, Codex 0.163.0 /
+  Claude 2.1.308 startup, Codex RPC and installed hook scripts. Its fingerprint
+  exactly matches the actual local Mac installations:
+  `cdf06654a19cc22551098365c751b1dbcacc99d67c4190a5f38b3e48cb8b7cbd`.
+  The obsolete full-suite run was superseded after both complete initial failure
+  lists were retained; the corrected candidate must run the full matrix again.
 
-Latest local full run after the additional package-identity fix: **718 tests OK**,
-two platform-only skips, 220.039s. The initial Windows installed report used
-Codex 0.163.0 / Claude 2.1.308, Python 3.11.9, Git 2.56.0.windows.2 and PowerShell
-7 on runner image windows-2025-vs2026 20261018.275.1. A real autocrlf checkout of
-`2a8e7df` reproduced its exact Windows fingerprint `470570a9c42d6ee7ed46085e10098caf4dc2cbc4b06304b9a9ac5c84391c93ca`,
-while the LF source was `e788a6e5657e9d11e876e31c5e163cf92683eab08331070ede673d62cccf42cd`.
-The new package-scoped Git attributes and clone regression preserve exact text
-identity and untouched binary assets; no fingerprint/journal check was weakened.
-The updated local package fingerprint is `cdf06654a19cc22551098365c751b1dbcacc99d67c4190a5f38b3e48cb8b7cbd`;
-both actual isolated local host installations pass for those exact package bytes.
+Latest completed local full run before the Windows fixture corrections: **718
+tests OK**, two platform-only skips, 220.039s. The next final run includes scoped
+fixture/client regressions. Installed Windows used Python 3.11.9,
+Git 2.56.0.windows.2 and PowerShell 7 on image windows-2025-vs2026 20261018.275.1.
+A real autocrlf checkout of `2a8e7df` reproduced its exact Windows fingerprint
+`470570a9c42d6ee7ed46085e10098caf4dc2cbc4b06304b9a9ac5c84391c93ca`;
+the LF source was `e788a6e5657e9d11e876e31c5e163cf92683eab08331070ede673d62cccf42cd`.
+Package-scoped Git attributes fix that difference without hash normalization.
+
 
 ## Requirement assessment (in progress)
 

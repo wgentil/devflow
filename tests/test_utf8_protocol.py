@@ -93,8 +93,9 @@ class UTF8ProtocolTests(unittest.TestCase):
         payload = {'hook_event_name': 'TaskCompleted', 'cwd': str(self.root), 'session_id': 'é東京', 'task_id': 'é東京'}
         stdin = io.TextIOWrapper(io.BytesIO(json.dumps(payload, ensure_ascii=False).encode('utf-8')), encoding='cp1252')
         stderr = io.TextIOWrapper(io.BytesIO(), encoding='cp1252')
-        # An unavailable executable produces a real OS error containing its Unicode pathname.
-        with patch.object(sys, 'stdin', stdin), patch.object(sys, 'stderr', stderr), patch.object(sys, 'executable', str(self.root / 'missing-é東京')):
+        # Windows CreateProcess errors omit the executable path. Inject the Unicode
+        # spawn diagnostic so this output contract is exercised on every OS.
+        with patch.object(sys, 'stdin', stdin), patch.object(sys, 'stderr', stderr), patch.object(hook.subprocess, 'run', side_effect=OSError('missing-é東京')):
             status = hook.main()
         self.assertEqual(status, 2)
         self.assertIn('missing-é東京', stderr.buffer.getvalue().decode('utf-8'))

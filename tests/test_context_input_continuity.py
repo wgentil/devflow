@@ -36,14 +36,14 @@ class ContextInputContinuityTests(unittest.TestCase):
         if org:
             owner=self.base/'org';(owner/'docs').mkdir(parents=True)
             subprocess.run(['git','init','-q',str(owner)],check=True,capture_output=True)
-            (owner/'docs/devflow-org.json').write_text(json.dumps({'schema_version':1,'id':'org','documents':[document]},indent=2))
+            (owner/'docs/devflow-org.json').write_text(json.dumps({'schema_version':1,'id':'org','documents':[document]},indent=2), newline='\n', encoding='utf-8')
             manifest['documents']=[];manifest['org']={'id':'org','url':str(owner)}
             state=read_state(self.root);repositories=copy.deepcopy(state['data']['repositories']);repositories['org']={'location':str(owner)}
             transact(self.root,state['version'],'register-org',{'kind':'fixture','payload':{'repositories':repositories}})
-        (owner/'rules.md').write_text('## G1: Safety\nPreserve required checks.\n')
-        (self.repo/'docs/devflow-context.json').write_text(json.dumps(manifest,indent=2))
+        (owner/'rules.md').write_text('## G1: Safety\nPreserve required checks.\n', newline='\n', encoding='utf-8')
+        (self.repo/'docs/devflow-context.json').write_text(json.dumps(manifest,indent=2), newline='\n', encoding='utf-8')
         self.interview={'schema_version':1,'topics':{name:{'status':'answered','material':True,'decision':'Offline decision.'} for name in TOPICS}}
-        (self.repo/'docs/devflow-ground-interview.json').write_text(json.dumps(self.interview,indent=2))
+        (self.repo/'docs/devflow-ground-interview.json').write_text(json.dumps(self.interview,indent=2), newline='\n', encoding='utf-8')
         for repo in {owner,self.repo}:
             subprocess.run(['git','-C',str(repo),'add','.'],check=True,capture_output=True)
             subprocess.run(['git','-C',str(repo),'-c','user.name=Fixture','-c','user.email=offline@example.test','commit','-qm','Governing fixture'],check=True,capture_output=True)
@@ -53,23 +53,23 @@ class ContextInputContinuityTests(unittest.TestCase):
         transact(self.root,state['version'],'reassessed-fixture',{'kind':'fixture','payload':{'runs':runs,'plan_validation':validation,'governing_reassessment_required':False}})
         return owner
     def test_absent_project_manifest_created_after_preflight_is_rejected(self):
-        self.assert_capture_rejected(lambda:(self.repo/'docs/devflow-context.json').write_text('{"schema_version":1,"documents":[]}'))
+        self.assert_capture_rejected(lambda:(self.repo/'docs/devflow-context.json').write_text('{"schema_version":1,"documents":[]}', newline='\n', encoding='utf-8'))
     def test_project_manifest_change_after_preflight_is_rejected(self):
         self.governed();path=self.repo/'docs/devflow-context.json'
-        self.assert_capture_rejected(lambda:path.write_text('{"schema_version":1,"documents":[]}'))
+        self.assert_capture_rejected(lambda:path.write_text('{"schema_version":1,"documents":[]}', newline='\n', encoding='utf-8'))
     def test_ground_interview_change_after_preflight_is_rejected(self):
         self.governed();self.interview['topics']['architecture']={'status':'deferred','material':True,'reason':'Unresolved change.'}
-        self.assert_capture_rejected(lambda:(self.repo/'docs/devflow-ground-interview.json').write_text(json.dumps(self.interview,indent=2)))
+        self.assert_capture_rejected(lambda:(self.repo/'docs/devflow-ground-interview.json').write_text(json.dumps(self.interview,indent=2), newline='\n', encoding='utf-8'))
     def test_org_manifest_change_after_worker_blocks_token_without_consuming_key(self):
         owner=self.governed(org=True);p,run=self.proposal()
         prepared_context(self.root,run,{'run_id':'current'},['W1'],stage='implementation',prepared=p)
-        (owner/'docs/devflow-org.json').write_text('invalid unapproved manifest')
+        (owner/'docs/devflow-org.json').write_text('invalid unapproved manifest', newline='\n', encoding='utf-8')
         with self.assertRaises(WorkflowError):
             preparation.commit_prepared_attempt(self.root,p,'org-guard',{'kind':'run.attempt.issued','payload':{'run_id':'current','attempt':run['active_attempt']}})
         state=read_state(self.root);self.assertNotIn('org-guard',state['operations']);self.assertIsNone(state['data']['runs']['current']['active_attempt'])
     def test_org_manifest_change_after_preflight_is_rejected(self):
         owner=self.governed(org=True)
-        self.assert_capture_rejected(lambda:(owner/'docs/devflow-org.json').write_text('invalid unapproved manifest'))
+        self.assert_capture_rejected(lambda:(owner/'docs/devflow-org.json').write_text('invalid unapproved manifest', newline='\n', encoding='utf-8'))
 
     def test_org_manifest_removed_after_preflight_is_rejected(self):
         owner=self.governed(org=True)
@@ -78,7 +78,7 @@ class ContextInputContinuityTests(unittest.TestCase):
         from workflow_lib.governing_docs import canonical_document_bytes
         owner=self.governed(org=True)
         paths=[self.repo/'docs/devflow-context.json',self.repo/'docs/devflow-ground-interview.json',owner/'docs/devflow-org.json',owner/'rules.md']
-        for path in paths:path.write_bytes(path.read_bytes().replace(b'\n',b'\r\n'))
+        for path in paths:path.write_bytes(path.read_bytes().replace(b'\r\n',b'\n').replace(b'\n',b'\r\n'))
         def windows(raw,**kw):return canonical_document_bytes(raw,windows=True,**kw)
         with patch('workflow_lib.governing_docs.canonical_document_bytes',side_effect=windows),patch('workflow_lib.document_approvals.canonical_document_bytes',side_effect=windows):
             p,run=self.proposal()
