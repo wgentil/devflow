@@ -1,22 +1,42 @@
 name: Platform tests
 on:
   push:
-    branches: [main, feat/windows-portability]
+    branches: [main, feat/windows-portability, fix/native-windows-compatibility]
   pull_request:
 jobs:
   python:
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ['3.11']
+        include:
+          - os: windows-latest
+            python: '3.x'
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-      - run: python -m unittest discover -s tests -f -v
+          python-version: ${{ matrix.python }}
+      - name: Complete ordinary platform suite
+        run: python scripts/run_platform_tests.py --output platform-report.json
+      - name: Explicit legacy Windows code page
+        if: always() && runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $env:PYTHONIOENCODING = 'cp1252'
+          Remove-Item Env:PYTHONUTF8 -ErrorAction SilentlyContinue
+          python -X utf8=0 scripts/run_platform_tests.py --output legacy-report.json --pattern 'test_utf8_*.py' --pattern 'test_windows_workflow.py'
+          exit $LASTEXITCODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: platform-${{ matrix.os }}-${{ matrix.python }}
+          path: '*-report.json'
   claude-plugin-windows:
+    timeout-minutes: 20
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,18 +46,45 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install Claude Code
-        run: npm install -g @anthropic-ai/claude-code
-      - name: Validate DevFlow marketplace
+      - name: Install actual host CLIs
+        run: npm install -g @openai/codex @anthropic-ai/claude-code
+      - name: Install candidate in disposable host configurations
+        shell: pwsh
         run: |
+          $env:CODEX_HOME = Join-Path $env:RUNNER_TEMP 'devflow-codex'
+          $env:CLAUDE_CONFIG_DIR = Join-Path $env:RUNNER_TEMP 'devflow-claude'
+          New-Item -ItemType Directory -Path $env:CODEX_HOME, $env:CLAUDE_CONFIG_DIR -Force | Out-Null
+          "CODEX_HOME=$env:CODEX_HOME" >> $env:GITHUB_ENV
+          "CLAUDE_CONFIG_DIR=$env:CLAUDE_CONFIG_DIR" >> $env:GITHUB_ENV
+          codex --version
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
           claude --version
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
           claude plugin validate .
-      - name: Add checkout marketplace
-        run: claude plugin marketplace add ./ --scope local
-      - name: Install DevFlow
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          codex plugin marketplace add "$env:GITHUB_WORKSPACE"
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          codex plugin add devflow@devflow-marketplace
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          claude plugin marketplace add "$env:GITHUB_WORKSPACE" --scope user
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          claude plugin install devflow@devflow-marketplace --scope user -y
+          exit $LASTEXITCODE
+      - name: Check exact installed packages and real native startup
+        shell: pwsh
         run: |
-          claude plugin install devflow@devflow-marketplace --scope local -y
-      - name: Check installed package and hooks
-        run: |
-          claude plugin list --json > "$env:RUNNER_TEMP\devflow-plugin-list.json"
-          python scripts/verify_claude_install.py "$env:RUNNER_TEMP\devflow-plugin-list.json"
+          codex plugin list --json > codex-installed.json
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          claude plugin list --json > claude-installed.json
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python scripts/verify_windows_install.py --source-root "$env:GITHUB_WORKSPACE" --codex-list codex-installed.json --codex-cache "$env:CODEX_HOME/plugins/cache" --claude-list claude-installed.json --output installed-report.json
+          exit $LASTEXITCODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-installed-hosts
+          path: |
+            installed-report.json
+            installed-report.hooks.log
+            codex-installed.json
+            claude-installed.json

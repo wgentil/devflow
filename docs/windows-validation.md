@@ -45,3 +45,22 @@ the original scope; adapt their remaining host checks to the candidate release
 and its actual skill inventory. Record actual OS, Python, Git, host CLI, plugin
 version, package fingerprint, commands and outcomes here. Keep unavailable cells
 explicit.
+
+## Native compatibility candidate (2026-10-22)
+
+The approved candidate branch adds explicit UTF-8 files/protocol output, strict
+report decoding with raw evidence, Unicode workflow regressions, and safe npm
+host executable resolution. Its complete ordinary Windows Python 3.11/latest
+suite and explicit legacy-code-page checks write machine-readable reports without
+fail-fast. The isolated host job installs both actual CLIs, requires eleven skills
+and exact package fingerprints, checks real startup/Codex RPC, and runs installed
+hook scripts. Candidate results are pending; earlier matrix rows remain historical.
+Signed-in worker execution, live event dispatch and cross-host acceptance remain
+separate unverified gates. No support claim changes until candidate evidence exists.
+
+Maintainers run `python scripts/run_platform_tests.py --output REPORT.json` for a
+complete failure list and locale/version metadata. Optional `--pattern` selects
+modules; `--start-dir` selects an owned fixture directory for runner tests. An
+empty suite fails. The installed-package check is
+`python scripts/verify_windows_install.py --source-root PACKAGE --codex-list CODEX.json --codex-cache CACHE --claude-list CLAUDE.json --output REPORT.json`.
+These are developer checks, not plugin onboarding steps.
