@@ -15,6 +15,7 @@ For an explicit continuing CLI consumer, add `--consumer-id my-session` and late
 compaction; handoffs and new workers require full context. A CLI without consumer
 identity returns full context even when given an old checkpoint ID.
 
+Preparation runs live journal/input preflight before dispatching its scoped worker.
 The internal Python lifecycle runner defaults to five seconds and 8,192 output
 bytes. Required preparation stops on errors; advisory diagnostics preserve verifier
 outcomes. See [hook limits and behavior](context-efficiency.md#portable-lifecycle-hooks).
@@ -641,3 +642,11 @@ returned `proof_id` and submit `run result --result
 [qualification and full command context](../skills/build-work/REFERENCE.md#reusing-recorded-red).
 Item-bound request-changes instead returns `run retry`; pending items route to
 implementation even while historical GREEN remains recorded.
+
+
+Context preparation returns `preparation` diagnostics with `preflight_ms`,
+`worker_ms`, `total_ms`, `journal_version` and `binding_hash`. The hook's worker
+limit excludes parent journal/input checks; these fields do not promise total
+five-second CLI latency. Scoped worker inputs are internal and never approve work.
+`CONTEXT_PREPARATION_STALE` requires fresh preparation from current inputs. Existing
+helper calls remain live-validating; no trusted-snapshot CLI flag is provided.

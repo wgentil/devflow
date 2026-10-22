@@ -26,7 +26,8 @@ class LargeContextPreparationTests(unittest.TestCase):
         small=self.project('small');large=self.project('large',delivered_runs=4,event_count=30,history_bytes=100000)
         views=[prepare_task_view(f['root'],f['run'],{'run_id':'current'},['W1']) for f in (small,large)]
         self.assertEqual(views[0]['task_view']['units'],views[1]['task_view']['units'])
-        self.assertEqual(views[0]['budget']['serialized_bytes'],views[1]['budget']['serialized_bytes'])
+        self.assertEqual(views[0]['task_view']['content_bytes'],views[1]['task_view']['content_bytes'])
+        self.assertTrue(all(v['budget']['serialized_bytes']<=20000 for v in views))
         self.assertNotIn('historical-',canonical(views[1]).decode())
     def test_selected_requirement_and_shared_facts_budgeted_separately(self):
         f=self.project();raw=copy.deepcopy(f['state']['data']['spec']);raw['requirements'][1]['text']='UNRELATED_SENTINEL'*2000

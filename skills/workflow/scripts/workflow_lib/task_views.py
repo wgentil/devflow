@@ -87,7 +87,7 @@ def build_task_view(run: dict, envelope: dict, selection: dict, sources: dict, p
     spec_content = render_spec(subset) if representation == 'markdown' else canonical(subset).decode('utf-8')
     spec_unit = {'id': 'specification', 'source_id': 'specification', 'content': spec_content,
                  'content_hash': hashlib.sha256(spec_content.encode('utf-8')).hexdigest(),
-                 'source_hash': content_hash(spec), 'reasons': ['task-requirements'], 'requirement_ids': required_requirements}
+                 'source_hash': selection.get('spec_hash',content_hash(spec)), 'reasons': ['task-requirements'], 'requirement_ids': required_requirements}
     governing = selection.get('governing', {})
     documents = selection.get('documents', [])
     mandatory = [dict(document) for document in documents if document.get('required', True)]
@@ -109,7 +109,7 @@ def build_task_view(run: dict, envelope: dict, selection: dict, sources: dict, p
     required_ids = sorted(set(required_requirements) | set(governing) | required_document_ids)
     task = {'schema_version': 1, 'representation': representation, 'required_ids': required_ids,
             'units': [spec_unit, *selected['units']], 'dependencies': selected['dependencies'],
-            'source_hashes': {'specification': content_hash(spec), **selected['source_hashes']},
+            'source_hashes': {'specification': selection.get('spec_hash',content_hash(spec)), **selected['source_hashes']},
             'source_provenance': selected['source_provenance'], 'governing': governing,
             'coverage': {'supplied_ids': required_ids, 'missing_ids': [], 'semantic_omissions': 'unknown'},
             'measurement_coverage': 'Emitted context only; hidden host instructions, unrelated reads and history are unknown.',
@@ -147,36 +147,10 @@ def build_task_view(run: dict, envelope: dict, selection: dict, sources: dict, p
 
 
 def prepare_task_view(root: Path, run: dict, envelope: dict, item_ids: list[str], *, stage: str = 'implementation',
-                      max_bytes: int = 20000, representation: str = 'markdown', output_mode: str = 'full') -> dict:
-    """Live entry point shared by run and host reads; caches never bypass preflight."""
-    from .repo_input_gate import require_current_inputs
-    state = read_state(root)
-    if envelope.get('binding_id'):
-        from .hosts import validate_binding
-        binding = validate_binding(state['data'], envelope['binding_id'], envelope.get('revision'))
-        if binding['run_id'] != run['id']:
-            raise WorkflowError('CONTEXT_SCOPE_CHANGED', 'binding no longer owns this run context')
-    require_current_inputs(root, state, 'context-preparation', run['id'])
-    data = read_state(root)['data']
-    spec = data['spec']
-    if run.get('plan', {}).get('spec_hash') != content_hash(spec):
-        raise WorkflowError('PLAN_STALE', 'task context requires the currently approved plan specification')
-    policy = load_documentation_policy(PACKAGE_ROOT)
-    stage = {'build': 'implementation', 'verification': 'implementation', 'branch-review': 'review',
-             'item-review': 'review', 'pr-review': 'review', 'pr-rework': 'implementation',
-             'scan': 'ingest', 'debugging': 'build-work', 'hardening': 'build-work',
-             'architecture': 'project-context', 'security': 'review-work',
-             'delivery': 'workflow', 'pr-opening': 'workflow', 'delivered': 'workflow', 'discarded': 'workflow'}.get(stage, stage)
-    if stage not in policy['stage_reads']:
-        raise WorkflowError('CONTEXT_STAGE_UNAVAILABLE', 'stage has no declared documentation read route')
-    governing, sources = governing_selections(data.get('governing_input_receipt', {}), data.get('repositories', {}))
-    sources.update({sid: {'root': str(PACKAGE_ROOT), 'path': source['path']} for sid, source in policy['sources'].items()})
-    selection = {'spec': spec, 'item_ids': item_ids, 'stage': stage, 'governing': governing,
-                 'documents': [{'source_id': sid} for sid in policy['stage_reads'][stage]]}
-    view = build_task_view(run, envelope, selection, sources, policy, root=root, max_bytes=max_bytes,
-                           representation=representation, output_mode=output_mode)
-    if data.get('spec_pair'):
-        from .repo_specs import assert_repo_spec_approval
-        pair = data['spec_pair']
-        assert_repo_spec_approval(Path(data['repositories'][pair['repo_id']]['location']), pair)
-    return view
+                      max_bytes: int = 20000, representation: str = 'markdown', output_mode: str = 'full', state: dict | None = None) -> dict:
+    """Safe direct entry; authoritative preflight remains outside composition."""
+    from .context_preparation import prepare_context,compose_prepared,assert_preparation_current,finish_prepared
+    prepared=prepare_context(root,run,envelope,item_ids,stage=stage,state=state,max_bytes=max_bytes,representation=representation,output_mode=output_mode)
+    result=compose_prepared(prepared.payload)
+    assert_preparation_current(root,prepared,prepared._state)
+    return finish_prepared(prepared,result)

@@ -38,7 +38,7 @@ def _finish(body, name, request, started, deadline_seconds, max_bytes, required)
     return body
 
 
-def run_lifecycle_hook(name: str, request: dict, *, deadline_seconds: float = 5,
+def _dispatch_worker(name: str, request: dict, *, deadline_seconds: float = 5,
                        max_bytes: int = 8192, required: bool = False) -> dict:
     started = time.monotonic()
     body = {'status': 'block', 'reason_code': 'HOOK_INPUT_INVALID'}
@@ -82,18 +82,14 @@ def execute_hook(name: str, request: dict, *, max_bytes: int, deadline_seconds: 
     root = Path(request['root']).expanduser().resolve()
     source_hashes, config_hash = {}, request.get('policy_hash')
     if name == 'prepare-context':
-        from .store import read_state
-        from .task_views import prepare_task_view, PACKAGE_ROOT
-        from .documentation import load_documentation_policy
-        data = read_state(root)['data']
-        run = data.get('runs', {}).get(request.get('run_id'))
-        if not run:
-            raise WorkflowError('RUN_NOT_FOUND', 'context preparation needs a current run')
-        result = prepare_task_view(root, run, request.get('envelope', {}), request.get('item_ids', []),
-            stage=request.get('stage', 'implementation'), max_bytes=request.get('context_max_bytes', 20000),
-            representation=request.get('representation', 'markdown'), output_mode=request.get('output_mode', 'full'))
-        source_hashes = result['task_view'].get('source_hashes', {})
-        config_hash = digest(load_documentation_policy(PACKAGE_ROOT))
+        from .context_transport import load_preparation
+        from .context_preparation import compose_prepared
+        reference=request.get('preparation_ref')
+        if not isinstance(reference,dict):raise WorkflowError('HOOK_INPUT_INVALID','Parent-prepared scoped context is required.')
+        payload=load_preparation(root,reference,request.get('binding_hash'))
+        result=compose_prepared(payload)
+        source_hashes=result['task_view'].get('source_hashes',{})
+        config_hash=digest(payload['policy'])
     elif name == 'invalidate-context':
         from .context_artifacts import invalidate_context_artifacts
         if not isinstance(request.get('observed_sources'), dict) or not isinstance(config_hash, str):
@@ -126,17 +122,70 @@ def execute_hook(name: str, request: dict, *, max_bytes: int, deadline_seconds: 
     return body
 
 
+def _prepared_response(root,prepared,*,deadline_seconds=5,max_bytes=8192,required=True):
+    from .context_transport import store_preparation,remove_preparation
+    from .context_preparation import assert_preparation_current,finish_prepared
+    assert_preparation_current(root,prepared,prepared._state)
+    reference=store_preparation(root,prepared)
+    try:
+        response=_dispatch_worker('prepare-context',{'root':str(Path(root).resolve()),'run_id':prepared.scope['run_id'],
+            'preparation_ref':reference,'binding_hash':prepared.binding_hash},deadline_seconds=deadline_seconds,max_bytes=max_bytes,required=required)
+        if response['status']=='allow':
+            result=response['result']
+            if result.get('full_result_artifact_id'):result=inspect_context_artifact(root,result['full_result_artifact_id'])
+            assert_preparation_current(root,prepared,prepared._state)
+            result=finish_prepared(prepared,result,response.get('elapsed_ms',0))
+            if response['result'].get('full_result_artifact_id'):
+                ref=store_context_artifact(root,result,{'hook':'prepare-context','binding_hash':prepared.binding_hash})
+                response['result']={**{k:v for k,v in response['result'].items() if k!='preparation'},
+                    'full_result_artifact_id':ref['artifact_id'],'preparation':result['preparation']}
+                response['artifact_refs']=[ref]
+            else:response['result']=result
+            for _ in range(10):
+                size=len(canonical(response))
+                if size==response['output_bytes']:break
+                response['output_bytes']=size
+            if len(canonical(response))>max_bytes:
+                raise WorkflowError('HOOK_OUTPUT_OVERFLOW','Prepared hook control envelope exceeds its output bound.')
+        return response
+    finally:remove_preparation(root,reference)
+
+
+def run_lifecycle_hook(name: str, request: dict, *, deadline_seconds: float=5,max_bytes: int=8192,required: bool=False)->dict:
+    if name!='prepare-context' or not isinstance(request,dict):
+        return _dispatch_worker(name,request,deadline_seconds=deadline_seconds,max_bytes=max_bytes,required=required)
+    started=time.monotonic()
+    try:
+        from .store import read_state
+        from .context_preparation import prepare_context
+        root=Path(request['root']).resolve();state=read_state(root);run=state['data'].get('runs',{}).get(request.get('run_id'))
+        if not run:raise WorkflowError('RUN_NOT_FOUND','Context preparation needs a current run.')
+        prepared=prepare_context(root,run,request.get('envelope',{}),request.get('item_ids',[]),stage=request.get('stage','implementation'),
+            state=state,max_bytes=request.get('context_max_bytes',20000),representation=request.get('representation','markdown'),output_mode=request.get('output_mode','full'))
+        return _prepared_response(root,prepared,deadline_seconds=deadline_seconds,max_bytes=max_bytes,required=required)
+    except (WorkflowError,KeyError,OSError,TypeError,ValueError) as exc:
+        return _finish({'status':'block','reason_code':getattr(exc,'code','HOOK_INPUT_INVALID'),'details':getattr(exc,'details',{})},name,request,started,deadline_seconds,max_bytes,required)
+
+
 def prepared_context(root: Path, run: dict, envelope: dict, item_ids: list[str], *, stage: str,
-                      max_bytes: int = 20000, representation: str = 'markdown', output_mode: str = 'full') -> dict:
-    response = run_lifecycle_hook('prepare-context', {'root': str(Path(root).resolve()), 'run_id': run['id'],
-        'envelope': envelope, 'item_ids': item_ids, 'stage': stage, 'context_max_bytes': max_bytes,
-        'representation': representation, 'output_mode': output_mode}, required=True)
-    if response['status'] != 'allow':
-        raise WorkflowError(response['reason_code'], 'required context preparation failed', {
-            'hook': response, **response.get('details', {})})
-    result = response['result']
-    if result.get('full_result_artifact_id'):
-        result = inspect_context_artifact(root, result['full_result_artifact_id'])
+                      max_bytes: int=20000,representation: str='markdown',output_mode: str='full',state: dict|None=None,prepared=None)->dict:
+    from .context_preparation import prepare_context,_require,normalize_stage,_accept_run,PreparedContext
+    _require(not (prepared is not None and state is not None),'Supply state or prepared context, not both.')
+    if prepared is None:prepared=prepare_context(root,run,envelope,item_ids,stage=stage,state=state,max_bytes=max_bytes,representation=representation,output_mode=output_mode)
+    else:
+        _require(isinstance(prepared,PreparedContext),'An internal prepared context object is required.')
+        _accept_run(prepared._state['data']['runs'][run['id']],run)
+        _require(prepared.scope['stage']==normalize_stage(stage) and prepared.scope['attempt_id']==(run.get('active_attempt') or {}).get('token'),'Prepared task stage or attempt differs.')
+        _require(prepared.payload['envelope']=={**envelope,'preparation':prepared.payload['envelope']['preparation']}
+            and prepared.scope['run_id']==run['id'] and prepared.scope['item_ids']==item_ids
+            and prepared.scope['context_max_bytes']==max_bytes and prepared.scope['representation']==representation and prepared.scope['output_mode']==output_mode,
+            'Prepared scope differs from this context request.')
+    response=_prepared_response(root,prepared)
+    if response['status']!='allow':raise WorkflowError(response['reason_code'],'Required context preparation failed.',{'phase':'composition','hook':response,**response.get('details',{})})
+    result=response['result']
+    if result.get('full_result_artifact_id'):result=inspect_context_artifact(root,result['full_result_artifact_id'])
+    from .context_preparation import assert_preparation_current
+    assert_preparation_current(root,prepared,prepared._state)
     return result
 
 

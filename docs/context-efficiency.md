@@ -160,4 +160,17 @@ When governing checks record a receipt or reassessment, they carry the transacti
 returned state forward; concurrent advancement returns `CONTEXT_PREPARATION_STALE`
 rather than combining different approval versions. Existing specification drift
 invalidation, exact-diff governing approval and reassessment requirements remain.
-This state-threading change does not yet move context composition out of its hook.
+Context composition receives a private scoped input artifact after this preflight;
+it does not replay the journal. The five-second worker limit starts at dispatch,
+so total operation time can exceed five seconds. Temporary inputs are removed on
+success or failure; orphaned inputs never become trusted cache entries.
+Preparation binds root/run/items/stage/attempt, source content and journal version.
+Changed sources or journal state require fresh preparation.
+
+```mermaid
+flowchart LR
+    Journal[Authoritative journal preflight] --> Scoped[Bound scoped input]
+    Scoped --> Worker[Five-second composition worker]
+    Worker --> Live[Recheck source and version bindings]
+    Live --> View[Complete context or bounded inspection reference]
+```

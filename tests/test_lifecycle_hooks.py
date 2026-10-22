@@ -52,7 +52,7 @@ class LifecycleHookTests(unittest.TestCase):
         for output in ('not-json', json.dumps({'status': 'allow', 'result': 'é' * 6000})):
             worker.write_text('import sys\nsys.stdin.readline()\nprint(' + repr(output) + ')\n')
             with patch('workflow_lib.lifecycle_hooks.WORKER_PATH', worker):
-                result = run_lifecycle_hook('prepare-context', {'root': str(self.root)}, required=True, max_bytes=2048)
+                result = run_lifecycle_hook('invalidate-context', {'root': str(self.root),'observed_sources':{},'policy_hash':digest({})}, required=True, max_bytes=2048)
             self.assertEqual(result['status'], 'block')
             self.assertIn(result['reason_code'], {'HOOK_OUTPUT_INVALID', 'HOOK_OUTPUT_OVERFLOW'})
 
