@@ -20,7 +20,7 @@ class HookTests(unittest.TestCase):
         self.root=self.project/'.devflow/control'
     def call(self,event='TaskCompleted',task='task',raw=None):
         payload={'hook_event_name':event,'session_id':'s1','cwd':str(self.project),'task_id':task,'task_subject':'ignored $(touch hacked)'}
-        return subprocess.run([sys.executable,'-B',str(HOOK)],input=raw if raw is not None else json.dumps(payload),text=True,capture_output=True,timeout=12)
+        return subprocess.run([sys.executable,'-B',str(HOOK)],input=raw if raw is not None else json.dumps(payload),text=True,encoding='utf-8',capture_output=True,timeout=12)
     def attach(self):
         transact(self.root,0,'seed',{'kind':'fixture','payload':host_state(str(self.project))})
         transact(self.root,1,'attach',{'kind':'domain.host.attach','payload':{'request':attachment(str(self.project),host='claude')}})

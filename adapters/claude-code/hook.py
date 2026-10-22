@@ -7,6 +7,9 @@ import subprocess
 import sys
 
 ROOT=Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT/'skills/workflow/scripts'))
+from workflow_lib.utf8_io import write_utf8
+
 LIMIT=65536
 
 
@@ -33,14 +36,14 @@ def main():
         decision=json.loads(result.stdout)
         if result.returncode or decision.get('status') == 'block':
             reason=decision.get('reason_code') or decision.get('error') or 'HOST_CHECK_FAILED'
-            print('DevFlow: '+reason+'. '+decision.get('message','Inspect host status and rework the mapped task.'),file=sys.stderr)
+            write_utf8('DevFlow: '+reason+'. '+decision.get('message','Inspect host status and rework the mapped task.')+'\n',stream=sys.stderr)
             return 2 if event in {'TaskCompleted', 'UserPromptSubmit'} else 0
         if decision.get('brief'):
-            print(json.dumps({'hookSpecificOutput':{'hookEventName':event,'additionalContext':'DevFlow resume: '+json.dumps(decision['brief'],separators=(',',':'))}},separators=(',',':')))
-        elif decision.get('message'):print('DevFlow: '+decision['message'],file=sys.stderr)
+            write_utf8(json.dumps({'hookSpecificOutput':{'hookEventName':event,'additionalContext':'DevFlow resume: '+json.dumps(decision['brief'],separators=(',',':'))}},separators=(',',':'))+'\n')
+        elif decision.get('message'):write_utf8('DevFlow: '+decision['message']+'\n',stream=sys.stderr)
         return 0
     except (OSError,ValueError,TypeError,subprocess.TimeoutExpired) as exc:
-        print('DevFlow hook diagnostic: '+str(exc)[:1000]+'. Inspect attachment before completing mapped work.',file=sys.stderr)
+        write_utf8('DevFlow hook diagnostic: '+str(exc)[:1000]+'. Inspect attachment before completing mapped work.\n',stream=sys.stderr)
         return 2 if event in {'TaskCompleted', 'UserPromptSubmit'} else 0
 
 

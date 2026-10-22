@@ -694,3 +694,9 @@ diagnosing those paths; the separate worker limit still starts at dispatch.
 Helper JSON requests, document sources, reports and patch files use strict UTF-8,
 independent of the system locale. Invalid UTF-8 is rejected; binary artifacts and
 Git content hashes retain their original bytes. See [Windows validation](windows-validation.md).
+
+CLI JSON and hook stdout/stderr are emitted as UTF-8 bytes even under a legacy
+Windows console code page. Consumers should decode that protocol as UTF-8.
+In-process text streams retain Unicode without global stream reconfiguration.
+If a downstream write fails after a durable operation, retry the same operation
+ID to recover its receipt; the write failure does not roll back the journal.

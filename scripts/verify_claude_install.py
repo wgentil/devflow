@@ -7,6 +7,9 @@ import sys
 
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'skills/workflow/scripts'))
+from workflow_lib.utf8_io import write_utf8
+
 PLUGIN_ID = 'devflow@devflow-marketplace'
 
 
@@ -32,7 +35,7 @@ def main(listing_file):
     expected = json.loads((ROOT / '.claude-plugin/plugin.json').read_text(encoding='utf-8'))['version']
     installed = find_installed_plugin(json.loads(Path(listing_file).read_text(encoding='utf-8-sig')), expected)
     environment = dict(os.environ, DEVFLOW_HOOK_PATH=str(installed / 'adapters/claude-code/hook.py'))
-    print(f'Installed {PLUGIN_ID} {expected}: {installed}', flush=True)
+    write_utf8(f'Installed {PLUGIN_ID} {expected}: {installed}\n')
     result = subprocess.run([sys.executable, '-m', 'unittest', 'discover', '-s', 'tests',
                              '-p', 'test_claude_hooks.py', '-v'], cwd=ROOT, env=environment,
                             check=False, timeout=120)
