@@ -3,8 +3,9 @@
 `host brief` validates the current binding and uses the same
 [complete task-view builder](context-efficiency.md#complete-task-views) as run
 briefs, including live input checks and required-context byte limits.
-Preparation runs through the shared bounded Python hook; a required failure blocks
-the read/dispatch. Large complete views travel through content-addressed artifacts
+Authoritative journal/input preflight runs in the parent, followed by the shared
+bounded composition worker. Required failure blocks read/dispatch. The worker
+deadline excludes preflight; see [preparation recovery](context-efficiency.md#preparation-recovery). Large complete views travel through content-addressed artifacts
 instead of overflowing the hook's inline response.
 Claude SessionStart always rebuilds full context, including after compaction.
 Ordinary repeated prompts still deduplicate only after live checks. An oversized

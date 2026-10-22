@@ -103,3 +103,8 @@ Runner report shapes: [JSON](target-test-report.json) and [JUnit](target-test-re
 [Context preparation diagnostics](context-preparation-diagnostics.json) is synthetic
 output from an intentionally oversized required item. Paths are placeholders;
 component totals describe that fixture, not a performance claim.
+
+
+The optional [developer benchmark](../developer-cli.md#context-preparation-diagnostics)
+measures a disposable synthetic journal separately from the overflow example. It
+never accepts an existing project root or removes existing run history.

@@ -449,7 +449,7 @@ create arbitrary new IDs to bypass a scope, evidence or authorization failure.
 | OPERATION_CONFLICT | Keep the prior operation; identify whether this is a retry or genuinely new input |
 | Active attempt prevents next/retry | Resume it, submit its result or explicitly abandon it |
 | Missing or stale proof/package | Rerun appropriate verification or prepare a current review package |
-| Required brief exceeds budget | Increase budget or inspect references; mandatory criteria are never silently truncated |
+| Required brief exceeds budget | Inspect component sizes, explicitly allow sufficient bytes or reduce scope; references do not waive mandatory facts |
 | EXECUTION_INTERRUPTED for hardening | Inspect state, then use a new ID for an intentional fresh execution |
 | Usage cost is null | Inspect per-run expectations, bindings, coverage, gaps, prices and delivery timestamps |
 | Telemetry warning | Workflow records remain authoritative; bytes/duration do not establish tokens saved |
@@ -644,6 +644,8 @@ Item-bound request-changes instead returns `run retry`; pending items route to
 implementation even while historical GREEN remains recorded.
 
 
+## Context preparation diagnostics
+
 Context preparation returns `preparation` diagnostics with `preflight_ms`,
 `worker_ms`, `total_ms`, `journal_version` and `binding_hash`. The hook's worker
 limit excludes parent journal/input checks; these fields do not promise total
@@ -661,3 +663,23 @@ required rules. No journal archive/compaction command is provided by this change
 
 See the [synthetic required-overflow response](examples/context-preparation-diagnostics.json)
 for the diagnostic field shape; it is not evidence for a real project.
+
+
+For worker deadlines, freshness failures and byte recovery, use
+[preparation recovery](context-efficiency.md#preparation-recovery). The actual
+worker limit remains in `limits.deadline_seconds`. `preparation.total_ms` sums
+preflight and worker measurements; it excludes final locked transaction time.
+
+Contributors can run a disposable synthetic scale benchmark from the package root:
+
+```sh
+python3 scripts/benchmark_context_preparation.py --events 4370 --delivered-runs 40 --history-bytes 79691776 --output REPORT.json
+```
+
+The benchmark accepts no existing control root. It creates and removes its own
+Git/control directories, exercises real `run next` and exact retry, and reports
+actual event/state sizes, parent/worker replay counts, phase costs, full CLI time,
+locked commit time and selected-context equality against a small project. Historical
+delivered metadata and review strings are synthetic; no live provider or verifier
+deliveries are claimed. Ordinary journal replay remains required. Timings depend
+on the available platform; routine tests assert structural counts, not speed.
