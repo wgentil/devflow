@@ -1,6 +1,7 @@
 # Native Windows compatibility review
 
-Status: **automated compatibility gates verified; unreleased branch**.
+Status: **automated compatibility gates verified**. The implementation review
+preceded release; authorized v0.3.13 delivery is recorded below.
 Authenticated Windows acceptance is **CANNOT_VERIFY / NOT_RUN**, as permitted by
 the approved spec when no suitable signed-in Windows environment is available.
 
@@ -173,3 +174,11 @@ final documentation/evidence commit follows the tested code SHA; integration is
 a separate user choice. Main's original AGENTS.md edit and other worktrees remain
 untouched. Only this plan's scratch and identified disposable host configurations
 are eligible for cleanup; the managed implementation worktree stays available.
+
+## Authorized delivery follow-up
+
+The user subsequently authorized merge, push and release. The reviewed branch
+was integrated into main; the v0.3.13 metadata bump and exact release package
+passed the merged full suite, all five platform jobs and isolated local/GitHub/
+Windows installation checks. The original AGENTS.md edit remains uncommitted and
+unchanged. See [v0.3.13 validation](../../releases/v0.3.13-validation.md).

@@ -16,7 +16,17 @@ separate gates; WSL2 remains unverified. See the
 [platform matrix](windows-validation.md). Historical counts and review findings
 below retain their original scope.
 
-## Unreleased native Windows compatibility candidate (2026-10-22)
+## v0.3.13 package checks (2026-10-22)
+
+The merged full suite and all five [release CI jobs](https://github.com/wgentil/devflow/actions/runs/39819785691) pass.
+Actual isolated local and GitHub marketplace installations of Codex/Claude and
+native Windows npm-profile installations expose eleven skills and share the
+exact release fingerprint. CLI startup, Codex RPC/cleanup and twelve installed
+hook-script tests pass. Regular user configurations remain unchanged. Signed-in
+Windows tasks, live hook dispatch and real host handoff remain NOT_RUN. See the
+[release validation](releases/v0.3.13-validation.md) for retained machine evidence.
+
+## Pre-release native Windows implementation (2026-10-22)
 
 At `146d503`, isolated actual Windows npm-profile installations of Codex 0.163.0
 and Claude 2.1.308 discover eleven skills and match the corrected source package.

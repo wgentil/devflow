@@ -8,6 +8,16 @@ including both complete native Windows suites and actual installed Codex/Claude 
 The [review report](superpowers/reviews/2026-10-22-native-windows-compatibility.md)
 records corrections, requirement evidence and delivery status.
 
+## Release package v0.3.13
+
+All five [release CI jobs](https://github.com/wgentil/devflow/actions/runs/39819785691) pass at `6793345`, with 733 tests
+per complete suite and both 22-test Windows legacy checks. Fresh actual Windows
+npm installations and isolated local/GitHub Codex/Claude installations match
+fingerprint `e978d5a6065e8a3815502bb7de1fe82111944086b00ed5992dce5c5f3e225b55`. Startup, Codex RPC/cleanup and twelve installed
+hook tests pass; signed-in acceptance remains NOT_RUN. See
+[release validation](releases/v0.3.13-validation.md) for the exact configurations.
+The implementation matrix below retains its original pre-release source scope.
+
 ## Implementation matrix (2026-10-22)
 
 | Gate | Configuration | Result |

@@ -2,7 +2,8 @@
 
 Status: written specification approved by the user on 2026-10-22 after
 `fce6870`. The implementation plan was subsequently approved; Native implementation and
-automated platform verification are complete on the unreleased branch.
+automated platform verification are complete. The user subsequently authorized
+v0.3.13 delivery; see [release validation](../../releases/v0.3.13-validation.md).
 See the [review and remaining signed-in gates](../reviews/2026-10-22-native-windows-compatibility.md).
 Baseline: DevFlow v0.3.12, `0893a2f`. This updates the remaining work from the
 [historical portability design](2026-10-08-windows-portability-design.md).

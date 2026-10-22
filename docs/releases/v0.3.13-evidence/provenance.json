@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "source_sha": "67933454ffca8fdf8ba1738b54c7d7851fc8fff7",
+  "ci_url": "https://github.com/wgentil/devflow/actions/runs/39819785691",
+  "files": {
+    "ubuntu-platform.json": {
+      "source": "https://github.com/wgentil/devflow/actions/runs/39819785691",
+      "raw_sha256": "3efb239169853185ada1f997d1a51b15bfbf5bc5f680192be966aa7c177b0616",
+      "retained_sha256": "3efb239169853185ada1f997d1a51b15bfbf5bc5f680192be966aa7c177b0616",
+      "normalization": "CRLF to LF only"
+    },
+    "macos-platform.json": {
+      "source": "https://github.com/wgentil/devflow/actions/runs/39819785691",
+      "raw_sha256": "9187ce620ba861e391e1d0950559c59d7f53d0e0a2433c8fc64034ba1aad464f",
+      "retained_sha256": "9187ce620ba861e391e1d0950559c59d7f53d0e0a2433c8fc64034ba1aad464f",
+      "normalization": "CRLF to LF only"
+    },
+    "windows-311-platform.json": {
+      "source": "https://github.com/wgentil/devflow/actions/runs/39819785691",
+      "raw_sha256": "c9de0b2a6f6f414b286f5ee1224c8c2222b8d621996bf904186a102f5cfac44e",
+      "retained_sha256": "322f79222b6671b36d68ceb9752cb2b7761f3fade4be23292b5d68614784354a",
+      "normalization": "CRLF to LF only"
+    },
+    "windows-latest-platform.json": {
+      "source": "https://github.com/wgentil/devflow/actions/runs/39819785691",
+      "raw_sha256": "4ef9f457228abd2a767a328900bd2a9e9de2975610bf944112807b434197a1f3",
+      "retained_sha256": "1f89929ab8e64fdf612504f99c4f6f8ad64048c954f8e8ffafb271422c6a5664",
+      "normalization": "CRLF to LF only"
+    },
+    "windows-311-legacy.json": {
+      "source": "https://github.com/wgentil/devflow/actions/runs/39819785691",
+      "raw_sha256": "3a452ff745239c2521e4cca972f8cc69a3e5f2ff8ab7c66e832b3065a421ae9b",
+      "retained_sha256": "18e6212041d73757738f833bc8a8c4e58a1113bc03995f14f261fdb0ab4028b8",
+      "normalization": "CRLF to LF only"
+    },
+    "windows-latest-legacy.json": {
+      "source": "https://github.com/wgentil/devflow/actions/runs/39819785691",
+      "raw_sha256": "6f777879f734200aba5138a86348e101a89045116206dbd0b7607cea13c288b2",
+      "retained_sha256": "c20d593db85cbcb1e28cf8b1fe24b85292aff4d972d0c0727c87c0bac8434252",
+      "normalization": "CRLF to LF only"
+    },
+    "local-installed.json": {
+      "source": "Isolated local host configurations; exact package descriptor matches CI",
+      "raw_sha256": "eaa64ba7f674d0eeeb10acb85a53f69bfc4ae55b9f69a7cef9936eea233cfb04",
+      "retained_sha256": "eaa64ba7f674d0eeeb10acb85a53f69bfc4ae55b9f69a7cef9936eea233cfb04",
+      "normalization": "CRLF to LF only"
+    },
+    "github-installed.json": {
+      "source": "Isolated local host configurations; exact package descriptor matches CI",
+      "raw_sha256": "eaa64ba7f674d0eeeb10acb85a53f69bfc4ae55b9f69a7cef9936eea233cfb04",
+      "retained_sha256": "eaa64ba7f674d0eeeb10acb85a53f69bfc4ae55b9f69a7cef9936eea233cfb04",
+      "normalization": "CRLF to LF only"
+    },
+    "windows-installed.json": {
+      "source": "https://github.com/wgentil/devflow/actions/runs/39819785691",
+      "raw_sha256": "46b405ef53f4abdbea6cfcd1ab69d06846cdf8c287bdac2313bd8b40c7d4cf7d",
+      "retained_sha256": "757f36836d166165bb3a191a210e91d2d915383913a47d946aebf078d0279c50",
+      "normalization": "CRLF to LF only"
+    },
+    "windows-installed-hooks.log": {
+      "source": "https://github.com/wgentil/devflow/actions/runs/39819785691",
+      "raw_sha256": "ac1beb8c55e6147847461af782aca633c7fd65f6969a9852d8874929ef98aa2c",
+      "retained_sha256": "01a79dbf825765752f72b65135e5fd05688a5e711664b1658c0131a3cab46d8a",
+      "normalization": "CRLF to LF only"
+    }
+  }
+}

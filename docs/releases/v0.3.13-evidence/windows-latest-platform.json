@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "success": true,
+  "tests_run": 733,
+  "failures": [],
+  "errors": [],
+  "skips": [
+    {
+      "id": "test_git_paths.GitPathsTests.test_diff_paths_preserve_newline",
+      "reason": "newline is not a valid Windows filename"
+    }
+  ],
+  "expected_failures": [],
+  "unexpected_successes": [],
+  "elapsed_seconds": 1318.585,
+  "metadata": {
+    "platform": "Windows-2025Server-10.0.26100-SP0",
+    "python": "3.14.8 (tags/v3.14.8:8e6e75d, Sep 30 2026, 18:19:33) [MSC v.1944 64 bit (AMD64)]",
+    "executable": "C:\\hostedtoolcache\\windows\\Python\\3.14.8\\x64\\python.exe",
+    "git": "git version 2.56.0.windows.2",
+    "preferred_encoding": "cp1252",
+    "filesystem_encoding": "utf-8",
+    "stdout_encoding": "cp1252",
+    "stderr_encoding": "cp1252",
+    "utf8_mode": 0,
+    "PYTHONUTF8": null,
+    "PYTHONIOENCODING": null,
+    "git_sha": "67933454ffca8fdf8ba1738b54c7d7851fc8fff7",
+    "patterns": [
+      "test_*.py"
+    ]
+  }
+}

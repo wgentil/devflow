@@ -149,5 +149,6 @@ runtime code. Signed-in acceptance remains NOT_RUN under Task 6's explicit
 unavailable-environment path. The
 [review report](../reviews/2026-10-22-native-windows-compatibility.md) records
 requirements, all rulings, review corrections and exact remaining acceptance.
-Integration/release is the separate delivery decision presented to the user.
+The user subsequently authorized merge, push and v0.3.13 release; see
+[release validation](../../releases/v0.3.13-validation.md).
 Main's original AGENTS.md edit and other worktrees remain untouched.
