@@ -717,3 +717,7 @@ release identity across checkouts without relaxing handoff fingerprint checks.
 These attributes apply to the DevFlow package, not application documents or their
 existing tracked-CRLF approval identities. Refresh a checkout/install that predates
 the policy before comparing package parity; do not rewrite journal receipts.
+
+The optional installed-host verifier retains a bounded underlying failure cause
+when a native transport wraps a cleanup/startup error. A failed cleanup is not
+accepted as passing startup evidence.
