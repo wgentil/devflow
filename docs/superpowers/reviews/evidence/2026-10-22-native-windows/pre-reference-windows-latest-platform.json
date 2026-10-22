@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "success": false,
+  "tests_run": 732,
+  "failures": [
+    "test_documentation.DocumentationTests.test_routing_sections_are_mandatory_and_independently_loadable",
+    "test_documentation.DocumentationTests.test_shipped_entry_budgets_and_complete_initial_read_routes"
+  ],
+  "errors": [],
+  "skips": [
+    {
+      "id": "test_git_paths.GitPathsTests.test_diff_paths_preserve_newline",
+      "reason": "newline is not a valid Windows filename"
+    }
+  ],
+  "expected_failures": [],
+  "unexpected_successes": [],
+  "elapsed_seconds": 1139.144,
+  "metadata": {
+    "platform": "Windows-2025Server-10.0.26100-SP0",
+    "python": "3.15.1 (tags/v3.15.1:c37e74c, Oct 21 2026, 06:24:08) [MSC v.1951 64 bit (AMD64)]",
+    "executable": "C:\\hostedtoolcache\\windows\\Python\\3.15.1\\x64\\python.exe",
+    "git": "git version 2.56.0.windows.2",
+    "preferred_encoding": "utf-8",
+    "filesystem_encoding": "utf-8",
+    "stdout_encoding": "utf-8",
+    "stderr_encoding": "utf-8",
+    "utf8_mode": 1,
+    "PYTHONUTF8": null,
+    "PYTHONIOENCODING": null,
+    "git_sha": "d1ae7f1b923065d3807be8311c274d39983a026c",
+    "patterns": [
+      "test_*.py"
+    ]
+  }
+}

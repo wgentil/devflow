@@ -1,77 +1,95 @@
 # Windows validation status
 
-Native Windows and WSL2 are not yet supported releases. The shared source now
-contains platform locking, threaded pipe transport for native Windows, and
-NUL-delimited Git pathname parsing in review and evidence paths. Windows
-checkout CRLF is normalized against LF Git blobs, while tracked CRLF documents
-retain their prior content hashes. Launcher
-liveness now uses a Windows process handle so reconciliation never signals a
-running process while checking it. Package and runtime JSON files are decoded as
-UTF-8 independent of the Windows console code page. The full Python suite passed
-on [macOS, Ubuntu, and native Windows CI](https://github.com/wgentil/devflow/actions/runs/37936398518)
-at commit `c574eeb` (421 tests per runner, with one Windows-only lock test).
-Authenticated installed-host checks remain open.
+The native Windows compatibility candidate is **unreleased**. Automated core
+runtime, actual plugin installation/startup and signed-in host acceptance are
+separate gates. All five automated jobs pass for
+[`146d503`](https://github.com/wgentil/devflow/actions/runs/39809931113),
+including both complete native Windows suites and actual installed Codex/Claude checks.
+The [review report](superpowers/reviews/2026-10-22-native-windows-compatibility.md)
+records corrections, requirement evidence and delivery status.
 
-| Gate | macOS | Linux | WSL2 Linux filesystem | Native Windows |
-| --- | --- | --- | --- | --- |
-| Full Python suite | Pass, CI Python 3.11 | Pass, CI Python 3.11 | Not run | Pass, CI Python 3.11.9 and Git for Windows 2.55.0 |
-| Isolated Codex plugin install | Prior 0.3.2 release only | Not run | Not run | Not run |
-| Isolated Claude plugin and hooks | Prior 0.3.2 release only | Not run | Not run | Pass: Claude Code 2.1.295 installed DevFlow 0.3.2 from checkout; 7 hook tests passed against installed copy. Live event delivery not run |
-| Real native workers and cleanup | Not run for this branch | Not run | Not run | Not run |
-| Cross-host handoff and parity | Not run for this branch | Not run | Not run | Not run |
+## Candidate matrix (2026-10-22)
 
-Claude hooks now use a shell-free Python command and plugin-root argument. Live
-Windows hook dispatch and cross-OS repository relocation still need real-host
-tests. Windows process-tree termination now uses a Windows Job Object instead of console
-commands; new workers start suspended and join the Job before resuming, closing
-the process-start assignment race. The subprocess-grandchild cleanup fixture passed on Windows CI, while
-installed worker tests are still needed. A WSL2 test must use a repository in the Linux filesystem;
-results cannot be generalized to `/mnt/c`.
+| Gate | Configuration | Result |
+| --- | --- | --- |
+| Complete local suite | macOS, Python 3.14.7 | PASS: 733 tests, three Windows-only skips, 223.993s |
+| Complete CI suite | Ubuntu, Python 3.11.17, Git 2.55.0 | PASS: 733 tests, three Windows-only skips, 92.317s |
+| Complete CI suite | macOS, Python 3.11.9, git version 2.56.0 | PASS: 733 tests, three Windows-only skips, 364.772s |
+| Complete ordinary Windows suite | Native Windows, Python 3.11.9, Git 2.56.0.windows.2; ordinary CP1252, UTF-8 mode off | PASS: 733 tests, one POSIX filename skip, 1100.328s |
+| Complete ordinary Windows suite | Native Windows, Python 3.15.1, Git 2.56.0.windows.2 | PASS: 733 tests, one POSIX filename skip, 912.444s |
+| Explicit legacy-code-page checks | Windows Python 3.11.9, `-X utf8=0`, `PYTHONIOENCODING=cp1252` | PASS: 22 tests, zero skips, 21.188s |
+| Explicit legacy-code-page checks | Windows Python 3.15.1, same explicit CP1252 settings | PASS: 22 tests, zero skips, 12.268s |
+| Actual isolated Codex and Claude installs | Windows npm profile, native Node 22, Codex 0.163.0 / Claude 2.1.308 | PASS: eleven skills each, exact candidate package |
+| Actual startup / protocol | Both Windows CLIs; Codex initialize/account RPC and confirmed cleanup | PASS; no model turn submitted |
+| Installed Claude hook scripts | Python 3.11.9 available as `python3` | PASS: twelve tests; live host event dispatch NOT_RUN |
+| Actual isolated local installs / startup | macOS Codex 0.162.1 / Claude 2.1.299 | PASS: same exact package, eleven skills, RPC and twelve installed hook tests |
+| Signed-in guided workflow / worker execution / live events | Native Windows | NOT_RUN: suitable authenticated Windows environment unavailable |
+| Same-release live host handoff / cross-OS relocation | Native Windows | NOT_RUN; deterministic workflow checks are a separate gate |
+| WSL2 Linux filesystem / `/mnt/c` | Separate environments | NOT_RUN |
 
-The `claude-plugin-windows` CI job installs the current Claude Code CLI on a
-clean Windows runner, validates this marketplace, installs DevFlow from the
-checkout at local scope, checks the installed version and hook files, and runs
-the hook behavior suite against the installed copy. This can establish package
-and hook-script behavior without authentication. A live Claude session must
-still prove that Claude dispatches each installed hook event as expected.
-Claude's validator warns that the repository's root `CLAUDE.md` is not loaded
-as plugin context; DevFlow's shipped instructions live in its skills.
+Actual Windows installed checks used PowerShell 7 and runner image
+`windows-2025-vs2026` / `20261018.275.1`. The verified Windows and macOS installed
+packages share fingerprint
+`316f713a312b78b2fa7e8e92639221ceb14b7fddd33207189d5a210a37ee488f`.
+The package still reports version `0.3.12`; the candidate fingerprint, not that
+unchanged version label, identifies this unreleased build.
+[Retained machine reports](superpowers/reviews/evidence/2026-10-22-native-windows/README.md)
+separate initial failures from final acceptance evidence.
 
-Before changing support language, validate the candidate release against the open
-host checks in the matrix above. The historical
-[WSL2 plan](superpowers/plans/2026-10-08-wsl2-validation.md) and
-[native Windows plan](superpowers/plans/2026-10-08-native-windows-port.md) record
-the original scope; adapt their remaining host checks to the candidate release
-and its actual skill inventory. Record actual OS, Python, Git, host CLI, plugin
-version, package fingerprint, commands and outcomes here. Keep unavailable cells
-explicit.
+## What is implemented
 
-## Native compatibility candidate (2026-10-22)
+Owned document/request boundaries and CLI/hook protocol bytes use explicit UTF-8
+without ordinary-user encoding environment settings. Structured reports decode
+strictly; arbitrary command logs retain their raw evidence bytes. Package Git
+attributes retain LF package and routed-reference text and unchanged binary
+assets across OS checkouts, so
+release parity remains an exact-byte comparison. Application documents retain
+existing tracked-CRLF approval identities.
 
-The approved candidate branch adds explicit UTF-8 files/protocol output, strict
-report decoding with raw evidence, Unicode workflow regressions, and safe npm
-host executable resolution. Its complete ordinary Windows Python 3.11/latest
-suite and explicit legacy-code-page checks write machine-readable reports without
-fail-fast. The isolated host job installs both actual CLIs, requires eleven skills
-and exact package fingerprints, checks real startup/Codex RPC, and runs installed
-hook scripts. Candidate results are pending; earlier matrix rows remain historical.
-Signed-in worker execution, live event dispatch and cross-host acceptance remain
-separate unverified gates. No support claim changes until candidate evidence exists.
+Windows host launching uses native executables or validated npm package entry
+points through native Node, without evaluating batch/shell text. Processes join a
+Windows Job Object before their initial thread resumes. Cleanup retains verified
+member handles, terminates and waits, rescans descendants and confirms zero active
+processes; failed or timed-out confirmation blocks replacement. Deterministic
+transport fixtures establish process behavior, not signed-in model execution.
+Native vendor `.exe` resolution is implemented and fixture-tested; the actual
+installed Windows acceptance profile here is npm.
 
-Maintainers run `python scripts/run_platform_tests.py --output REPORT.json` for a
-complete failure list and locale/version metadata. Optional `--pattern` selects
-modules; `--start-dir` selects an owned fixture directory for runner tests. An
-empty suite fails. The installed-package check is
-`python scripts/verify_windows_install.py --source-root PACKAGE --codex-list CODEX.json --codex-cache CACHE --claude-list CLAUDE.json --output REPORT.json`.
-These are developer checks, not plugin onboarding steps.
+The native Claude profile requires Python 3.11+ available as `python3` and Claude
+Code 2.1.295+ for mandatory launcher-failure blocking. DevFlow provisions neither
+Python nor aliases. Live Claude dispatch must still prove that installed events
+arrive in real sessions. Ordinary onboarding remains in the
+[quick start](quick-start.md) and [primary setup guide](setup-and-usage.md).
+
+## Reproduce the maintainer checks
+
+`python scripts/run_platform_tests.py --output REPORT.json` runs a complete
+non-fail-fast suite and records all failure/error IDs, counts, skips, OS/Python/Git
+versions and encoding settings. Optional `--pattern` selects modules;
+`--start-dir` selects an owned fixture directory for runner tests. Empty suites
+fail. The ordinary CI jobs do not force UTF-8; dedicated Windows legacy checks
+set their own validation environment.
+
+`python scripts/verify_windows_install.py --source-root PACKAGE --codex-list CODEX.json --codex-cache CACHE --claude-list CLAUDE.json --output REPORT.json`
+checks enabled actual installations, eleven skills, exact package identity,
+startup, Codex RPC and installed hook scripts. Wrapped failures retain a bounded
+underlying cause; a cleanup failure remains a failed gate. Disposable host
+configurations must be outside the source package; regular user installations
+are left unchanged. These are developer checks, not onboarding steps.
 
 The [signed-in Windows acceptance procedure](examples/windows-host-acceptance.md)
-records remaining workflow/event/worker/handoff gates. No suitable signed-in
-Windows environment is available in this execution; those rows remain NOT_RUN.
+specifies the missing environment, genuine approvals, live events, worker
+interruption/cleanup, independent review and handoff evidence. Credentials were
+not copied to CI and no paid model probes were submitted.
 
-The initial Windows candidate installation passed but exposed a cross-OS package
-identity defect: Git automatic CRLF conversion changed fingerprinted text bytes.
-A real autocrlf checkout reproduced the exact Windows fingerprint. Package-scoped
-Git attributes now retain LF text and unchanged binary assets; a real clone
-regression checks exact release parity. Updated candidate CI must establish the
-resulting package fingerprint before this becomes a completed gate.
+## Historical evidence
+
+The older [421-test CI run](https://github.com/wgentil/devflow/actions/runs/37936398518)
+at `c574eeb` and Claude 0.3.2 package checks describe that historical release.
+They do not establish this candidate's compatibility. The first complete current
+candidate run at `2a8e7df` retained all Windows failures; fixture/client encoding,
+newline, NTFS mode-bit and exact package identity corrections followed. Its
+reports remain in the evidence directory. The historical
+[WSL2 plan](superpowers/plans/2026-10-08-wsl2-validation.md) and
+[native Windows plan](superpowers/plans/2026-10-08-native-windows-port.md) retain
+original planning scope; current results and missing host gates are above.

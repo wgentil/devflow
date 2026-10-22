@@ -11,7 +11,8 @@ setup steps. Existing Python 3.11+ available as `python3` on macOS/Linux is
 required; this package does not provision an interpreter. Native Windows core
 runtime, installed-package/startup checks and signed-in workflows are separate
 validation gates. See the [platform matrix](windows-validation.md) for exact
-candidate evidence; signed-in Windows event/worker/handoff acceptance remains
+candidate evidence. Unreleased candidate checks do not change the package served
+from the marketplace until integration and publication. Signed-in Windows event/worker/handoff acceptance remains
 unverified, and WSL2 is a separate target. The native Windows Claude profile
 requires Python 3.11+ available as `python3` and Claude Code 2.1.295+ for mandatory
 launcher-failure blocking. DevFlow does not install Python or create aliases.

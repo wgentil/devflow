@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "files": {
+    "final-macos-installed.json": {
+      "raw_sha256": "371bbd9a54869f7e30bcc9383d0aac6018e85c49322bd4689f5f32ec1510cd52",
+      "retained_sha256": "371bbd9a54869f7e30bcc9383d0aac6018e85c49322bd4689f5f32ec1510cd52",
+      "normalization": "CRLF to LF only; all report fields retained",
+      "source": "Isolated local macOS host installations; exact descriptor fingerprint in report; no CI SHA"
+    },
+    "initial-windows-311-legacy.json": {
+      "raw_sha256": "1f1c35de0df2b872b6d714b903b33b591f9dc9c553c56706e62f914fcdd9b5f2",
+      "retained_sha256": "4542016bafa0c3f1b2d16bbadb5ae490339f1affc3753559b21c8f406725d634",
+      "normalization": "CRLF to LF only; all report fields retained",
+      "source": "https://github.com/wgentil/devflow/actions/runs/39798471005"
+    },
+    "initial-windows-311-platform.json": {
+      "raw_sha256": "acde1ecf39b674dae0260859673c3d0185deb6ad35976e942205fd956d3f2335",
+      "retained_sha256": "4beb7deb2d2cbf37ec9bf52e11bc8dbe35598000019bf5706ebc05e543987f4b",
+      "normalization": "CRLF to LF only; all report fields retained",
+      "source": "https://github.com/wgentil/devflow/actions/runs/39798471005"
+    },
+    "initial-windows-latest-legacy.json": {
+      "raw_sha256": "fb75ab4c076dc1e1babcb0a59670cb21621fdbc1bdbcf86d755ecb4be95acda5",
+      "retained_sha256": "020416838a564b6f90ee359f3abbb2f6bf5c52f30dd9c96a0018d2e1f0df9092",
+      "normalization": "CRLF to LF only; all report fields retained",
+      "source": "https://github.com/wgentil/devflow/actions/runs/39798471005"
+    },
+    "initial-windows-latest-platform.json": {
+      "raw_sha256": "528c09ba48e9c9dc62e7e41a615e0ceb087cf3984bff8f0b1fa6f20dc698d16d",
+      "retained_sha256": "def991476aa02888bda4025eade3265b8238d283e14d9605cb33d667018fa507",
+      "normalization": "CRLF to LF only; all report fields retained",
+      "source": "https://github.com/wgentil/devflow/actions/runs/39798471005"
+    },
+    "final-windows-installed-hooks.log": {
+      "raw_sha256": "5b5fee14f63d078058ff4ad2275e765f673025ac8e1c8ce8f5400778eee95f0c",
+      "retained_sha256": "b43564a1ae722ea6db8f561b0f33eaeb0231b18f01b2b09a43b1eff015afce84",
+      "normalization": "CRLF to LF only; all report fields retained",
+      "source": "https://github.com/wgentil/devflow/actions/runs/39809931113"
+    },
+    "final-windows-installed.json": {
+      "raw_sha256": "dfc74215a8d2f22e5f996bae1ce0a7611df39f49bff7fe3740fde5da5e44a5e4",
+      "retained_sha256": "c1a90edcb5ba8d2b9284eac923ec397b4c13dc49d4477e508b59ed06e8287a8c",
+      "normalization": "CRLF to LF only; all report fields retained",
+      "source": "https://github.com/wgentil/devflow/actions/runs/39809931113"
+    },
+    "diagnostic-windows-installed.json": {
+      "raw_sha256": "c62a58ba84d158b43f7b7b28c521491361e703618b3c2e95950a11d559656d61",
+      "retained_sha256": "997189824dca248d391440511fa13a9de92a59f57d2c6c291d6f8fb61eccdadd",
+      "normalization": "CRLF to LF only; all report fields retained",
+      "source": "https://github.com/wgentil/devflow/actions/runs/39806502642"
+    },
+    "final-ubuntu-platform.json": {
+      "raw_sha256": "6751898a3800eed05cc98d296bc085e8c403957cd5f11f8e899c84926e9dfb65",
+      "retained_sha256": "6751898a3800eed05cc98d296bc085e8c403957cd5f11f8e899c84926e9dfb65",
+      "normalization": "CRLF to LF only; all report fields retained",
+      "source": "https://github.com/wgentil/devflow/actions/runs/39809931113"
+    },
+    "pre-reference-windows-311-legacy.json": {
+      "raw_sha256": "79ad1ae849d284d2f94e69e47e1e0c80e9b5b1bb8d3bd3a95c63eef88a65039e",
+      "retained_sha256": "79a6618518eda8b352363040b347c46a09bd02493edf19cb33364517cda38f5d",
+      "normalization": "CRLF to LF only; all report fields retained",
+      "source": "https://github.com/wgentil/devflow/actions/runs/39806877981"
+    },
+    "pre-reference-windows-311-platform.json": {
+      "raw_sha256": "e87cd14bfdde04b3fdad95df3e722af6faf4a4770ead2786a9824506de952538",
+      "retained_sha256": "29ead412ab679ec65959ed41ff950a62d9a9b38dcb55cbe2b99b1ecc1e6c98de",
+      "normalization": "CRLF to LF only; all report fields retained",
+      "source": "https://github.com/wgentil/devflow/actions/runs/39806877981"
+    },
+    "pre-reference-windows-latest-legacy.json": {
+      "raw_sha256": "a2700fcbbf3785ad4a557409635a0f8399c671f02114d20fc82e23eddc14ef1a",
+      "retained_sha256": "40bd9c2205141b1ff77e566ca96f2ceff6f0424f08783f7322cb9b896cf60857",
+      "normalization": "CRLF to LF only; all report fields retained",
+      "source": "https://github.com/wgentil/devflow/actions/runs/39806877981"
+    },
+    "pre-reference-windows-latest-platform.json": {
+      "raw_sha256": "44e2f3890a26fd6b98126db997253075d7872bc6f448094904e23227651fbb78",
+      "retained_sha256": "9932112844e6399e0157eb63460d0b27b2ffe93a8f9c733ac5d09f73a97a047d",
+      "normalization": "CRLF to LF only; all report fields retained",
+      "source": "https://github.com/wgentil/devflow/actions/runs/39806877981"
+    },
+    "final-macos-platform.json": {
+      "raw_sha256": "109a7b0b252e924dce019ba20c1ba154e47d2c73616868c6b21983fbeda8d747",
+      "retained_sha256": "109a7b0b252e924dce019ba20c1ba154e47d2c73616868c6b21983fbeda8d747",
+      "normalization": "CRLF to LF only; all report fields retained",
+      "source": "https://github.com/wgentil/devflow/actions/runs/39809931113"
+    },
+    "final-windows-latest-legacy.json": {
+      "raw_sha256": "d5a8affc71be983ca63e64458f3ddaeab0c8ba77a17695f7e828d12b0c953f47",
+      "retained_sha256": "94f2dffd116154278963365e769618c9d2700ebb9496b065d6aba454ce30434f",
+      "normalization": "CRLF to LF only; all report fields retained",
+      "source": "https://github.com/wgentil/devflow/actions/runs/39809931113"
+    },
+    "final-windows-latest-platform.json": {
+      "raw_sha256": "ad1698eb67af8610a394b4a9360be4e0761af4d7afc47f87d32b18baf52da928",
+      "retained_sha256": "18cd91d0244a099deb95528ea6fbe26117c80652357e7c8ab20012dfe7afdc94",
+      "normalization": "CRLF to LF only; all report fields retained",
+      "source": "https://github.com/wgentil/devflow/actions/runs/39809931113"
+    },
+    "final-windows-311-legacy.json": {
+      "raw_sha256": "d55a2b8801025781484fdc285f72dedae8bf8205f88a521543759a66f8ef170e",
+      "retained_sha256": "ad6fb88d14567870075a6006dfe9a90497348602ad893e612c1734be70816f0a",
+      "normalization": "CRLF to LF only; all report fields retained",
+      "source": "https://github.com/wgentil/devflow/actions/runs/39809931113"
+    },
+    "final-windows-311-platform.json": {
+      "raw_sha256": "469f26c31bbabbd6b574d72f83260b1ebc5223e6ae99c618c9acdc1afa542c8f",
+      "retained_sha256": "f93fb3d415f343487ca5ee679bb5e9845578036c9eb96323053cf06ac146b7c0",
+      "normalization": "CRLF to LF only; all report fields retained",
+      "source": "https://github.com/wgentil/devflow/actions/runs/39809931113"
+    }
+  }
+}

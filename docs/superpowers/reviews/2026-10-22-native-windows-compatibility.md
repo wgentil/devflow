@@ -1,133 +1,175 @@
 # Native Windows compatibility review
 
-Status: implementation verification in progress; native CI and the independent
-whole-branch review are not complete. This is not a Windows support release.
+Status: **automated compatibility gates verified; unreleased branch**.
+Authenticated Windows acceptance is **CANNOT_VERIFY / NOT_RUN**, as permitted by
+the approved spec when no suitable signed-in Windows environment is available.
 
-Spec: [native Windows compatibility](../specs/2026-10-22-native-windows-compatibility-design.md).
-Plan: [approved Native implementation](../plans/2026-10-22-native-windows-compatibility.md).
-Baseline: `6a76e4c` (product baseline v0.3.12 / `0893a2f`).
+Spec: [approved design](../specs/2026-10-22-native-windows-compatibility-design.md).
+Plan: [Native implementation](../plans/2026-10-22-native-windows-compatibility.md).
+Baseline: `6a76e4c` (product v0.3.12 / `0893a2f`).
 Branch: `fix/native-windows-compatibility`.
 
-## Verification evidence
+## Final verification
 
-- Baseline: 688 tests OK, one Windows-only skip, 235.632s on macOS.
-- After encoding/protocol/workflow fixes: 706 tests OK, two platform-only skips,
-  211.773s. The invalid-UTF-8 RED-proof regression failed before its fix.
-- Candidate local report: 717 tests OK, two platform-only skips, 216.102s.
-- Actual isolated local Codex 0.162.1 / Claude 2.1.299: exact eleven-skill
-  package fingerprints, CLI startup, Codex initialize/account RPC and twelve
-  installed hook-script tests pass. No model turn or live host event is implied.
-- [Initial candidate CI](https://github.com/wgentil/devflow/actions/runs/39798471005)
-  at `2a8e7df`: Ubuntu/macOS/Windows installed-host jobs passed. Full Windows
-  Python 3.11.9 collected 717 tests, six failures plus three errors (1239.532s);
-  Python 3.15.0 collected 717 tests, six failures plus two errors (1263.321s).
-  Both skipped only the POSIX newline-filename case. Ordinary 3.11 used CP1252
-  with UTF-8 mode off; 3.15 used UTF-8 mode. The explicit legacy jobs used CP1252
-  with UTF-8 mode off and collected eighteen tests each; their one failure was
-  an OS-specific diagnostic filename assumption.
-- The full native failure lists exposed fixture/client assumptions: double-CR
-  fixture conversion, implicit CRLF writes in exact-LF fixtures, a legacy-codepage
-  review test client, POSIX mode bits on NTFS, package checkout documentation
-  budgets, and a CreateProcess diagnostic filename expectation. Exact-byte fixture
-  assertions are preserved by explicit LF writers. CRLF construction is idempotent;
-  genuine tracked-CRLF and binary hashes remain unchanged. The same real fixtures
-  fail locally under scoped Windows-default simulation before the corrections.
-- [Updated installed-package CI](https://github.com/wgentil/devflow/actions/runs/39801355478)
-  at `f100903` passed both actual Windows packages, eleven skills, Codex 0.163.0 /
-  Claude 2.1.308 startup, Codex RPC and installed hook scripts. Its fingerprint
-  exactly matches the actual local Mac installations:
-  `cdf06654a19cc22551098365c751b1dbcacc99d67c4190a5f38b3e48cb8b7cbd`.
-  The obsolete full-suite run was superseded after both complete initial failure
-  lists were retained; the corrected candidate must run the full matrix again.
+[Complete candidate CI](https://github.com/wgentil/devflow/actions/runs/39809931113)
+tested `146d503fa344a336aa9b86d23070b9cdf2f7d9cc`. All five jobs pass. The final report/status/evidence commit
+follows this tested SHA and changes only documentation, retained reports and their LF checkout metadata;
+no fingerprinted package file or runtime code changes after the tested SHA.
 
-Latest completed local full run before the Windows fixture corrections: **718
-tests OK**, two platform-only skips, 220.039s. The next final run includes scoped
-fixture/client regressions. Installed Windows used Python 3.11.9,
-Git 2.56.0.windows.2 and PowerShell 7 on image windows-2025-vs2026 20261018.275.1.
-A real autocrlf checkout of `2a8e7df` reproduced its exact Windows fingerprint
-`470570a9c42d6ee7ed46085e10098caf4dc2cbc4b06304b9a9ac5c84391c93ca`;
-the LF source was `e788a6e5657e9d11e876e31c5e163cf92683eab08331070ede673d62cccf42cd`.
-Package-scoped Git attributes fix that difference without hash normalization.
-
-
-## Requirement assessment (in progress)
-
-| Requirement | Current status | Changed-file evidence and remaining check |
+| Gate | Actual configuration | Tests / skips / elapsed |
 | --- | --- | --- |
-| R1 explicit UTF-8 files | CANNOT_VERIFY | `tests/test_utf8_boundaries.py:35`; real Windows result pending |
-| R2 UTF-8 CLI/hook protocol | CANNOT_VERIFY | `skills/workflow/scripts/workflow_lib/utf8_io.py:8`, `tests/test_utf8_protocol.py:32`; Windows result pending |
-| R3 complete native suites | CANNOT_VERIFY | `scripts/run_platform_tests.py:22`, `.github/workflows/platform-tests.yml:7`; Windows reports pending |
-| R4 workflow/path/journal invariants | CANNOT_VERIFY | `tests/test_windows_workflow.py:42`, `tests/test_windows_workflow.py:118`; Windows/NTFS result pending |
-| R5 installed executable/process checks | CANNOT_VERIFY | `skills/workflow/scripts/workflow_lib/native_executables.py:12`, `scripts/verify_windows_install.py:59`; real Windows installed job pending |
-| R6 signed-in acceptance | CANNOT_VERIFY | `docs/examples/windows-host-acceptance.md:1`; no suitable signed-in Windows environment; automated package/startup evidence remains separate |
-| R7 support documentation | CANNOT_VERIFY | `docs/setup-and-usage.md:11`; final matrix pending |
-| R8 reviewed branch/evidence | CANNOT_VERIFY | This report; final native evidence and fresh review pending |
+| Local full suite | macOS 27.0.1 arm64 / Python 3.14.7 / Git 2.50.1 / zsh 5.9 | 733 / 3 / 223.993s |
+| ubuntu | Linux-6.17.0-1022-azure-x86_64-with-glibc2.39 / Python 3.11.17 / git version 2.55.0 | 733 / 3 / 92.317s |
+| macos | macOS-26.6.2-arm64-arm-64bit / Python 3.11.9 / git version 2.56.0 | 733 / 3 / 364.772s |
+| windows-311 | Windows-10-10.0.26100-SP0 / Python 3.11.9 / git version 2.56.0.windows.2 | 733 / 1 / 1100.328s |
+| windows-latest | Windows-2025Server-10.0.26100-SP0 / Python 3.15.1 / git version 2.56.0.windows.2 | 733 / 1 / 912.444s |
+| Windows 311, explicit legacy | Python 3.11.9, cp1252, UTF-8 mode 0 | 22 / 0 / 21.188s |
+| Windows latest, explicit legacy | Python 3.15.1, cp1252, UTF-8 mode 0 | 22 / 0 / 12.268s |
+
+Every full suite collected all tests without fail-fast. Unix skips only the
+native Windows byte-range-lock, NTFS junction and Job/process-handle tests.
+Windows skips only the POSIX newline-filename case. Both explicit legacy suites
+have no skips. Ordinary jobs do not set `PYTHONUTF8` or `PYTHONIOENCODING`;
+the dedicated legacy jobs use `-X utf8=0` and `PYTHONIOENCODING=cp1252`.
+Actual encoding/version details and all failure/error/skip IDs are retained in the
+[machine reports](evidence/2026-10-22-native-windows/README.md).
+
+Actual isolated Windows npm-profile Codex 0.163.0
+and Claude 2.1.308 installations pass:
+eleven skills each, exact source package identity, CLI startup, Codex
+initialize/account RPC with confirmed cleanup, and twelve installed hook-script
+tests. The Windows runner uses Python 3.11.9, Git 2.56.0.windows.2, native Node 22
+and PowerShell 7 on Windows Server 2025, image
+`windows-2025-vs2026` / `20261018.275.1`. Local isolated
+macOS Codex 0.162.1 /
+Claude 2.1.299 installs pass the same checks.
+Both OS installations match fingerprint
+`316f713a312b78b2fa7e8e92639221ceb14b7fddd33207189d5a210a37ee488f`.
+The version label remains 0.3.12; this fingerprint identifies the unreleased
+candidate, distinct from the published 0.3.12 package. No model turn or live event
+acceptance is implied by account-status/startup or direct hook-script tests.
+
+## Diagnosis retained
+
+The first complete native Windows run at `2a8e7df` collected every failure:
+Python 3.11 had six failures plus three errors, and Python 3.15 had six failures
+plus two errors. Each collected 717 tests and skipped only the POSIX filename
+case. The initial and pre-reference-fix reports remain in the evidence directory.
+Corrections preserve exact assertions: explicit LF byte-specific fixtures,
+idempotent CRLF conversion, explicit UTF-8 clients, and native Windows ACL
+expectations while retaining all root/run/hash/symlink rejection checks.
+
+A real autocrlf checkout reproduced the initial installed-package fingerprint
+mismatch. Package-scoped LF/auto-binary attributes fixed it without normalizing
+release hashes. Native verification later exposed routed-reference CRLF drift;
+a separate real Git clone regression failed before LF policy was extended only
+to `docs/reference/**`, then passed with unchanged binary fixture bytes and
+unchanged documentation budgets. Both native full suites now pass the original
+generated-report checks.
+
+## Requirement assessment
+
+| Requirement | Status | Changed-file evidence |
+| --- | --- | --- |
+| R1 explicit UTF-8 files | MET | `tests/test_utf8_boundaries.py:32`, `tests/test_utf8_boundaries.py:61`; both real Windows versions and explicit legacy checks pass |
+| R2 UTF-8 CLI/hook protocol | MET | `skills/workflow/scripts/workflow_lib/utf8_io.py:8`, `skills/workflow/scripts/workflow_lib/utf8_io.py:26`, `skills/workflow/scripts/run.py:817`, `tests/test_utf8_protocol.py:76`, `tests/test_utf8_protocol.py:104`; real child and in-process output/retry/diagnostic checks pass |
+| R3 complete native suites | MET | `scripts/run_platform_tests.py:22`, `.github/workflows/platform-tests.yml:7`; four complete 733-test suites and both 22-test legacy reports pass at the tested SHA |
+| R4 workflow/path/journal invariants | MET | `tests/test_windows_workflow.py:42`, `tests/test_windows_workflow.py:55`, `tests/test_windows_workflow.py:83`, `tests/test_windows_workflow.py:118`, `tests/test_package.py:128`; native workflow, NTFS, locking and content identity checks pass |
+| R5 installed executable/process checks | MET | `skills/workflow/scripts/workflow_lib/native_executables.py:12`, `skills/workflow/scripts/workflow_lib/process_transport.py:28`, `tests/test_process_transport.py:163`, `scripts/verify_windows_install.py:59`; real installed npm startup/RPC plus deterministic native interruption/tree/pipe tests pass |
+| R6 signed-in acceptance | CANNOT_VERIFY | `docs/examples/windows-host-acceptance.md:1`, `scripts/verify_windows_install.py:59`; automated installation subgates pass, but suitable signed-in Windows access is unavailable and live workflow/event/model/handoff rows remain NOT_RUN |
+| R7 support documentation | MET | `docs/setup-and-usage.md:11`, `docs/windows-validation.md:1`, `docs/quick-start.md:3`; support tiers, actual prerequisites, unreleased status and missing acceptance are explicit |
+| R8 reviewed branch/evidence | MET | This report and `docs/superpowers/reviews/evidence/2026-10-22-native-windows/README.md:1`; one independent review, TDD correction pass, full native evidence, preserved user edit and separate delivery boundary |
 
 ## Documentation review
 
-Primary setup, quick start, skills index, host/native guides and workflow
-references distinguish runtime, installed-package and signed-in gates. Detailed
-commands stay in optional developer/acceptance references. SKILL metadata and the
-workflow responsibility diagram need no change: agent responsibilities and public
-command flow are unchanged. The new native-launch diagram documents the changed
-internal executable path. Documentation policy budgets are unchanged; the shared
-reference wording was shortened to remain below its existing limit.
+Primary setup, quick start, skills index, host/native guides, developer examples,
+workflow GUIDE/REFERENCE and diagrams were reviewed. Onboarding remains free of
+helper paths, shell variables and direct Python commands. Maintainer details stay
+in optional references. SKILL metadata and the workflow responsibility diagram
+need no content change because responsibilities and public flow are unchanged;
+the native-launch diagram describes the changed internal route.
+Documentation links, examples, command syntax and skill metadata pass checks.
+Existing budgets are unchanged; aggregate skill entry size stays **25,540 bytes**.
+The changed migration example ran successfully. Post-CI report/status changes
+receive focused documentation/protocol/package checks, with no runtime change.
 
 ## Rulings I made
 
-- Baseline: 688 tests OK (1 Windows-only skip), 235.632s. Task 1 RED: 16 failures + Unicode patch read error under CP1252; fixes target those boundaries. Task 1 Ruling: valid Unicode domain requests cover docs, schedules, migration and reports; other JSON readers use actual CLI strict-invalid-byte rejection before domain processing, avoiding synthetic provider/journal receipts — narrower fixtures, same decoding contract — cost if wrong: valid domain values need further integration coverage.
-- Task 3 RED: invalid report accepted as RED; Unicode initialization/report/commit text decode errors. GREEN: all 8 regressions pass (1 NTFS-only skip); complete suite 706 tests OK (2 platform-only skips), 211.773s. Setup reviewed: current unsupported-host language stays until CI evidence. Task 3 Ruling: all existing declared UTF-8 machine clients and Git text helpers get explicit UTF-8 alongside demonstrated consumers; binary Git blobs/diffs remain unchanged — cost if wrong: a tool emitting legacy rather than declared UTF-8 requires a separate adapter. Invalid structured report stdout is strict; diagnostic stderr replacement is presentation only and raw bytes remain the evidence.
-- Task 4: launcher regressions 4 FAIL before resolver, 4 PASS after; real Node preserves Unicode/quotes/&/%/substitution arguments without marker side effects. All six named regression modules and Claude plugin validate PASS. Primary setup retains current acceptance limitations until CI. Task 4 Ruling: direct script startup failure and exec-form path tests prove adapter behavior; Claude host-side onFailure dispatch still needs real installed event acceptance, so schema validation is not recorded as live fail-closed dispatch proof — cost if wrong: host event availability remains unproven.
-- Task 5 RED: two runner tests and three install parser tests fail absent scripts; GREEN 5/5. Task 5 Ruling: add optional --start-dir to exercise real nonzero CLI results against owned temporary modules, avoiding recursive suite execution or temporary writes into plugin source — cost if wrong: one extra maintainer flag to retain.
-- Task 5 candidate CI: https://github.com/wgentil/devflow/actions/runs/39798471005, SHA 2a8e7df5b196e80cc3375248647849e59349841a. Task 5 Ruling: while external CI queues/runs, prepare independent Task 6 procedure/documentation; Task 5 remains incomplete until native evidence is inspected, and final support claims wait for it — cost if wrong: procedure may need an evidence-driven correction.
+- valid Unicode domain requests cover docs, schedules, migration and reports; other JSON readers use actual CLI strict-invalid-byte rejection before domain processing, avoiding synthetic provider/journal receipts — narrower fixtures, same decoding contract — cost if wrong: valid domain values need further integration coverage.
+- all existing declared UTF-8 machine clients and Git text helpers get explicit UTF-8 alongside demonstrated consumers; binary Git blobs/diffs remain unchanged — cost if wrong: a tool emitting legacy rather than declared UTF-8 requires a separate adapter. Invalid structured report stdout is strict; diagnostic stderr replacement is presentation only and raw bytes remain the evidence.
+- direct script startup failure and exec-form path tests prove adapter behavior; Claude host-side onFailure dispatch still needs real installed event acceptance, so schema validation is not recorded as live fail-closed dispatch proof — cost if wrong: host event availability remains unproven.
+- add optional --start-dir to exercise real nonzero CLI results against owned temporary modules, avoiding recursive suite execution or temporary writes into plugin source — cost if wrong: one extra maintainer flag to retain.
+- while external CI queues/runs, prepare independent Task 6 procedure/documentation; Task 5 remains incomplete until native evidence is inspected, and final support claims wait for it — cost if wrong: procedure may need an evidence-driven correction.
+- retain exact content assertions by making byte-specific fixtures write LF; make CRLF fixture conversion idempotent; Windows artifact access uses native ACLs, so POSIX mode-bit assertion applies only to POSIX while all root/run/hash/symlink attacks still execute on Windows — cost if wrong: inherited Windows directory ACLs need separate owner policy.
+- inject a Unicode spawn error for the hook wire test because Windows CreateProcess omits filename; actual UTF-8 helper subprocess tests still execute unchanged — cost if wrong: platform-specific diagnostic formatting has only native host coverage.
+- overlap the single read-only whole-branch code review with final local/native verification, rather than delaying all review feedback until another twenty-minute native run finishes. Reviewer receives all known native failures, corrections and pending gates; no delivery before required native results and the one Important/Critical TDD correction pass are complete — cost if wrong: any later native-only repair is verified by tests rather than a second independent review, consistent with Native execution.
+- re-grade pre-write output accounting from Minor to Important — measured emitted bytes are a stated protocol/statistics contract and recording success before an immediate pipe failure misreports actual observations — cost if wrong: a small accounting-order change adds gap rather than attempted-byte records for failed responses.
+- signed-in Windows model/event/review/delivery/handoff acceptance stays NOT_RUN — no authenticated environment was supplied and the approved spec permits explicit missing acceptance — cost if wrong: authenticated host integration can still fail beyond startup.
+- WSL2 and /mnt/c stay unverified — they are separate environments from native Windows — cost if wrong: users need additional environment-specific validation.
+- native .exe resolution is implemented but npm is the installed acceptance profile — resolver tests do not prove an alternate vendor installation end to end — cost if wrong: alternate installations may need adapter changes.
+- retain inherited Windows ACL policy — this change introduces no owner-only ACL guarantee and documents its limitation — cost if wrong: a shared directory may expose artifacts according to inherited permissions.
+- non-UTF-8 POSIX filename bytes remain outside the Unicode path contract — arbitrary byte filenames cannot be assumed to decode as UTF-8 — cost if wrong: those users need an explicit binary-path adapter.
+- abrupt launcher/OS death retains existing reconciliation and human stop-confirmation contracts — no automatic crash-recovery subsystem is introduced — cost if wrong: operators must confirm stale child cleanup before replacement.
 
-## Independent review
+## Independent review and correction pass
 
 One fresh read-only whole-branch review of `6a76e4c..2ea8c29` used
 `gpt-6-astra` at `xhigh` effort. It found no Critical issues, three Important
-issues and one Minor issue. The reviewer independently reproduced the encoding
-and accounting defects and checked Windows cleanup against Microsoft's
-[termination contract](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-terminateprocess).
+issues and one Minor. The controller regraded output accounting Important
+because R2 requires actual emitted-byte measurements. No minors are deferred.
 
-The single Native correction pass addresses:
+All four findings were fixed in the single Native correction pass:
 
-1. Optional telemetry diagnostics: real child CP1252 stderr was invalid UTF-8;
-   strict in-process diagnostics could mask a committed registration. New CLI,
-   broken-diagnostic-stream and context-view tests failed before the fix.
-   Diagnostics now use the UTF-8 writer with best-effort failure handling.
-2. Arbitrary logs versus reports: exit-status gates and IaC commands rejected
-   CP1252 logs; valid JSON stdout with legacy stderr failed; CRLF gate artifacts
-   were rewritten. Real command regressions failed before the fix. Capture is
-   binary; structured stdout alone decodes strictly; artifacts retain exact bytes.
-3. Windows cleanup: deterministic delayed/query/timeout tests failed before the
-   fix. Cleanup retains verified job-member process handles, terminates/waits,
-   rescans for descendants and confirms zero active processes within five seconds.
-   A second adversarial test failed against accounting-only polling: zero job
-   accounting cannot replace waiting on process handles. Native CI must also prove
-   the exited-leader descendant handle is signaled immediately when close returns.
-4. Output accounting was regraded Important because R2 requires actual emitted
-   bytes. The failed-pipe retry regression now checks that failed output does not
-   create a successful byte measurement; it failed before the write/account order
-   was corrected. The operation stays committed and its exact retry remains valid.
+1. Optional telemetry diagnostics: real CP1252 child stderr and strict in-process
+   diagnostic regressions failed before the fix. UTF-8 best-effort diagnostics
+   now preserve successful journal mutations and exact-operation retries even
+   when the diagnostic stream itself fails.
+2. Arbitrary logs versus reports: real exit-status/IaC/candidate commands with
+   CP1252 logs or stderr, and a CRLF artifact comparison, failed before the fix.
+   Capture is binary; structured stdout alone decodes strictly. Raw hardening
+   artifact bytes/hashes remain exact; invalid structured stdout still fails.
+3. Confirmed Windows cleanup: delayed/query/timeout API regressions failed before
+   the fix. A second regression failed against accounting-only polling; cleanup
+   retains verified member handles, terminates/waits, rescans descendants and
+   confirms zero active members within the existing five-second bound. A real
+   installed Codex run exposed an exit race: termination can reject a process
+   already exiting before its handle signals. Its reproducing regression failed
+   before bounded handle waiting replaced the immediate poll. Native CI proves
+   an exited leader's descendant handle is signaled when close returns, with no
+   post-return sleep. Unconfirmed cleanup still blocks replacement.
+4. Output accounting: the failed-pipe retry regression failed because a successful
+   output measurement existed before any bytes were emitted. Accounting now
+   follows successful response writes; committed operations remain recoverable
+   through their exact operation-ID retry.
 
-Focused correction checks: 41 tests OK, one native-Windows-only skip, followed by
-the additional process-handle barrier regression. Final full native gates remain
-pending. No second independent review is represented.
+The cleanup correction follows Microsoft's
+[TerminateProcess completion contract](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-terminateprocess).
+Every fix has observed RED→GREEN evidence and the final complete local/native
+suite is green. The routed-reference checkout fix also has its real RED→GREEN
+Git regression and complete native verification. No second independent review is
+represented. The original review's “not ready” verdict was resolved by this
+verified correction pass; remaining authenticated gates were not fabricated.
 
 ## Deferred minors
 
-None. The output-accounting finding was regraded Important and enters the correction pass.
+None. The accounting finding was regraded Important and fixed.
 
 ## Unavailable acceptance gates
 
 Signed-in guided workflow, actual Claude event dispatch, model worker execution
-and interruption, real independent host review/delivery, same-release cross-host
-handoff and cross-OS relocation remain NOT_RUN. The
+and interruption, genuine independent host review/delivery, same-release live
+cross-host handoff and cross-OS relocation remain NOT_RUN. The
 [acceptance procedure](../../examples/windows-host-acceptance.md) specifies exact
-prerequisites and evidence. WSL2 and `/mnt/c` are separate unverified targets.
+prerequisites and required evidence. WSL2 and `/mnt/c` are separate unverified
+targets. Native vendor `.exe` resolution is fixture-tested; actual installed
+Windows acceptance covers the npm profile. Inherited Windows ACLs remain the
+permission policy; no owner-only ACL guarantee is introduced.
 
 ## Delivery
 
-No merge, main push, version bump or release is authorized by this implementation.
-Candidate branch pushes are verification only. Main's user AGENTS.md edit and
-other worktrees remain untouched.
+No main merge/push, version bump or release was performed. Dedicated candidate
+branch pushes were verification actions authorized by the approved plan. The
+final documentation/evidence commit follows the tested code SHA; integration is
+a separate user choice. Main's original AGENTS.md edit and other worktrees remain
+untouched. Only this plan's scratch and identified disposable host configurations
+are eligible for cleanup; the managed implementation worktree stays available.

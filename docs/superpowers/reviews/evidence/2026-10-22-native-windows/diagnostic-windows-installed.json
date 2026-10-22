@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "git_sha": "2d227f0e10aa813dc287d11c2b7e04ac17264613",
+  "descriptor": {
+    "plugin": "devflow",
+    "plugin_version": "0.3.12",
+    "state_schema_version": 1,
+    "supported_schemas": [
+      1
+    ],
+    "host_protocol_version": 1,
+    "release_id": "785fed372b5b42a8cc34c426d7b5e884771d666d33595c0740768db9a17a234d",
+    "fingerprint": "785fed372b5b42a8cc34c426d7b5e884771d666d33595c0740768db9a17a234d"
+  },
+  "gates": {
+    "codex_install": {
+      "status": "PASS",
+      "skill_count": 11,
+      "descriptor": {
+        "plugin": "devflow",
+        "plugin_version": "0.3.12",
+        "state_schema_version": 1,
+        "supported_schemas": [
+          1
+        ],
+        "host_protocol_version": 1,
+        "release_id": "785fed372b5b42a8cc34c426d7b5e884771d666d33595c0740768db9a17a234d",
+        "fingerprint": "785fed372b5b42a8cc34c426d7b5e884771d666d33595c0740768db9a17a234d"
+      }
+    },
+    "claude_install": {
+      "status": "PASS",
+      "skill_count": 11,
+      "descriptor": {
+        "plugin": "devflow",
+        "plugin_version": "0.3.12",
+        "state_schema_version": 1,
+        "supported_schemas": [
+          1
+        ],
+        "host_protocol_version": 1,
+        "release_id": "785fed372b5b42a8cc34c426d7b5e884771d666d33595c0740768db9a17a234d",
+        "fingerprint": "785fed372b5b42a8cc34c426d7b5e884771d666d33595c0740768db9a17a234d"
+      }
+    },
+    "codex_startup": {
+      "status": "PASS",
+      "version": "0.163.0"
+    },
+    "claude_startup": {
+      "status": "PASS",
+      "version": "2.1.308"
+    },
+    "failure": {
+      "status": "FAIL",
+      "reason": "Native process cleanup could not be confirmed.",
+      "cause": "TerminateProcess failed; tree cleanup is unconfirmed"
+    }
+  },
+  "authenticated_workflow": {
+    "status": "NOT_RUN",
+    "reason": "Startup checks do not execute signed-in model tasks or live session events."
+  },
+  "success": false
+}

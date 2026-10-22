@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "success": true,
+  "tests_run": 733,
+  "failures": [],
+  "errors": [],
+  "skips": [
+    {
+      "id": "test_platform_lock.PlatformLockTests.test_blocking_lock_waits_longer_than_msvcrt_default_retry_window",
+      "reason": "Windows byte-range lock retry behavior"
+    },
+    {
+      "id": "test_process_transport.WindowsJobCompletionTests.test_exited_leader_descendant_is_signaled_before_close_returns",
+      "reason": "requires native Windows Job and process handles"
+    },
+    {
+      "id": "test_windows_workflow.WindowsWorkflowTests.test_junction_escape_is_rejected",
+      "reason": "native NTFS junction containment"
+    }
+  ],
+  "expected_failures": [],
+  "unexpected_successes": [],
+  "elapsed_seconds": 92.317,
+  "metadata": {
+    "platform": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+    "python": "3.11.17 (main, Oct  1 2026, 14:32:31) [GCC 13.3.0]",
+    "executable": "/opt/hostedtoolcache/Python/3.11.17/x64/bin/python",
+    "git": "git version 2.55.0",
+    "preferred_encoding": "UTF-8",
+    "filesystem_encoding": "utf-8",
+    "stdout_encoding": "utf-8",
+    "stderr_encoding": "utf-8",
+    "utf8_mode": 0,
+    "PYTHONUTF8": null,
+    "PYTHONIOENCODING": null,
+    "git_sha": "146d503fa344a336aa9b86d23070b9cdf2f7d9cc",
+    "patterns": [
+      "test_*.py"
+    ]
+  }
+}

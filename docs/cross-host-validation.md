@@ -15,6 +15,20 @@ Windows/WSL2 support remains unreleased; see the
 [platform matrix](windows-validation.md). Historical counts and review findings
 below retain their original scope.
 
+## Unreleased native Windows compatibility candidate (2026-10-22)
+
+At `146d503`, isolated actual Windows npm-profile installations of Codex 0.163.0
+and Claude 2.1.308 discover eleven skills and match the corrected source package.
+CLI startup, Codex initialize/account RPC with confirmed cleanup, and twelve
+installed Claude hook-script tests pass. Isolated local macOS Codex 0.162.1 /
+Claude 2.1.299 checks pass with the same fingerprint:
+`316f713a312b78b2fa7e8e92639221ceb14b7fddd33207189d5a210a37ee488f`.
+See the [candidate matrix](windows-validation.md) and
+[retained reports](superpowers/reviews/evidence/2026-10-22-native-windows/README.md).
+This is an unreleased source candidate whose version label remains 0.3.12;
+it is distinct from the published 0.3.12 package checks below. Live event dispatch,
+signed-in model work and genuine host handoff remain NOT_RUN.
+
 ## v0.3.12 package checks (2026-10-22)
 
 Claude marketplace validation passed with the existing warning that root
