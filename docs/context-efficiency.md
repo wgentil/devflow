@@ -151,3 +151,13 @@ incomplete or limited output stays partial/blocked even if it is shorter. Report
 are navigation only: existing fresh verification and independent review still
 own completion. New workers receive full context; resumed/retried decisions retain
 live checks and the durable task escalation allowance.
+
+
+## Authoritative input preflight
+
+Input validation reuses its authoritative journal state on unchanged paths.
+When governing checks record a receipt or reassessment, they carry the transaction's
+returned state forward; concurrent advancement returns `CONTEXT_PREPARATION_STALE`
+rather than combining different approval versions. Existing specification drift
+invalidation, exact-diff governing approval and reassessment requirements remain.
+This state-threading change does not yet move context composition out of its hook.

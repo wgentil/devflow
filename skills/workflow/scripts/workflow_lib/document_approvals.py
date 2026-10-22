@@ -82,16 +82,29 @@ def approve_document_change(root: Path, proposal_hash: str, actor_id: str) -> di
 
 
 def require_current_governing_inputs(root: Path, state: dict, phase: str) -> dict:
+    return preflight_governing_inputs(root,state,phase)['receipt']
+
+
+def _governing_write(root, state, kind, payload):
+    try:
+        return transact(root,state['version'],kind+':'+uuid4().hex,{'kind':kind,'payload':payload})['state']
+    except WorkflowError as exc:
+        if exc.code=='STALE_STATE':
+            raise WorkflowError('CONTEXT_PREPARATION_STALE','Inputs changed during preflight; retry with current authoritative state.') from exc
+        raise
+
+
+def preflight_governing_inputs(root: Path, state: dict, phase: str) -> dict:
     data = state.get('data', state)
     pair = data.get('spec_pair')
     if not pair:
-        return {}
+        return {'state':state,'receipt':{}}
     project_id = pair['repo_id']
     project = _repository(data, project_id)
     if not (project / 'docs/devflow-context.json').exists():
         if data.get('governing_input_receipt'):
             raise WorkflowError('GOVERNING_INPUT_DRIFT', 'governing manifest was removed')
-        return {}
+        return {'state':state,'receipt':{}}
     try:
         manifest = json.loads((project / 'docs/devflow-context.json').read_text(encoding='utf-8'))
     except (OSError, ValueError) as exc:
@@ -123,10 +136,9 @@ def require_current_governing_inputs(root: Path, state: dict, phase: str) -> dic
     effective_digest = _digest(json.dumps(semantic, sort_keys=True, ensure_ascii=False, separators=(',', ':')).encode())
     validated_digest = data.get('plan_validation', {}).get('governing_digest')
     if data.get('plan_validation') and validated_digest != effective_digest and not data.get('governing_reassessment_required'):
-        latest = read_state(root)
-        transact(root, latest['version'], 'governing-reassessment:' + uuid4().hex,
-                 {'kind': 'governing.reassessment.required', 'payload': {
-                     'previous_digest': validated_digest, 'effective_digest': effective_digest}})
+        state=_governing_write(root,state,'governing.reassessment.required',
+            {'previous_digest':validated_digest,'effective_digest':effective_digest})
+        data=state['data']
     sources = {project_id: (project, {'docs/devflow-context.json'})}
     if org_id:
         sources[org_id] = (org_repo, {'docs/devflow-org.json'})
@@ -154,11 +166,9 @@ def require_current_governing_inputs(root: Path, state: dict, phase: str) -> dic
     receipt = {'effective_digest': effective_digest, 'files': files,
                'applicable_rule_ids': sorted(applicable), 'irrelevance_decisions': manifest.get('irrelevance_decisions', [])}
     if receipt != data.get('governing_input_receipt'):
-        latest = read_state(root)
-        transact(root, latest['version'], 'governing-input:' + uuid4().hex,
-                 {'kind': 'governing.inputs.recorded', 'payload': {'receipt': receipt}})
-    latest = read_state(root)['data']
+        state=_governing_write(root,state,'governing.inputs.recorded',{'receipt':receipt})
+    latest=state.get('data',state)
     if latest.get('governing_reassessment_required') and phase != 'plan-validation':
         raise WorkflowError('GOVERNING_REASSESSMENT_REQUIRED',
                             'approve changed documents, reassess plan and verification impact, then explicitly revalidate the plan')
-    return receipt
+    return {'state':state,'receipt':receipt}

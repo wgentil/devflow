@@ -62,21 +62,28 @@ def migrate_legacy_spec(root: Path, repo_id: str, relative_json: str, operation_
 
 
 def require_current_inputs(root: Path, state: dict, phase: str, run_id: str | None = None) -> dict:
-    """Compose independent specification and governing-document evidence."""
-    from .document_approvals import require_current_governing_inputs
-    spec = require_current_spec(root, state, phase)
-    governing = require_current_governing_inputs(root, read_state(root), phase)
-    data = read_state(root)['data']
-    pair = data.get('spec_pair')
-    grounding = {}
+    """Compatibility wrapper; callers needing refreshed state use preflight_inputs."""
+    return preflight_inputs(root,state,phase,run_id)['inputs']
+
+
+def preflight_inputs(root: Path, state: dict, phase: str, run_id: str | None = None) -> dict:
+    """Validate once and carry transaction-returned authority through owned writes."""
+    import time
+    from .document_approvals import preflight_governing_inputs
+    started=time.monotonic()
+    spec=require_current_spec(root,state,phase)
+    governed=preflight_governing_inputs(root,state,phase)
+    state=governed['state'];governing=governed['receipt'];data=state.get('data',state)
+    pair=data.get('spec_pair');grounding={}
     if pair:
-        registered = data.get('repositories', {}).get(pair['repo_id'])
-        if registered and (Path(registered['location']) / 'docs/devflow-context.json').is_file():
+        registered=data.get('repositories',{}).get(pair['repo_id'])
+        if registered and (Path(registered['location'])/'docs/devflow-context.json').is_file():
             from .ground_interview import require_ground_interview
-            grounding = require_ground_interview(Path(registered['location']))
+            grounding=require_ground_interview(Path(registered['location']))
     if run_id and governing:
-        run = read_state(root)['data'].get('runs', {}).get(run_id)
-        if run and run.get('governing_digest') != governing['effective_digest']:
+        run=data.get('runs',{}).get(run_id)
+        if run and run.get('governing_digest')!=governing['effective_digest']:
             raise WorkflowError('RUN_GOVERNING_INPUTS_STALE',
-                                'this run uses prior governing inputs; preserve it for audit and start a fresh run from the reassessed plan')
-    return {'spec': spec, 'governing': governing, 'grounding': grounding}
+                'This run uses prior governing inputs; preserve it for audit and start a fresh run from the reassessed plan.')
+    return {'state':state,'inputs':{'spec':spec,'governing':governing,'grounding':grounding},
+            'timing':{'preflight_ms':max(0,int((time.monotonic()-started)*1000))}}
