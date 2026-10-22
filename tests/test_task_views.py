@@ -120,3 +120,10 @@ class TaskViewTests(unittest.TestCase):
         self.assertNotIn('Other rule.', text)
         unit = next(unit for unit in view['task_view']['units'] if unit['source_id'] == 'governing:app:rules.md')
         self.assertEqual(unit['content'], _rules(self.root.resolve(), manifest, 'project')['G1']['content'])
+
+    def test_shared_diagram_survives_selected_requirement_projection(self):
+        self.selection['spec']['diagrams']=[{'title':'Shared contract','mermaid':'flowchart LR\n    Shared --> Contract'}]
+        for representation in ('markdown','json'):
+            value=self.build(representation=representation)
+            self.assertIn('Shared --> Contract',canonical(value).decode())
+            self.assertNotIn('Unselected requirement',canonical(value).decode())
