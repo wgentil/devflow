@@ -26,11 +26,11 @@ def _patch_paths(patch: str, repo: Path) -> list[str]:
         handle.write(patch)
         handle.flush()
         checked = subprocess.run(["git", "apply", "--check", handle.name], cwd=repo,
-                                 capture_output=True, text=True, check=False)
+                                 capture_output=True, text=True, check=False, encoding='utf-8')
         if checked.returncode:
             raise ValueError(f"patch does not apply cleanly: {checked.stderr.strip()}")
         listed = subprocess.run(["git", "apply", "--numstat", handle.name], cwd=repo,
-                                capture_output=True, text=True, check=False)
+                                capture_output=True, text=True, check=False, encoding='utf-8')
         if listed.returncode:
             raise ValueError("malformed test patch")
     paths = []
@@ -103,16 +103,16 @@ def apply_approved_patch(repo_path: Path, proposal: dict, approval: dict) -> dic
         handle.flush()
         if preimage_matches:
             checked = subprocess.run(["git", "apply", "--check", handle.name], cwd=repo,
-                                     capture_output=True, text=True, check=False)
+                                     capture_output=True, text=True, check=False, encoding='utf-8')
             if checked.returncode:
                 raise ValueError("approved test patch no longer applies to the repository")
             applied = subprocess.run(["git", "apply", handle.name], cwd=repo,
-                                     capture_output=True, text=True, check=False)
+                                     capture_output=True, text=True, check=False, encoding='utf-8')
             if applied.returncode:
                 raise ValueError(f"approved test patch failed to apply: {applied.stderr.strip()}")
         else:
             reversed_check = subprocess.run(["git", "apply", "--reverse", "--check", handle.name], cwd=repo,
-                                            capture_output=True, text=True, check=False)
+                                            capture_output=True, text=True, check=False, encoding='utf-8')
             if reversed_check.returncode:
                 raise ValueError("approved test patch is partially applied or repository content has changed")
     after = {path: _hash((repo / path).resolve()) for path in proposal["changed_paths"]}

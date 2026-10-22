@@ -28,7 +28,7 @@ def _paths(repo: Path, relative_json: str) -> tuple[Path, Path]:
                 raise WorkflowError('SPEC_PATH_ESCAPE', 'specification path escapes the visible repository')
             relative = relative_path.as_posix()
             checked = subprocess.run(['git', '-C', str(repo), 'check-ignore', '--no-index', '--', relative],
-                                     capture_output=True, text=True)
+                                     capture_output=True, text=True, encoding='utf-8')
             if checked.returncode == 0:
                 raise WorkflowError('SPEC_PATH_IGNORED', f'specification path is ignored: {relative}')
             if checked.returncode != 1:

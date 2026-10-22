@@ -35,7 +35,7 @@ def ingest_sources(repo: dict, scope: list[str], profile: dict, cache: dict, *, 
                 if forced or not extensions or candidate.suffix.lower() in extensions:
                     selected.append(candidate)
     records=[]; hits=[]
-    commit=subprocess.run(['git','rev-parse','HEAD'],cwd=root,capture_output=True,text=True,check=False)
+    commit=subprocess.run(['git','rev-parse','HEAD'],cwd=root,capture_output=True,text=True,check=False, encoding='utf-8')
     commit_id=commit.stdout.strip() if commit.returncode==0 else None
     for path in sorted(set(selected)):
         data=path.read_bytes(); rel=path.relative_to(root).as_posix(); text=data.decode('utf-8')

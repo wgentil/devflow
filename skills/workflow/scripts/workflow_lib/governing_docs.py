@@ -23,7 +23,7 @@ def canonical_document_bytes(raw: bytes, *, windows: bool | None = None, baselin
 def _git(repo: Path, *args: str) -> subprocess.CompletedProcess:
     try:
         return subprocess.run(['git', '-C', str(repo), *args], capture_output=True, text=True, timeout=30,
-                              env={**os.environ, 'GIT_TERMINAL_PROMPT': '0'})
+                              env={**os.environ, 'GIT_TERMINAL_PROMPT': '0'}, encoding='utf-8')
     except (OSError, subprocess.TimeoutExpired) as exc:
         raise WorkflowError('GOVERNING_SOURCE_UNAVAILABLE', 'Git source cannot be reached') from exc
 

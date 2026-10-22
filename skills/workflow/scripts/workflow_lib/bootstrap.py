@@ -22,7 +22,7 @@ def compatible_runtime(candidates=None) -> str:
 
 def discover_project(project_dir: Path) -> Path:
     location = project_dir.expanduser().resolve()
-    result = subprocess.run(['git', 'rev-parse', '--show-toplevel'], cwd=location, capture_output=True, text=True)
+    result = subprocess.run(['git', 'rev-parse', '--show-toplevel'], cwd=location, capture_output=True, text=True, encoding='utf-8')
     if result.returncode:
         raise WorkflowError('PROJECT_REQUIRED', 'Open a Git project and invoke workflow there; Git is not initialized automatically.')
     root = Path(result.stdout.strip()).resolve()
@@ -33,7 +33,7 @@ def discover_project(project_dir: Path) -> Path:
 
 def exclude_runtime(project: Path) -> None:
     result = subprocess.run(['git', 'rev-parse', '--path-format=absolute', '--git-path', 'info/exclude'],
-                            cwd=project, capture_output=True, text=True, check=True)
+                            cwd=project, capture_output=True, text=True, check=True, encoding='utf-8')
     path = Path(result.stdout.strip())
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open('a+', encoding='utf-8') as file:

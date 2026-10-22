@@ -15,7 +15,7 @@ def _canonical(value: dict) -> str:
 
 
 def _git_text(repo: Path, *argv: str) -> str:
-    result = subprocess.run(["git", *argv], cwd=repo, capture_output=True, text=True, check=False)
+    result = subprocess.run(["git", *argv], cwd=repo, capture_output=True, text=True, check=False, encoding='utf-8')
     if result.returncode:
         raise ValueError(f"cannot verify acceptance repository: {result.stderr.strip()}")
     return result.stdout

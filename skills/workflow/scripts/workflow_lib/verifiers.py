@@ -14,9 +14,11 @@ def _run(argv: list[str], cwd: Path, timeout: int) -> dict:
     if not isinstance(argv, list) or not argv or any(not isinstance(value, str) for value in argv):
         return {"passed": False, "failure": "INVALID_COMMAND"}
     try:
-        result = subprocess.run(argv, cwd=cwd, capture_output=True, text=True, timeout=timeout, check=False)
+        result = subprocess.run(argv, cwd=cwd, capture_output=True, text=True, timeout=timeout, check=False, encoding='utf-8')
     except subprocess.TimeoutExpired:
         return {"passed": False, "failure": "TIMEOUT"}
+    except UnicodeError:
+        return {"passed": False, "failure": "INVALID_REPORT_ENCODING"}
     except OSError as exc:
         return {"passed": False, "failure": "COMMAND_FAILED", "detail": str(exc)}
     return {"exit_code": result.returncode, "stdout": result.stdout, "stderr": result.stderr,

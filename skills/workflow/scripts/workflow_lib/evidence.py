@@ -22,8 +22,8 @@ def _sha(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def _blob(root: Path, text: str) -> str:
-    data = text.encode("utf-8")
+def _blob(root: Path, text: str | bytes) -> str:
+    data = text.encode("utf-8") if isinstance(text, str) else text
     digest = _sha(data)
     relative = Path("artifacts") / "sha256" / digest[:2] / digest[2:]
     path = root / relative
@@ -48,9 +48,9 @@ def repository_fingerprint(location: Path) -> dict:
     repo = Path(location).expanduser().resolve()
     try:
         head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=repo, check=True,
-                              capture_output=True, text=True, timeout=10).stdout.strip()
+                              capture_output=True, text=True, encoding="utf-8", timeout=10).stdout.strip()
         status = subprocess.run(["git", "status", "--porcelain", "--untracked-files=all"], cwd=repo,
-                                check=True, capture_output=True, text=True, timeout=10).stdout
+                                check=True, capture_output=True, text=True, encoding="utf-8", timeout=10).stdout
         changed = subprocess.run(["git", "diff", "--binary", "HEAD"], cwd=repo, check=True,
                                  capture_output=True, timeout=10).stdout
         from .git_paths import git_paths, resolve_repo_path
@@ -163,34 +163,37 @@ def capture_evidence(root: Path, run_id: str, token: str, phase: str, command: l
     before_repo = repository_fingerprint(repo)
     started = _now()
     try:
-        completed = subprocess.run(command, cwd=repo, capture_output=True, text=True,
+        completed = subprocess.run(command, cwd=repo, capture_output=True,
                                    timeout=timeout, check=False)
-        exit_code, stdout, stderr = completed.returncode, completed.stdout, completed.stderr
+        exit_code, stdout_raw, stderr_raw = completed.returncode, completed.stdout, completed.stderr
     except subprocess.TimeoutExpired as exc:
         finished = _now()
         stdout_value = exc.stdout or b""
         stderr_value = exc.stderr or b""
-        if isinstance(stdout_value, bytes):
-            stdout_value = stdout_value.decode("utf-8", errors="replace")
-        if isinstance(stderr_value, bytes):
-            stderr_value = stderr_value.decode("utf-8", errors="replace")
         return {"passed": False, "failure": "TIMEOUT", "exit_code": None,
                 "started_at": started, "finished_at": finished,
                 "stdout_ref": _blob(root, stdout_value), "stderr_ref": _blob(root, stderr_value)}
     except OSError as exc:
         return {"passed": False, "failure": "COMMAND_FAILED", "message": str(exc), "exit_code": None}
     finished = _now()
+    try:
+        stdout = stdout_raw.decode('utf-8')
+        stderr = stderr_raw.decode('utf-8', errors='strict' if report_format == 'unittest' else 'replace')
+    except UnicodeError:
+        return {"passed": False, "failure": "INVALID_TEST_REPORT_ENCODING", "exit_code": exit_code,
+                "started_at": started, "finished_at": finished,
+                "stdout_ref": _blob(root, stdout_raw), "stderr_ref": _blob(root, stderr_raw)}
     after_repo = repository_fingerprint(repo)
     if after_repo != before_repo:
         return {"passed": False, "failure": "REPOSITORY_CHANGED_DURING_VERIFICATION", "exit_code": exit_code,
                 "started_at": started, "finished_at": finished,
-                "stdout_ref": _blob(root, stdout), "stderr_ref": _blob(root, stderr)}
+                "stdout_ref": _blob(root, stdout_raw), "stderr_ref": _blob(root, stderr_raw)}
     try:
         outcomes = _report(stdout, stderr, report_format)
     except WorkflowError as exc:
         return {"passed": False, "failure": exc.code, "exit_code": exit_code,
                 "started_at": started, "finished_at": finished,
-                "stdout_ref": _blob(root, stdout), "stderr_ref": _blob(root, stderr)}
+                "stdout_ref": _blob(root, stdout_raw), "stderr_ref": _blob(root, stderr_raw)}
     target_outcomes = {name: outcomes[name] for name in target_ids if name in outcomes}
     test_counts = {kind: sum(outcome == kind for outcome in outcomes.values()) for kind in ('failed', 'error', 'skipped', 'passed')}
     if phase == "RED":
@@ -209,13 +212,13 @@ def capture_evidence(root: Path, run_id: str, token: str, phase: str, command: l
     if not passed:
         return {"passed": False, "failure": failure, "exit_code": exit_code,
                 "target_outcomes": target_outcomes, "test_counts": test_counts, "started_at": started, "finished_at": finished,
-                "stdout_ref": _blob(root, stdout), "stderr_ref": _blob(root, stderr)}
+                "stdout_ref": _blob(root, stdout_raw), "stderr_ref": _blob(root, stderr_raw)}
     proof = {"id": uuid.uuid4().hex, "kind": work_item["kind"], "phase": phase, "run_id": run_id,
              "item_id": item_id, "token": token, "repo_id": repo_id, "argv": command,
              "exit_code": exit_code, "started_at": started, "finished_at": finished,
              "repository_head": before_repo["head"], "worktree_digest": before_repo["worktree_digest"],
              "test_hashes": before_tests, "target_outcomes": target_outcomes, "test_counts": test_counts, "passed": True,
-             "stdout_ref": _blob(root, stdout), "stderr_ref": _blob(root, stderr)}
+             "stdout_ref": _blob(root, stdout_raw), "stderr_ref": _blob(root, stderr_raw)}
     proof.update(verification_contract=contract, contract_hash=digest(contract))
     if red_source is not None: proof['red_source'] = red_source
     response = transact(root, state["version"], f"verification:{proof['id']}",

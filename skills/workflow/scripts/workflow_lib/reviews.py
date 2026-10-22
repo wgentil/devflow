@@ -18,7 +18,7 @@ def _canonical(value: dict) -> str:
 
 
 def _git(repo: Path, *args: str) -> str:
-    result = subprocess.run(["git", *args], cwd=repo, capture_output=True, text=True, check=False)
+    result = subprocess.run(["git", *args], cwd=repo, capture_output=True, text=True, check=False, encoding='utf-8')
     if result.returncode:
         raise ValueError(f"git {' '.join(args)} failed: {result.stderr.strip()}")
     return result.stdout

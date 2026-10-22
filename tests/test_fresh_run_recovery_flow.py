@@ -19,7 +19,7 @@ class FreshRunRecoveryFlowTests(unittest.TestCase):
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory(prefix='devflow recovery 東京 ');self.addCleanup(self.temp.cleanup)
         self.repo=Path(self.temp.name).resolve()/'application';self.repo.mkdir();self.control=Path(self.temp.name).resolve()/'control'
-        self.env={**os.environ,'PYTHONUTF8':'1'}
+        self.env=dict(os.environ)
         self.git('init','-q');self.git('config','user.email','test@example.test');self.git('config','user.name','Fixture')
         (self.repo/'tests').mkdir()
         for index in range(1,4):

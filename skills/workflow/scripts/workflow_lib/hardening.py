@@ -13,7 +13,8 @@ def verify_gate(root:Path,run_id:str,gate_id:str,command:list[str],contract:dict
   from .evidence import repository_fingerprint
   before=repository_fingerprint(root)
  except Exception: return {'passed':False,'failure':'REPOSITORY_NOT_REGISTERED','run_id':run_id,'gate_id':gate_id}
- try: result=subprocess.run(command,cwd=root,capture_output=True,text=True,timeout=900,check=False)
+ try: result=subprocess.run(command,cwd=root,capture_output=True,text=True,timeout=900,check=False, encoding='utf-8')
+ except UnicodeError: return {'passed':False,'failure':'INVALID_REPORT_ENCODING'}
  except (OSError,subprocess.TimeoutExpired): return {'passed':False,'failure':'COMMAND_UNAVAILABLE'}
  digest=hashlib.sha256((result.stdout+result.stderr).encode()).hexdigest()
  try: after=repository_fingerprint(root)

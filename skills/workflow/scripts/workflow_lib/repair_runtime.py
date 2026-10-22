@@ -50,7 +50,7 @@ def _run_gate(root: Path, run_id: str, gate_id: str, operation_id: str) -> dict:
     try:
         result = subprocess.run([sys.executable, str(Path(__file__).resolve().parents[1] / 'run.py'),
                                  'harden', 'gate', '--root', str(root), '--input', str(path),
-                                 '--operation-id', operation_id], capture_output=True, text=True)
+                                 '--operation-id', operation_id], capture_output=True, text=True, encoding='utf-8')
         if result.returncode:
             raise WorkflowError('REPAIR_VERIFICATION_FAILED', result.stderr or result.stdout)
         return json.loads(result.stdout)

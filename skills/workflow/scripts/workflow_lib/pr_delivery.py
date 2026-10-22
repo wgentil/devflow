@@ -61,7 +61,7 @@ def _preflight(run: dict, manifest: dict, request: dict) -> tuple[str, str, str]
         raise ValueError('PR head differs from verified delivery manifest')
     location = Path(record.get('location', ''))
     remotes = subprocess.run(['git', 'remote', '-v'], cwd=location, capture_output=True,
-                             text=True, check=False)
+                             text=True, check=False, encoding='utf-8')
     if remotes.returncode:
         raise ValueError('cannot inspect the PR repository remotes')
     identities = set()

@@ -23,7 +23,7 @@ class GithubClient:
         try:
             result = subprocess.run(argv, input=json.dumps(body) if body is not None else None,
                                     capture_output=True, text=True, check=False,
-                                    timeout=self.timeout_seconds)
+                                    timeout=self.timeout_seconds, encoding='utf-8')
         except FileNotFoundError as exc:
             raise WorkflowError('GITHUB_CLI_MISSING', 'GitHub CLI is required for PR mode') from exc
         except subprocess.TimeoutExpired as exc:
