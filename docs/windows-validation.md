@@ -1,6 +1,6 @@
 # Windows validation status
 
-The native Windows compatibility candidate is **unreleased**. Automated core
+DevFlow v0.3.13 contains the native Windows compatibility fixes. Automated core
 runtime, actual plugin installation/startup and signed-in host acceptance are
 separate gates. All five automated jobs pass for
 [`146d503`](https://github.com/wgentil/devflow/actions/runs/39809931113),
@@ -8,7 +8,7 @@ including both complete native Windows suites and actual installed Codex/Claude 
 The [review report](superpowers/reviews/2026-10-22-native-windows-compatibility.md)
 records corrections, requirement evidence and delivery status.
 
-## Candidate matrix (2026-10-22)
+## Implementation matrix (2026-10-22)
 
 | Gate | Configuration | Result |
 | --- | --- | --- |
@@ -31,8 +31,9 @@ Actual Windows installed checks used PowerShell 7 and runner image
 `windows-2025-vs2026` / `20261018.275.1`. The verified Windows and macOS installed
 packages share fingerprint
 `316f713a312b78b2fa7e8e92639221ceb14b7fddd33207189d5a210a37ee488f`.
-The package still reports version `0.3.12`; the candidate fingerprint, not that
-unchanged version label, identifies this unreleased build.
+These implementation results identify the pre-release 0.3.12-labelled candidate.
+The v0.3.13 version change creates a new package fingerprint; its exact-package
+release verification is recorded in the [release notes](releases/v0.3.13.md).
 [Retained machine reports](superpowers/reviews/evidence/2026-10-22-native-windows/README.md)
 separate initial failures from final acceptance evidence.
 

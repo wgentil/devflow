@@ -6,12 +6,13 @@ no regular user installation was changed by this validation.
 
 ## Current evidence limits
 
-The current package is v0.3.12 with eleven skills. Successful isolated native Codex
+The current package is v0.3.13 with eleven skills. Successful isolated native Codex
 and Claude installs are recorded below for earlier releases, including v0.3.1;
 they supersede the initial failed Codex discovery probe as installation evidence.
 They do not establish a current-release installed workflow or repair run. Native
 worker smoke, hook-script tests and end-to-end host execution are distinct checks.
-Windows/WSL2 support remains unreleased; see the
+Native Windows automated runtime/package validation and signed-in acceptance are
+separate gates; WSL2 remains unverified. See the
 [platform matrix](windows-validation.md). Historical counts and review findings
 below retain their original scope.
 
@@ -239,4 +240,4 @@ isolated packages/startup/hook-script checks from signed-in workflows, real even
 dispatch, independent reviews and cross-host handoff. Those authenticated Windows
 rows are NOT_RUN: no suitable signed-in Windows environment is available to this
 execution. CI account-status startup submits no model turn and proves none of
-those rows. Use exact candidate fingerprints, not just the unchanged 0.3.12 label.
+those rows. Use exact installed package fingerprints in addition to the version label.

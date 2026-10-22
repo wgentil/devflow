@@ -11,8 +11,7 @@ setup steps. Existing Python 3.11+ available as `python3` on macOS/Linux is
 required; this package does not provision an interpreter. Native Windows core
 runtime, installed-package/startup checks and signed-in workflows are separate
 validation gates. See the [platform matrix](windows-validation.md) for exact
-candidate evidence. Unreleased candidate checks do not change the package served
-from the marketplace until integration and publication. Signed-in Windows event/worker/handoff acceptance remains
+tested profiles and release evidence. Signed-in Windows event/worker/handoff acceptance remains
 unverified, and WSL2 is a separate target. The native Windows Claude profile
 requires Python 3.11+ available as `python3` and Claude Code 2.1.295+ for mandatory
 launcher-failure blocking. DevFlow does not install Python or create aliases.
@@ -25,7 +24,7 @@ use their executable directly. Detailed maintainer checks stay in the
 
 Codex and Claude have separate installations of the same shared package. Users
 choose when to upgrade. Both manifests and one skills/helper tree are included;
-the package version is `0.3.12`;
+the package version is `0.3.13`;
 the Claude marketplace descriptor is packaged at `.claude-plugin/marketplace.json`.
 The private GitHub repository `wgentil/devflow` serves the marketplace from
 `main`. Codex users with access to that repository can install it:
