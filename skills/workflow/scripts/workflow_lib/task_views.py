@@ -80,7 +80,7 @@ def _spec_content(subset,representation):
     return content,requirement_bytes
 
 
-def context_component_bytes(envelope:dict,task:dict)->dict:
+def context_component_bytes(envelope:dict,task:dict,*,optional_slices=())->dict:
     """Partition actual wire bytes; punctuation and binding metadata remain explicit."""
     total=len(canonical({**envelope,'task_view':task}))
     parts={k:0 for k in ('requirements','shared_spec','governing','stage_documents','control_envelope','artifact_references','optional','serialization_overhead')}
@@ -94,19 +94,23 @@ def context_component_bytes(envelope:dict,task:dict)->dict:
         elif unit.get('source_id') in governed:parts['governing']+=size
         else:parts['stage_documents']+=size
     parts['control_envelope']=sum(len(canonical({k:v}))-2 for k,v in envelope.items() if k!='budget')
+    context=envelope.get('context',{})
+    optional_bytes=sum(len(canonical({key:context.get(field,{})[key]}))-2
+        for key in set(optional_slices) for field in ('values','provenance') if key in context.get(field,{}))
+    parts['optional']+=optional_bytes;parts['control_envelope']-=optional_bytes
     parts['artifact_references']=sum(len(canonical({k:task[k]}))-2 for k in ('artifact_id','artifact_ref','content_bytes','inspection') if k in task)
     parts['serialization_overhead']=total-sum(parts.values())
     parts['serialized_bytes']=total
     return parts
 
 
-def _measure_view(envelope,task,max_bytes,omitted):
+def _measure_view(envelope,task,max_bytes,omitted,*,optional_slices=()):
     value=_size_and_estimate({**deepcopy(envelope),'task_view':deepcopy(task)},max_bytes,omitted)
     for _ in range(20):
-        parts=context_component_bytes({k:v for k,v in value.items() if k!='task_view'},value['task_view'])
+        parts=context_component_bytes({k:v for k,v in value.items() if k!='task_view'},value['task_view'],optional_slices=optional_slices)
         value['budget']['component_bytes']=parts
         size=len(canonical(value));value['budget'].update(serialized_bytes=size,estimated_tokens=(size+3)//4)
-        if (parts==context_component_bytes({k:v for k,v in value.items() if k!='task_view'},value['task_view'])
+        if (parts==context_component_bytes({k:v for k,v in value.items() if k!='task_view'},value['task_view'],optional_slices=optional_slices)
                 and size==len(canonical(value))):return value
     raise WorkflowError('CONTEXT_ACCOUNTING_INVALID','Context byte accounting did not converge.')
 
@@ -162,7 +166,25 @@ def build_task_view(run: dict, envelope: dict, selection: dict, sources: dict, p
             'coverage': {'supplied_ids': required_ids, 'missing_ids': [], 'semantic_omissions': 'unknown'},
             'measurement_coverage': 'Emitted context only; hidden host instructions, unrelated reads and history are unknown.',
             'cache_outcome': selected['cache_outcome'], 'retrieval_calls': selected['retrieval_calls']}
+    envelope=deepcopy(envelope)
+    optional_slices=selection.get('optional_slices',[])
     omitted = list(envelope.get('budget', {}).get('optional_omitted', []))
+    def preview_task(candidate):
+        preview=deepcopy(candidate)
+        if root is not None:
+            preview.update(artifact_id='0'*64,artifact_ref=str(Path(root).resolve()/'context-artifacts'/('0'*64+'.json')),content_bytes=len(canonical(candidate)))
+            if output_mode=='refs':
+                preview={key:preview[key] for key in ('schema_version','artifact_id','artifact_ref','required_ids','coverage','representation')}
+                preview['inspection']='context-artifact inspect --root CONTROL --id '+'0'*64
+        return preview
+    # Envelope slices must fit alongside mandatory units, not just by themselves.
+    for key in optional_slices:
+        projected=_measure_view(envelope,preview_task(task),max_bytes,omitted,optional_slices=optional_slices)
+        if projected['budget']['serialized_bytes']<=max_bytes:break
+        context=envelope.get('context',{})
+        if key in context.get('values',{}):
+            context['values'].pop(key);context.get('provenance',{}).pop(key,None)
+            if key not in omitted:omitted.append(key)
     for document in optional:
         try:
             extra = resolve([document])
@@ -171,10 +193,7 @@ def build_task_view(run: dict, envelope: dict, selection: dict, sources: dict, p
             candidate['units'].extend({**u,'required':False} for u in extra['units'] if u['id'] not in present)
             candidate['dependencies'].update(extra['dependencies'])
             candidate['source_hashes'].update(extra['source_hashes'])
-            preview=deepcopy(candidate)
-            if root is not None:
-                preview.update(artifact_id='0'*64,artifact_ref=str(Path(root).resolve()/'context-artifacts'/('0'*64+'.json')),content_bytes=len(canonical(candidate)))
-            projected = _measure_view(envelope,preview,max_bytes,omitted)
+            projected = _measure_view(envelope,preview_task(candidate),max_bytes,omitted,optional_slices=optional_slices)
             if projected['budget']['serialized_bytes'] > max_bytes:
                 raise WorkflowError('CONTEXT_OPTIONAL_OVERFLOW', 'optional document exceeds load budget')
             task = candidate
@@ -188,7 +207,7 @@ def build_task_view(run: dict, envelope: dict, selection: dict, sources: dict, p
             raise WorkflowError('CONTROL_ROOT_REQUIRED', 'reference output needs a selected control root')
         task = {key: task[key] for key in ('schema_version', 'artifact_id', 'artifact_ref', 'required_ids', 'coverage', 'representation')}
         task['inspection'] = 'context-artifact inspect --root CONTROL --id ' + refs['artifact_id']
-    result = _measure_view(envelope,task,max_bytes,omitted)
+    result = _measure_view(envelope,task,max_bytes,omitted,optional_slices=optional_slices)
     if result['budget']['serialized_bytes'] > max_bytes:
         raise WorkflowError('CONTEXT_BUDGET_EXCEEDED', 'mandatory task context exceeds max_bytes', {
             'required_bytes': result['budget']['serialized_bytes'], 'max_bytes': max_bytes,

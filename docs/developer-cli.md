@@ -683,3 +683,8 @@ locked commit time and selected-context equality against a small project. Histor
 delivered metadata and review strings are synthetic; no live provider or verifier
 deliveries are claimed. Ordinary journal replay remains required. Timings depend
 on the available platform; routine tests assert structural counts, not speed.
+
+
+Timing limitation: public lifecycle-hook preparation and `run reverify` can omit
+their initial journal read from `preflight_ms`. Measure full CLI elapsed time when
+diagnosing those paths; the separate worker limit still starts at dispatch.

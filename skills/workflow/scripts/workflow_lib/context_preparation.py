@@ -25,6 +25,40 @@ def _file_hash(path):
     except OSError as exc:raise WorkflowError('CONTEXT_SOURCE_CHANGED','A context source is missing or unreadable.') from exc
 
 
+def _grounding_files(data):
+    pair=data.get('spec_pair')
+    if not pair:return {}
+    registered=data.get('repositories',{}).get(pair['repo_id'])
+    if not registered:return {} # Preserve the ordinary live preflight error.
+    repo=Path(registered['location']).resolve()
+    return {str(repo/name):_file_hash(repo/name) if (repo/name).exists() or (repo/name).is_symlink() else None
+        for name in ('docs/devflow-context.json','docs/devflow-ground-interview.json')}
+
+
+def _assert_files_current(files):
+    for path,wanted in files.items():
+        if wanted is None:
+            _require(not Path(path).exists() and not Path(path).is_symlink(),'A new governing input appeared after validation.','CONTEXT_SOURCE_CHANGED')
+        else:_require(_file_hash(path)==wanted,'Context source changed after validation.','CONTEXT_SOURCE_CHANGED')
+
+
+def _validated_governing_files(data):
+    import base64
+    from .governing_docs import canonical_document_bytes
+    files={}
+    for record in data.get('governing_input_receipt',{}).get('files',{}).values():
+        source={'root':data['repositories'][record['repo_id']]['location'],'path':record['path']}
+        path=document_path(source);expected=base64.b64decode(record['content_base64'],validate=True)
+        try:current=path.read_bytes()
+        except OSError:
+            _require(False,'Governing input disappeared after live preflight.','CONTEXT_SOURCE_CHANGED')
+        current_hash=hashlib.sha256(current).hexdigest()
+        _require(canonical_document_bytes(current,baseline=expected)==expected and _file_hash(path)==current_hash,
+            'Governing input changed after live preflight.','CONTEXT_SOURCE_CHANGED')
+        files[str(path)]=current_hash
+    return files
+
+
 @dataclass(frozen=True)
 class PreparedContext:
     root:str
@@ -76,7 +110,10 @@ def prepare_context(root:Path,run:dict,envelope:dict,item_ids:list[str],*,stage:
     started=time.monotonic();root=Path(root).resolve()
     borrowed_read_ms=state.get('_context_read_ms',0) if state is not None else 0
     state=read_state(root) if state is None else state
+    grounding_files=_grounding_files(state['data'])
     checked=preflight_inputs(root,state,'context-preparation',run['id']);state=checked['state'];data=state['data']
+    _assert_files_current(grounding_files)
+    validated_files=_validated_governing_files(data)
     actual=data.get('runs',{}).get(run['id'])
     _require(isinstance(actual,dict),'Context preparation needs a current run.','RUN_NOT_FOUND');_accept_run(actual,run)
     _validate_envelope(data,run,envelope,item_ids,max_bytes)
@@ -105,11 +142,15 @@ def prepare_context(root:Path,run:dict,envelope:dict,item_ids:list[str],*,stage:
     sources.update({sid:{'root':str(PACKAGE_ROOT),'path':value['path']} for sid,value in policy['sources'].items()})
     required={rid for item in chosen for rid in item.get('requirement_ids',[])} if chosen else {r['id'] for r in spec['requirements']}
     selected_spec={**deepcopy(spec),'requirements':[deepcopy(r) for r in spec['requirements'] if r['id'] in required]}
-    selection={'spec':selected_spec,'spec_hash':content_hash(spec),'item_ids':list(item_ids),'stage':stage,'governing':governing,
+    stage_settings=run['plan'].get('stage',{})
+    optional_slices=[key for key in stage_settings.get('optional_slices',[]) if key not in stage_settings.get('required_slices',[])]
+    selection={'optional_slices':optional_slices,'spec':selected_spec,'spec_hash':content_hash(spec),'item_ids':list(item_ids),'stage':stage,'governing':governing,
                'documents':[{'source_id':sid} for sid in policy['stage_reads'][stage]]}
     scope={'run_id':run['id'],'item_ids':list(item_ids),'stage':stage,'attempt_id':(run.get('active_attempt') or {}).get('token'),
         'attempt':deepcopy(run.get('active_attempt')),'binding_id':binding_id,'revision':envelope.get('revision'),'representation':representation,'output_mode':output_mode,'context_max_bytes':max_bytes}
-    files={}
+    files={**validated_files,**grounding_files}
+    for record in data.get('governing_input_receipt',{}).get('files',{}).values():
+        rid=record['repo_id'];locations[rid]=str(Path(data['repositories'][rid]['location']).resolve())
     for source in sources.values():
         path=document_path(source)
         if str(path) not in files:files[str(path)]=_file_hash(path)
@@ -128,9 +169,6 @@ def prepare_context(root:Path,run:dict,envelope:dict,item_ids:list[str],*,stage:
                 except (OSError,ValueError) as exc:raise WorkflowError('SPEC_APPROVAL_STALE','Specification changed during preflight.') from exc
                 _require(current_spec==spec and content_hash(current_spec)==pair['content_hash'] and _file_hash(path)==current_hash,'Specification JSON changed during preflight.','SPEC_APPROVAL_STALE')
             files[str(path)]=current_hash
-        for name in ('docs/devflow-context.json','docs/devflow-ground-interview.json'):
-            path=repo/name
-            files[str(path)]=_file_hash(path) if path.exists() else None
     tail=next((event for event in state['operations'].values() if event['sequence']==state['version']),None)
     bindings={'run_hash':digest(actual),'locations':locations,'spec_pair':deepcopy(pair),'approval_hash':digest(data.get('approval')),
         'governing_hash':digest(data.get('governing_input_receipt')),'files':files,'tail_hash':digest(tail) if tail else None}
@@ -172,10 +210,7 @@ def _assert_preparation_current(root:Path,prepared:PreparedContext,state:dict)->
         from .hosts import validate_binding
         binding=validate_binding(data,prepared.scope['binding_id'],prepared.scope['revision'])
         _require(binding['run_id']==prepared.scope['run_id'],'Host scope changed.','CONTEXT_SCOPE_CHANGED')
-    for path,wanted in prepared.source_bindings['files'].items():
-        if wanted is None:
-            _require(not Path(path).exists() and not Path(path).is_symlink(),'A new governing input appeared after preparation.','CONTEXT_SOURCE_CHANGED')
-        else:_require(_file_hash(path)==wanted,'Context source changed after preparation.','CONTEXT_SOURCE_CHANGED')
+    _assert_files_current(prepared.source_bindings['files'])
 
 
 def compose_prepared(prepared_payload:dict)->dict:
@@ -190,7 +225,7 @@ def finish_prepared(prepared,result,worker_ms=0):
     result=deepcopy(result)
     result['preparation']={'preflight_ms':prepared.preflight_ms,'worker_ms':worker_ms,'total_ms':prepared.preflight_ms+worker_ms,
         'journal_version':prepared.journal_version,'binding_hash':prepared.binding_hash}
-    result=_measure_view({k:v for k,v in result.items() if k!='task_view'},result['task_view'],prepared.scope['context_max_bytes'],result.get('budget',{}).get('optional_omitted',[]))
+    result=_measure_view({k:v for k,v in result.items() if k!='task_view'},result['task_view'],prepared.scope['context_max_bytes'],result.get('budget',{}).get('optional_omitted',[]),optional_slices=prepared.payload['selection'].get('optional_slices',[]))
     _require(result['budget']['serialized_bytes']<=prepared.scope['context_max_bytes'],'Prepared context exceeds its byte budget.','CONTEXT_BUDGET_EXCEEDED')
     return result
 

@@ -165,7 +165,10 @@ it does not replay the journal. The five-second worker limit starts at dispatch,
 so total operation time can exceed five seconds. Temporary inputs are removed on
 success or failure; orphaned inputs never become trusted cache entries.
 Preparation binds root/run/items/stage/attempt, source content and journal version.
-Changed sources or journal state require fresh preparation.
+Changed sources or journal state require fresh preparation. Manifest/interview
+existence and content are bound across live preflight; every applicable project
+and organization receipt file remains covered by the final guard, preserving
+canonical Windows checkout handling.
 
 ```mermaid
 flowchart LR
@@ -183,8 +186,10 @@ Selected-item briefs include the selected work and its declared dependencies'
 latest attempts, not unrelated items' result bodies. Task views preserve selected
 requirements and shared specification facts in both Markdown and JSON, including
 unclassified shared metadata. Governing rules and required dependency closure are
-never dropped to make a view fit. Optional whole units are omitted first, after
-reserving artifact references and diagnostics.
+never dropped to make a view fit. Optional context values and provenance are reconsidered against the combined
+envelope and task-unit budget before optional documents. Retained optional slices
+are counted as optional bytes; required slices remain mandatory. Whole optional
+units are omitted after reserving artifact references and diagnostics.
 
 `budget.component_bytes` partitions actual serialized UTF-8 bytes into requirements,
 shared specification, governing, stage documents, control envelope, artifact
@@ -211,8 +216,11 @@ required preparation before issuing a new attempt or starting model work.
   sufficient context bytes or reduce task scope while preserving applicable shared
   rules and dependencies. Inspection references do not waive mandatory content.
 
-Successful views report `preparation.preflight_ms` (including caller replay when
-reused), `worker_ms`, their sum `total_ms`, `journal_version` and `binding_hash`.
+Successful views report `preparation.preflight_ms`, `worker_ms`, their sum
+`total_ms`, `journal_version` and `binding_hash`. Initial replay is included when
+the caller uses the timed authoritative-read wrapper. The public lifecycle-hook
+entry and reverification currently use untimed initial reads, so their reported
+preflight time can omit that replay cost.
 `total_ms` covers those measured phases, not the final locked replay or every
 parent artifact/freshness operation. Full CLI time is measured separately. Ordinary
 journal replay still grows with history; no journal compaction/archive command is
