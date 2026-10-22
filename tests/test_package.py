@@ -124,3 +124,32 @@ class CrossPlatformPackageIdentityTests(unittest.TestCase):
             subprocess.run(['git', '-c', 'core.autocrlf=true', 'clone', '--no-local', '-q', str(source), str(clone)], check=True, capture_output=True)
             self.assertEqual(release_descriptor(clone), release_descriptor(source))
             self.assertEqual((clone / 'adapters/binary-fixture.bin').read_bytes(), binary)
+
+    def test_routed_reference_bytes_survive_git_checkout_with_autocrlf(self):
+        sys.path.insert(0, str(ROOT / 'skills/workflow/scripts'))
+        from workflow_lib.documentation import load_documentation_policy
+        from workflow_lib.document_units import select_document_units
+        policy = load_documentation_policy(ROOT)
+        references = {sid: row for sid, row in policy['sources'].items() if row['path'].startswith('docs/reference/')}
+        with tempfile.TemporaryDirectory(prefix='devflow-reference-identity-') as directory:
+            root = Path(directory)
+            source = root / 'source'
+            source.mkdir()
+            for row in references.values():
+                target = source / row['path']
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes((ROOT / row['path']).read_bytes().replace(b'\r\n', b'\n'))
+            shutil.copy2(ROOT / '.gitattributes', source / '.gitattributes')
+            binary = b'\x00reference\r\n\xff\x00'
+            (source / 'docs/reference/binary-fixture.bin').write_bytes(binary)
+            for argv in (['init', '-q'], ['config', 'core.autocrlf', 'false'], ['add', '.'],
+                         ['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', 'references']):
+                subprocess.run(['git', *argv], cwd=source, check=True, capture_output=True)
+            clone = root / 'windows-checkout'
+            subprocess.run(['git', '-c', 'core.autocrlf=true', 'clone', '--no-local', '-q', str(source), str(clone)], check=True, capture_output=True)
+            def observed(base):
+                sources = {sid: {'root': str(base), 'path': row['path']} for sid, row in references.items()}
+                selected = select_document_units(sources, [{'source_id': sid} for sid in sources], policy)
+                return {u['id']: (u['content_hash'], len(u['content'].encode('utf-8'))) for u in selected['units']}
+            self.assertEqual(observed(clone), observed(source))
+            self.assertEqual((clone / 'docs/reference/binary-fixture.bin').read_bytes(), binary)

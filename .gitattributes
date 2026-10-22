@@ -6,3 +6,6 @@ adapters/** text=auto eol=lf
 definitions/** text=auto eol=lf
 .claude-plugin/** text=auto eol=lf
 .codex-plugin/** text=auto eol=lf
+
+# Routed references use content-bound byte budgets and generated reports.
+docs/reference/** text=auto eol=lf

@@ -711,7 +711,8 @@ CRLF and legacy log bytes. Invalid report bytes return a failed encoding result 
 establish RED or GREEN proof. Git text identities decode as UTF-8; raw Git blobs,
 patch bytes and canonical tracked-CRLF identity retain their existing contracts.
 
-Package Git attributes keep fingerprinted text files at LF on Windows and Unix,
+Git attributes keep fingerprinted package text and routed `docs/reference/`
+sources at LF on Windows and Unix,
 while auto-detected binary assets retain their exact bytes. This preserves raw
 release identity across checkouts without relaxing handoff fingerprint checks.
 These attributes apply to the DevFlow package, not application documents or their
