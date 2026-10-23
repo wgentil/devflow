@@ -1,7 +1,8 @@
 # Bandpick prompt hook latency and timeout handling
 
-Status: proposed design, awaiting user approval. Recommended approach below is
-an agent proposal; the user has not yet selected the timeout policy.
+Status: design approved by the user on 2026-10-23 after `0c79f5a`.
+The recommended approach (including advisory prompt helper timeouts) is selected;
+the implementation plan awaits review.
 Source: [issue #3](https://github.com/wgentil/devflow/issues/3).
 Baseline: DevFlow v0.3.13, `33dfe48`.
 
