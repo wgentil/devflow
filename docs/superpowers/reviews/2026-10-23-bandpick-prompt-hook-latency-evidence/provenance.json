@@ -1,0 +1,77 @@
+{
+  "runtime_sha": "e9b8e62df4a5e3becd5d38c5aade80a1294cc5cb",
+  "runtime_fingerprint": "affc8a903e37990652f524b517371426c27b94fbccb568e69c9ec59c25b4a91f",
+  "workflow_url": "https://github.com/wgentil/devflow/actions/runs/39991068930",
+  "files": [
+    {
+      "file": "local-final-report.json",
+      "origin": "local corrected runtime suite",
+      "original_sha256": "4ea973d0de410b695cc4136535b0f55d5f72c51b194d39faf25b859b38883583",
+      "retained_sha256": "4ea973d0de410b695cc4136535b0f55d5f72c51b194d39faf25b859b38883583",
+      "normalization": "CRLF to LF only"
+    },
+    {
+      "file": "bandpick-benchmark.json",
+      "origin": "read-only benchmark ate9b8e62",
+      "original_sha256": "ce2601b2dce451644523a294665bdf1f9d98a1a5929087cac32d6d58fd463536",
+      "retained_sha256": "ce2601b2dce451644523a294665bdf1f9d98a1a5929087cac32d6d58fd463536",
+      "normalization": "CRLF to LF only"
+    },
+    {
+      "file": "platform-ubuntu-latest-3.11-report.json",
+      "origin": "Actions39991068930 platform-ubuntu-latest-3.11",
+      "original_sha256": "1e38980d73ca68e35523c3776c7dd3911c0298ba17c667a613550dab1558017e",
+      "retained_sha256": "1e38980d73ca68e35523c3776c7dd3911c0298ba17c667a613550dab1558017e",
+      "normalization": "CRLF to LF only"
+    },
+    {
+      "file": "platform-macos-latest-3.11-report.json",
+      "origin": "Actions39991068930 platform-macos-latest-3.11",
+      "original_sha256": "54d74ab76d984c81f6e4795c6c8289d5e9adaa51d66b854ec5cd0826716b74dc",
+      "retained_sha256": "54d74ab76d984c81f6e4795c6c8289d5e9adaa51d66b854ec5cd0826716b74dc",
+      "normalization": "CRLF to LF only"
+    },
+    {
+      "file": "platform-windows-latest-3.11-report.json",
+      "origin": "Actions39991068930 platform-windows-latest-3.11",
+      "original_sha256": "c3070bb9a99b3c330335872a1d0b7ff3d8558860d06aebe756305dd1b7499a42",
+      "retained_sha256": "ed5ba4715ff22ef96ab73a3957c42f53cebf2f5f79a67cf919075965d49a9c9a",
+      "normalization": "CRLF to LF only"
+    },
+    {
+      "file": "platform-windows-latest-3.11-legacy-report.json",
+      "origin": "Actions39991068930 platform-windows-latest-3.11 CP1252",
+      "original_sha256": "2129b416c87967ba77f8229d68c862b7b0698f88eeff2c5bf1bc142fe4cfd466",
+      "retained_sha256": "6701d71029026060ec669a671c0991569e8d7d6bd1627f6e7da7942f1c1f3632",
+      "normalization": "CRLF to LF only"
+    },
+    {
+      "file": "platform-windows-latest-3.x-report.json",
+      "origin": "Actions39991068930 platform-windows-latest-3.x",
+      "original_sha256": "ae4bbe46cdbd46a4bb8513f93b992ada91e56c5cadd54ef45276c50231afe263",
+      "retained_sha256": "e1a4dc032b84bb63bc8ce3d79240d84c8f8e166594333d2aab51fd80fe412a63",
+      "normalization": "CRLF to LF only"
+    },
+    {
+      "file": "platform-windows-latest-3.x-legacy-report.json",
+      "origin": "Actions39991068930 platform-windows-latest-3.x CP1252",
+      "original_sha256": "49eddf6810126d8d281d574e2e2d5ccc328cf76cd9e5506d187a4656e8236826",
+      "retained_sha256": "71d542f59bd05f85044bdf334859dee67d5843ffb3efd9b3e621cb4bd44ef9c3",
+      "normalization": "CRLF to LF only"
+    },
+    {
+      "file": "installed-report.json",
+      "origin": "Actions39991068930 windows-installed-hosts",
+      "original_sha256": "25125d6574459237fa1cba366ae71781f12601a3258fff4063084feddb74907e",
+      "retained_sha256": "aab3a4810c0766d83927d72583aba82f47b79deda6ae8a8332b00d6e2e4a5c44",
+      "normalization": "CRLF to LF only"
+    },
+    {
+      "file": "installed-report.hooks.log",
+      "origin": "Actions39991068930 windows-installed-hosts",
+      "original_sha256": "2f76d03aeb33be30aac6c0df4810a353005926148f6af0b112c38f9e29f77366",
+      "retained_sha256": "fc60c40b8afa6f201ba5ad1e11047f977aa6ff08a066a5e29004c8e8e81576e5",
+      "normalization": "CRLF to LF only"
+    }
+  ]
+}

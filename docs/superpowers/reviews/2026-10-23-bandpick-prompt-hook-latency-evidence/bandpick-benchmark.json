@@ -1,0 +1,27 @@
+{
+  "source_sha": "e9b8e62df4a5e3becd5d38c5aade80a1294cc5cb",
+  "session_id": "devflow-issue3-read-only-861eb0dbf26a4a608e8155884957bcd9",
+  "state_bytes": 139433075,
+  "direct": {
+    "result": {
+      "status": "inactive",
+      "reason_code": "ATTACHMENT_NOT_DISCOVERED",
+      "message": "No usable attachment discovery hints; retry explicit attachment before workflow work."
+    },
+    "elapsed_seconds": 0.006576708983629942,
+    "journal_replay_calls": 0
+  },
+  "cli": {
+    "exit": 0,
+    "elapsed_seconds": 0.07936675008386374,
+    "stdout": "{\"status\":\"inactive\",\"reason_code\":\"ATTACHMENT_NOT_DISCOVERED\",\"message\":\"No usable attachment discovery hints; retry explicit attachment before workflow work.\"}\n",
+    "stderr": ""
+  },
+  "adapter": {
+    "exit": 0,
+    "elapsed_seconds": 0.09698750008828938,
+    "stdout": "",
+    "stderr": "DevFlow: No usable attachment discovery hints; retry explicit attachment before workflow work.\n"
+  },
+  "host_metadata_unchanged": true
+}

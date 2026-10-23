@@ -1,6 +1,6 @@
 # Bandpick Prompt Hook Latency Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Fix issue #3's unnecessary prompt-hook replay and timeout blocking while preserving authoritative completion and context gates.
 
@@ -10,7 +10,7 @@
 
 **Spec:** [Approved design](../specs/2026-10-23-bandpick-prompt-hook-latency-design.md), approved by the user on 2026-10-23 after `0c79f5a`.
 
-**Execution:** Preserve the previously selected Native approach. Implementation starts after the user reviews this plan. Use a new isolated workspace; preserve main's AGENTS.md edit and all existing worktrees.
+**Execution:** Preserve the previously selected Native approach. The user approved this plan; implementation and verification are complete. Use a new isolated workspace; preserve main's AGENTS.md edit and all existing worktrees.
 
 ## Global Constraints
 
@@ -48,12 +48,12 @@
 
 **Interfaces:** Keep `evaluate(project_dir, session_id, event, task_id=None) -> dict`. Consume existing bounded `read_locator`/`read_task_index`. Produce inactive results only for SessionStart/UserPromptSubmit with neither valid locator nor usable index, before journal/snapshot reads. Use `ATTACHMENT_NOT_DISCOVERED` for absent hints and preserve `LOCATOR_INVALID` for a corrupt locator; recovery guidance requests explicit attachment repair and makes no claim about journal binding absence.
 
-- [ ] Add `test_undiscoverable_optional_events_do_not_replay_or_read_snapshot`: reuse owned Git/journal fixtures with an existing active binding/mapping, remove both hints, guard canonical `_read_journal` and the exact snapshot read, and assert inactive results for both optional events with no new files/state mutation. Add corrupt-locator/no-index variant. No large timing threshold.
-- [ ] Add `test_missing_discovery_caches_do_not_bypass_completion`, asserting TaskCompleted still replays the default journal and blocks ACTIVE_ATTEMPT. Add valid external-index/no-locator and empty-index cases: retain authoritative selected-root reads and existing repair behavior. Cover wrong-root hints via existing host review/integration cases.
-- [ ] Add `test_sessions_do_not_share_negative_discovery`: undiscoverable session B stays inactive without caching that result; attached A still builds context. Keep per-session hashed paths.
-- [ ] Run the new module. Expected: zero-read assertions fail against baseline; existing completion expectations pass and must remain intact.
-- [ ] Add the early optional-event return after bounded hint discovery, without changing TaskCompleted's root/journal fallback or authority checks. Run new module plus `test_claude_hooks.py`, `test_host_integration.py`, `test_host_review_regressions.py`. Expected: PASS.
-- [ ] Update affected discovery prose, run documentation/diff checks, commit `fix: skip journal replay for undiscoverable prompt refreshes`.
+- [x] Add `test_undiscoverable_optional_events_do_not_replay_or_read_snapshot`: reuse owned Git/journal fixtures with an existing active binding/mapping, remove both hints, guard canonical `_read_journal` and the exact snapshot read, and assert inactive results for both optional events with no new files/state mutation. Add corrupt-locator/no-index variant. No large timing threshold.
+- [x] Add `test_missing_discovery_caches_do_not_bypass_completion`, asserting TaskCompleted still replays the default journal and blocks ACTIVE_ATTEMPT. Add valid external-index/no-locator and empty-index cases: retain authoritative selected-root reads and existing repair behavior. Cover wrong-root hints via existing host review/integration cases.
+- [x] Add `test_sessions_do_not_share_negative_discovery`: undiscoverable session B stays inactive without caching that result; attached A still builds context. Keep per-session hashed paths.
+- [x] Run the new module. Expected: zero-read assertions fail against baseline; existing completion expectations pass and must remain intact.
+- [x] Add the early optional-event return after bounded hint discovery, without changing TaskCompleted's root/journal fallback or authority checks. Run new module plus `test_claude_hooks.py`, `test_host_integration.py`, `test_host_review_regressions.py`. Expected: PASS.
+- [x] Update affected discovery prose, run documentation/diff checks, commit `fix: skip journal replay for undiscoverable prompt refreshes`.
 
 ### Task 2: One authoritative replay for attached refresh
 
@@ -61,11 +61,11 @@
 
 **Interfaces:** Read through existing `read_context_state(root) -> dict`, retain the complete returned object, use its `data` for binding evaluation, and pass that same object as `authoritative_state` to `host_brief`. No signature, state schema or store replay policy changes.
 
-- [ ] Add `test_attached_refresh_reuses_authoritative_state`: use the existing valid attached HookTests fixture for both optional events, count canonical `_read_journal` calls and assert one, with complete required context and unchanged authoritative version/token. Add state identity/timing attribution assertions at the supported `host_brief` boundary. Expected: baseline performs two replays.
-- [ ] Add `test_cached_brief_cannot_waive_revoked_binding_completion`: obtain a real brief, detach/revise the binding through the fixture journal, then confirm authoritative completion and existing stale-binding mutation guards reject stale work. Do not assert that an advisory snapshot authorizes a later mutation.
-- [ ] Run the new module and watch the replay count fail before implementing state reuse. Pass the timed authoritative state through the existing API; keep all preparation/preflight calls active.
-- [ ] Run `test_prompt_hook_latency.py`, `test_context_preparation.py`, `test_context_input_continuity.py`, `test_large_context_preparation.py`, `test_lifecycle_hooks.py`, `test_host_integration.py`, `test_host_completion.py`, `test_claude_hooks.py`. Expected: PASS, including live source drift, revoked binding, required-context failure and unchanged worker limits.
-- [ ] Update measured-scope/replay documentation, check docs/diff, commit `fix: reuse authoritative state during attached hook refresh`.
+- [x] Add `test_attached_refresh_reuses_authoritative_state`: use the existing valid attached HookTests fixture for both optional events, count canonical `_read_journal` calls and assert one, with complete required context and unchanged authoritative version/token. Add state identity/timing attribution assertions at the supported `host_brief` boundary. Expected: baseline performs two replays.
+- [x] Add `test_cached_brief_cannot_waive_revoked_binding_completion`: obtain a real brief, detach/revise the binding through the fixture journal, then confirm authoritative completion and existing stale-binding mutation guards reject stale work. Do not assert that an advisory snapshot authorizes a later mutation.
+- [x] Run the new module and watch the replay count fail before implementing state reuse. Pass the timed authoritative state through the existing API; keep all preparation/preflight calls active.
+- [x] Run `test_prompt_hook_latency.py`, `test_context_preparation.py`, `test_context_input_continuity.py`, `test_large_context_preparation.py`, `test_lifecycle_hooks.py`, `test_host_integration.py`, `test_host_completion.py`, `test_claude_hooks.py`. Expected: PASS, including live source drift, revoked binding, required-context failure and unchanged worker limits.
+- [x] Update measured-scope/replay documentation, check docs/diff, commit `fix: reuse authoritative state during attached hook refresh`.
 
 ### Task 3: Advisory prompt helper timeout with retained hard failures
 
@@ -73,12 +73,12 @@
 
 **Interfaces:** Catch only `subprocess.TimeoutExpired` for the new policy. UserPromptSubmit exits 0 with bounded best-effort UTF-8 guidance and no successful-context stdout; TaskCompleted still exits 2. Reuse existing `warn_utf8` for optional diagnostics. Generic failures and explicit block decisions retain their current behavior. Keep descriptor bytes/limits/policy unchanged.
 
-- [ ] Add table-driven timeout tests for SessionStart, UserPromptSubmit and TaskCompleted with exit codes 0, 0 and 2. A TimeoutExpired containing partial stdout must not emit `additionalContext` or partial JSON. Add a broken-diagnostic-stream case: prompt acceptance must survive its optional warning failure.
-- [ ] Add a matrix proving explicit helper block, nonzero helper result, invalid JSON and OSError still block known mandatory events. Retain current malformed/oversized payload, Unicode and host-launch failure tests.
-- [ ] Add an actual owned helper subprocess that writes partial output then stalls. Load the actual `HOOK` path (respect `DEVFLOW_HOOK_PATH`), temporarily point its helper root at the owned fixture, and intercept the subprocess call only to assert production timeout remains 8 and shorten the fixture's wait. Let real `subprocess.run` raise TimeoutExpired; verify prompt acceptance and completion rejection. No eight-second sleep or provider process is needed.
-- [ ] Run `test_claude_hooks.py`. Expected: prompt timeout/broken-warning assertions fail before the fix. Add the distinct timeout handler, leaving non-timeout handling and `hooks.json` unchanged; run the module again. Expected: PASS.
-- [ ] Update the public event policy and recovery guidance. Add/update an event-flow Mermaid diagram in `docs/hosts.md`; review workflow SKILL's existing required-context-before-work diagram and record whether a content change is needed. Keep workflow REFERENCE below its existing 12,288-byte limit (currently 12,254); replace/shorten affected prose rather than expanding budgets.
-- [ ] Run `test_claude_hooks.py`, `test_utf8_protocol.py`, `test_host_review_regressions.py`, `test_package.py`, `test_documentation.py`; run `python3 scripts/check_documentation.py --write`, then `--check`, and `git diff --check`. Expected: PASS, no metadata/budget drift. Commit `fix: keep prompt helper timeouts advisory`.
+- [x] Add table-driven timeout tests for SessionStart, UserPromptSubmit and TaskCompleted with exit codes 0, 0 and 2. A TimeoutExpired containing partial stdout must not emit `additionalContext` or partial JSON. Add a broken-diagnostic-stream case: prompt acceptance must survive its optional warning failure.
+- [x] Add a matrix proving explicit helper block, nonzero helper result, invalid JSON and OSError still block known mandatory events. Retain current malformed/oversized payload, Unicode and host-launch failure tests.
+- [x] Add an actual owned helper subprocess that writes partial output then stalls. Load the actual `HOOK` path (respect `DEVFLOW_HOOK_PATH`), temporarily point its helper root at the owned fixture, and intercept the subprocess call only to assert production timeout remains 8 and shorten the fixture's wait. Let real `subprocess.run` raise TimeoutExpired; verify prompt acceptance and completion rejection. No eight-second sleep or provider process is needed.
+- [x] Run `test_claude_hooks.py`. Expected: prompt timeout/broken-warning assertions fail before the fix. Add the distinct timeout handler, leaving non-timeout handling and `hooks.json` unchanged; run the module again. Expected: PASS.
+- [x] Update the public event policy and recovery guidance. Add/update an event-flow Mermaid diagram in `docs/hosts.md`; review workflow SKILL's existing required-context-before-work diagram and record whether a content change is needed. Keep workflow REFERENCE below its existing 12,288-byte limit (currently 12,254); replace/shorten affected prose rather than expanding budgets.
+- [x] Run `test_claude_hooks.py`, `test_utf8_protocol.py`, `test_host_review_regressions.py`, `test_package.py`, `test_documentation.py`; run `python3 scripts/check_documentation.py --write`, then `--check`, and `git diff --check`. Expected: PASS, no metadata/budget drift. Commit `fix: keep prompt helper timeouts advisory`.
 
 ### Task 4: Real regression evidence, platform gates and independent review
 
@@ -86,13 +86,13 @@
 
 **Interfaces:** Candidate branch `fix/bandpick-prompt-hook-latency`; current workflow collects full Ubuntu/macOS/Windows 3.11/latest suites and isolated installed Windows host checks. Approval of this plan authorizes pushing only this candidate branch for CI verification. No PR, main integration, issue message/closure, version bump or release is implied.
 
-- [ ] Run the full local suite and docs/diff checks. Expected: all tests pass with only platform-inapplicable skips, current hook byte/time limits intact.
-- [ ] Re-run the original Bandpick investigation read-only with a fresh undiscoverable session ID: capture actual elapsed time and journal replay count. Also run the real helper CLI and hook adapter for that fresh session. Assert inactive/exit 0 and zero replay; report observed timing versus the 7.575-second baseline without a universal wall-time guarantee. Never invoke attached evaluation there or change its caches.
-- [ ] Exercise complete attached context and timeout paths on owned fixtures; retain event outcomes, replay counts, source/identity checks and evidence limitations in the tracked report. Do not treat injected timeouts as live Claude event dispatch or claim an active-session replay is constant time.
-- [ ] Add the candidate branch to the existing push filter, commit, push that exact branch and inspect the run for its SHA. Retain complete platform results and installed hook-script proof, fix in-scope failures, and rerun changed gates. Expected: available platform/package gates PASS. Signed-in Claude dispatch remains unverified if no suitable environment is supplied.
-- [ ] Record R1–R5 as MET/NOT_MET/CANNOT_VERIFY with changed-file:line evidence, all Native rulings, and any unavailable gates. Prepare one whole-branch review package and send it to one fresh read-only reviewer using the requesting-code-review template, spec/plan, all five Review Focus lines verbatim and ledger rulings. Use the most capable currently allowed model with explicit effort; reviewer cannot delegate.
-- [ ] Regrade findings by user effect; make the one Native Important/Critical RED→GREEN correction pass and run the full applicable suite. No second reviewer. Record deferred minors and all decisions in the tracked report and final message. Preserve evidence before deleting only this plan's scratch.
-- [ ] Run final documentation/package/protocol checks after report-only edits; explicitly distinguish documentation-only changes after a tested SHA and revalidate installed identity if fingerprinted package files change. Commit the final report and present the delivery choice; do not merge/publish without the user's separate instruction.
+- [x] Run the full local suite and docs/diff checks. Expected: all tests pass with only platform-inapplicable skips, current hook byte/time limits intact.
+- [x] Re-run the original Bandpick investigation read-only with a fresh undiscoverable session ID: capture actual elapsed time and journal replay count. Also run the real helper CLI and hook adapter for that fresh session. Assert inactive/exit 0 and zero replay; report observed timing versus the 7.575-second baseline without a universal wall-time guarantee. Never invoke attached evaluation there or change its caches.
+- [x] Exercise complete attached context and timeout paths on owned fixtures; retain event outcomes, replay counts, source/identity checks and evidence limitations in the tracked report. Do not treat injected timeouts as live Claude event dispatch or claim an active-session replay is constant time.
+- [x] Add the candidate branch to the existing push filter, commit, push that exact branch and inspect the run for its SHA. Retain complete platform results and installed hook-script proof, fix in-scope failures, and rerun changed gates. Expected: available platform/package gates PASS. Signed-in Claude dispatch remains unverified if no suitable environment is supplied.
+- [x] Record R1–R5 as MET/NOT_MET/CANNOT_VERIFY with changed-file:line evidence, all Native rulings, and any unavailable gates. Prepare one whole-branch review package and send it to one fresh read-only reviewer using the requesting-code-review template, spec/plan, all five Review Focus lines verbatim and ledger rulings. Use the most capable currently allowed model with explicit effort; reviewer cannot delegate.
+- [x] Regrade findings by user effect; make the one Native Important/Critical RED→GREEN correction pass and run the full applicable suite. No second reviewer. Record deferred minors and all decisions in the tracked report and final message. Preserve evidence before deleting only this plan's scratch.
+- [x] Run final documentation/package/protocol checks after report-only edits; explicitly distinguish documentation-only changes after a tested SHA and revalidate installed identity if fingerprinted package files change. Commit the final report and present the delivery choice; do not merge/publish without the user's separate instruction.
 
 ## Plan self-review and handoff
 
@@ -104,8 +104,9 @@ borrowing and event-specific adapter exits. No dependency, schema or timeout
 configuration is introduced. Baseline evidence is the v0.3.13 733-test release;
 execution verifies a clean local baseline before changing code.
 
-The design is approved. This implementation plan awaits user review; Native
-execution is already selected. No implementation branch/worktree, product code,
-candidate push or issue message has been created by this planning step. Main's
-AGENTS.md edit remains untouched. Primary setup was reviewed; its current behavior
-is unchanged until execution, so this planning-only change needs no setup edit.
+The user approved the design and plan. Native implementation, the single fresh
+whole-branch review, its Important RED→GREEN correction and all platform gates
+are complete. See the [final review](../reviews/2026-10-23-bandpick-prompt-hook-latency.md)
+for requirement evidence, rulings and retained results. Candidate runtime was
+pushed for CI; main's AGENTS.md edit and all other worktrees remain untouched.
+No main integration, PR, issue message or release is authorized by this record.

@@ -2,7 +2,8 @@
 
 Status: design approved by the user on 2026-10-23 after `0c79f5a`.
 The recommended approach (including advisory prompt helper timeouts) is selected;
-the implementation plan awaits review.
+the approved plan is implemented and verified; see the
+[final review](../reviews/2026-10-23-bandpick-prompt-hook-latency.md).
 Source: [issue #3](https://github.com/wgentil/devflow/issues/3).
 Baseline: DevFlow v0.3.13, `33dfe48`.
 

@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "git_sha": "e9b8e62df4a5e3becd5d38c5aade80a1294cc5cb",
+  "descriptor": {
+    "plugin": "devflow",
+    "plugin_version": "0.3.13",
+    "state_schema_version": 1,
+    "supported_schemas": [
+      1
+    ],
+    "host_protocol_version": 1,
+    "release_id": "affc8a903e37990652f524b517371426c27b94fbccb568e69c9ec59c25b4a91f",
+    "fingerprint": "affc8a903e37990652f524b517371426c27b94fbccb568e69c9ec59c25b4a91f"
+  },
+  "gates": {
+    "codex_install": {
+      "status": "PASS",
+      "skill_count": 11,
+      "descriptor": {
+        "plugin": "devflow",
+        "plugin_version": "0.3.13",
+        "state_schema_version": 1,
+        "supported_schemas": [
+          1
+        ],
+        "host_protocol_version": 1,
+        "release_id": "affc8a903e37990652f524b517371426c27b94fbccb568e69c9ec59c25b4a91f",
+        "fingerprint": "affc8a903e37990652f524b517371426c27b94fbccb568e69c9ec59c25b4a91f"
+      }
+    },
+    "claude_install": {
+      "status": "PASS",
+      "skill_count": 11,
+      "descriptor": {
+        "plugin": "devflow",
+        "plugin_version": "0.3.13",
+        "state_schema_version": 1,
+        "supported_schemas": [
+          1
+        ],
+        "host_protocol_version": 1,
+        "release_id": "affc8a903e37990652f524b517371426c27b94fbccb568e69c9ec59c25b4a91f",
+        "fingerprint": "affc8a903e37990652f524b517371426c27b94fbccb568e69c9ec59c25b4a91f"
+      }
+    },
+    "codex_startup": {
+      "status": "PASS",
+      "version": "0.164.0"
+    },
+    "claude_startup": {
+      "status": "PASS",
+      "version": "2.1.309"
+    },
+    "codex_protocol": {
+      "status": "PASS",
+      "detail": "initialize/account-status completed; no model turn submitted"
+    },
+    "claude_hook_scripts": {
+      "status": "PASS",
+      "python_command": "python3",
+      "live_event_dispatch": "NOT_RUN"
+    }
+  },
+  "authenticated_workflow": {
+    "status": "NOT_RUN",
+    "reason": "Startup checks do not execute signed-in model tasks or live session events."
+  },
+  "success": true
+}
