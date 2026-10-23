@@ -1,7 +1,7 @@
 name: Platform tests
 on:
   push:
-    branches: [main, feat/windows-portability, fix/native-windows-compatibility]
+    branches: [main, feat/windows-portability, fix/native-windows-compatibility, fix/bandpick-prompt-hook-latency]
   pull_request:
 jobs:
   python:
