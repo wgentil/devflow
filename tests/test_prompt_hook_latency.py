@@ -114,3 +114,49 @@ class PromptHookLatencyTests(unittest.TestCase):
             with self.subTest(body=body):
                 result = host_hook.evaluate(self.project, 's1', 'TaskCompleted', 'task')
                 self.assertEqual((result['status'], result['reason_code']), ('block', 'ACTIVE_ATTEMPT'))
+
+    def test_attached_refresh_reuses_authoritative_state(self):
+        original = host_hook.host_brief
+        observed = []
+        def capture(data, binding, **kwargs):
+            view = original(data, binding, **kwargs)
+            observed.append((data, kwargs.get('authoritative_state'), view))
+            return view
+        for event in ('SessionStart', 'UserPromptSubmit'):
+            with self.subTest(event=event), patch.object(store, '_read_journal', wraps=store._read_journal) as replay, patch.object(host_hook, 'host_brief', side_effect=capture):
+                decision = host_hook.evaluate(self.project, 's1', event)
+                self.assertIn(decision['status'], ('allow', 'inactive'))
+                self.assertEqual(replay.call_count, 1, 'attached refresh must not replay again inside context preparation')
+                data, authoritative, view = observed[-1]
+                self.assertIsNotNone(authoritative)
+                self.assertIs(authoritative['data'], data)
+                self.assertEqual(authoritative['version'], 3)
+                self.assertGreaterEqual(authoritative['_context_read_ms'], 0)
+                self.assertGreaterEqual(view['preparation']['preflight_ms'], authoritative['_context_read_ms'])
+                self.assertIn('R1', view['task_view']['required_ids'])
+                self.assertEqual(view['task_view']['coverage']['missing_ids'], [])
+                self.assertEqual(view['active_attempt']['token'], 't')
+        state = store.read_state(self.root)
+        self.assertEqual(state['version'], 3)
+        self.assertEqual(state['data']['runs']['run']['active_attempt']['token'], 't')
+
+    def test_cached_brief_cannot_waive_revoked_binding_completion(self):
+        write_task_index(self.project, 'claude', 's1', self.root, ['task'])
+        self.assertEqual(host_hook.evaluate(self.project, 's1', 'SessionStart')['status'], 'allow')
+        brief_path = self.locator.with_suffix('.brief.json')
+        old_cache = brief_path.read_bytes()
+        store.transact(self.root, 3, 'detach', {'kind': 'domain.host.detach', 'payload': {
+            'request': {'binding_id': 'b1', 'revision': 1}}})
+        result = host_hook.evaluate(self.project, 's1', 'TaskCompleted', 'task')
+        self.assertEqual((result['status'], result['reason_code']), ('block', 'BINDING_DETACHED'))
+        token = store.HOST_CONTEXT.set({'binding_id': 'b1', 'revision': 1})
+        try:
+            with self.assertRaises(store.WorkflowError) as caught:
+                store.transact(self.root, 4, 'stale-write', {'kind': 'fixture', 'payload': {'forbidden': True}})
+        finally:
+            store.HOST_CONTEXT.reset(token)
+        self.assertEqual(caught.exception.code, 'STALE_BINDING')
+        self.assertEqual(brief_path.read_bytes(), old_cache)
+        current = store.read_state(self.root)
+        self.assertEqual(current['version'], 4)
+        self.assertNotIn('forbidden', current['data'])

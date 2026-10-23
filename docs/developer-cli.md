@@ -722,3 +722,12 @@ the policy before comparing package parity; do not rewrite journal receipts.
 The optional installed-host verifier retains a bounded underlying failure cause
 when a native transport wraps a cleanup/startup error. A failed cleanup is not
 accepted as passing startup evidence.
+
+## Hook refresh replay scope
+
+An attached Claude SessionStart/UserPromptSubmit refresh reuses its authoritative
+journal read during context preparation, including the original read-time
+attribution. It does not replay again to build the same brief. That remaining
+read still scales with journal history; this is not an authoritative state cache.
+Undiscoverable optional refreshes skip journal and snapshot reads. Live source
+preflight, context budgets and task-completion authority remain enforced.

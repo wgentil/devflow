@@ -5,7 +5,7 @@ from .bootstrap import discover_project
 from .host_locators import read_locator, locator_path, read_task_index
 from .hosts import binding_for_session
 from .host_completion import check_completion, host_brief
-from .store import read_state, WorkflowError, _atomic_json
+from .store import WorkflowError, _atomic_json
 
 
 def evaluate(project_dir, session_id, event, task_id=None):
@@ -26,7 +26,9 @@ def evaluate(project_dir, session_id, event, task_id=None):
     if not locator and index:issue=issue or 'LOCATOR_MISSING' 
     if not root.is_dir():
         return {'status':'block' if known_mapped else 'inactive','reason_code':'CONTROL_ROOT_UNAVAILABLE'}
-    state=read_state(root)['data']
+    from .context_preparation import read_context_state
+    authoritative=read_context_state(root)
+    state=authoritative['data']
     binding=binding_for_session(state,'claude',session_id)
     if locator:
         pointed=state.get('host_bindings',{}).get(locator['binding_id'])
@@ -48,7 +50,7 @@ def evaluate(project_dir, session_id, event, task_id=None):
         return decision
     if issue:return {'status':'inactive','reason_code':issue,'message':'Repair locator by retrying explicit attachment.'}
     try:
-        brief=host_brief(state,binding,control_root=root)
+        brief=host_brief(state,binding,control_root=root,authoritative_state=authoritative)
     except WorkflowError as exc:
         return {'status':'block','reason_code':exc.code,'message':str(exc),'evidence_refs':['journal:'+binding['run_id']]}
     path=locator_path(project,'claude',session_id).with_suffix('.brief.json')
