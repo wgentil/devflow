@@ -53,10 +53,20 @@ class PromptHookLatencyTests(unittest.TestCase):
         self.assertEqual(state['data']['runs']['run']['active_attempt']['token'], 't')
 
     def test_corrupt_locator_without_index_does_not_replay(self):
-        self.locator.write_text('{', encoding='utf-8')
-        for event in ('SessionStart', 'UserPromptSubmit'):
-            with self.subTest(event=event):
-                self.optional_without_storage_reads(event, 'LOCATOR_INVALID')
+        for body in ('{', '["control_root","binding_id"]', '[]', 'null', '7'):
+            self.locator.write_text(body, encoding='utf-8')
+            for event in ('SessionStart', 'UserPromptSubmit'):
+                with self.subTest(body=body, event=event):
+                    self.optional_without_storage_reads(event, 'LOCATOR_INVALID')
+
+    def test_malformed_locator_shape_cannot_waive_mapped_completion(self):
+        self.locator.with_suffix('.tasks.json').unlink(missing_ok=True)
+        for body in ('["control_root","binding_id"]', '[]', 'null', '7'):
+            self.locator.write_text(body, encoding='utf-8')
+            with self.subTest(body=body), patch.object(store, '_read_journal', wraps=store._read_journal) as replay:
+                result = host_hook.evaluate(self.project, 's1', 'TaskCompleted', 'task')
+                self.assertEqual((result['status'], result['reason_code']), ('block', 'LOCATOR_INVALID'))
+                self.assertEqual(replay.call_count, 1)
 
     def test_invalid_task_index_is_not_an_optional_refresh_hint(self):
         self.remove_hints()

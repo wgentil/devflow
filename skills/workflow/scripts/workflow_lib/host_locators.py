@@ -24,7 +24,7 @@ def read_locator(project_dir: Path, host: str, session_id: str) -> dict | None:
     try:
         if path.stat().st_size > 8192: raise ValueError('locator exceeds limit')
         value=json.loads(path.read_text(encoding='utf-8'))
-        if set(value) != {'control_root','binding_id'} or not all(isinstance(x,str) and x for x in value.values()) or not Path(value['control_root']).is_absolute():
+        if not isinstance(value,dict) or set(value) != {'control_root','binding_id'} or not all(isinstance(x,str) and x for x in value.values()) or not Path(value['control_root']).is_absolute():
             raise ValueError('invalid locator fields')
         return value
     except (OSError,ValueError,TypeError) as exc:
