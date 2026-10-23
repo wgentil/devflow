@@ -16,6 +16,9 @@ def evaluate(project_dir, session_id, event, task_id=None):
     try: locator=read_locator(project,'claude',session_id)
     except WorkflowError as exc:locator=None;issue=exc.code
     index=read_task_index(project,'claude',session_id)
+    if event in {'SessionStart','UserPromptSubmit'} and not locator and not index:
+        return {'status':'inactive','reason_code':issue or 'ATTACHMENT_NOT_DISCOVERED',
+                'message':'No usable attachment discovery hints; retry explicit attachment before workflow work.'}
     known_mapped=event == 'TaskCompleted' and index and task_id in index['task_ids']
     if locator and index and Path(locator['control_root']).resolve() != Path(index['control_root']).resolve():
         issue='LOCATOR_ROOT_MISMATCH'

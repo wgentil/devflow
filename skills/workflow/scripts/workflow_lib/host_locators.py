@@ -43,6 +43,6 @@ def read_task_index(project_dir, host, session_id):
     try:
         if path.stat().st_size>65536:raise ValueError('task index too large')
         value=json.loads(path.read_text(encoding='utf-8'))
-        if not isinstance(value.get('task_ids'),list) or not all(isinstance(t,str) for t in value['task_ids']) or not isinstance(value.get('control_root'),str) or not Path(value['control_root']).is_absolute():raise ValueError('invalid task index')
+        if not isinstance(value,dict) or not isinstance(value.get('task_ids'),list) or not all(isinstance(t,str) for t in value['task_ids']) or not isinstance(value.get('control_root'),str) or not Path(value['control_root']).is_absolute():raise ValueError('invalid task index')
         return value
     except (OSError,ValueError,TypeError):return None

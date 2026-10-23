@@ -7,7 +7,7 @@ Authoritative journal/input preflight runs in the parent, followed by the shared
 bounded composition worker. Required failure blocks read/dispatch. The worker
 deadline excludes preflight; see [preparation recovery](context-efficiency.md#preparation-recovery). Large complete views travel through content-addressed artifacts
 instead of overflowing the hook's inline response.
-Claude SessionStart always rebuilds full context, including after compaction.
+Attached Claude SessionStart rebuilds full context, including after compaction.
 Ordinary repeated prompts still deduplicate only after live checks. An oversized
 inline view exposes its control envelope and complete artifact reference with
 `context_complete: false`; load that artifact before model work. Native workers
@@ -240,3 +240,15 @@ supported host profile. SessionStart/Stop retain their diagnostic policy. Python
 3.11+ must be available through the descriptor's `python3` executable; DevFlow does
 not create an alias or install a runtime. Script tests, host schema validation and
 actual installed event dispatch are separate [acceptance gates](windows-validation.md).
+
+## Optional attachment discovery
+
+SessionStart and UserPromptSubmit skip journal/snapshot reads when that session
+has neither a valid attachment locator nor a usable task index. The result is
+inactive (`ATTACHMENT_NOT_DISCOVERED`, or `LOCATOR_INVALID` for a corrupt locator),
+with guidance to retry explicit attachment. This discovers hints, not ownership:
+a missing cache does not prove that the journal has no binding. No cache or
+journal repair is performed. An empty but valid task index still selects its
+authoritative root. TaskCompleted retains journal validation and its existing
+default-control-root fallback, including when discovery caches are missing or
+invalid; cache absence cannot waive completion checks in that journal.
