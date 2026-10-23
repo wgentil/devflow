@@ -24,7 +24,7 @@ use their executable directly. Detailed maintainer checks stay in the
 
 Codex and Claude have separate installations of the same shared package. Users
 choose when to upgrade. Both manifests and one skills/helper tree are included;
-the package version is `0.3.13`;
+the package version is `0.3.14`;
 the Claude marketplace descriptor is packaged at `.claude-plugin/marketplace.json`.
 The private GitHub repository `wgentil/devflow` serves the marketplace from
 `main`. Codex users with access to that repository can install it:
