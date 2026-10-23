@@ -1,0 +1,98 @@
+{
+  "source_sha": "58bcd04089a527b6a0c7b6f6e32206f51b90f902",
+  "fingerprint": "2d4b6e65e5bdd88a7ddcd16ff2673e3a5aec720fe4e63a628f40173cead9b6d5",
+  "workflow_url": "https://github.com/wgentil/devflow/actions/runs/40009063128",
+  "files": [
+    {
+      "file": "local-platform.json",
+      "origin": "merged local suite",
+      "original_sha256": "d68bb2f955d6c090b209911ab3f61ab2b551117f837dcd35450d6af7050b4536",
+      "retained_sha256": "d68bb2f955d6c090b209911ab3f61ab2b551117f837dcd35450d6af7050b4536",
+      "normalization": "CRLF to LF only"
+    },
+    {
+      "file": "platform-ubuntu-latest-3.11.json",
+      "origin": "Actions40009063128 platform-ubuntu-latest-3.11",
+      "original_sha256": "7b64a7bc21714a972d13f1593c3d5236a885a376045bbec17955c86fe20d091f",
+      "retained_sha256": "7b64a7bc21714a972d13f1593c3d5236a885a376045bbec17955c86fe20d091f",
+      "normalization": "CRLF to LF only"
+    },
+    {
+      "file": "platform-macos-latest-3.11.json",
+      "origin": "Actions40009063128 platform-macos-latest-3.11",
+      "original_sha256": "ba7f81c3dfe57635d66eb44af666235562e84b67e81b0ee25e7cb0df75eab39e",
+      "retained_sha256": "ba7f81c3dfe57635d66eb44af666235562e84b67e81b0ee25e7cb0df75eab39e",
+      "normalization": "CRLF to LF only"
+    },
+    {
+      "file": "platform-windows-latest-3.11.json",
+      "origin": "Actions40009063128 platform-windows-latest-3.11",
+      "original_sha256": "d1ebbd8bcc8136407b0544303d9fa822db88a9abf3d0c9f59f36f10d54c96f74",
+      "retained_sha256": "96a8705bc622a3ef6973aeb5c7666f9b8af3c376decf3467d3fbc6cb1b6c39b1",
+      "normalization": "CRLF to LF only"
+    },
+    {
+      "file": "platform-windows-latest-3.11-legacy.json",
+      "origin": "Actions40009063128 platform-windows-latest-3.11 CP1252",
+      "original_sha256": "5039b88c8a1a137a04e35882379cfb1f1044439e99b57c8f0855860d4b861d34",
+      "retained_sha256": "14c503c97abcd3abb4b0a1d2ed9b09d184570c61268cc1f045f51d9a865e0c2b",
+      "normalization": "CRLF to LF only"
+    },
+    {
+      "file": "platform-windows-latest-3.x.json",
+      "origin": "Actions40009063128 platform-windows-latest-3.x",
+      "original_sha256": "0f961360d37392a929fa4ef7de8a25d6402bdb099c1d08f930dffe54d4ab12e6",
+      "retained_sha256": "f62ed2e5c9cddb8a718febb5721703b9af09ee75816c6a57c9c18dfd0509d152",
+      "normalization": "CRLF to LF only"
+    },
+    {
+      "file": "platform-windows-latest-3.x-legacy.json",
+      "origin": "Actions40009063128 platform-windows-latest-3.x CP1252",
+      "original_sha256": "d091feb59cf56072e83435070f794f59ebb339ce431afa2673074e807549ed1b",
+      "retained_sha256": "1aaf65d317d43dd2a4344c1d96049e8ee4050d71fdb31469f997bacf4d4214d4",
+      "normalization": "CRLF to LF only"
+    },
+    {
+      "file": "local-installed.json",
+      "origin": "local isolated installed hosts",
+      "original_sha256": "c488f70f380a1f9f2e4f62435f08d8fbe4129b5f6f63b197dd8c6e264fdf45e1",
+      "retained_sha256": "c488f70f380a1f9f2e4f62435f08d8fbe4129b5f6f63b197dd8c6e264fdf45e1",
+      "normalization": "CRLF to LF only"
+    },
+    {
+      "file": "local-installed-hooks.log",
+      "origin": "local isolated installed hosts",
+      "original_sha256": "fda6a7f2e1d0ae9f9e60804503c38b6da8cb9aa686c75d005c2916149307632b",
+      "retained_sha256": "fda6a7f2e1d0ae9f9e60804503c38b6da8cb9aa686c75d005c2916149307632b",
+      "normalization": "CRLF to LF only"
+    },
+    {
+      "file": "github-installed.json",
+      "origin": "github isolated installed hosts",
+      "original_sha256": "c488f70f380a1f9f2e4f62435f08d8fbe4129b5f6f63b197dd8c6e264fdf45e1",
+      "retained_sha256": "c488f70f380a1f9f2e4f62435f08d8fbe4129b5f6f63b197dd8c6e264fdf45e1",
+      "normalization": "CRLF to LF only"
+    },
+    {
+      "file": "github-installed-hooks.log",
+      "origin": "github isolated installed hosts",
+      "original_sha256": "7e0f95bc2e1c74d2bb9d6f1a3d75d410242059942a4ce456533e949b2b7f8665",
+      "retained_sha256": "7e0f95bc2e1c74d2bb9d6f1a3d75d410242059942a4ce456533e949b2b7f8665",
+      "normalization": "CRLF to LF only"
+    },
+    {
+      "file": "windows-installed.json",
+      "origin": "ci/windows-installed-hosts isolated installed hosts",
+      "original_sha256": "8aafe141e83521476759bb2c9ab24504bc2b87bda9476dab56bddd82e7cc871e",
+      "retained_sha256": "93afd757466f2dd068aea7b1dca412bca7cd264990b6418f25cfa40739e9511a",
+      "normalization": "CRLF to LF only"
+    },
+    {
+      "file": "windows-installed-hooks.log",
+      "origin": "ci/windows-installed-hosts isolated installed hosts",
+      "original_sha256": "081b08d9ffa80fc30f8a8aedc4dab0d2f69f94150ecf1b905caa2eaf975b45d1",
+      "retained_sha256": "a8ba6226fb9b70a666dfc580a448cf7c1055deff39195be45fbc1e8032ee4f2d",
+      "normalization": "CRLF to LF only"
+    }
+  ]
+}
