@@ -2,7 +2,7 @@
 
 Run next/retry/brief now return complete bounded task views; attached clients can
 use `host brief`. See [context selection and limits](../../docs/context-efficiency.md).
-Attached session start/compaction/handoff rebuild full context. A reference-only hook
+Attached session start/compaction/handoff rebuild full context. A prompt refresh timeout is advisory; required context and completion checks still apply. See [host recovery](../../docs/hosts.md#prompt-refresh-and-timeouts). A reference-only hook
 response must be explicitly loaded before model work. Native invocations receive
 full context once, after required preparation succeeds.
 

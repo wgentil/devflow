@@ -250,6 +250,12 @@ Delivery completion requires the recorded terminal result and manifest. Unmapped
 tasks remain ordinary host work even during an attached run. Codex uses the same
 shared check explicitly; automatic Codex hook enforcement is not claimed.
 
+A prompt context-refresh timeout warns and lets the conversation continue. Ask
+the harness to check attachment and required context before starting workflow
+work; prompt acceptance does not waive those prerequisites. Explicit policy
+blocks and task-completion failures still block. See
+[hook refresh and timeout behavior](hosts.md#prompt-refresh-and-timeouts).
+
 Hooks never run tests or change ownership. Stop permits pauses and human-input
 waits. A completion blocker directs rework; it does not force endless continuation.
 Host bindings coordinate trusted local clients, rather than secure arbitrary shell

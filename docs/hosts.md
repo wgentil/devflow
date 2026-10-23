@@ -252,3 +252,32 @@ journal repair is performed. An empty but valid task index still selects its
 authoritative root. TaskCompleted retains journal validation and its existing
 default-control-root fallback, including when discovery caches are missing or
 invalid; cache absence cannot waive completion checks in that journal.
+
+## Prompt refresh and timeouts
+
+An attached refresh reuses one authoritative journal read for context preparation;
+that read still grows with history. The helper keeps its eight-second deadline.
+A UserPromptSubmit helper timeout emits a best-effort UTF-8 warning and lets the
+prompt continue, without successful-context output. SessionStart timeouts remain
+advisory. An explicit returned policy/context block still blocks the prompt;
+non-timeout helper/launcher failures and malformed mandatory input still block.
+TaskCompleted timeouts and errors remain blocking. Descriptor `onFailure: block`
+and the ten-second host limit are unchanged: this is not a host-launch failure
+bypass or a new configurable timeout.
+
+Prompt acceptance is not evidence that required context is ready. Ask the harness
+to check attachment and refresh the required context before workflow work. Stop
+continues to allow pauses. Direct script tests do not establish live host dispatch.
+
+```mermaid
+flowchart TD
+    Event[Claude refresh or completion event] --> Kind{TaskCompleted?}
+    Kind -->|Yes| Complete[Authoritative completion check; errors and timeouts block]
+    Kind -->|No: SessionStart or UserPromptSubmit| Hints{Usable session hints?}
+    Hints -->|No| Inactive[Inactive; no journal or snapshot read]
+    Hints -->|Yes| Refresh[One authoritative read and current-context preparation]
+    Refresh --> Result{Helper result}
+    Result -->|Allow or inactive| Continue[Continue prompt or session]
+    Result -->|Explicit block| Block[Prompt blocked; SessionStart diagnostic]
+    Result -->|Helper timeout| Warn[Warn and continue; required context still needed before work]
+```

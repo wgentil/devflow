@@ -111,3 +111,103 @@ class HookTests(unittest.TestCase):
             stdin = io.TextIOWrapper(io.BytesIO(json.dumps(payload).encode('utf-8')), encoding='utf-8')
             with self.subTest(event=event), patch.object(sys, 'stdin', stdin), patch.object(sys, 'executable', str(self.project / 'missing-python')), contextlib.redirect_stderr(io.StringIO()):
                 self.assertEqual(hook.main(), 2)
+
+
+class AdapterTimeoutTests(unittest.TestCase):
+    def setUp(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('devflow_timeout_adapter', HOOK)
+        self.hook = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.hook)
+        self.temp = tempfile.TemporaryDirectory(prefix='devflow-hook-timeout-')
+        self.addCleanup(self.temp.cleanup)
+        self.project = Path(self.temp.name).resolve()
+
+    def invoke(self, event, child, *, stderr=None):
+        import contextlib
+        import io
+        from unittest.mock import patch
+        payload = {'hook_event_name': event, 'cwd': str(self.project), 'session_id': 'é東京', 'task_id': 'mapped'}
+        stdin = io.TextIOWrapper(io.BytesIO(json.dumps(payload).encode('utf-8')), encoding='utf-8')
+        out = io.StringIO()
+        err = io.StringIO() if stderr is None else stderr
+        def run(argv, **kwargs):
+            self.assertEqual(kwargs.get('timeout'), 8)
+            if isinstance(child, BaseException):
+                raise child
+            return child(argv, **kwargs) if callable(child) else child
+        with patch.object(sys, 'stdin', stdin), patch.object(self.hook.subprocess, 'run', side_effect=run), contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = self.hook.main()
+        return code, out.getvalue(), err
+
+    def test_helper_timeout_is_advisory_only_for_prompt_and_session_start(self):
+        marker = 'SENSITIVE_PARTIAL_RESPONSE'
+        for event, want in (('SessionStart', 0), ('UserPromptSubmit', 0), ('TaskCompleted', 2)):
+            timeout = subprocess.TimeoutExpired(['helper é東京'], 8,
+                output=json.dumps({'brief': {'note': marker}}).encode('utf-8'), stderr=b'\xffpartial diagnostic')
+            with self.subTest(event=event):
+                code, output, err = self.invoke(event, timeout)
+                self.assertEqual(code, want)
+                self.assertEqual(output, '', 'timeout cannot advertise successful or partial context')
+                self.assertIn('timed out', err.getvalue().lower())
+                self.assertNotIn(marker, err.getvalue())
+                self.assertLess(len(err.getvalue().encode('utf-8')), 2000)
+                if event == 'UserPromptSubmit':
+                    self.assertIn('context', err.getvalue().lower())
+                    self.assertIn('attach', err.getvalue().lower())
+
+    def test_timeout_warning_failure_does_not_change_event_exit_policy(self):
+        import io
+        class BrokenStream(io.StringIO):
+            def write(self, value):
+                raise OSError('closed diagnostic sink')
+        for event, want in (('UserPromptSubmit', 0), ('TaskCompleted', 2)):
+            with self.subTest(event=event):
+                code, output, _ = self.invoke(event, subprocess.TimeoutExpired(['helper'], 8), stderr=BrokenStream())
+                self.assertEqual((code, output), (want, ''))
+
+    def test_non_timeout_failures_and_explicit_blocks_still_block(self):
+        cases = {
+            'policy': subprocess.CompletedProcess(['helper'], 0, b'{"status":"block","reason_code":"SPEC_NOT_APPROVED","message":"Required context missing"}', b''),
+            'error': subprocess.CompletedProcess(['helper'], 2, b'{"error":"CORRUPT_STATE","message":"Invalid journal"}', b''),
+            'json': subprocess.CompletedProcess(['helper'], 0, b'not JSON', b''),
+            'launcher': OSError('helper unavailable'),
+        }
+        for event in ('UserPromptSubmit', 'TaskCompleted'):
+            for label, result in cases.items():
+                with self.subTest(event=event, failure=label):
+                    code, output, err = self.invoke(event, result)
+                    self.assertEqual((code, output), (2, ''))
+                    self.assertTrue(err.getvalue())
+
+    def test_real_stalled_helper_preserves_prompt_and_completion_policy(self):
+        from unittest.mock import patch
+        helper_root = self.project / 'helper é東京'
+        helper = helper_root / 'skills/workflow/scripts/run.py'
+        helper.parent.mkdir(parents=True)
+        helper.write_text("import time\nprint('{\"brief\":',flush=True)\ntime.sleep(30)\n", encoding='utf-8')
+        real_run = subprocess.run
+        timeouts = []
+        def short_fixture_wait(argv, **kwargs):
+            # Production still passes 8; shorten only this owned stalling child.
+            self.assertEqual(kwargs['timeout'], 8)
+            kwargs['timeout'] = 0.15
+            try:
+                return real_run(argv, **kwargs)
+            except subprocess.TimeoutExpired as exc:
+                timeouts.append(exc)
+                raise
+        for event, want in (('UserPromptSubmit', 0), ('TaskCompleted', 2)):
+            before = len(timeouts)
+            with self.subTest(event=event), patch.object(self.hook, 'ROOT', helper_root):
+                code, output, err = self.invoke(event, short_fixture_wait)
+                self.assertEqual(len(timeouts), before + 1, 'the real helper must time out, not fail to launch/parse')
+                self.assertEqual((code, output), (want, ''))
+                self.assertIn('timed out', err.getvalue().lower())
+
+    def test_prompt_timeout_diagnostic_uses_utf8_with_legacy_stderr(self):
+        import io
+        stderr = io.TextIOWrapper(io.BytesIO(), encoding='cp1252')
+        code, output, _ = self.invoke('UserPromptSubmit', subprocess.TimeoutExpired(['helper é東京'], 8), stderr=stderr)
+        self.assertEqual((code, output), (0, ''))
+        self.assertIn('timed out', stderr.buffer.getvalue().decode('utf-8').lower())

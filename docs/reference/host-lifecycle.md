@@ -10,6 +10,13 @@ uses no separate model. Unknown effective settings remain advisory; strict mode
 blocks. New scoped workers use bundled native discovery and launch; explicit advisory
 pins require user permission for unvalidated suitability. Claude effort remains unobservable. See [host contracts](../../docs/hosts.md) for handoff and model limits.
 
+For Claude prompt refresh, a helper timeout is advisory; prompt acceptance does
+not waive required context or mapped completion gates. Ask the harness to verify
+attachment/context before work. Explicit returned policy blocks and completion
+timeouts still block. Undiscoverable optional refreshes skip journal reads;
+attached refreshes reuse their one authoritative read. See
+[hook event policy](../hosts.md#prompt-refresh-and-timeouts).
+
 Before new model work, resolve the relevant stage with `host profile-resolve` for
 this binding. Use `host model-discover` for the native account context, then
 `host model-run` with a unique invocation and operation ID for an eligible scoped

@@ -8,7 +8,7 @@ import sys
 
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT/'skills/workflow/scripts'))
-from workflow_lib.utf8_io import write_utf8
+from workflow_lib.utf8_io import write_utf8, warn_utf8
 
 LIMIT=65536
 
@@ -42,7 +42,13 @@ def main():
             write_utf8(json.dumps({'hookSpecificOutput':{'hookEventName':event,'additionalContext':'DevFlow resume: '+json.dumps(decision['brief'],separators=(',',':'))}},separators=(',',':'))+'\n')
         elif decision.get('message'):write_utf8('DevFlow: '+decision['message']+'\n',stream=sys.stderr)
         return 0
-    except (OSError,ValueError,TypeError,subprocess.TimeoutExpired) as exc:
+    except subprocess.TimeoutExpired:
+        if event == 'UserPromptSubmit':
+            warn_utf8('DevFlow context refresh timed out; your prompt can continue. Check attachment and required context before starting workflow work.')
+        else:
+            warn_utf8('DevFlow hook diagnostic: helper timed out. Inspect attachment and retry before completing mapped work.')
+        return 2 if event == 'TaskCompleted' else 0
+    except (OSError,ValueError,TypeError) as exc:
         write_utf8('DevFlow hook diagnostic: '+str(exc)[:1000]+'. Inspect attachment before completing mapped work.\n',stream=sys.stderr)
         return 2 if event in {'TaskCompleted', 'UserPromptSubmit'} else 0
 

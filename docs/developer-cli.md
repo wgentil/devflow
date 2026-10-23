@@ -731,3 +731,10 @@ attribution. It does not replay again to build the same brief. That remaining
 read still scales with journal history; this is not an authoritative state cache.
 Undiscoverable optional refreshes skip journal and snapshot reads. Live source
 preflight, context budgets and task-completion authority remain enforced.
+
+The Claude adapter treats only the UserPromptSubmit helper's eight-second timeout
+as advisory: exit 0, bounded best-effort UTF-8 diagnostic, no partial/successful
+context stdout. TaskCompleted timeout exits 2. Explicit block decisions and
+non-timeout errors retain blocking behavior; descriptor launcher-failure policy
+and the ten-second host limit are unchanged. See
+[event and recovery details](hosts.md#prompt-refresh-and-timeouts).
