@@ -1,6 +1,7 @@
 # Test-change list dispatch correction
 
-Status: design approved by the user after `1e1db99`; implementation plan awaits review.
+Status: design and plan approved; implementation and verification complete.
+See the [final review](../reviews/2026-10-23-test-change-list-dispatch.md).
 Source: [issue #4](https://github.com/wgentil/devflow/issues/4).
 Baseline: DevFlow v0.3.14, `71c524a`.
 
@@ -72,3 +73,11 @@ are in scope. Keep parser arguments, output schema, journal formats and proposal
 approval/application behavior unchanged. Preserve main's existing uncommitted
 AGENTS.md edit and every existing worktree. After approval, write the ordered
 implementation plan before preparing an isolated implementation workspace.
+
+## Implementation clarification
+
+Independent review found that shared build preflight could write invalidation
+or governing receipt events before list dispatch. To satisfy R2, the correction
+also exempts precisely test-change list from that approval-consuming preflight.
+Mutating commands retain it. Historical inspection does not establish readiness
+for work; the final review records this Native ruling and its cost.

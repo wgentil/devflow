@@ -1,0 +1,13 @@
+test_list_empty_run_without_proposal_id (test_test_changes.TestChangeCLITests.test_list_empty_run_without_proposal_id) ... ok
+test_list_preserves_proposals_and_run_scope (test_test_changes.TestChangeCLITests.test_list_preserves_proposals_and_run_scope) ... ok
+test_list_unknown_run_is_structured_error (test_test_changes.TestChangeCLITests.test_list_unknown_run_is_structured_error) ... ok
+test_mutating_commands_retain_proposal_id_validation (test_test_changes.TestChangeCLITests.test_mutating_commands_retain_proposal_id_validation) ... ok
+test_applied_change_marks_every_dependent_green_proof_stale (test_test_changes.TestChangeTests.test_applied_change_marks_every_dependent_green_proof_stale) ... ok
+test_edited_test_preimage_blocks_an_approved_patch (test_test_changes.TestChangeTests.test_edited_test_preimage_blocks_an_approved_patch) ... ok
+test_exact_approval_precedes_patch_application_and_records_hashes (test_test_changes.TestChangeTests.test_exact_approval_precedes_patch_application_and_records_hashes) ... ok
+test_proposal_rejects_unlocked_and_structural_changes (test_test_changes.TestChangeTests.test_proposal_rejects_unlocked_and_structural_changes) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 1.540s
+
+OK

@@ -1,0 +1,87 @@
+test_list_empty_run_without_proposal_id (test_test_changes.TestChangeCLITests.test_list_empty_run_without_proposal_id) ... 
+  test_list_empty_run_without_proposal_id (test_test_changes.TestChangeCLITests.test_list_empty_run_without_proposal_id) (run_id='missing') ... FAIL
+  test_list_empty_run_without_proposal_id (test_test_changes.TestChangeCLITests.test_list_empty_run_without_proposal_id) (run_id='empty') ... FAIL
+test_list_preserves_proposals_and_run_scope (test_test_changes.TestChangeCLITests.test_list_preserves_proposals_and_run_scope) ... FAIL
+test_list_unknown_run_is_structured_error (test_test_changes.TestChangeCLITests.test_list_unknown_run_is_structured_error) ... ok
+test_mutating_commands_retain_proposal_id_validation (test_test_changes.TestChangeCLITests.test_mutating_commands_retain_proposal_id_validation) ... ok
+test_applied_change_marks_every_dependent_green_proof_stale (test_test_changes.TestChangeTests.test_applied_change_marks_every_dependent_green_proof_stale) ... ok
+test_edited_test_preimage_blocks_an_approved_patch (test_test_changes.TestChangeTests.test_edited_test_preimage_blocks_an_approved_patch) ... ok
+test_exact_approval_precedes_patch_application_and_records_hashes (test_test_changes.TestChangeTests.test_exact_approval_precedes_patch_application_and_records_hashes) ... ok
+test_proposal_rejects_unlocked_and_structural_changes (test_test_changes.TestChangeTests.test_proposal_rejects_unlocked_and_structural_changes) ... ok
+
+======================================================================
+FAIL: test_list_empty_run_without_proposal_id (test_test_changes.TestChangeCLITests.test_list_empty_run_without_proposal_id) (run_id='missing')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/0106/devflow/tests/test_test_changes.py", line 146, in test_list_empty_run_without_proposal_id
+    self.assertEqual(result.returncode, 0, result.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/0106/devflow/skills/workflow/scripts/run.py", line 834, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/Users/wayne/.codex/worktrees/0106/devflow/skills/workflow/scripts/run.py", line 806, in main
+    result = dispatch_command_group(parsed)
+  File "/Users/wayne/.codex/worktrees/0106/devflow/skills/workflow/scripts/commands/__init__.py", line 25, in dispatch
+    return module.dispatch(parsed)
+           ~~~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/0106/devflow/skills/workflow/scripts/commands/build.py", line 92, in dispatch
+    result = _dispatch(parsed)
+  File "/Users/wayne/.codex/worktrees/0106/devflow/skills/workflow/scripts/commands/build.py", line 203, in _dispatch
+    proposal = proposals.get(parsed.proposal_id)
+                             ^^^^^^^^^^^^^^^^^^
+AttributeError: 'Namespace' object has no attribute 'proposal_id'
+
+
+======================================================================
+FAIL: test_list_empty_run_without_proposal_id (test_test_changes.TestChangeCLITests.test_list_empty_run_without_proposal_id) (run_id='empty')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/0106/devflow/tests/test_test_changes.py", line 146, in test_list_empty_run_without_proposal_id
+    self.assertEqual(result.returncode, 0, result.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/0106/devflow/skills/workflow/scripts/run.py", line 834, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/Users/wayne/.codex/worktrees/0106/devflow/skills/workflow/scripts/run.py", line 806, in main
+    result = dispatch_command_group(parsed)
+  File "/Users/wayne/.codex/worktrees/0106/devflow/skills/workflow/scripts/commands/__init__.py", line 25, in dispatch
+    return module.dispatch(parsed)
+           ~~~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/0106/devflow/skills/workflow/scripts/commands/build.py", line 92, in dispatch
+    result = _dispatch(parsed)
+  File "/Users/wayne/.codex/worktrees/0106/devflow/skills/workflow/scripts/commands/build.py", line 203, in _dispatch
+    proposal = proposals.get(parsed.proposal_id)
+                             ^^^^^^^^^^^^^^^^^^
+AttributeError: 'Namespace' object has no attribute 'proposal_id'
+
+
+======================================================================
+FAIL: test_list_preserves_proposals_and_run_scope (test_test_changes.TestChangeCLITests.test_list_preserves_proposals_and_run_scope)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/0106/devflow/tests/test_test_changes.py", line 169, in test_list_preserves_proposals_and_run_scope
+    self.assertEqual(result.returncode, 0, result.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 0 : Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/0106/devflow/skills/workflow/scripts/run.py", line 834, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/Users/wayne/.codex/worktrees/0106/devflow/skills/workflow/scripts/run.py", line 806, in main
+    result = dispatch_command_group(parsed)
+  File "/Users/wayne/.codex/worktrees/0106/devflow/skills/workflow/scripts/commands/__init__.py", line 25, in dispatch
+    return module.dispatch(parsed)
+           ~~~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/0106/devflow/skills/workflow/scripts/commands/build.py", line 92, in dispatch
+    result = _dispatch(parsed)
+  File "/Users/wayne/.codex/worktrees/0106/devflow/skills/workflow/scripts/commands/build.py", line 203, in _dispatch
+    proposal = proposals.get(parsed.proposal_id)
+                             ^^^^^^^^^^^^^^^^^^
+AttributeError: 'Namespace' object has no attribute 'proposal_id'
+
+
+----------------------------------------------------------------------
+Ran 8 tests in 1.446s
+
+FAILED (failures=3)

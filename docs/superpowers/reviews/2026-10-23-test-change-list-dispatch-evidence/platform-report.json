@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "success": true,
+  "tests_run": 756,
+  "failures": [],
+  "errors": [],
+  "skips": [
+    {
+      "id": "test_platform_lock.PlatformLockTests.test_blocking_lock_waits_longer_than_msvcrt_default_retry_window",
+      "reason": "Windows byte-range lock retry behavior"
+    },
+    {
+      "id": "test_process_transport.WindowsJobCompletionTests.test_exited_leader_descendant_is_signaled_before_close_returns",
+      "reason": "requires native Windows Job and process handles"
+    },
+    {
+      "id": "test_windows_workflow.WindowsWorkflowTests.test_junction_escape_is_rejected",
+      "reason": "native NTFS junction containment"
+    }
+  ],
+  "expected_failures": [],
+  "unexpected_successes": [],
+  "elapsed_seconds": 251.511,
+  "metadata": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "python": "3.14.7 (main, Aug  5 2026, 10:29:49) [Clang 21.0.0 (clang-2100.3.34.2)]",
+    "executable": "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "git": "git version 2.50.1",
+    "preferred_encoding": "UTF-8",
+    "filesystem_encoding": "utf-8",
+    "stdout_encoding": "utf-8",
+    "stderr_encoding": "utf-8",
+    "utf8_mode": 0,
+    "PYTHONUTF8": null,
+    "PYTHONIOENCODING": null,
+    "git_sha": null,
+    "patterns": [
+      "test_*.py"
+    ]
+  }
+}

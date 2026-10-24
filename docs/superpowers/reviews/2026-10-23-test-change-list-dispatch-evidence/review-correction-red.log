@@ -1,0 +1,96 @@
+test_list_does_not_refresh_governing_receipt (test_test_changes.TestChangeCLITests.test_list_does_not_refresh_governing_receipt) ... FAIL
+test_list_empty_run_without_proposal_id (test_test_changes.TestChangeCLITests.test_list_empty_run_without_proposal_id) ... ok
+test_list_preserves_proposals_and_run_scope (test_test_changes.TestChangeCLITests.test_list_preserves_proposals_and_run_scope) ... ok
+test_list_remains_read_only_with_drifted_or_missing_spec (test_test_changes.TestChangeCLITests.test_list_remains_read_only_with_drifted_or_missing_spec) ... 
+  test_list_remains_read_only_with_drifted_or_missing_spec (test_test_changes.TestChangeCLITests.test_list_remains_read_only_with_drifted_or_missing_spec) (run_id='current', mode='drifted') ... FAIL
+  test_list_remains_read_only_with_drifted_or_missing_spec (test_test_changes.TestChangeCLITests.test_list_remains_read_only_with_drifted_or_missing_spec) (run_id='unknown', mode='drifted') ... FAIL
+  test_list_remains_read_only_with_drifted_or_missing_spec (test_test_changes.TestChangeCLITests.test_list_remains_read_only_with_drifted_or_missing_spec) (mode='drifted') ... FAIL
+  test_list_remains_read_only_with_drifted_or_missing_spec (test_test_changes.TestChangeCLITests.test_list_remains_read_only_with_drifted_or_missing_spec) (run_id='current', mode='missing') ... FAIL
+  test_list_remains_read_only_with_drifted_or_missing_spec (test_test_changes.TestChangeCLITests.test_list_remains_read_only_with_drifted_or_missing_spec) (run_id='unknown', mode='missing') ... FAIL
+  test_list_remains_read_only_with_drifted_or_missing_spec (test_test_changes.TestChangeCLITests.test_list_remains_read_only_with_drifted_or_missing_spec) (mode='missing') ... FAIL
+test_list_unknown_run_is_structured_error (test_test_changes.TestChangeCLITests.test_list_unknown_run_is_structured_error) ... ok
+test_mutating_commands_retain_proposal_id_validation (test_test_changes.TestChangeCLITests.test_mutating_commands_retain_proposal_id_validation) ... ok
+test_mutating_commands_still_require_current_inputs (test_test_changes.TestChangeCLITests.test_mutating_commands_still_require_current_inputs) ... ok
+test_applied_change_marks_every_dependent_green_proof_stale (test_test_changes.TestChangeTests.test_applied_change_marks_every_dependent_green_proof_stale) ... ok
+test_edited_test_preimage_blocks_an_approved_patch (test_test_changes.TestChangeTests.test_edited_test_preimage_blocks_an_approved_patch) ... ok
+test_exact_approval_precedes_patch_application_and_records_hashes (test_test_changes.TestChangeTests.test_exact_approval_precedes_patch_application_and_records_hashes) ... ok
+test_proposal_rejects_unlocked_and_structural_changes (test_test_changes.TestChangeTests.test_proposal_rejects_unlocked_and_structural_changes) ... ok
+
+======================================================================
+FAIL: test_list_does_not_refresh_governing_receipt (test_test_changes.TestChangeCLITests.test_list_does_not_refresh_governing_receipt)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/0106/devflow/tests/test_test_changes.py", line 265, in test_list_does_not_refresh_governing_receipt
+    self.assertEqual(read_state(self.root), recorded)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'sch[23 chars]on': 6, 'data': {'spec': {'mode': 'new', 'titl[24299 chars] []}} != {'sch[23 chars]on': 5, 'data': {'spec': {'mode': 'new', 'titl[23210 chars] []}}
+Diff is 96437 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_list_remains_read_only_with_drifted_or_missing_spec (test_test_changes.TestChangeCLITests.test_list_remains_read_only_with_drifted_or_missing_spec) (run_id='current', mode='drifted')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/0106/devflow/tests/test_test_changes.py", line 229, in test_list_remains_read_only_with_drifted_or_missing_spec
+    self.assertEqual(result.returncode, code, result.stdout + result.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 2 != 0 : {"error":"SPEC_PAIR_MISMATCH","message":"Markdown does not match the deterministic specification rendering"}
+
+
+======================================================================
+FAIL: test_list_remains_read_only_with_drifted_or_missing_spec (test_test_changes.TestChangeCLITests.test_list_remains_read_only_with_drifted_or_missing_spec) (run_id='unknown', mode='drifted')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/0106/devflow/tests/test_test_changes.py", line 232, in test_list_remains_read_only_with_drifted_or_missing_spec
+    self.assertEqual(value[key], wanted)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'SPEC_APPROVAL_STALE' != 'RUN_NOT_FOUND'
+- SPEC_APPROVAL_STALE
++ RUN_NOT_FOUND
+
+
+======================================================================
+FAIL: test_list_remains_read_only_with_drifted_or_missing_spec (test_test_changes.TestChangeCLITests.test_list_remains_read_only_with_drifted_or_missing_spec) (mode='drifted')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/0106/devflow/tests/test_test_changes.py", line 235, in test_list_remains_read_only_with_drifted_or_missing_spec
+    self.assertEqual(self.authoritative_files(), before)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'/pr[7538 chars]spec_approval_invalidated":{"code":"SPEC_PAIR_[8724 chars]}}}'} != {'/pr[7538 chars]spec_pair":{"content_hash":"ec8c36006e74ea266d[8330 chars]}}}'}
+Diff is 480180 characters long. Set self.maxDiff to None to see it.
+
+======================================================================
+FAIL: test_list_remains_read_only_with_drifted_or_missing_spec (test_test_changes.TestChangeCLITests.test_list_remains_read_only_with_drifted_or_missing_spec) (run_id='current', mode='missing')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/0106/devflow/tests/test_test_changes.py", line 229, in test_list_remains_read_only_with_drifted_or_missing_spec
+    self.assertEqual(result.returncode, code, result.stdout + result.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 2 != 0 : {"error":"SPEC_PAIR_MISSING","message":"both specification JSON and Markdown files are required"}
+
+
+======================================================================
+FAIL: test_list_remains_read_only_with_drifted_or_missing_spec (test_test_changes.TestChangeCLITests.test_list_remains_read_only_with_drifted_or_missing_spec) (run_id='unknown', mode='missing')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/0106/devflow/tests/test_test_changes.py", line 232, in test_list_remains_read_only_with_drifted_or_missing_spec
+    self.assertEqual(value[key], wanted)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'SPEC_APPROVAL_STALE' != 'RUN_NOT_FOUND'
+- SPEC_APPROVAL_STALE
++ RUN_NOT_FOUND
+
+
+======================================================================
+FAIL: test_list_remains_read_only_with_drifted_or_missing_spec (test_test_changes.TestChangeCLITests.test_list_remains_read_only_with_drifted_or_missing_spec) (mode='missing')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/0106/devflow/tests/test_test_changes.py", line 235, in test_list_remains_read_only_with_drifted_or_missing_spec
+    self.assertEqual(self.authoritative_files(), before)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'/pr[7538 chars]spec_approval_invalidated":{"code":"SPEC_PAIR_[8722 chars]}}}'} != {'/pr[7538 chars]spec_pair":{"content_hash":"ec8c36006e74ea266d[8330 chars]}}}'}
+Diff is 470508 characters long. Set self.maxDiff to None to see it.
+
+----------------------------------------------------------------------
+Ran 11 tests in 3.943s
+
+FAILED (failures=7)
