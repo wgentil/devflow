@@ -1,6 +1,6 @@
 # Test-change list dispatch correction
 
-Status: proposed design, awaiting user approval.
+Status: design approved by the user after `1e1db99`; implementation plan awaits review.
 Source: [issue #4](https://github.com/wgentil/devflow/issues/4).
 Baseline: DevFlow v0.3.14, `71c524a`.
 
@@ -20,8 +20,8 @@ The recommended narrow correction returns the run's proposal collection before
 looking up an individual proposal. This preserves the documented command and
 existing authoritative journal semantics. A dummy/default proposal ID would
 hide the dispatch error and retain an irrelevant lookup; a broader parser or
-proposal-store redesign adds no benefit to this bugfix. The recommendation is
-proposed for approval with this design; no product implementation has started.
+proposal-store redesign adds no benefit to this bugfix. The user selected this narrow correction by approving the design; no product
+implementation has started.
 
 ## Requirements
 
