@@ -87,6 +87,8 @@ Locked-test correction uses `build test-change propose --patch-file --reason
 Inspect the run's recorded proposals with `build test-change list --root "$CONTROL"
 --run-id greeting-run`; no proposal ID is required. It returns `{"proposals": {}}`
 when empty, or the complete recorded collection without approving or applying it.
+This reads historical records without live-input preflight or governing receipt
+refresh; listing does not establish readiness for work.
 See the [developer example](../../docs/examples/test-change-list.md).
 
 Applied changes invalidate affected GREEN proof. Never weaken tests merely to

@@ -133,8 +133,8 @@ class TestChangeCLITests(unittest.TestCase):
         paths = [self.root / 'state.json', *(self.root / 'events').glob('*.json')]
         return {str(path): path.read_bytes() for path in paths}
 
-    def repository_files(self):
-        return {str(path): path.read_bytes() for path in self.fixture.repo.rglob('*') if path.is_file()}
+    def repository_files(self, repo=None):
+        return {str(path): path.read_bytes() for path in (repo or self.fixture.repo).rglob('*') if path.is_file()}
 
     def test_list_empty_run_without_proposal_id(self):
         # An erroneous per-proposal lookup must not prevent run-level inspection.
@@ -202,6 +202,84 @@ class TestChangeCLITests(unittest.TestCase):
                 self.assertNotIn('Traceback', result.stderr)
         self.assertEqual(self.authoritative_files(), before)
         self.assertEqual(self.repository_files(), repository)
+
+
+    def context_project(self, name):
+        from large_context_fixtures import make_context_project
+        project = make_context_project(Path(self.fixture.temp.name) / name)
+        self.root = project['root']
+        return project
+
+    def test_list_remains_read_only_with_drifted_or_missing_spec(self):
+        # Inspection must not trigger live-input invalidation, even for unknown runs.
+        for mode in ('drifted', 'missing'):
+            with self.subTest(mode=mode):
+                project = self.context_project(mode)
+                spec = project['repo'] / project['state']['data']['spec_pair']['markdown_path']
+                if mode == 'drifted':
+                    spec.write_text('Unapproved specification edit', encoding='utf-8')
+                else:
+                    spec.unlink()
+                before, repository = self.authoritative_files(), self.repository_files(project['repo'])
+                version = read_state(self.root)['version']
+                for run_id, code, expected in (('current', 0, {'proposals': {}}),
+                                               ('unknown', 2, {'error': 'RUN_NOT_FOUND'})):
+                    with self.subTest(run_id=run_id):
+                        result = self.cli('list', run_id=run_id)
+                        self.assertEqual(result.returncode, code, result.stdout + result.stderr)
+                        value = json.loads(result.stdout)
+                        for key, wanted in expected.items():
+                            self.assertEqual(value[key], wanted)
+                        self.assertEqual(self.authoritative_files(), before)
+                        self.assertEqual(read_state(self.root)['version'], version)
+                self.assertEqual(self.authoritative_files(), before)
+                self.assertEqual(self.repository_files(project['repo']), repository)
+
+    def test_list_does_not_refresh_governing_receipt(self):
+        # An unchanged rule's newer Git provenance is refreshed by work, not inspection.
+        from workflow_lib.ground_interview import TOPICS
+        from workflow_lib.repo_input_gate import preflight_inputs
+        project = self.context_project('governed')
+        repo = project['repo']
+        (repo / 'rules.md').write_text('## A: Safety\nKeep checks.\n', encoding='utf-8')
+        (repo / 'docs/devflow-context.json').write_text(json.dumps({'schema_version': 1,
+            'documents': [{'category': 'coding-standards', 'path': 'rules.md', 'rule_ids': ['A']}]}), encoding='utf-8')
+        (repo / 'docs/devflow-ground-interview.json').write_text(json.dumps({'schema_version': 1,
+            'topics': {name: {'status': 'answered', 'material': True, 'decision': 'Offline fixture.'}
+                       for name in TOPICS}}), encoding='utf-8')
+        subprocess.run(['git', 'add', '.'], cwd=repo, check=True, capture_output=True)
+        subprocess.run(['git', 'commit', '-qm', 'Fixture rules'], cwd=repo, check=True, capture_output=True)
+        state = preflight_inputs(self.root, read_state(self.root), 'plan-validation')['state']
+        digest = state['data']['governing_input_receipt']['effective_digest']
+        run = {**state['data']['runs']['current'], 'governing_digest': digest}
+        transact(self.root, state['version'], 'align-plan', {'kind': 'fixture', 'payload': {
+            'runs': {'current': run}, 'governing_reassessment_required': None,
+            'plan_validation': {**state['data']['plan_validation'], 'governing_digest': digest}}})
+        subprocess.run(['git', 'commit', '--allow-empty', '-qm', 'Advance provenance only'],
+                       cwd=repo, check=True, capture_output=True)
+        before, repository = self.authoritative_files(), self.repository_files(repo)
+        recorded = read_state(self.root)
+        result = self.cli('list', run_id='current')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(json.loads(result.stdout), {'proposals': {}})
+        self.assertEqual(read_state(self.root), recorded)
+        self.assertEqual(self.authoritative_files(), before)
+        self.assertEqual(self.repository_files(repo), repository)
+
+    def test_mutating_commands_still_require_current_inputs(self):
+        # Exempting inspection must not exempt proposal/approval/application work.
+        for command, options in (
+            ('propose', ['--item', 'W1', '--patch-file', 'unused.patch', '--reason', 'correction']),
+            ('approve', ['--proposal-id', 'unknown', '--confirm-hash', 'hash', '--actor-id', 'human']),
+            ('apply', ['--proposal-id', 'unknown', '--confirm-hash', 'hash'])):
+            with self.subTest(command=command):
+                project = self.context_project('guard-' + command)
+                path = project['repo'] / project['state']['data']['spec_pair']['markdown_path']
+                path.write_text('Unapproved specification edit', encoding='utf-8')
+                result = self.cli(command, run_id='current', options=options)
+                self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+                self.assertEqual(json.loads(result.stdout)['error'], 'SPEC_PAIR_MISMATCH')
+                self.assertIsNotNone(read_state(self.root)['data'].get('spec_approval_invalidated'))
 
 
 if __name__ == "__main__":

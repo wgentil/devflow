@@ -745,7 +745,10 @@ Use `df build test-change list --root "$CONTROL" --run-id greeting-run` to inspe
 all proposals for that run. It needs no `--proposal-id` and returns
 `{"proposals": {}}` when none are recorded. Populated results preserve proposal
 fields and statuses; listing performs no approval, application or authoritative
-state change. Ordinary best-effort command metrics can still be recorded.
+state change. Listing skips approval-consuming live-input preflight, so historical
+proposals remain inspectable with stale/missing spec files and no governing
+receipt refresh. It does not establish readiness for work. Ordinary best-effort
+command metrics can still be recorded.
 An unknown run returns the structured `RUN_NOT_FOUND` error. Approve/apply retain
 required proposal IDs and exact-hash approval gates. See the
 [runnable developer example](examples/test-change-list.md).

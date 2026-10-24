@@ -20,7 +20,10 @@ For a populated run, `proposals` maps proposal IDs to complete recorded objects,
 including status, patch, reason, hashes and any approval/application fields.
 Pending, approved and applied proposals remain visible. Listing does not need
 `--proposal-id`, approve a proposal, apply a patch, change test files or write
-journal events. Ordinary best-effort command metrics may still be recorded.
+journal events. It reads historical records even if live specification files are
+stale or missing, and does not refresh governing-input receipts. A list response
+is not evidence that inputs are ready for work. Ordinary best-effort command
+metrics may still be recorded.
 
 An unknown run returns exit 2 with JSON error `RUN_NOT_FOUND`; choose an existing
 run before retrying. Approve/apply are separate operations requiring a proposal

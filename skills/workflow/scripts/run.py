@@ -376,7 +376,11 @@ def main(argv: list[str] | None = None) -> int:
         if getattr(parsed, 'plan_command', None) == 'validate': phase = 'plan-validation'
         if getattr(parsed, 'plan_command', None) == 'ready': phase = 'plan-ready'
         if run_command in {'start', 'result', 'accept'}: phase = 'run-' + run_command
-        if getattr(parsed, 'build_command', None) not in {None, 'validation-plan'}: phase = 'build'
+        build_command = getattr(parsed, 'build_command', None)
+        # Inspection reads recorded proposals without refreshing or invalidating inputs.
+        lists_test_changes = (build_command == 'test-change'
+                              and getattr(parsed, 'test_change_command', None) == 'list')
+        if build_command not in {None, 'validation-plan'} and not lists_test_changes: phase = 'build'
         if getattr(parsed, 'review_command', None): phase = 'review'
         if getattr(parsed, 'delivery_command', None): phase = 'delivery'
         if phase and getattr(parsed, 'root', None):
