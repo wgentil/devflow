@@ -738,3 +738,14 @@ context stdout. TaskCompleted timeout exits 2. Explicit block decisions and
 non-timeout errors retain blocking behavior; descriptor launcher-failure policy
 and the ten-second host limit are unchanged. See
 [event and recovery details](hosts.md#prompt-refresh-and-timeouts).
+
+## Inspect locked-test change proposals
+
+Use `df build test-change list --root "$CONTROL" --run-id greeting-run` to inspect
+all proposals for that run. It needs no `--proposal-id` and returns
+`{"proposals": {}}` when none are recorded. Populated results preserve proposal
+fields and statuses; listing performs no approval, application or authoritative
+state change. Ordinary best-effort command metrics can still be recorded.
+An unknown run returns the structured `RUN_NOT_FOUND` error. Approve/apply retain
+required proposal IDs and exact-hash approval gates. See the
+[runnable developer example](examples/test-change-list.md).

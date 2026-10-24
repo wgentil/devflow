@@ -200,11 +200,11 @@ def _dispatch(parsed: argparse.Namespace) -> dict:
                 {"kind": "test.change.proposed", "payload": {"run_id": parsed.run_id, "proposal": proposal}})
             return {"proposal": proposal, "state_version": response["state"]["version"],
                     "replayed": response["replayed"]}
+        if parsed.test_change_command == "list":
+            return {"proposals": proposals}
         proposal = proposals.get(parsed.proposal_id)
         if proposal is None:
             raise WorkflowError("TEST_CHANGE_NOT_FOUND", f"unknown proposal {parsed.proposal_id}")
-        if parsed.test_change_command == "list":
-            return {"proposals": proposals}
         if parsed.test_change_command == "approve":
             approval = approve_test_change(proposal, parsed.confirm_hash, parsed.actor_id)
             operation_id = (parsed.operation_id if getattr(parsed, "operation_id_explicit", False)

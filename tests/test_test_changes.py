@@ -1,4 +1,5 @@
 import hashlib
+import json
 import importlib.util
 import subprocess
 import tempfile
@@ -110,6 +111,97 @@ index 0000000..0000000 100644
         self.assertFalse(saved["run-2"]["verification_proofs"]["green-2"]["fresh"])
         self.assertFalse(saved["run-1"]["verifier_proofs"]["green-1"]["passed"])
         self.assertEqual(saved["run-1"]["verification_proofs"]["green-1"]["ruling"], "historical ruling")
+
+
+class TestChangeCLITests(unittest.TestCase):
+    def setUp(self):
+        self.fixture = TestChangeTests('test_exact_approval_precedes_patch_application_and_records_hashes')
+        self.fixture.setUp()
+        self.addCleanup(self.fixture.tearDown)
+        self.root = Path(self.fixture.temp.name) / 'control é東京'
+        self.entry = Path(__file__).resolve().parents[1] / 'skills/workflow/scripts/run.py'
+
+    def seed(self, runs):
+        transact(self.root, 0, 'fixture', {'kind': 'fixture', 'payload': {'runs': runs}})
+
+    def cli(self, command, *, run_id='run-1', options=()):
+        return subprocess.run([sys.executable, '-B', str(self.entry), 'build', 'test-change', command,
+            '--root', str(self.root), '--run-id', run_id, *options],
+            capture_output=True, encoding='utf-8', timeout=30)
+
+    def authoritative_files(self):
+        paths = [self.root / 'state.json', *(self.root / 'events').glob('*.json')]
+        return {str(path): path.read_bytes() for path in paths}
+
+    def repository_files(self):
+        return {str(path): path.read_bytes() for path in self.fixture.repo.rglob('*') if path.is_file()}
+
+    def test_list_empty_run_without_proposal_id(self):
+        # An erroneous per-proposal lookup must not prevent run-level inspection.
+        self.seed({'missing': {'id': 'missing'}, 'empty': {'id': 'empty', 'test_change_proposals': {}}})
+        before = self.authoritative_files()
+        for run_id in ('missing', 'empty'):
+            with self.subTest(run_id=run_id):
+                result = self.cli('list', run_id=run_id)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(json.loads(result.stdout), {'proposals': {}})
+                self.assertNotIn('Traceback', result.stderr)
+        self.assertEqual(self.authoritative_files(), before)
+
+    def test_list_preserves_proposals_and_run_scope(self):
+        # Dropping fields, filtering status, selecting another run or writing state is a bug.
+        propose, approve, apply = self.fixture.module()
+        pending = propose(self.fixture.run, 'W1', self.fixture.patch, 'é東京: preserve\npatch details', self.fixture.repo)
+        approved = propose(self.fixture.run, 'W1', self.fixture.patch, 'approved é東京', self.fixture.repo)
+        applied = propose(self.fixture.run, 'W1', self.fixture.patch, 'applied é東京', self.fixture.repo)
+        approved['approval'] = approve(approved, approved['proposal_hash'], 'human-é東京')
+        approved['status'] = 'approved'
+        applied['approval'] = approve(applied, applied['proposal_hash'], 'human-é東京')
+        result = apply(self.fixture.repo, applied, applied['approval'])
+        applied.update(status='applied', after_hashes=result['after_hashes'])
+        proposals = {p['id']: p for p in (pending, approved, applied)}
+        self.seed({'run-1': {**self.fixture.run, 'test_change_proposals': proposals},
+                   'run-2': {'id': 'run-2', 'test_change_proposals': {'other': {'id': 'other'}}}})
+        before, repository = self.authoritative_files(), self.repository_files()
+        version = read_state(self.root)['version']
+        for _ in range(2):
+            result = self.cli('list')
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(json.loads(result.stdout), {'proposals': proposals})
+            self.assertNotIn('Traceback', result.stderr)
+        current = read_state(self.root)
+        self.assertEqual(current['version'], version)
+        self.assertEqual(current['data']['runs']['run-1']['test_change_proposals'], proposals)
+        self.assertEqual(self.authoritative_files(), before)
+        self.assertEqual(self.repository_files(), repository)
+
+    def test_list_unknown_run_is_structured_error(self):
+        self.seed({'run-1': {'id': 'run-1'}})
+        before = self.authoritative_files()
+        result = self.cli('list', run_id='unknown')
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertEqual(json.loads(result.stdout)['error'], 'RUN_NOT_FOUND')
+        self.assertNotIn('Traceback', result.stderr)
+        self.assertEqual(self.authoritative_files(), before)
+
+    def test_mutating_commands_retain_proposal_id_validation(self):
+        # Accidentally widening the list branch must not bypass mutation validation.
+        self.seed({'run-1': {'id': 'run-1'}})
+        before, repository = self.authoritative_files(), self.repository_files()
+        for command, options in (('approve', ['--confirm-hash', 'hash', '--actor-id', 'human']),
+                                 ('apply', ['--confirm-hash', 'hash'])):
+            with self.subTest(command=command, case='missing ID'):
+                result = self.cli(command, options=options)
+                self.assertEqual(result.returncode, 2)
+                self.assertIn('--proposal-id', result.stderr)
+                self.assertNotIn('Traceback', result.stderr)
+            with self.subTest(command=command, case='unknown ID'):
+                result = self.cli(command, options=[*options, '--proposal-id', 'unknown'])
+                self.assertEqual(result.returncode, 2, result.stderr)
+                self.assertEqual(json.loads(result.stdout)['error'], 'TEST_CHANGE_NOT_FOUND')
+                self.assertNotIn('Traceback', result.stderr)
+        self.assertEqual(self.authoritative_files(), before)
+        self.assertEqual(self.repository_files(), repository)
 
 
 if __name__ == "__main__":

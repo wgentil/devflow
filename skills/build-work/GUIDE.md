@@ -84,6 +84,11 @@ and distinct operation IDs. A new token needs fresh GREEN; an explicitly qualifi
 Locked-test correction uses `build test-change propose --patch-file --reason
 --item`, then separate `approve --proposal-id --confirm-hash --actor-id` and
 `apply --proposal-id --confirm-hash` after real approval. All require root/run.
+Inspect the run's recorded proposals with `build test-change list --root "$CONTROL"
+--run-id greeting-run`; no proposal ID is required. It returns `{"proposals": {}}`
+when empty, or the complete recorded collection without approving or applying it.
+See the [developer example](../../docs/examples/test-change-list.md).
+
 Applied changes invalidate affected GREEN proof. Never weaken tests merely to
 claim GREEN. Continue with independent review.
 
