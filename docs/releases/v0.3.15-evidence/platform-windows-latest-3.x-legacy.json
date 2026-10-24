@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "success": true,
+  "tests_run": 22,
+  "failures": [],
+  "errors": [],
+  "skips": [],
+  "expected_failures": [],
+  "unexpected_successes": [],
+  "elapsed_seconds": 19.034,
+  "metadata": {
+    "platform": "Windows-2025Server-10.0.26100-SP0",
+    "python": "3.15.1 (tags/v3.15.1:c37e74c, Oct 21 2026, 06:24:08) [MSC v.1951 64 bit (AMD64)]",
+    "executable": "C:\\hostedtoolcache\\windows\\Python\\3.15.1\\x64\\python.exe",
+    "git": "git version 2.56.0.windows.2",
+    "preferred_encoding": "cp1252",
+    "filesystem_encoding": "utf-8",
+    "stdout_encoding": "cp1252",
+    "stderr_encoding": "cp1252",
+    "utf8_mode": 0,
+    "PYTHONUTF8": null,
+    "PYTHONIOENCODING": "cp1252",
+    "git_sha": "6bce3358fc96f9a3152467df701e9d74d1ca05c0",
+    "patterns": [
+      "test_utf8_*.py",
+      "test_windows_workflow.py"
+    ]
+  }
+}
