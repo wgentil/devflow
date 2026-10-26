@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "success": true,
-  "tests_run": 894,
+  "tests_run": 896,
   "failures": [],
   "errors": [],
   "skips": [
@@ -28,7 +28,7 @@
   ],
   "expected_failures": [],
   "unexpected_successes": [],
-  "elapsed_seconds": 582.743,
+  "elapsed_seconds": 522.302,
   "metadata": {
     "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
     "python": "3.14.7 (main, Aug  5 2026, 10:29:49) [Clang 21.0.0 (clang-2100.3.34.2)]",

@@ -13,10 +13,11 @@
       2
     ],
     "host_protocol_version": 1,
-    "release_id": "bd0dc08128a6e4d2ada75a1b0fb46599de886951ac7b291233e367a2177110be",
-    "fingerprint": "bd0dc08128a6e4d2ada75a1b0fb46599de886951ac7b291233e367a2177110be"
+    "release_id": "3c307e657674c39082dd60d05e20d228b7099053ef033aab1f32b43de5809cd1",
+    "fingerprint": "3c307e657674c39082dd60d05e20d228b7099053ef033aab1f32b43de5809cd1"
   },
-  "status": "local894 PASS; exact runtime candidate pushed for CI; final review pending",
-  "runtime_source_commit": "f39b4b02b6f77c935d448d0cb5c55ed4c2242d18",
-  "ci_run": "https://github.com/wgentil/devflow/actions/runs/40404192037"
+  "status": "corrected actual installed-host gate PASS; ordinary CI/local full still running",
+  "runtime_source_commit": "b36f4ce5b529e5a9ae86bb270f34ccc1c2079338",
+  "ci_run": "https://github.com/wgentil/devflow/actions/runs/40405162340",
+  "first_ci_run": "https://github.com/wgentil/devflow/actions/runs/40404192037"
 }

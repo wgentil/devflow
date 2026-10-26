@@ -781,3 +781,7 @@ timings, hot logical payload and separate physical storage categories. It cleans
 only its own temporary roots. This maintainer check does not migrate Bandpick or
 any existing project and does not submit model work. Timings describe the measured
 machine and generated corpus; they are not universal latency promises.
+
+Owned benchmark Git fixtures disable automatic/detached maintenance so Git lock
+creation/removal does not race strict read-only repository snapshots. Existing
+project or global Git configuration is not changed.

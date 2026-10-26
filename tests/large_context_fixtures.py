@@ -14,6 +14,9 @@ def make_context_project(base: Path, *, delivered_runs: int=0,event_count: int=0
     base=Path(base).resolve();repo=base/'repo';root=base/'control';repo.mkdir(parents=True);(root/'events').mkdir(parents=True)
     def git(*argv):return subprocess.run(['git',*argv],cwd=repo,check=True,capture_output=True,text=True,encoding='utf-8').stdout.strip()
     git('init','-q');git('config','user.name','Offline Fixture');git('config','user.email','offline@example.test')
+    # Strict read-only snapshots include .git: no detached Git maintenance may
+    # create/remove locks concurrently after the fixture's own commits.
+    git('config','maintenance.auto','false');git('config','gc.auto','0')
     spec={'mode':'new','title':'Scoped context fixture','diagrams':[{'title':'Shared boundary','mermaid':'flowchart LR\n    Shared --> Boundary'}],
           'requirements':[{'id':f'R{i}','title':f'Behavior {i}','text':f'Return scoped value {i}.','acceptance_criteria':[f'Target {i} passes.'],'provenance':{'kind':'authored'}} for i in range(1,requirement_count+1)]}
     pair={'repo_id':'app',**write_spec_pair(repo,'docs/spec.json',spec)};git('add','.');git('commit','-qm','Fixture specification')

@@ -1,0 +1,15 @@
+FAIL: test_list_does_not_refresh_governing_receipt (test_test_changes.TestChangeCLITests.test_list_does_not_refresh_governing_receipt)
+2026-10-26T21:41:49.4308580Z ----------------------------------------------------------------------
+2026-10-26T21:41:49.4309610Z Traceback (most recent call last):
+2026-10-26T21:41:49.4347040Z   File "/Users/runner/work/devflow/devflow/tests/test_test_changes.py", line 272, in test_list_does_not_refresh_governing_receipt
+2026-10-26T21:41:49.4348060Z     self.assertEqual(self.repository_files(repo), repository)
+2026-10-26T21:41:49.4349430Z AssertionError: {'/pr[9344 chars]ects/50/a0cb51b1500a295e2a5038c16b9d919d556c64[39226 chars]2\n'} != {'/pr[9344 chars]ects/maintenance.lock': b'', '/private/var/fol[39347 chars]2\n'}
+2026-10-26T21:41:49.4350130Z Diff is 1190431 characters long. Set self.maxDiff to None to see it.
+2026-10-26T21:41:49.4350360Z 
+2026-10-26T21:41:49.4350490Z ----------------------------------------------------------------------
+2026-10-26T21:41:49.4350760Z Ran 896 tests in 572.866s
+2026-10-26T21:41:49.4350880Z 
+2026-10-26T21:41:49.4350950Z FAILED (failures=1, skipped=5)
+2026-10-26T21:41:49.4446380Z {"success": false, "tests_run": 896, "failures": ["test_test_changes.TestChangeCLITests.test_list_does_not_refresh_governing_receipt"], "errors": []}
+2026-10-26T21:41:49.4977380Z ##[error]Process completed with exit code 1.
+2026-10-26T21:41:49.5192340Z 

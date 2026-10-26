@@ -2,8 +2,8 @@
 
 Candidate: `feat/archive-backed-control-state`, based on `36e10f4`.
 Status: final local gate passed; native CI and final review in progress.
-Runtime commit: `f39b4b02b6f77c935d448d0cb5c55ed4c2242d18`.
-[Exact candidate CI](https://github.com/wgentil/devflow/actions/runs/40404192037).
+Runtime commit: `b36f4ce5b529e5a9ae86bb270f34ccc1c2079338`.
+[Exact corrected candidate CI](https://github.com/wgentil/devflow/actions/runs/40405162340).
 No merge or release.
 Source: [approved design](../specs/2026-10-26-control-state-compaction-design.md),
 [plan](../plans/2026-10-26-control-state-compaction.md),
@@ -157,3 +157,19 @@ complete local suite must pass again on the correction commit. The first failed
 [installed-host report](evidence/2026-10-26-control-state-compaction/ci-first-installed-report.json)
 is retained; it does not establish corrected-runtime compatibility.
 Primary setup was reviewed; this internal handle-access fix adds no setup step.
+
+
+### Controlled Git fixture correction
+
+Corrected-runtime local validation passes 896 tests (five native-only skips),
+522.051 seconds. Actual installed-host Windows, Ubuntu 3.11/latest and macOS
+latest gates passed. macOS 3.11's only failure was a strict repository snapshot:
+Git's own `objects/maintenance.lock` existed before the read and disappeared
+during detached maintenance. All Devflow authority/state assertions passed.
+The [trace](evidence/2026-10-26-control-state-compaction/ci-before-fixture-macos311-failure.txt)
+and [report](evidence/2026-10-26-control-state-compaction/ci-before-fixture-macos311-report.json)
+are retained. The owned fixture now disables automatic Git maintenance before its
+first commit using [documented Git controls](https://git-scm.com/docs/git-maintenance).
+All repository-byte assertions remain unchanged. Nine focused strict-inspection
+and benchmark tests pass; the complete final candidate CI is rerun for this
+fixture-only change. Product runtime/fingerprint is unchanged by that correction.

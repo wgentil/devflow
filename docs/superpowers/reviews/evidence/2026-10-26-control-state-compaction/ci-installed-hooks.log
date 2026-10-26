@@ -1,0 +1,44 @@
+test_helper_timeout_is_advisory_only_for_prompt_and_session_start (test_claude_hooks.AdapterTimeoutTests.test_helper_timeout_is_advisory_only_for_prompt_and_session_start) ... ok
+test_non_timeout_failures_and_explicit_blocks_still_block (test_claude_hooks.AdapterTimeoutTests.test_non_timeout_failures_and_explicit_blocks_still_block) ... ok
+test_prompt_timeout_diagnostic_uses_utf8_with_legacy_stderr (test_claude_hooks.AdapterTimeoutTests.test_prompt_timeout_diagnostic_uses_utf8_with_legacy_stderr) ... ok
+test_real_stalled_helper_preserves_prompt_and_completion_policy (test_claude_hooks.AdapterTimeoutTests.test_real_stalled_helper_preserves_prompt_and_completion_policy) ... ok
+test_timeout_warning_failure_does_not_change_event_exit_policy (test_claude_hooks.AdapterTimeoutTests.test_timeout_warning_failure_does_not_change_event_exit_policy) ... ok
+test_binding_project_mismatch_blocks_only_mapped_task (test_claude_hooks.HookTests.test_binding_project_mismatch_blocks_only_mapped_task) ... ok
+test_brief_dedup_and_no_provider_effects (test_claude_hooks.HookTests.test_brief_dedup_and_no_provider_effects) ... ok
+test_corrupt_and_missing_locator_mapped_fail_closed (test_claude_hooks.HookTests.test_corrupt_and_missing_locator_mapped_fail_closed) ... ok
+test_descriptor_launch_from_unicode_package_root (test_claude_hooks.HookTests.test_descriptor_launch_from_unicode_package_root) ... ok
+test_hook_launcher_failure_blocks_mandatory_events (test_claude_hooks.HookTests.test_hook_launcher_failure_blocks_mandatory_events) ... ok
+test_inactive_no_files_or_shell_effect (test_claude_hooks.HookTests.test_inactive_no_files_or_shell_effect) ... ok
+test_malformed_and_oversized_bounded (test_claude_hooks.HookTests.test_malformed_and_oversized_bounded) ... ok
+test_mapped_blocks_unmapped_unaffected_stop_nonblocking (test_claude_hooks.HookTests.test_mapped_blocks_unmapped_unaffected_stop_nonblocking) ... ok
+test_oversized_known_completion_event_blocks (test_claude_hooks.HookTests.test_oversized_known_completion_event_blocks) ... ok
+test_oversized_known_prompt_event_blocks (test_claude_hooks.HookTests.test_oversized_known_prompt_event_blocks) ... ok
+test_required_context_failure_is_visible_without_success_context (test_claude_hooks.HookTests.test_required_context_failure_is_visible_without_success_context) ... ok
+test_session_start_rebuilds_even_when_fingerprint_unchanged (test_claude_hooks.HookTests.test_session_start_rebuilds_even_when_fingerprint_unchanged) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 9.571s
+
+OK
+test_binding_project_mismatch_blocks_only_mapped_task (test_storage_host_views.IndexedHookTests.test_binding_project_mismatch_blocks_only_mapped_task) ... ok
+test_brief_dedup_and_no_provider_effects (test_storage_host_views.IndexedHookTests.test_brief_dedup_and_no_provider_effects) ... ok
+test_corrupt_and_missing_locator_mapped_fail_closed (test_storage_host_views.IndexedHookTests.test_corrupt_and_missing_locator_mapped_fail_closed) ... ok
+test_descriptor_launch_from_unicode_package_root (test_storage_host_views.IndexedHookTests.test_descriptor_launch_from_unicode_package_root) ... ok
+test_hook_launcher_failure_blocks_mandatory_events (test_storage_host_views.IndexedHookTests.test_hook_launcher_failure_blocks_mandatory_events) ... ok
+test_inactive_no_files_or_shell_effect (test_storage_host_views.IndexedHookTests.test_inactive_no_files_or_shell_effect) ... ok
+test_malformed_and_oversized_bounded (test_storage_host_views.IndexedHookTests.test_malformed_and_oversized_bounded) ... ok
+test_mapped_blocks_unmapped_unaffected_stop_nonblocking (test_storage_host_views.IndexedHookTests.test_mapped_blocks_unmapped_unaffected_stop_nonblocking) ... ok
+test_oversized_known_completion_event_blocks (test_storage_host_views.IndexedHookTests.test_oversized_known_completion_event_blocks) ... ok
+test_oversized_known_prompt_event_blocks (test_storage_host_views.IndexedHookTests.test_oversized_known_prompt_event_blocks) ... ok
+test_required_context_failure_is_visible_without_success_context (test_storage_host_views.IndexedHookTests.test_required_context_failure_is_visible_without_success_context) ... ok
+test_session_start_rebuilds_even_when_fingerprint_unchanged (test_storage_host_views.IndexedHookTests.test_session_start_rebuilds_even_when_fingerprint_unchanged) ... ok
+test_cached_view_cannot_waive_authority (test_storage_host_views.StorageHostViewTests.test_cached_view_cannot_waive_authority) ... ok
+test_missing_hints_preserve_completion (test_storage_host_views.StorageHostViewTests.test_missing_hints_preserve_completion) ... ok
+test_session_refresh_skips_retired_bindings_and_unused_prices (test_storage_host_views.StorageHostViewTests.test_session_refresh_skips_retired_bindings_and_unused_prices) ... ok
+test_sessions_read_only_selected_history (test_storage_host_views.StorageHostViewTests.test_sessions_read_only_selected_history) ... ok
+test_v2_outbox_crash_reconciles_without_resending (test_storage_host_views.StorageHostViewTests.test_v2_outbox_crash_reconciles_without_resending) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 15.572s
+
+OK
