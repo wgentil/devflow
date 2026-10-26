@@ -291,3 +291,21 @@ retrieval locators while retaining immutable content and legacy caches.
 Database initialization and backup flush through non-truncating write-capable
 handles, as required on native Windows; the file bytes and SQLite content are
 unchanged by reopening the handle.
+
+
+## Readable reservation descriptors
+
+New reservations use pin descriptor version 2. The Windows mandatory byte lease
+is beyond the bounded JSON/hash/copy read region, rather than overlapping the
+metadata. Seeking to that lease does not extend the file; the descriptor remains
+at most 64 KiB. Reconciliation proves both the older byte-zero lease and the new
+lease stopped before reading or deleting any descriptor. It accepts versions 1/2;
+older helpers reject version 2 instead of mistaking a live new lease for an idle
+file. Unknown/empty descriptors remain unchanged on failed reconciliation.
+
+Confinement first checks the lexical path, then resolves existing ancestors
+strictly. Missing path components are not interpreted through non-strict OS
+fallback spellings while cooperative publishers create directories. Symlinks,
+name-surrogate reparse points (including junctions), outside resolutions and
+unavailable reparse points without a confinement proof remain refused; parents
+are rechecked after creation. Backup resume reads its owned marker as UTF-8.

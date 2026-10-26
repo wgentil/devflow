@@ -46,8 +46,10 @@ class HookTests(unittest.TestCase):
         self.assertEqual(read_state(self.root)['version'],3)
     def test_session_start_rebuilds_even_when_fingerprint_unchanged(self):
         self.attach()
-        self.assertIn('additionalContext', self.call(event='SessionStart').stdout)
-        self.assertIn('additionalContext', self.call(event='SessionStart').stdout)
+        for _ in range(2):
+            result=self.call(event='SessionStart')
+            self.assertEqual(result.returncode,0,result.stderr)
+            self.assertIn('additionalContext',result.stdout,result.stderr)
 
     def test_required_context_failure_is_visible_without_success_context(self):
         self.attach()

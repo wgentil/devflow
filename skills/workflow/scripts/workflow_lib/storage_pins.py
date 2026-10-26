@@ -1,5 +1,5 @@
 """Durable root-coordinated reservations, reclaimed only by OS ownership proof."""
-from contextlib import nullcontext
+from contextlib import contextmanager
 from functools import wraps
 import json
 import os
@@ -10,18 +10,37 @@ from .platform_lock import exclusive_file,sync_directory
 from .storage_format import confined_path,detect_layout
 from .store import _exclusive,WorkflowError
 
+MAX_PIN_BYTES=65536
+# Windows byte locks are mandatory. Keep the lease beyond all bounded metadata
+# reads (including the 1MiB hash/copy buffer), without extending the data file.
+PIN_LOCK_OFFSET=1 << 30
+
+@contextmanager
+def _lease(handle,*,blocking=True,legacy_probe=False):
+    if os.name=='nt' and legacy_probe:
+        # An earlier candidate locked byte zero; prove that ownership too.
+        with exclusive_file(handle,blocking=blocking,offset=0,initialize=False):
+            with exclusive_file(handle,blocking=blocking,offset=PIN_LOCK_OFFSET):yield
+    else:
+        with exclusive_file(handle,blocking=blocking,offset=PIN_LOCK_OFFSET):yield
+
 class Pin:
     def __init__(self,root,kind):
+        if not isinstance(kind,str) or not kind or len(kind)>2048:
+            raise WorkflowError('INVALID_STORAGE_PIN','Reservation kind must be nonempty bounded metadata.')
         self.root=Path(root).resolve();self.handle=None;self.lease=None;self.path=None;self.owner_pid=os.getpid()
         if detect_layout(self.root)['layout'] not in {'v2','legacy'}:return
         with _exclusive(self.root):
             layout=detect_layout(self.root)
-            self.path=confined_path(self.root,'pins/'+uuid4().hex+'.json',create_parents=True)
-            self.handle=self.path.open('x+b');os.chmod(self.path,0o600)
-            self.lease=exclusive_file(self.handle);self.lease.__enter__()
-            body={'pin_version':1,'id':self.path.stem,'kind':kind,'pid':os.getpid(),
+            identifier=uuid4().hex
+            body={'pin_version':2,'id':identifier,'kind':kind,'pid':os.getpid(),
                 'root_id':layout.get('root_id'),'layout_id':layout.get('layout_id')}
-            self.handle.write(json.dumps(body,sort_keys=True).encode('utf-8'));self.handle.flush();os.fsync(self.handle.fileno());sync_directory(self.path.parent)
+            raw=json.dumps(body,sort_keys=True).encode('utf-8')
+            if len(raw)>MAX_PIN_BYTES:raise WorkflowError('INVALID_STORAGE_PIN','Reservation metadata exceeds its read budget.')
+            self.path=confined_path(self.root,'pins/'+identifier+'.json',create_parents=True)
+            self.handle=self.path.open('x+b');os.chmod(self.path,0o600)
+            self.lease=_lease(self.handle);self.lease.__enter__()
+            self.handle.seek(0);self.handle.write(raw);self.handle.flush();os.fsync(self.handle.fileno());sync_directory(self.path.parent)
     def close(self):
         if self.handle is None:return
         if os.getpid()!=self.owner_pid:
@@ -51,11 +70,14 @@ def reconcile(root):
             for path in files:
                 confined_path(root,path.relative_to(root).as_posix())
                 try:
-                    handle=stack.enter_context(path.open('r+b'));stack.enter_context(exclusive_file(handle,blocking=False))
+                    handle=stack.enter_context(path.open('r+b'));stack.enter_context(_lease(handle,blocking=False,legacy_probe=True))
                 except BlockingIOError as exc:raise WorkflowError('PIN_OWNER_ACTIVE','A reservation still has a live OS owner; stop/reconcile the worker first.') from exc
-                try:body=json.loads(handle.read(65537))
+                try:
+                    handle.seek(0);raw=handle.read(MAX_PIN_BYTES+1)
+                    if len(raw)>MAX_PIN_BYTES:raise ValueError('oversized reservation')
+                    body=json.loads(raw)
                 except (ValueError,OSError) as exc:raise WorkflowError('INVALID_STORAGE_PIN','Malformed reservation; preserve it for explicit recovery.') from exc
-                if (type(body.get('pin_version')) is not int or body['pin_version']!=1
+                if (type(body.get('pin_version')) is not int or body['pin_version'] not in {1,2}
                         or body.get('id')!=path.stem or not re.fullmatch('[0-9a-f]{32}',path.stem)
                         or any(body.get(key)!=layout.get(key) for key in ('root_id','layout_id'))
                         or type(body.get('pid')) is not int or body['pid']<=0

@@ -99,7 +99,7 @@ class StorageGCTests(unittest.TestCase):
         from workflow_lib.storage_audit import paths
         from workflow_lib.storage_maintenance import verify_store
         gc=self.backend();plan=gc.gc_plan(self.root);gc.apply_gc(self.root,plan['plan_hash'],operation_id='audit',actor_id='owner')
-        receipt=paths(self.root,'audit')[0];record=json.loads(receipt.read_text());record['body']['actor_id']='tampered';receipt.write_text(json.dumps(record))
+        receipt=paths(self.root,'audit')[0];record=json.loads(receipt.read_text(encoding="utf-8"));record['body']['actor_id']='tampered';receipt.write_text(json.dumps(record))
         self.assertFalse(verify_store(self.root,full=True)['valid'])
 
     def test_backup_refuses_in_flight_publication(self):
@@ -110,7 +110,7 @@ class StorageGCTests(unittest.TestCase):
 
     def test_pin_from_another_root_cannot_be_reconciled(self):
         from workflow_lib.storage_pins import reconcile
-        pin=reserve(self.root,'prepared-context');path=pin.path;body=json.loads(path.read_text());pin.close()
+        pin=reserve(self.root,'prepared-context');path=pin.path;body=json.loads(path.read_text(encoding="utf-8"));pin.close()
         body['root_id']='0'*32;path.write_text(json.dumps(body))
         with self.assertRaises(store.WorkflowError):reconcile(self.root)
         self.assertTrue(path.exists())

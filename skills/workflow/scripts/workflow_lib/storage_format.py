@@ -2,6 +2,7 @@
 from pathlib import Path
 import json
 import re
+import stat
 
 from .store import WorkflowError
 
@@ -16,16 +17,34 @@ LEGACY_GUARD = {'schema_version': 2, 'sequence': 1, 'operation_id': 'storage-v2-
 
 
 def confined_path(root: Path, relative: str, *, create_parents: bool = False) -> Path:
-    root = Path(root).resolve()
     part = Path(relative)
     if part.is_absolute() or '..' in part.parts or '\\' in relative:
         raise WorkflowError('STORAGE_PATH_INVALID', 'Storage paths must stay within the selected control root.')
+    root = Path(root)
+    if create_parents:
+        # Resolve an existing root: Windows may spell a missing path differently
+        # while another publisher is creating its ancestors.
+        root.mkdir(parents=True,exist_ok=True)
+    root = root.resolve()
     path = root / part
+    if not path.is_relative_to(root):
+        raise WorkflowError('STORAGE_PATH_INVALID','Storage path is not lexically within its selected root.')
     for item in (path, *path.parents):
-        if item == root:
-            break
-        if item.is_symlink() or not item.resolve().is_relative_to(root):
-            raise WorkflowError('STORAGE_PATH_INVALID', 'Storage links must not redirect content outside its root.')
+        if item == root:break
+        try:info=item.lstat()
+        except FileNotFoundError:continue
+        attributes=getattr(info,'st_file_attributes',0)
+        tag=getattr(info,'st_reparse_tag',0)
+        # Name-surrogate reparse points include junctions/mounted folders.
+        if stat.S_ISLNK(info.st_mode) or attributes & 0x400 and tag & 0x20000000:
+            raise WorkflowError('STORAGE_PATH_INVALID','Storage links must not redirect managed content.')
+        try:resolved=item.resolve(strict=True)
+        except FileNotFoundError:
+            if attributes & 0x400:
+                raise WorkflowError('STORAGE_PATH_INVALID','Cannot prove confinement of an unavailable reparse point.')
+            continue
+        if not resolved.is_relative_to(root):
+            raise WorkflowError('STORAGE_PATH_INVALID','Storage links must not redirect content outside its root.')
     if create_parents:
         path.parent.mkdir(parents=True, exist_ok=True)
         # Recheck after creating directories; cooperative publishers never redirect them.

@@ -3,7 +3,8 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
+from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'skills/workflow/scripts'))
 from workflow_lib.context_metrics import record_context_measurement, context_statistics, measure_context_view
@@ -14,6 +15,9 @@ class ContextMetricTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
+        # Semantic/privacy assertions do not test scheduler or filesystem speed.
+        # Budget exhaustion is exercised explicitly with a progressing clock.
+        self.enterContext(patch('workflow_lib.context_metrics.time',SimpleNamespace(monotonic=lambda:0.0)))
         self.view = {'run_id': 'r', 'task_view': {'units': [{'id': 'G1', 'content': 'secret body é', 'content_hash': 'hash'}],
             'required_ids': ['G1'], 'coverage': {'supplied_ids': ['G1'], 'missing_ids': []}, 'cache_outcome': 'miss', 'retrieval_calls': 2}}
 
@@ -65,3 +69,14 @@ class ContextMetricTests(unittest.TestCase):
         self.assertEqual(stats['actual_tokens'], {'input_tokens': 30, 'output_tokens': 5})
         self.assertEqual(stats['usage_source'], 'explicit runtime observations; partial coverage')
         self.assertIsNone(stats['actual_cost'])
+
+    def test_budget_exhaustion_returns_a_gap_without_appending(self):
+        event=measure_context_view(self.view,operation_id='recorded',operation='run.brief')
+        self.assertTrue(record_context_measurement(self.root,event)['recorded'])
+        path=self.root/'context-metrics.jsonl';before=path.read_bytes()
+        clock=SimpleNamespace(monotonic=Mock(side_effect=[0.0,1.0]))
+        with patch('workflow_lib.context_metrics.time',clock):
+            result=record_context_measurement(self.root,{**event,'operation_id':'not-recorded'})
+        self.assertFalse(result['recorded'])
+        self.assertIn('bounded telemetry deduplication scan unavailable',result['gap'])
+        self.assertEqual(path.read_bytes(),before)

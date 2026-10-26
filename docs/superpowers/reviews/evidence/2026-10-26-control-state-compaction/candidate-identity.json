@@ -16,10 +16,10 @@
     "release_id": "3c307e657674c39082dd60d05e20d228b7099053ef033aab1f32b43de5809cd1",
     "fingerprint": "3c307e657674c39082dd60d05e20d228b7099053ef033aab1f32b43de5809cd1"
   },
-  "status": "local896 PASS; fixture-only focused9 PASS; final exact validation CI running",
+  "status": "nine independent gates running; semantic telemetry clock fixture corrected locally but not committed",
   "runtime_source_commit": "b36f4ce5b529e5a9ae86bb270f34ccc1c2079338",
-  "ci_run": "https://github.com/wgentil/devflow/actions/runs/40407384992",
+  "ci_run": "https://github.com/wgentil/devflow/actions/runs/40412264849",
   "first_ci_run": "https://github.com/wgentil/devflow/actions/runs/40404192037",
-  "validation_commit": "d3aaeedf6a69e5cd8059bea270384198096e6816",
+  "validation_commit": "444cec461199080643284def7e9036bb42cb21d0",
   "previous_validation_ci_run": "https://github.com/wgentil/devflow/actions/runs/40405162340"
 }

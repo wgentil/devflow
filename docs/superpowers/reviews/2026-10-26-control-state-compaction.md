@@ -3,8 +3,8 @@
 Candidate: `feat/archive-backed-control-state`, based on `36e10f4`.
 Status: final local gate passed; native CI and final review in progress.
 Runtime commit: `b36f4ce5b529e5a9ae86bb270f34ccc1c2079338`.
-Validation commit: `d3aaeedf6a69e5cd8059bea270384198096e6816` (fixture/docs only).
-[Exact final validation CI](https://github.com/wgentil/devflow/actions/runs/40407384992).
+Validation commit: `444cec461199080643284def7e9036bb42cb21d0` (CI reporting/fixtures/docs only).
+[Current independent validation CI](https://github.com/wgentil/devflow/actions/runs/40412264849).
 No merge or release.
 Source: [approved design](../specs/2026-10-26-control-state-compaction-design.md),
 [plan](../plans/2026-10-26-control-state-compaction.md),
@@ -191,3 +191,38 @@ published without waiting for another full storage suite. JSON reports retain
 all failure/error IDs and bounded head/tail traceback excerpts with truncation
 flags. Reporter tests observed RED before those fields were implemented, then
 passed; workflow YAML parsed successfully. Product runtime/fingerprint is unchanged.
+
+
+### Deterministic telemetry semantics tests
+
+The new retained [Ubuntu 3.11 trace](evidence/2026-10-26-control-state-compaction/ci-before-clock-ubuntu311-report.json)
+identifies a telemetry unit-test scheduling race: the intended best-effort 50 ms
+deduplication scan returns a gap, while the semantic test unconditionally reads
+`duplicate`. A controlled delayed clock reproduced the exact error before the
+fixture correction. Semantic/privacy tests now use a fixed module-local clock;
+a separate progressing-clock test proves budget exhaustion returns a gap and
+leaves the metadata file unchanged. The original delayed-clock reproduction and
+all six context-metrics tests pass. No production budget or behavior changed.
+
+
+### Native reservation, confinement and recovery corrections
+
+The independent [Windows latest legacy report](evidence/2026-10-26-control-state-compaction/ci-before-readable-pins-windows-latest.json)
+and [3.11 report](evidence/2026-10-26-control-state-compaction/ci-before-readable-pins-windows-3.11.json)
+identify mandatory pin-byte locks denying metadata reads, concurrent fresh-root
+confinement rejection, and implicit CP1252 decoding of UTF-8 backup markers and
+recovery fixtures. A CP1252-default real backup test reproduced the recovery
+error before its fix; the missing-component resolver boundary reproduced the
+confinement rejection before strict existing-ancestor validation. Pin version-2
+metadata/readability/ownership tests observed RED before the new protocol version.
+The real native reports remain the platform-specific RED evidence.
+
+The corrected focused set passes 89 tests locally (three native-only skips),
+including live metadata hashing, legacy ownership proof, empty-byte preservation,
+backup restart, real process pins/GC, confinement and both hook layouts. Full
+native validation of the corrected runtime is still pending. One older 3.11 hook
+case lacked output without a useful stderr assertion; it now retains both return
+code and stderr while keeping the original required context assertion. If that
+failure persists, its cause must be diagnosed rather than inferred or omitted.
+Primary setup/skill navigation/guides/diagrams were reviewed; these internal
+compatibility fixes add no setup command or skill step.

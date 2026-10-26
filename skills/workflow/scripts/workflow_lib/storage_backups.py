@@ -93,7 +93,7 @@ def backup_locked(root, output, *, resume=False):
     marker = output / '.backup-incomplete.json'
     identity = {'backup_version': 1, 'source_root': str(root)}
     if output.exists():
-        if not resume or not marker.is_file() or json.loads(marker.read_text()) != identity:
+        if not resume or not marker.is_file() or json.loads(marker.read_text(encoding="utf-8")) != identity:
             raise WorkflowError('BACKUP_OUTPUT_EXISTS', 'Use a new output path or explicitly resume this owned incomplete backup.')
     else: output.mkdir(parents=True)
     _atomic_json(marker, identity)

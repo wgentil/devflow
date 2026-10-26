@@ -81,7 +81,7 @@ class StoragePinTests(unittest.TestCase):
             with self.assertRaises(store.WorkflowError):apply_compaction(root,plan['plan_hash'])
             publish.set();self.assertTrue(published.wait(10))
             import json
-            ref=json.loads((root/'published-test.json').read_text())
+            ref=json.loads((root/'published-test.json').read_text(encoding="utf-8"))
             view=inspect_context_artifact(root,ref['artifact_id'])
             self.assertEqual(view['task_view']['coverage']['missing_ids'],[])
             self.assertTrue(compaction_plan(root)['blockers'])
@@ -121,3 +121,40 @@ class StoragePinTests(unittest.TestCase):
             with self.assertRaises(store.WorkflowError):assert_preparation_current(root,p,state)
         finally:
             if hasattr(p,'release'):p.release()
+
+    def test_live_pin_metadata_is_readable_without_releasing_ownership(self):
+        import json,hashlib
+        from workflow_lib.storage_backups import file_hash
+        pins=self.component()
+        with pins.reserve(self.root,'readable-metadata') as pin:
+            raw=pin.path.read_bytes();body=json.loads(raw)
+            self.assertEqual(body['pin_version'],2)
+            self.assertLess(len(raw),65536)
+            self.assertEqual(file_hash(pin.path),hashlib.sha256(raw).hexdigest())
+            self.assertTrue(compaction_plan(self.root)['blockers'])
+            with self.assertRaises(store.WorkflowError) as caught:pins.reconcile(self.root)
+            self.assertEqual(caught.exception.code,'PIN_OWNER_ACTIVE')
+            self.assertEqual(pin.path.read_bytes(),raw)
+        self.assertFalse(pin.path.exists())
+
+    def test_legacy_pin_ownership_is_proved_before_reconciliation(self):
+        import json,os
+        from workflow_lib.platform_lock import exclusive_file
+        from workflow_lib.storage_format import detect_layout
+        pins=self.component();layout=detect_layout(self.root);directory=self.root/'pins';directory.mkdir(exist_ok=True)
+        path=directory/('a'*32+'.json');body={'pin_version':1,'id':path.stem,'kind':'legacy-candidate','pid':1,
+            'root_id':layout['root_id'],'layout_id':layout['layout_id']}
+        raw=json.dumps(body).encode('utf-8');path.write_bytes(raw)
+        with path.open('r+b') as handle,exclusive_file(handle):
+            with self.assertRaises(store.WorkflowError) as caught:pins.reconcile(self.root)
+            self.assertEqual(caught.exception.code,'PIN_OWNER_ACTIVE')
+        self.assertEqual(path.read_bytes(),raw)
+        self.assertEqual(pins.reconcile(self.root)['released'],1)
+        self.assertFalse(path.exists())
+
+    def test_empty_pin_reconciliation_preserves_original_bytes(self):
+        pins=self.component();directory=self.root/'pins';directory.mkdir(exist_ok=True)
+        path=directory/('b'*32+'.json');path.write_bytes(b'')
+        with self.assertRaises(store.WorkflowError) as caught:pins.reconcile(self.root)
+        self.assertEqual(caught.exception.code,'INVALID_STORAGE_PIN')
+        self.assertEqual(path.read_bytes(),b'')

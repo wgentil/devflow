@@ -30,7 +30,7 @@ class StorageCompatibilityTests(unittest.TestCase):
         project=self.base/'project';project.mkdir();subprocess.run(['git','init','-q',str(project)],check=True)
         self.cli('host','init','--project-dir',project,'--root',self.root,'--operation-id','init-existing')
         self.assertEqual(detect_layout(self.root)['layout'],'legacy');self.assertFalse((self.root/'format.json').exists())
-        self.assertEqual(json.loads((self.root/'events/00000001.json').read_text())['schema_version'],1)
+        self.assertEqual(json.loads((self.root/'events/00000001.json').read_text(encoding="utf-8"))['schema_version'],1)
     def test_missing_sqlite_preserves_legacy_access_and_new_root_retry(self):
         legacy=legacy_root(self.base/'legacy');store.transact(legacy,0,'one',{'kind':'note','payload':{'value':'old'}})
         with patch.object(sqlite_store,'_sqlite',side_effect=store.WorkflowError('SQLITE_UNAVAILABLE','Use Python with SQLite support.')):
@@ -77,7 +77,7 @@ store.transact(Path(sys.argv[1]),0,'first',{'kind':'note','payload':{'value':'fi
     def test_corrupt_initial_operation_identity_refuses_activation(self):
         from workflow_lib.storage_maintenance import resume_compaction
         self.crash_initialize('ready');path=self.root/'maintenance/intent.json'
-        value=json.loads(path.read_text());value['initiating_operation_hash']='not-a-hash';path.write_text(json.dumps(value))
+        value=json.loads(path.read_text(encoding="utf-8"));value['initiating_operation_hash']='not-a-hash';path.write_text(json.dumps(value))
         with self.assertRaises(store.WorkflowError):resume_compaction(self.root)
         self.assertFalse((self.root/'format.json').exists())
 

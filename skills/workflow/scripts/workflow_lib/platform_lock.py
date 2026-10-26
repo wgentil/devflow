@@ -5,19 +5,23 @@ import time
 
 
 @contextmanager
-def exclusive_file(handle, *, blocking: bool = True):
+def exclusive_file(handle, *, blocking: bool = True, offset: int = 0, initialize: bool = True):
     """Hold an exclusive lock until the context exits.
 
     A nonblocking contention raises BlockingIOError on every platform.
+    Windows offsets select the mandatory byte range; POSIX uses advisory flock.
+    Ownership probes may disable initialization to preserve unknown file bytes.
     """
+    if type(offset) is not int or offset < 0:raise ValueError("Lock offset must be a nonnegative integer.")
     owner_pid=os.getpid()
     if os.name == 'nt':
         import msvcrt
-        handle.seek(0, os.SEEK_END)
-        if handle.tell() == 0:
-            handle.write(b'\0' if 'b' in handle.mode else '\0')
-            handle.flush()
-        handle.seek(0)
+        if initialize and offset == 0:
+            handle.seek(0, os.SEEK_END)
+            if handle.tell() == 0:
+                handle.write(b'\0' if 'b' in handle.mode else '\0')
+                handle.flush()
+        handle.seek(offset)
         while True:
             try:
                 msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
@@ -33,7 +37,7 @@ def exclusive_file(handle, *, blocking: bool = True):
             yield
         finally:
             if os.getpid()==owner_pid:
-                handle.seek(0)
+                handle.seek(offset)
                 msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
     else:
         import fcntl

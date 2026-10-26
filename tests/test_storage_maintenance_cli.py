@@ -146,7 +146,7 @@ class MaintenanceCLITests(unittest.TestCase):
         from workflow_lib.storage_audit import paths
         from workflow_lib.storage_maintenance import verify_store
         self.cli('backup','--root',self.root,'--output',self.base/'legacy-backup','--operation-id','legacy-backup','--actor-id','owner')
-        path=paths(self.root,'legacy-backup')[0];record=json.loads(path.read_text());record['body']['actor_id']='changed';path.write_text(json.dumps(record))
+        path=paths(self.root,'legacy-backup')[0];record=json.loads(path.read_text(encoding="utf-8"));record['body']['actor_id']='changed';path.write_text(json.dumps(record))
         self.assertFalse(verify_store(self.root,full=True)['valid'])
 
     def test_readonly_missing_root_does_not_create_authority(self):

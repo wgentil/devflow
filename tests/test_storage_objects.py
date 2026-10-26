@@ -115,10 +115,18 @@ class StorageObjectTests(unittest.TestCase):
             self.assertFalse(list(root.rglob('*.tmp')))
 
     def test_concurrent_publishers_return_one_complete_identity(self):
+        self._assert_concurrent_publishers(self.root)
+
+    @unittest.skipUnless(os.name=='nt','native Windows fresh-root canonicalization race')
+    def test_repeated_concurrent_fresh_windows_roots_preserve_confinement(self):
+        for index in range(5):
+            with self.subTest(index=index):self._assert_concurrent_publishers(self.root/('fresh-'+str(index)))
+
+    def _assert_concurrent_publishers(self,root):
         store = self.module()
         code = "import json,sys;from pathlib import Path;from workflow_lib.storage_objects import put_object;print(json.dumps(put_object(Path(sys.argv[1]),'race',b'concurrent'*1000)))"
         env = {**os.environ, 'PYTHONPATH': str(ROOT / 'skills/workflow/scripts')}
-        processes = [subprocess.Popen([sys.executable, '-B', '-c', code, str(self.root)],
+        processes = [subprocess.Popen([sys.executable, '-B', '-c', code, str(root)],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env) for _ in range(4)]
         for process in processes:
             self.addCleanup(lambda p=process: p.kill() if p.poll() is None else None)
@@ -128,8 +136,23 @@ class StorageObjectTests(unittest.TestCase):
             self.assertEqual(process.returncode, 0, err.decode('utf-8', errors='replace'))
             refs.append(json.loads(out))
         self.assertEqual(refs, [refs[0]] * 4)
-        self.assertEqual(store.read_object(self.root, refs[0], max_bytes=10000), b'concurrent' * 1000)
-        self.assertFalse(list(self.root.rglob('*.tmp')))
+        self.assertEqual(store.read_object(root, refs[0], max_bytes=10000), b'concurrent' * 1000)
+        self.assertFalse(list(root.rglob('*.tmp')))
+
+    def test_missing_component_resolution_cannot_reject_safe_publication(self):
+        store=self.module();self.root.mkdir(parents=True)
+        outside=self.root.parent/'outside-fallback';outside.mkdir()
+        original=Path.resolve
+        def resolve(path,strict=False):
+            # A non-strict OS fallback can have a different spelling while
+            # another publisher creates ancestors. It is not an existing link.
+            if not strict and path!=self.root and path.is_relative_to(self.root) and not path.exists():
+                return outside/path.name
+            return original(path,strict=strict)
+        with patch.object(Path,'resolve',resolve):
+            reference=store.put_object(self.root,'safe-publication',b'complete bytes')
+        self.assertEqual(store.read_object(self.root,reference,max_bytes=100),b'complete bytes')
+        self.assertEqual(list(outside.iterdir()),[])
 
     def test_existing_open_manifest_is_reused_without_replacement(self):
         store = self.module()
@@ -151,12 +174,14 @@ class StorageObjectTests(unittest.TestCase):
         store = self.module()
         self.root.mkdir(parents=True)
         with tempfile.TemporaryDirectory() as outside:
-            result = subprocess.run(['cmd', '/c', 'mklink', '/J', str(self.root / 'objects'), outside],
-                                    capture_output=True, timeout=10)
-            self.assertEqual(result.returncode, 0)
-            try:
-                with self.assertRaises(WorkflowError):
-                    store.put_object(self.root, 'test', b'forbidden')
-                self.assertEqual(list(Path(outside).iterdir()), [])
-            finally:
-                os.rmdir(self.root / 'objects')
+            for target in (Path(outside),Path(outside)/'missing-target'):
+                with self.subTest(target_exists=target.exists()):
+                    result = subprocess.run(['cmd', '/c', 'mklink', '/J', str(self.root / 'objects'), str(target)],
+                                            capture_output=True, timeout=10)
+                    self.assertEqual(result.returncode, 0,result.stderr)
+                    try:
+                        with self.assertRaises(WorkflowError):
+                            store.put_object(self.root, 'test', b'forbidden')
+                        self.assertEqual(list(Path(outside).iterdir()), [])
+                    finally:
+                        os.rmdir(self.root / 'objects')

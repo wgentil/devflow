@@ -62,7 +62,7 @@ class StorageRecoveryTests(unittest.TestCase):
             path.write_text(json.dumps({'schema_version': 1, 'sequence': 2, 'operation_id': 'new-tail',
                                       'kind': 'note', 'payload': {'tail': True}}))
             with self.assertRaises(store.WorkflowError): maintenance.resume_compaction(root)
-            self.assertEqual(json.loads(path.read_text())['operation_id'], 'new-tail')
+            self.assertEqual(json.loads(path.read_text(encoding="utf-8"))['operation_id'], 'new-tail')
             self.assertFalse((root / 'format.json').exists())
 
     def test_disk_full_refuses_before_activation(self):
@@ -81,7 +81,7 @@ class StorageRecoveryTests(unittest.TestCase):
         with owned_control() as root:
             self.seeded(root); plan = maintenance.compaction_plan(root)
             self.crash(root, 'ready', plan['plan_hash'])
-            intent = json.loads((root / 'maintenance/intent.json').read_text())
+            intent = json.loads((root / 'maintenance/intent.json').read_text(encoding="utf-8"))
             ref = intent['checkpoint']
             manifest = root / 'objects/manifests' / ref['object_id'][:2] / (ref['object_id'][2:] + '.json')
             manifest.write_text('{}')

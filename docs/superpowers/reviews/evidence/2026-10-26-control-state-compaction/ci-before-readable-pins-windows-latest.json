@@ -1,0 +1,173 @@
+{
+  "schema_version": 1,
+  "success": false,
+  "tests_run": 161,
+  "failures": [
+    "test_storage_objects.StorageObjectTests.test_concurrent_publishers_return_one_complete_identity"
+  ],
+  "errors": [
+    "test_storage_gc.StorageGCTests.test_backup_refuses_in_flight_publication",
+    "test_storage_gc.StorageGCTests.test_gc_preserves_archived_and_pinned_roots",
+    "test_storage_gc.StorageGCTests.test_live_process_pin_blocks_actual_gc",
+    "test_storage_gc.StorageGCTests.test_pin_from_another_root_cannot_be_reconciled",
+    "test_storage_maintenance_cli.MaintenanceCLITests.test_documented_policy_example_and_stopped_pin_recovery",
+    "test_storage_pins.StoragePinTests.test_gc_race_cannot_delete_prepared_or_dispatched_context",
+    "test_storage_pins.StoragePinTests.test_legacy_preparation_blocks_conversion",
+    "test_storage_pins.StoragePinTests.test_real_preparation_publication_and_maintenance_interleave",
+    "test_storage_recovery.StorageRecoveryTests.test_corrupt_checkpoint_fails_without_repair",
+    "test_storage_recovery.StorageRecoveryTests.test_interrupted_backup_is_not_complete_and_can_resume"
+  ],
+  "failure_traces": [
+    {
+      "id": "test_storage_objects.StorageObjectTests.test_concurrent_publishers_return_one_complete_identity",
+      "traceback": "Traceback (most recent call last):\n  File \"D:\\a\\devflow\\devflow\\tests\\test_storage_objects.py\", line 128, in test_concurrent_publishers_return_one_complete_identity\n    self.assertEqual(process.returncode, 0, err.decode('utf-8', errors='replace'))\n    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: 1 != 0 : Traceback (most recent call last):\r\n  File \"<string>\", line 1, in <module>\r\n    import json,sys;from pathlib import Path;from workflow_lib.storage_objects import put_object;print(json.dumps(put_object(Path(sys.argv[1]),'race',b'concurrent'*1000)))\r\n                                                                                                                  ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\r\n  File \"D:\\a\\devflow\\devflow\\skills\\workflow\\scripts\\workflow_lib\\storage_objects.py\", line 182, in put_object\r\n    target = _chunk_path(root, encoding, digest, create=True)\r\n  File \"D:\\a\\devflow\\devflow\\skills\\workflow\\scripts\\workflow_lib\\storage_objects.py\", line 80, in _chunk_path\r\n    return confined_path(root, 'objects/chunks/' + encoding + '/' + digest[:2] + '/' + digest[2:] + '.blob', create_parents=create)\r\n  File \"D:\\a\\devflow\\devflow\\skills\\workflow\\scripts\\workflow_lib\\storage_format.py\", line 28, in confined_path\r\n    raise WorkflowError('STORAGE_PATH_INVALID', 'Storage links must not redirect content outside its root.')\r\nworkflow_lib.store.WorkflowError: Storage links must not redirect content outside its root.\r\n\n",
+      "truncated": false
+    }
+  ],
+  "error_traces": [
+    {
+      "id": "test_storage_gc.StorageGCTests.test_backup_refuses_in_flight_publication",
+      "traceback": "Traceback (most recent call last):\n  File \"D:\\a\\devflow\\devflow\\tests\\test_storage_gc.py\", line 108, in test_backup_refuses_in_flight_publication\n    with self.assertRaises(store.WorkflowError):backup_control(self.root,Path(self.temp)/'inflight-backup')\n                                                ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\a\\devflow\\devflow\\skills\\workflow\\scripts\\workflow_lib\\storage_maintenance.py\", line 134, in backup_control\n    blockers=_blockers(state['data'],_pins(root))\n                                     ~~~~~^^^^^^\n  File \"D:\\a\\devflow\\devflow\\skills\\workflow\\scripts\\workflow_lib\\storage_maintenance.py\", line 59, in _pins\n    if file.is_file(): result.append({'path':relative,'size_bytes':file.stat().st_size,'sha256':file_hash(file)})\n                                                                                                ~~~~~~~~~^^^^^^\n  File \"D:\\a\\devflow\\devflow\\skills\\workflow\\scripts\\workflow_lib\\storage_backups.py\", line 17, in file_hash\n    while chunk := handle.read(1024 * 1024): digest.update(chunk)\n                   ~~~~~~~~~~~^^^^^^^^^^^^^\nPermissionError: [Errno 13] Permission denied\n",
+      "truncated": false
+    },
+    {
+      "id": "test_storage_gc.StorageGCTests.test_gc_preserves_archived_and_pinned_roots",
+      "traceback": "Traceback (most recent call last):\n  File \"D:\\a\\devflow\\devflow\\tests\\test_storage_gc.py\", line 41, in test_gc_preserves_archived_and_pinned_roots\n    with self.assertRaises(store.WorkflowError):gc.apply_gc(self.root,plan['plan_hash'],operation_id='gc',actor_id='owner')\n                                                ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\a\\devflow\\devflow\\skills\\workflow\\scripts\\workflow_lib\\storage_gc.py\", line 194, in apply_gc\n    return perform(root,'gc',{'plan_hash':plan_hash},operation_id,actor_id,\n        lambda audit:_apply(root,plan_hash,operation_id,audit))\n  File \"D:\\a\\devflow\\devflow\\skills\\workflow\\scripts\\workflow_lib\\storage_audit.py\", line 79, in perform\n    result=action(prior)\n  File \"D:\\a\\devflow\\devflow\\skills\\workflow\\scripts\\workflow_lib\\storage_gc.py\", line 195, in <lambda>\n    lambda audit:_apply(root,plan_hash,operation_id,audit))\n                 ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\a\\devflow\\devflow\\skills\\workflow\\scripts\\workflow_lib\\storage_gc.py\", line 199, in _apply\n    plan=gc_plan(root)\n  File \"D:\\a\\devflow\\devflow\\skills\\workflow\\scripts\\workflow_lib\\storage_gc.py\", line 150, in gc_plan\n    _,state,metadata=_snapshot(root);pins=_pins(root)\n                                          ~~~~~^^^^^^\n  File \"D:\\a\\devflow\\devflow\\skills\\workflow\\scripts\\workflow_lib\\storage_maintenance.py\", line 59, in _pins\n    if file.is_file(): result.append({'path':relative,'size_bytes':file.stat().st_size,'sha256':file_hash(file)})\n                                                                                                ~~~~~~~~~^^^^^^\n  File \"D:\\a\\devflow\\devflow\\skills\\workflow\\scripts\\workflow_lib\\storage_backups.py\", line 17, in file_hash\n    while chunk := handle.read(1024 * 1024): digest.update(chunk)\n                   ~~~~~~~~~~~^^^^^^^^^^^^^\nPermissionError: [Errno 13] Permission denied\n",
+      "truncated": false
+    },
+    {
+      "id": "test_storage_gc.StorageGCTests.test_live_process_pin_blocks_actual_gc",
+      "traceback": "Traceback (most recent call last):\n  File \"D:\\a\\devflow\\devflow\\tests\\test_storage_gc.py\", line 137, in test_live_process_pin_blocks_actual_gc\n    with self.assertRaises(store.WorkflowError):gc.apply_gc(self.root,plan['plan_hash'],operation_id='process-gc',actor_id='owner')\n                                                ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\a\\devflow\\devflow\\skills\\workflow\\scripts\\workflow_lib\\storage_gc.py\", line 194, in apply_gc\n    return perform(root,'gc',{'plan_hash':plan_hash},operation_id,actor_id,\n        lambda audit:_apply(root,plan_hash,operation_id,audit))\n  File \"D:\\a\\devflow\\devflow\\skills\\workflow\\scripts\\workflow_lib\\storage_audit.py\", line 79, in perform\n    result=action(prior)\n  File \"D:\\a\\devflow\\devflow\\skills\\workflow\\scripts\\workflow_lib\\storage_gc.py\", line 195, in <lambda>\n    lambda audit:_apply(root,plan_hash,operation_id,audit))\n                 ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"D:\\a\\devflow\\devflow\\skills\\workflow\\scripts\\workflow_lib\\storage_gc.py\", line 199, in _apply\n    plan=gc_plan(root)\n  File \"D:\\a\\devflow\\devflow\\skills\\workflow\\scripts\\workflow_lib\\storage_gc.py\", line 150, in gc_plan\n    _,state,metadata=_snapshot(root);pins=_pins(root)\n                                          ~~~~~^^^^^^\n  File \"D:\\a\\devflow\\devflow\\skills\\workflow\\scripts\\workflow_lib\\storage_maintenance.py\", line 59, in _pins\n    if file.is_file(): result.append({'path':relative,'size_bytes':file.stat().st_size,'sha256':file_hash(file)})\n                                                                                                ~~~~~~~~~^^^^^^\n  File \"D:\\a\\devflow\\devflow\\skills\\workflow\\scripts\\workflow_lib\\storage_backups.py\", line 17, in file_hash\n    while chunk := handle.read(1024 * 1024): digest.update(chunk)\n                   ~~~~~~~~~~~^^^^^^^^^^^^^\nPermissionError: [Errno 13] Permission denied\n",
+      "truncated": false
+    },
+    {
+      "id": "test_storage_gc.StorageGCTests.test_pin_from_another_root_cannot_be_reconciled",
+      "traceback": "Traceback (most recent call last):\n  File \"D:\\a\\devflow\\devflow\\tests\\test_storage_gc.py\", line 113, in test_pin_from_another_root_cannot_be_reconciled\n    pin=reserve(self.root,'prepared-context');path=pin.path;body=json.loads(path.read_text());pin.close()\n                                                                            ~~~~~~~~~~~~~~^^\n  File \"C:\\hostedtoolcache\\windows\\Python\\3.15.1\\x64\\Lib\\pathlib\\__init__.py\", line 987, in read_text\n    return f.read()\n           ~~~~~~^^\nPermissionError: [Errno 13] Permission denied\n",
+      "truncated": false
+    },
+    {
+      "id": "test_storage_maintenance_cli.MaintenanceCLITests.test_documented_policy_example_and_stopped_pin_recovery",
+      "traceback": "Traceback (most recent call last):\n  File \"D:\\a\\devflow\\devflow\\tests\\test_storage_maintenance_cli.py\", line 124, in test_documented_policy_example_and_stopped_pin_recovery\n    pin=reserve(root,'prepared-context');path=pin.path;raw=path.read_bytes()\n                                                           ~~~~~~~~~~~~~~~^^\n  File \"C:\\hostedtoolcache\\windows\\Python\\3.15.1\\x64\\Lib\\pathlib\\__init__.py\", line 977, in read_bytes\n    return f.read()\n           ~~~~~~^^\nPermissionError: [Errno 13] Permission denied\n",
+      "truncated": false
+    },
+    {
+      "id": "test_storage_pins.StoragePinTests.test_gc_race_cannot_delete_prepared_or_dispatched_context",
+      "traceback": "Traceback (most recent call last):\n  File \"D:\\a\\devflow\\devflow\\tests\\test_storage_pins.py\", line 50, in test_gc_race_cannot_delete_prepared_or_dispatched_context\n    self.assertTrue(ready.wait(10));plan=compaction_plan(self.root)\n                                         ~~~~~~~~~~~~~~~^^^^^^^^^^^\n  File \"D:\\a\\devflow\\devflow\\skills\\workflow\\scripts\\workflow_lib\\storage_maintenance.py\", line 81, in compaction_plan\n    pins = _pins(root)\n  File \"D:\\a\\devflow\\devflow\\skills\\workflow\\scripts\\workflow_lib\\storage_maintenance.py\", line 59, in _pins\n    if file.is_file(): result.append({'path':relative,'size_bytes':file.stat().st_size,'sha256':file_hash(file)})\n                                                                                                ~~~~~~~~~^^^^^^\n  File \"D:\\a\\devflow\\devflow\\skills\\workflow\\scripts\\workflow_lib\\storage_backups.py\", line 17, in file_hash\n    while chunk := handle.read(1024 * 1024): digest.update(chunk)\n                   ~~~~~~~~~~~^^^^^^^^^^^^^\nPermissionError: [Errno 13] Permission denied\n",
+      "truncated": false
+    },
+    {
+      "id": "test_storage_pins.StoragePinTests.test_legacy_preparation_blocks_conversion",
+      "traceback": "Traceback (most recent call last):\n  File \"D:\\a\\devflow\\devflow\\tests\\test_storage_pins.py\", line 67, in test_legacy_preparation_blocks_conversion\n    plan=compaction_plan(legacy)\n  File \"D:\\a\\devflow\\devflow\\skills\\workflow\\scripts\\workflow_lib\\storage_maintenance.py\", line 81, in compaction_plan\n    pins = _pins(root)\n  File \"D:\\a\\devflow\\devflow\\skills\\workflow\\scripts\\workflow_lib\\storage_maintenance.py\", line 59, in _pins\n    if file.is_file(): result.append({'path':relative,'size_bytes':file.stat().st_size,'sha256':file_hash(file)})\n                                                                                                ~~~~~~~~~^^^^^^\n  File \"D:\\a\\devflow\\devflow\\skills\\workflow\\scripts\\workflow_lib\\storage_backups.py\", line 17, in file_hash\n    while chunk := handle.read(1024 * 1024): digest.update(chunk)\n                   ~~~~~~~~~~~^^^^^^^^^^^^^\nPermissionError: [Errno 13] Permission denied\n",
+      "truncated": false
+    },
+    {
+      "id": "test_storage_pins.StoragePinTests.test_real_preparation_publication_and_maintenance_interleave",
+      "traceback": "Traceback (most recent call last):\n  File \"D:\\a\\devflow\\devflow\\tests\\test_storage_pins.py\", line 79, in test_real_preparation_publication_and_maintenance_interleave\n    self.assertTrue(ready.wait(10));plan=compaction_plan(root)\n                                         ~~~~~~~~~~~~~~~^^^^^^\n  File \"D:\\a\\devflow\\devflow\\skills\\workflow\\scripts\\workflow_lib\\storage_maintenance.py\", line 81, in compaction_plan\n    pins = _pins(root)\n  File \"D:\\a\\devflow\\devflow\\skills\\workflow\\scripts\\workflow_lib\\storage_maintenance.py\", line 59, in _pins\n    if file.is_file(): result.append({'path':relative,'size_bytes':file.stat().st_size,'sha256':file_hash(file)})\n                                                                                                ~~~~~~~~~^^^^^^\n  File \"D:\\a\\devflow\\devflow\\skills\\workflow\\scripts\\workflow_lib\\storage_backups.py\", line 17, in file_hash\n    while chunk := handle.read(1024 * 1024): digest.update(chunk)\n                   ~~~~~~~~~~~^^^^^^^^^^^^^\nPermissionError: [Errno 13] Permission denied\n",
+      "truncated": false
+    },
+    {
+      "id": "test_storage_recovery.StorageRecoveryTests.test_corrupt_checkpoint_fails_without_repair",
+      "traceback": "Traceback (most recent call last):\n  File \"D:\\a\\devflow\\devflow\\tests\\test_storage_recovery.py\", line 84, in test_corrupt_checkpoint_fails_without_repair\n    intent = json.loads((root / 'maintenance/intent.json').read_text())\n                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"C:\\hostedtoolcache\\windows\\Python\\3.15.1\\x64\\Lib\\pathlib\\__init__.py\", line 987, in read_text\n    return f.read()\n           ~~~~~~^^\n  File \"C:\\hostedtoolcache\\windows\\Python\\3.15.1\\x64\\Lib\\encodings\\cp1252.py\", line 23, in decode\n    return codecs.charmap_decode(input,self.errors,decoding_table)[0]\n           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nUnicodeDecodeError: 'charmap' codec can't decode byte 0x9d in position 1214: character maps to <undefined>\n",
+      "truncated": false
+    },
+    {
+      "id": "test_storage_recovery.StorageRecoveryTests.test_interrupted_backup_is_not_complete_and_can_resume",
+      "traceback": "Traceback (most recent call last):\n  File \"D:\\a\\devflow\\devflow\\tests\\test_storage_recovery.py\", line 129, in test_interrupted_backup_is_not_complete_and_can_resume\n    result = maintenance.backup_control(root, output, resume=True)\n  File \"D:\\a\\devflow\\devflow\\skills\\workflow\\scripts\\workflow_lib\\storage_maintenance.py\", line 137, in backup_control\n    return backup_locked(root,output,resume=resume)\n  File \"D:\\a\\devflow\\devflow\\skills\\workflow\\scripts\\workflow_lib\\storage_backups.py\", line 96, in backup_locked\n    if not resume or not marker.is_file() or json.loads(marker.read_text()) != identity:\n                                                        ~~~~~~~~~~~~~~~~^^\n  File \"C:\\hostedtoolcache\\windows\\Python\\3.15.1\\x64\\Lib\\pathlib\\__init__.py\", line 987, in read_text\n    return f.read()\n           ~~~~~~^^\n  File \"C:\\hostedtoolcache\\windows\\Python\\3.15.1\\x64\\Lib\\encodings\\cp1252.py\", line 23, in decode\n    return codecs.charmap_decode(input,self.errors,decoding_table)[0]\n           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nUnicodeDecodeError: 'charmap' codec can't decode byte 0x9d in position 118: character maps to <undefined>\n",
+      "truncated": false
+    }
+  ],
+  "skips": [
+    {
+      "id": "test_storage_migration.StorageMigrationTests.test_sqlite_authority_and_backup_keep_private_file_permissions",
+      "reason": "POSIX private-file permission semantics"
+    },
+    {
+      "id": "test_storage_pins.StoragePinTests.test_fork_child_cannot_release_parent_pin",
+      "reason": "POSIX inherited lease ownership probe"
+    },
+    {
+      "id": "test_storage_pins.StoragePinTests.test_reentrant_coordination_does_not_cross_process_owner",
+      "reason": "POSIX fork ownership probe"
+    }
+  ],
+  "expected_failures": [],
+  "unexpected_successes": [],
+  "elapsed_seconds": 599.879,
+  "metadata": {
+    "platform": "Windows-2025Server-10.0.26100-SP0",
+    "python": "3.15.1 (tags/v3.15.1:c37e74c, Oct 21 2026, 06:24:08) [MSC v.1951 64 bit (AMD64)]",
+    "executable": "C:\\hostedtoolcache\\windows\\Python\\3.15.1\\x64\\python.exe",
+    "git": "git version 2.56.0.windows.2",
+    "preferred_encoding": "cp1252",
+    "filesystem_encoding": "utf-8",
+    "stdout_encoding": "cp1252",
+    "stderr_encoding": "cp1252",
+    "utf8_mode": 0,
+    "PYTHONUTF8": null,
+    "PYTHONIOENCODING": "cp1252",
+    "git_sha": "444cec461199080643284def7e9036bb42cb21d0",
+    "patterns": [
+      "test_utf8_*.py",
+      "test_windows_workflow.py",
+      "test_storage_*.py",
+      "test_sqlite_store.py",
+      "test_run_archives.py",
+      "test_stored_records.py"
+    ],
+    "sqlite": {
+      "version": "3.53.4",
+      "compile_options": [
+        "ATOMIC_INTRINSICS=0",
+        "COMPILER=msvc-1951",
+        "DEFAULT_AUTOVACUUM",
+        "DEFAULT_CACHE_SIZE=-2000",
+        "DEFAULT_FILE_FORMAT=4",
+        "DEFAULT_JOURNAL_SIZE_LIMIT=-1",
+        "DEFAULT_MMAP_SIZE=0",
+        "DEFAULT_PAGE_SIZE=4096",
+        "DEFAULT_PCACHE_INITSZ=20",
+        "DEFAULT_RECURSIVE_TRIGGERS",
+        "DEFAULT_SECTOR_SIZE=4096",
+        "DEFAULT_SYNCHRONOUS=2",
+        "DEFAULT_WAL_AUTOCHECKPOINT=1000",
+        "DEFAULT_WAL_SYNCHRONOUS=2",
+        "DEFAULT_WORKER_THREADS=0",
+        "DIRECT_OVERFLOW_READ",
+        "ENABLE_FTS3",
+        "ENABLE_FTS4",
+        "ENABLE_FTS5",
+        "ENABLE_MATH_FUNCTIONS",
+        "ENABLE_PERCENTILE",
+        "ENABLE_RTREE",
+        "MALLOC_SOFT_LIMIT=1024",
+        "MAX_ATTACHED=10",
+        "MAX_COLUMN=2000",
+        "MAX_COMPOUND_SELECT=500",
+        "MAX_DEFAULT_PAGE_SIZE=8192",
+        "MAX_EXPR_DEPTH=1000",
+        "MAX_FUNCTION_ARG=1000",
+        "MAX_LENGTH=1000000000",
+        "MAX_LIKE_PATTERN_LENGTH=50000",
+        "MAX_MMAP_SIZE=0x7fff0000",
+        "MAX_PAGE_COUNT=0xfffffffe",
+        "MAX_PAGE_SIZE=65536",
+        "MAX_SQL_LENGTH=1000000000",
+        "MAX_TRIGGER_DEPTH=1000",
+        "MAX_VARIABLE_NUMBER=32766",
+        "MAX_VDBE_OP=250000000",
+        "MAX_WORKER_THREADS=8",
+        "MUTEX_W32",
+        "OMIT_AUTOINIT",
+        "SYSTEM_MALLOC",
+        "TEMP_STORE=1",
+        "THREADSAFE=1"
+      ],
+      "durability": {
+        "journal_mode": "wal",
+        "synchronous": 2,
+        "foreign_keys": 1,
+        "busy_timeout": 1000
+      }
+    }
+  }
+}

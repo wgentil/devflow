@@ -139,3 +139,14 @@ keeps every failure/error ID plus bounded head/tail traceback excerpts (64K
 characters, with an explicit truncation flag), so diagnosis does not depend on a
 subsequent job's logs surviving cancellation. The process exit status remains
 nonzero for any failure, error or empty suite.
+
+
+Windows mandatory byte locks also affect reads through other handles. Reservation
+leases therefore use a byte beyond managed metadata reads, supported by
+[MSVCRT locking beyond EOF](https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/locking).
+Descriptors are version 2; reconciliation supports old/new lease locations and
+never infers ownership from PID or age. Native tests read/hash live descriptors,
+prove active owners cannot be reconciled, preserve empty/foreign descriptors,
+and retry concurrent publication across fresh roots. Backup/recovery fixtures and
+markers use explicit UTF-8 under CP1252. Name-surrogate reparse points follow the
+[Windows reparse-tag contract](https://learn.microsoft.com/en-us/windows/win32/fileio/reparse-point-tags).

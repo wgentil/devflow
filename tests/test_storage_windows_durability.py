@@ -49,3 +49,21 @@ class WindowsStorageDurabilityTests(unittest.TestCase):
                 self.assertEqual(state['version'],1)
                 self.assertEqual(state['data']['value'],'é東京')
             finally:conn.close()
+
+    def test_interrupted_backup_resumes_under_non_utf8_default(self):
+        from control_store_fixtures import legacy_root
+        from workflow_lib.storage_maintenance import backup_control
+        from workflow_lib.storage_backups import verify_backup
+        with tempfile.TemporaryDirectory() as temporary:
+            root=legacy_root(Path(temporary)/'control é東京');output=Path(temporary)/'backup é東京'
+            store.transact(root,0,'original',{'kind':'note','payload':{'value':'é東京'}})
+            with patch('workflow_lib.storage_backups.shutil.copyfileobj',side_effect=OSError('interrupted')):
+                with self.assertRaises(OSError):backup_control(root,output)
+            original=Path.read_text
+            def locale_read(path,*args,**kwargs):
+                kwargs.setdefault('encoding','cp1252')
+                return original(path,*args,**kwargs)
+            with patch.object(Path,'read_text',locale_read):
+                result=backup_control(root,output,resume=True)
+            self.assertTrue(result['completed'])
+            self.assertTrue(verify_backup(output)['valid'])
