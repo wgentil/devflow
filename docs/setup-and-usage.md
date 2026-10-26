@@ -406,10 +406,13 @@ need no shell variables or manual installation paths.
 ## Specification drift and legacy upgrades
 
 For repository-backed work, DevFlow checks the visible specification pair before
-planning, run start, host handoff and delivery. Observed drift persists as a
-blocker even after restoration; ask the agent to repair/store the pair and obtain
-a fresh human approval. Journal inspection and replay remain available without
-repository files. A temporary change restored between checks is unobservable.
+planning, run start, host handoff and delivery. Mutating work records observed
+drift as a blocker even after restoration; ask the agent to repair/store the pair
+and obtain fresh human approval. Read-only readiness and delivery inspection
+reject drift without recording invalidation. Matching files can use the prior
+approval when no earlier mutating check invalidated it. Journal inspection and
+replay remain available without repository files. A temporary change restored
+between checks is unobservable.
 
 Existing journal-backed specifications remain compatible. Ask “Migrate the legacy
 specification from this control root to `docs/specs/greeting.json` in

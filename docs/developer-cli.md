@@ -222,8 +222,9 @@ df plan ready --root "$CONTROL" --completed '[]'
 Plan validation also persists the plan. All requirements must be covered, IDs must
 exist and dependencies must be acyclic. Code items require code-test criteria;
 IaC and agent-config items have their own typed criteria. `plan ready` accepts a
-supplied completion list for planning inspection; executable dispatch uses actual
-committed item completion through `run next`. See [plan-work](../skills/plan-work/GUIDE.md).
+supplied completion list for read-only planning inspection. It checks current
+files without recording an invalidation; executable dispatch uses actual
+committed completion and rechecks inputs through `run next`. See [plan-work](../skills/plan-work/GUIDE.md).
 
 ### 4. Start the run and issue work
 

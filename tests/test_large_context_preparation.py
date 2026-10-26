@@ -16,9 +16,9 @@ class LargeContextPreparationTests(unittest.TestCase):
     def project(self,name='project',**kw):return make_context_project(self.base/name,**kw)
     def test_unchanged_preparation_does_not_replay_inside_worker(self):
         f=self.project();calls=[];original=read_state
-        def counted(root):calls.append(str(root));return original(root)
+        def counted(root,*args,**kwargs):calls.append(str(root));return original(root)
         # Root/run worker requests must no longer replay the entire journal.
-        with patch('workflow_lib.store.read_state',side_effect=counted),patch('workflow_lib.task_views.read_state',side_effect=counted),patch('workflow_lib.repo_input_gate.read_state',side_effect=counted),patch('workflow_lib.document_approvals.read_state',side_effect=counted):
+        with patch('workflow_lib.store.read_state',side_effect=counted),patch('workflow_lib.task_views.read_state',side_effect=counted),patch('workflow_lib.repo_input_gate.read_current',side_effect=counted),patch('workflow_lib.document_approvals.read_current',side_effect=counted):
             try:execute_hook('prepare-context',{'root':str(f['root']),'run_id':'current','item_ids':['W1']},max_bytes=8192,deadline_seconds=5)
             except WorkflowError:pass # New worker route rejects an unscoped request.
         self.assertEqual(calls,[],'Journal replay must occur in parent preflight, never the bounded worker.')

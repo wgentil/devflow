@@ -9,7 +9,7 @@ VERSION = '1'
 def _canonical(value): return json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(',',':'))
 def _sha(data): return hashlib.sha256(data).hexdigest()
 
-def ingest_sources(repo: dict, scope: list[str], profile: dict, cache: dict, *, selection_policy: dict | None = None) -> dict:
+def ingest_sources(repo: dict, scope: list[str], profile: dict, cache: dict, *, selection_policy: dict | None = None, cache_lookup=None) -> dict:
     root=Path(repo.get('location','')).expanduser().resolve()
     if not root.is_dir() or not isinstance(scope,list) or not isinstance(profile,dict) or not isinstance(cache,dict): raise ValueError('invalid repository, scope, profile, or cache')
     extensions=set(profile.get('extensions',[]))
@@ -44,6 +44,9 @@ def ingest_sources(repo: dict, scope: list[str], profile: dict, cache: dict, *, 
             identity.update(version='2', selection_policy=policy)
             identity.pop('commit')
         key=_sha(_canonical(identity).encode())
+        if key not in cache and cache_lookup is not None:
+            found = cache_lookup(key)
+            if found is not None: cache[key] = found
         hits.append(key in cache)
         if key in cache: record={**cache[key], 'commit': commit_id}
         else:

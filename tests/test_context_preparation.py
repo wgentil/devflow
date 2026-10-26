@@ -47,11 +47,11 @@ class ContextPreparationTests(unittest.TestCase):
         self.assertLessEqual(value['budget']['serialized_bytes'],20000)
     def test_standalone_entry_adds_at_most_one_replay(self):
         original=read_state;calls=[]
-        def counted(root):calls.append(root);return original(root)
-        with patch('workflow_lib.context_preparation.read_state',side_effect=counted):self.prepare()
+        def counted(root,*args,**kwargs):calls.append(root);return original(root)
+        with patch('workflow_lib.context_preparation.read_current',side_effect=counted):self.prepare()
         self.assertEqual(len(calls),1)
         calls.clear()
-        with patch('workflow_lib.context_preparation.read_state',side_effect=counted):self.prepare(state=self.f['state'])
+        with patch('workflow_lib.context_preparation.read_current',side_effect=counted):self.prepare(state=self.f['state'])
         self.assertEqual(calls,[])
 
     def test_prepared_scope_cannot_be_reused_for_another_stage_or_attempt(self):

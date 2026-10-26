@@ -7,13 +7,15 @@ description: Decompose approved requirements into validated work items with comp
 
 Decompose the approved specification into dependent, repository-bound work items. Cover every requirement with kind-specific acceptance criteria and explicit dependencies; validate the plan with bundled helpers.
 
-Stop for missing coverage, dependency cycles, stale approval or governing reassessment. A changed plan/spec invalidates the affected work and evidence. Use current validated plan content before issuing attempts.
+Stop for missing coverage, dependency cycles, stale approval or governing reassessment. A changed plan/spec invalidates the affected work and evidence. Use current validated plan content before issuing attempts. `plan ready` inspects current inputs and eligibility without recording observations; mutating work rechecks inputs and records drift.
 
 Read [shared invariants](../../docs/reference/workflow-invariants.md) and the declared stage sections before work. The harness runs helpers and guides the user. For delegated work read [task routing](../../docs/reference/task-routing.md#task-decisions); use the actual stage and preserve user constraints.
 
 ```mermaid
 flowchart LR
-    Scope[Current task and declared inputs] --> Checks[Live checks and shared invariants]
+    Scope[Current task and declared inputs] --> Mode{Readiness inspection?}
+    Mode -->|Yes| Inspect[Read-only checks and eligibility]
+    Mode -->|No| Checks[Live checks and shared invariants]
     Checks --> Work[Stage responsibility]
     Work --> Result{Worker outcome}
     Result -->|Complete scoped report| Evidence[Current evidence and next gate]

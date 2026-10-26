@@ -1,8 +1,9 @@
 """Append-only usage, pricing, compatibility imports and frozen reports."""
 import json
 from pathlib import Path
+from workflow_lib.storage_access import read_command, read_current, operation_lookup, read_history, read_entity, find_entity_id
 from .journal import add_journal_options, commit
-from workflow_lib.store import read_state, WorkflowError
+from workflow_lib.store import WorkflowError
 from workflow_lib.pricing import price_usage
 from workflow_lib.reporting import rollup, export_report
 from workflow_lib.legacy import import_legacy
@@ -21,7 +22,7 @@ def dispatch(parsed):
     if parsed.operation == 'routing':
         if not parsed.root:raise WorkflowError('CONTROL_ROOT_REQUIRED','Routing statistics require a control root.')
         from workflow_lib.routing_evaluation import routing_statistics
-        return routing_statistics(read_state(Path(parsed.root))['data'], opts)
+        return routing_statistics(read_history(Path(parsed.root),'routing',run_id=opts.get('run_id'))['data'], opts)
     if parsed.operation == 'context':
         if not parsed.root:
             raise WorkflowError('CONTROL_ROOT_REQUIRED', 'context statistics require a selected control root')
@@ -32,20 +33,20 @@ def dispatch(parsed):
             raise WorkflowError('TRACE_INPUT_REQUIRED', 'trace requires --root and options run_id')
         from workflow_lib.improvement_traces import project_run_trace
         from workflow_lib.journal_domains import digest
-        trace = project_run_trace(read_state(Path(parsed.root)), opts['run_id'],
+        trace = project_run_trace(read_history(Path(parsed.root),'trace',run_id=opts['run_id'],namespaces=('usage',)), opts['run_id'],
                                   opts.get('include_usage', True))
         return {**trace, 'trace_hash': digest(trace)}
     if parsed.operation == 'inspect':
         if not parsed.root:
             raise WorkflowError('CONTROL_ROOT_REQUIRED', 'inspection requires --root')
-        state = read_state(Path(parsed.root))['data']
+        state = read_command(Path(parsed.root), parsed, family='stats')['data']
         return {k: state.get(k, {}) for k in ('usage','usage_expectations','prices','reports','legacy_imports')}
     if parsed.operation == 'metrics':
         return commit(parsed, 'domain.stats.metrics', opts)
     if parsed.root and parsed.operation == 'rollup':
-        return rollup(read_state(Path(parsed.root))['data'].get('reports', []), opts.get('scope', {}))
+        return rollup(read_current(Path(parsed.root),global_keys=(),namespaces=('reports',))['data'].get('reports', []), opts.get('scope', {}))
     if parsed.root and parsed.operation == 'export' and opts.get('report_id'):
-        report = next((r for r in read_state(Path(parsed.root))['data'].get('reports', []) if r['id'] == opts['report_id']), None)
+        report = find_entity_id(Path(parsed.root),'reports',opts['report_id'])
         if report is None:
             raise WorkflowError('REPORT_NOT_FOUND', 'frozen report is unavailable')
         return {'output': export_report(report, opts.get('format', 'json'))}
@@ -62,6 +63,6 @@ def dispatch(parsed):
     if parsed.operation == 'price':
         return price_usage(request['usage'], request['prices'], request['coverage'])
     if parsed.operation == 'rollup':
-        reports = read_state(Path(parsed.root))['data'].get('reports', []) if parsed.root else request
+        reports = read_command(Path(parsed.root), parsed, family='stats')['data'].get('reports', []) if parsed.root else request
         return rollup(reports, opts.get('scope', {}))
     return {'output': export_report(request, opts.get('format', 'json'))}

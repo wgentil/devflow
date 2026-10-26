@@ -94,7 +94,7 @@ class GroundInterviewTests(unittest.TestCase):
             'repositories': {'app': {'location': str(self.project.resolve())}},
             'spec_pair': {'repo_id': 'app'}}})
         with patch('workflow_lib.repo_input_gate.require_current_spec', return_value={}):
-            with patch('workflow_lib.document_approvals.preflight_governing_inputs', side_effect=lambda root,state,phase: {'state':state,'receipt':{}}):
+            with patch('workflow_lib.document_approvals.preflight_governing_inputs', side_effect=lambda root,state,phase,**options: {'state':state,'receipt':{}}):
                 with self.assertRaises(WorkflowError) as caught:
                     require_current_inputs(control, read_state(control), 'plan-validation')
                 self.assertEqual(caught.exception.code, 'GROUND_INTERVIEW_REQUIRED')

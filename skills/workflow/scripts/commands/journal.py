@@ -1,6 +1,7 @@
 """Shared compare-and-swap journal boundary for auxiliary commands."""
 from pathlib import Path
-from workflow_lib.store import WorkflowError, read_state, transact
+from workflow_lib.storage_access import read_command, read_current, operation_lookup, read_history, read_entity
+from workflow_lib.store import WorkflowError, transact
 
 
 def add_journal_options(parser):
@@ -15,7 +16,7 @@ def commit(parsed, kind, request):
     if not getattr(parsed, 'operation_id_explicit', False):
         raise WorkflowError('OPERATION_ID_REQUIRED', 'mutations require --operation-id for safe retry')
     root = Path(parsed.root).expanduser().resolve()
-    state = read_state(root)
+    state = read_current(root, global_keys=(), operations=(parsed.operation_id,))
     previous = state['operations'].get(parsed.operation_id)
     event = {'kind': kind, 'payload': {'request': request}}
     if previous is not None:

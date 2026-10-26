@@ -2,11 +2,12 @@
 
 import json
 from pathlib import Path
+from workflow_lib.storage_access import read_command, read_current, operation_lookup, read_history, read_entity
 
 from .journal import add_journal_options, commit
 from workflow_lib.repair import repair_decision
 from workflow_lib.repair_runtime import run_repair
-from workflow_lib.store import read_state, WorkflowError
+from workflow_lib.store import WorkflowError
 
 
 def register_commands(parser):
@@ -42,7 +43,7 @@ def dispatch(parsed):
             request['worker_stop_confirmation'] = {'approved': True,
                                                     'actor_id': parsed.confirm_stopped_by}
         return commit(parsed, 'domain.repair.stop', request)
-    state = read_state(root)
+    state = read_command(root, parsed, family='repair')
     run = state['data'].get('runs', {}).get(parsed.run_id)
     if not run:
         raise WorkflowError('RUN_UNAVAILABLE', 'known repair run required')

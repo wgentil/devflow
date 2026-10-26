@@ -413,6 +413,17 @@ def verify_store(root, *, full=False):
                 data = {row[0]:sql._load_space(conn,root,(row[0],)) for row in conn.execute('SELECT name FROM spaces WHERE parent IS NULL ORDER BY position')}
                 if replay['version']!=head or replay['data']!=data:
                     raise WorkflowError('CORRUPT_STORAGE','Complete replay and current projection differ; no checkpoint was restored.')
+                from .storage_access import history_projections
+                expected_views = {}
+                for key,run in data.get('runs',{}).items():
+                    for view,value in history_projections(run).items():expected_views[(sql._space(('runs',)),key,view)] = value
+                actual_views = {(space,key,view):sql._decode(root,codec,payload,checksum)
+                    for space,key,view,codec,payload,checksum in conn.execute('SELECT * FROM run_views')}
+                if expected_views != actual_views:raise WorkflowError('CORRUPT_STORAGE','Indexed reporting views differ from complete logical runs.')
+                expected_documents = sorted((sql._space(('document_proposals',)),key,proposal.get('repo_id'),path,digest(record))
+                    for key,proposal in data.get('document_proposals',{}).items() for path,record in proposal.get('files',{}).items())
+                if expected_documents != sorted(conn.execute('SELECT * FROM document_files').fetchall()):
+                    raise WorkflowError('CORRUPT_STORAGE','Governing approval lookup differs from authoritative proposal bodies.')
                 expected_links = sorted((kind,source,sql._space(('runs',)),key,entity) for key,run in data.get('runs',{}).items() for kind,source,entity in dependencies(run))
                 actual_links = sorted(conn.execute('SELECT kind,source,space,run_id,entity_key FROM dependencies').fetchall())
                 if actual_links!=expected_links: raise WorkflowError('CORRUPT_DEPENDENCY_INDEX','Reverse dependencies differ from complete logical runs.')

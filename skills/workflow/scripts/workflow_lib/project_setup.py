@@ -153,7 +153,7 @@ def _approval_result(result: dict, operation_id: str, control_root: Path | None)
     """Proposal failure is visible without undoing successfully created documents."""
     from .bootstrap import initialize_project
     from .document_approvals import propose_document_change
-    from .store import read_state
+    from .storage_access import read_current
     project=Path(result['project_dir'])
     root=control_root.expanduser().resolve() if control_root is not None else project/'.devflow/control'
     output={**result,'control_root':str(root),'approval_status':'pending','approval_required':True,
@@ -169,7 +169,7 @@ def _approval_result(result: dict, operation_id: str, control_root: Path | None)
             additional.append(propose_document_change(root,org_id,org_paths))
         paths=['docs/devflow-context.json',*[row['path'] for row in result['manifest']['documents']]]
         proposal=propose_document_change(root,initialized['repo_id'],paths)
-        state=read_state(root)['data']
+        state=read_current(root,entities=(('document_approvals',proposal['proposal_hash']),))['data']
         approved=proposal['proposal_hash'] in state.get('document_approvals',{})
         changed=any(row['before_hash']!=row['after_hash'] or row['before_exists']!=row['after_exists'] for row in proposal['files'].values())
         status='approved' if approved else 'required' if changed else 'not-required'
@@ -197,9 +197,10 @@ def _approval_result(result: dict, operation_id: str, control_root: Path | None)
 def _organization_approval_owner(root: Path, result: dict, operation_id: str) -> tuple[str, Path]:
     """Preserve a selected owner; never create a second identity for its runtime clone."""
     from .context import register_repo
-    from .store import read_state,transact
+    from .store import transact
+    from .storage_access import read_current
     from urllib.parse import urlsplit,unquote
-    state=read_state(root);repositories=state['data'].get('repositories',{})
+    state=read_current(root);repositories=state['data'].get('repositories',{})
     identity=result['manifest']['org'];identifier=identity['id'];url=identity['url']
     parsed=urlsplit(url)
     local=Path(unquote(parsed.path)).resolve() if parsed.scheme=='file' else Path(url).resolve() if Path(url).is_absolute() else None

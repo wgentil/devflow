@@ -8,7 +8,8 @@ import subprocess
 from uuid import uuid4
 
 from .governing_docs import _git, _path, resolve_governing_docs, canonical_document_bytes
-from .store import WorkflowError, read_state, transact
+from .store import WorkflowError, transact
+from .storage_access import read_current, document_diff_approved
 
 
 def _digest(value):
@@ -47,7 +48,7 @@ def _snapshot(repo, paths, data=None, repo_id=None):
 
 
 def propose_document_change(root: Path, repo_id: str, paths: list[str]) -> dict:
-    state = read_state(root)
+    state = read_current(root)
     if not isinstance(paths, list) or not paths or any(not isinstance(p, str) for p in paths):
         raise WorkflowError('INVALID_DOCUMENT_PROPOSAL', 'nonempty document paths are required')
     records = _snapshot(_repository(state['data'], repo_id), paths, state['data'], repo_id)
@@ -60,7 +61,7 @@ def propose_document_change(root: Path, repo_id: str, paths: list[str]) -> dict:
 
 
 def approve_document_change(root: Path, proposal_hash: str, actor_id: str) -> dict:
-    state = read_state(root)
+    state = read_current(root, entities=(('document_proposals',proposal_hash),('document_approvals',proposal_hash)), operations=('document-approval:'+proposal_hash,))
     proposal = state['data'].get('document_proposals', {}).get(proposal_hash)
     if not proposal:
         raise WorkflowError('DOCUMENT_APPROVAL_REQUIRED', 'existing exact proposal and human actor are required')
@@ -85,16 +86,28 @@ def require_current_governing_inputs(root: Path, state: dict, phase: str) -> dic
     return preflight_governing_inputs(root,state,phase)['receipt']
 
 
-def _governing_write(root, state, kind, payload):
+def _governing_write(root, state, kind, payload, *, record=True):
+    if not record:
+        from copy import deepcopy
+        from .store import _apply_event
+        preview=deepcopy(state)
+        _apply_event(preview,{'kind':kind,'payload':payload,'sequence':state['version']+1})
+        return preview
     try:
-        return transact(root,state['version'],kind+':'+uuid4().hex,{'kind':kind,'payload':payload})['state']
+        updated = transact(root,state['version'],kind+':'+uuid4().hex,{'kind':kind,'payload':payload})['state']
+        if state.get('_storage'):
+            return read_current(root,run_ids=tuple(state['data'].get('runs',{})),entities=tuple(
+                (namespace,key) for namespace in ('host_bindings','host_tasks','host_handoffs','source_indexes','document_proposals','document_approvals')
+                for key in state['data'].get(namespace,{})))
+        return updated
     except WorkflowError as exc:
         if exc.code=='STALE_STATE':
             raise WorkflowError('CONTEXT_PREPARATION_STALE','Inputs changed during preflight; retry with current authoritative state.') from exc
         raise
 
 
-def preflight_governing_inputs(root: Path, state: dict, phase: str) -> dict:
+def preflight_governing_inputs(root: Path, state: dict, phase: str, *, record=True) -> dict:
+    record_observations = record
     data = state.get('data', state)
     pair = data.get('spec_pair')
     if not pair:
@@ -137,7 +150,7 @@ def preflight_governing_inputs(root: Path, state: dict, phase: str) -> dict:
     validated_digest = data.get('plan_validation', {}).get('governing_digest')
     if data.get('plan_validation') and validated_digest != effective_digest and not data.get('governing_reassessment_required'):
         state=_governing_write(root,state,'governing.reassessment.required',
-            {'previous_digest':validated_digest,'effective_digest':effective_digest})
+            {'previous_digest':validated_digest,'effective_digest':effective_digest},record=record_observations)
         data=state['data']
     sources = {project_id: (project, {'docs/devflow-context.json'})}
     if org_id:
@@ -156,17 +169,14 @@ def preflight_governing_inputs(root: Path, state: dict, phase: str) -> dict:
             changed = (record['before_hash'] != record['after_hash']
                        or record['before_exists'] != record['after_exists'])
             if changed:
-                approved = any(p['repo_id'] == owner and path in p['files']
-                    and p['files'][path] == record
-                    and p['proposal_hash'] in data.get('document_approvals', {})
-                    for p in data.get('document_proposals', {}).values())
+                approved = document_diff_approved(root,data,owner,path,record)
                 if not approved:
                     raise WorkflowError('DOCUMENT_APPROVAL_REQUIRED', 'governing edit requires separate exact-diff human approval',
                                         {'phase': phase, 'repo_id': owner, 'path': path})
     receipt = {'effective_digest': effective_digest, 'files': files,
                'applicable_rule_ids': sorted(applicable), 'irrelevance_decisions': manifest.get('irrelevance_decisions', [])}
     if receipt != data.get('governing_input_receipt'):
-        state=_governing_write(root,state,'governing.inputs.recorded',{'receipt':receipt})
+        state=_governing_write(root,state,'governing.inputs.recorded',{'receipt':receipt},record=record_observations)
     latest=state.get('data',state)
     if latest.get('governing_reassessment_required') and phase != 'plan-validation':
         raise WorkflowError('GOVERNING_REASSESSMENT_REQUIRED',

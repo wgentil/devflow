@@ -2,9 +2,10 @@
 
 import json
 from pathlib import Path
+from workflow_lib.storage_access import read_command, read_current, operation_lookup, read_history, read_entity
 
 from .journal import add_journal_options, commit
-from workflow_lib.store import read_state, WorkflowError
+from workflow_lib.store import WorkflowError
 
 
 def register_commands(parser):
@@ -27,7 +28,10 @@ def dispatch(parsed):
                                                                'actor_id': parsed.actor_id})
     if not parsed.root:
         raise WorkflowError('CONTROL_ROOT_REQUIRED', 'improvement requires --root')
-    data = read_state(Path(parsed.root))['data']
+    if parsed.improve_command in {'feedback','case-approve'}:
+        request = json.loads(Path(parsed.input).read_text(encoding='utf-8'))
+        return commit(parsed,'domain.improve.'+parsed.improve_command,request)
+    data = read_command(Path(parsed.root), parsed, family='improve')['data']
     if parsed.improve_command == 'inspect':
         return {'feedback': data.get('improvement_feedback', {}),
                 'approved_cases': data.get('improvement_cases', {})}

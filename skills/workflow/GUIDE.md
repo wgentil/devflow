@@ -239,8 +239,11 @@ Read [canonical guidance](../../docs/hosts.md). Stage routing is declared in thi
 Repository-backed specifications use one live file gate before plan validation
 and readiness, run start, host handoff preparation/acceptance, and delivery
 preparation/verification/recording. Both visible JSON and deterministic Markdown
-must match the approved receipt. Observed drift records an invalidation: restoring
-matching files does not revive approval. Repair and store the pair when necessary,
+must match the approved receipt. Read-only readiness and delivery inspection
+report drift without recording invalidations. Matching files can use the prior
+approval when no earlier mutating check recorded an invalidation. Mutating work
+records observed drift; after that, restoring files does not revive approval.
+Repair and store the pair when necessary,
 then ask the human to approve it explicitly with a new operation ID. Historical
 receipts remain readable; journal replay does not read repository files. Changes
 that occur and are restored between checks cannot be detected.

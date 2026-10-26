@@ -5,10 +5,11 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from workflow_lib.storage_access import read_command, read_current, operation_lookup, read_history, read_entity
 
 from workflow_lib.delivery import prepare_delivery, record_delivery, verify_delivery
 from workflow_lib.runs import run_summary
-from workflow_lib.store import WorkflowError, read_state, transact
+from workflow_lib.store import WorkflowError, transact
 
 
 def register_commands(parser: argparse.ArgumentParser) -> None:
@@ -35,7 +36,7 @@ def register_commands(parser: argparse.ArgumentParser) -> None:
 
 def dispatch(parsed: argparse.Namespace) -> dict:
     root = Path(parsed.root).expanduser().resolve()
-    state = read_state(root)
+    state = read_command(root, parsed, family='delivery')
     run = state["data"].get("runs", {}).get(parsed.run_id)
     if run is None:
         raise WorkflowError("RUN_NOT_FOUND", f"unknown run {parsed.run_id}")
@@ -48,7 +49,7 @@ def dispatch(parsed: argparse.Namespace) -> dict:
     actual = json.loads(Path(parsed.actual_result_file).read_text(encoding="utf-8"))
     operation_id = (parsed.operation_id if getattr(parsed, "operation_id_explicit", False)
                     else f"delivery:{parsed.run_id}:{manifest.get('manifest_hash', '')}")
-    previous = state["operations"].get(operation_id)
+    previous = operation_lookup(root, operation_id, state)
     if previous is not None:
         committed = previous["payload"].get("delivery", {})
         return {**run_summary(run), "delivery": committed, "replayed": True,

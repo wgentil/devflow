@@ -1,33 +1,33 @@
 {
-  "aggregate_entry_bytes": 25540,
+  "aggregate_entry_bytes": 25982,
   "baseline": {
     "aggregate_entry_bytes": 65937
   },
-  "duplicate_prose_bytes": 10959,
+  "duplicate_prose_bytes": 10626,
   "entry_bytes": {
     "skills/build-work/SKILL.md": 3074,
     "skills/ingest/SKILL.md": 2093,
     "skills/issues/SKILL.md": 1682,
     "skills/migrate/SKILL.md": 1707,
-    "skills/plan-work/SKILL.md": 2180,
+    "skills/plan-work/SKILL.md": 2419,
     "skills/project-context/SKILL.md": 2333,
     "skills/review-work/SKILL.md": 2854,
     "skills/specify/SKILL.md": 2244,
     "skills/stats/SKILL.md": 1981,
     "skills/ux-reviewer/SKILL.md": 1872,
-    "skills/workflow/SKILL.md": 3520
+    "skills/workflow/SKILL.md": 3723
   },
   "schema_version": 1,
   "stage_load_bytes": {
-    "acceptance": 10002,
+    "acceptance": 10205,
     "build-work": 10435,
     "context": 6348,
     "implementation": 10435,
     "ingest": 9352,
     "issues": 5622,
     "migrate": 5680,
-    "plan-work": 8631,
-    "planning": 8631,
+    "plan-work": 8870,
+    "planning": 8870,
     "project-context": 6348,
     "review": 9337,
     "review-work": 9337,
@@ -35,7 +35,7 @@
     "specify": 9707,
     "stats": 7710,
     "ux-reviewer": 6674,
-    "workflow": 10002
+    "workflow": 10205
   },
   "unit_bytes": {
     "common#1e6f0adae858d8e7": 3702,
@@ -66,10 +66,10 @@
     "guide.migrate.5#fd57e81ffaa2564a": 813,
     "guide.migrate.6#2176f3c3e270265d": 112,
     "guide.plan-work#ce65f4c076d4966f": 458,
-    "guide.plan-work.2#a2e29934b9c7aa90": 1063,
+    "guide.plan-work.2#a2e29934b9c7aa90": 1158,
     "guide.plan-work.3#9e2c0d331fdafe1e": 415,
     "guide.plan-work.4#09d660bd34c857a4": 113,
-    "guide.plan-work.5#615688e79162ce65": 1574,
+    "guide.plan-work.5#615688e79162ce65": 1764,
     "guide.plan-work.6#a362954c08d51ca7": 172,
     "guide.project-context#24fa7094061192b5": 313,
     "guide.project-context.2#4c622a2883d48112": 1008,
@@ -103,7 +103,7 @@
     "guide.ux-reviewer.4#ac4094c509328317": 472,
     "guide.workflow#9e07883791b13172": 489,
     "guide.workflow.10#f8f9bc5f244b2981": 113,
-    "guide.workflow.11#e51607672fb9549d": 2834,
+    "guide.workflow.11#e51607672fb9549d": 3024,
     "guide.workflow.12#1757cf0219546475": 171,
     "guide.workflow.13#278bd7a38c4da35a": 3359,
     "guide.workflow.14#5757257bae0a9550": 173,
@@ -149,12 +149,12 @@
     "skill.ingest#1e6f0adae858d8e7": 2093,
     "skill.issues#1e6f0adae858d8e7": 1682,
     "skill.migrate#1e6f0adae858d8e7": 1707,
-    "skill.plan-work#1e6f0adae858d8e7": 2180,
+    "skill.plan-work#1e6f0adae858d8e7": 2419,
     "skill.project-context#1e6f0adae858d8e7": 2333,
     "skill.review-work#1e6f0adae858d8e7": 2854,
     "skill.specify#1e6f0adae858d8e7": 2244,
     "skill.stats#1e6f0adae858d8e7": 1981,
     "skill.ux-reviewer#1e6f0adae858d8e7": 1872,
-    "skill.workflow#1e6f0adae858d8e7": 3520
+    "skill.workflow#1e6f0adae858d8e7": 3723
   }
 }

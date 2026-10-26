@@ -1,9 +1,10 @@
 """Journal-backed migration plans, evidence, and delivery ordering."""
 import json
 from pathlib import Path
+from workflow_lib.storage_access import read_command, read_current, operation_lookup, read_history, read_entity
 from .journal import add_journal_options, commit
 from workflow_lib.migrations import validate_increments, review_specification
-from workflow_lib.store import read_state, WorkflowError
+from workflow_lib.store import WorkflowError
 
 
 def register_commands(parser):
@@ -17,7 +18,7 @@ def dispatch(parsed):
     if parsed.operation == 'inspect':
         if not parsed.root:
             raise WorkflowError('CONTROL_ROOT_REQUIRED', 'inspection requires --root')
-        return read_state(Path(parsed.root))['data'].get('migration', {})
+        return read_command(Path(parsed.root), parsed, family='migrate')['data'].get('migration', {})
     if not parsed.input:
         raise WorkflowError('INVALID_INPUT', '--input is required')
     request = json.loads(Path(parsed.input).read_text(encoding='utf-8'))
@@ -37,7 +38,7 @@ def verify_pilot_command(parsed, request):
     if not parsed.root or not parsed.operation_id_explicit:
         raise WorkflowError('OPERATION_ID_REQUIRED', 'pilot execution requires --root and --operation-id')
     root = Path(parsed.root)
-    state = read_state(root)
+    state = read_command(root, parsed, family='migrate', request=request)
     prior = state['operations'].get(parsed.operation_id)
     if prior:
         if prior['kind'] != 'domain.migrate.pilot-record' or prior['payload']['request'].get('execution') != request:
@@ -73,6 +74,6 @@ def verify_pilot_command(parsed, request):
              'repository_fingerprint': fingerprint}
     proof['proof_id'] = digest(proof)
     parsed.operation_id = original_id
-    parsed.expected_version = read_state(root)['version']
+    parsed.expected_version = read_command(root, parsed, family='migrate', request=request)['version']
     return commit(parsed, 'domain.migrate.pilot-record', {'execution_id': original_id,
                   'run_id': request['run_id'], 'proof': proof, 'execution': request})

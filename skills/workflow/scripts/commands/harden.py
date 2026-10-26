@@ -1,13 +1,14 @@
 """Configured gate execution with durable attempt and result records."""
 import json
 from pathlib import Path
+from workflow_lib.storage_access import read_command, read_current, operation_lookup, read_history, read_entity
 from uuid import uuid4
 from .journal import add_journal_options, commit
 from workflow_lib.hardening import verify_gate, repository_schedule
 from workflow_lib.evidence import repository_fingerprint
 from workflow_lib.gate_reports import normalize_contract
 from workflow_lib.journal_domains import digest
-from workflow_lib.store import read_state, WorkflowError
+from workflow_lib.store import WorkflowError
 
 
 def register_commands(parser):
@@ -35,7 +36,7 @@ def _dispatch(parsed):
         return commit(parsed, 'domain.harden.configure', request)
     if not parsed.root or not parsed.operation_id_explicit:
         raise WorkflowError('OPERATION_ID_REQUIRED', 'gate execution requires --root and --operation-id')
-    state = read_state(Path(parsed.root))
+    state = read_command(Path(parsed.root), parsed, family='harden', request=request)
     previous = state['operations'].get(parsed.operation_id)
     if previous is not None:
         stored = previous['payload'].get('request', {})
@@ -69,6 +70,6 @@ def _dispatch(parsed):
         proof.update(passed=False, failure='STALE_CONFIGURATION')
     parsed.operation_id = original_id
     # No live data is re-read during journal recovery; execution happened above.
-    parsed.expected_version = read_state(Path(parsed.root))['version']
+    parsed.expected_version = read_command(Path(parsed.root), parsed, family='harden', request=request)['version']
     return commit(parsed, 'domain.harden.record', {'run_id': request['run_id'], 'gate_id': request['gate_id'],
                   'token': token, 'config_hash': run['hardening_config_hash'], 'proof': proof, 'execution': request})

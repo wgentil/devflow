@@ -14,6 +14,9 @@ def basic_event_streams():
            {'id': 'discard', 'kind': 'run.discarded', 'payload': {
                'run_id': 'run', 'reason': 'explicit discard', 'actor_id': 'human'}}]
 
+    yield [{'id':'cache-seed','kind':'fixture','payload':{'context_projections':{'old':{'value':'retained'}}}},
+           {'id':'cache-delta','kind':'context.resolution.recorded','payload':{'resolved_context':{},
+            'resolved_context_source_hash':'source','context_projections_delta':{'new':{'value':'added'}}}}]
     seed = {'id': 'r', 'status': 'active', 'active_attempt': {'token': 't'},
             'verification_proofs': {'p': {'kind': 'iac-plan', 'token': 't', 'repo_id': 'app'}},
             'unresolved_findings': [{'id': 'park'}, {'id': 'resolve'}, {'id': 'waive'}],
@@ -106,4 +109,19 @@ def registered_domain_kinds():
                 for comparator in node.comparators:
                     kinds.update(prefix + value.value for value in ast.walk(comparator)
                                  if isinstance(value, ast.Constant) and isinstance(value.value, str))
+    return kinds
+
+
+def registered_core_kinds():
+    import ast
+    from pathlib import Path
+    source=Path(__file__).resolve().parents[1]/'skills/workflow/scripts/workflow_lib/store.py'
+    tree=ast.parse(source.read_text(encoding='utf-8'))
+    function=next(node for node in tree.body if isinstance(node,ast.FunctionDef) and node.name=='_apply_event')
+    kinds=set()
+    for node in ast.walk(function):
+        if isinstance(node,ast.Compare) and isinstance(node.left,ast.Name) and node.left.id=='kind':
+            for comparator in node.comparators:
+                kinds.update(value.value for value in ast.walk(comparator)
+                    if isinstance(value,ast.Constant) and isinstance(value.value,str))
     return kinds

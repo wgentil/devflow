@@ -8,7 +8,8 @@ from pathlib import Path
 import subprocess
 import uuid
 
-from .store import WorkflowError, read_state, transact
+from .store import WorkflowError, transact
+from .storage_access import read_current
 
 def _run(argv: list[str], cwd: Path, timeout: int, *, structured: bool = False) -> dict:
     if not isinstance(argv, list) or not argv or any(not isinstance(value, str) for value in argv):
@@ -126,7 +127,7 @@ def verify_eval_set(command: list[str], cwd: Path, phase: str, baseline: dict | 
 
 
 def record_typed_proof(root: Path, run_id: str, token: str, proof: dict) -> dict:
-    state = read_state(root)
+    state = read_current(root, run_id=run_id)
     run = state["data"].get("runs", {}).get(run_id)
     active = run.get("active_attempt") if run else None
     if not active or active.get("token") != token:

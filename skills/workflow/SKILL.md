@@ -7,13 +7,15 @@ description: Guide a software project through scoped context, requirements, plan
 
 Guide setup, requirements, planning, verified work, independent review and delivery. Resolve the bundled helper relative to this skill; check Python 3.11+ and capture `version`. Call `host init` for the actual working directory and retain its returned control root/repo ID. Offer guided document setup and the first-use ground interview; ask only unresolved material decisions. Never create a run before its ordinary prerequisites.
 
-Follow journal gate status and eligible attempts; preserve the active token. Coordinate distinct item, branch and acceptance reviewers, configured hardening and exact-head delivery. After recording delivery, ask once whether to update the [DevFlow Codex site](https://devflow-field-guide.waygent.chatgpt.site/); update it only if accepted.
+Use read-only inspection for current facts; mutating work rechecks inputs and records drift. Follow journal gate status and eligible attempts; preserve the active token. Coordinate distinct item, branch and acceptance reviewers, configured hardening and exact-head delivery. After recording delivery, ask once whether to update the [DevFlow Codex site](https://devflow-field-guide.waygent.chatgpt.site/); update it only if accepted.
 
 Read [shared invariants](../../docs/reference/workflow-invariants.md) and the declared stage sections before work. The harness runs helpers and guides the user. For delegated work read [task routing](../../docs/reference/task-routing.md#task-decisions); use the actual stage and preserve user constraints.
 
 ```mermaid
 flowchart LR
-    Scope[Current task and declared inputs] --> Checks[Live checks and shared invariants]
+    Scope[Current task and declared inputs] --> Mode{Inspect or change?}
+    Mode -->|Inspect| Inspect[Read-only state and input checks]
+    Mode -->|Change| Checks[Live checks and shared invariants]
     Checks --> Prep{Required context ready?}
     Prep -->|Blocked| Context[Explain phase and resolve preparation]
     Prep -->|Ready| Work[Stage responsibility]

@@ -4,10 +4,11 @@ from uuid import uuid4
 
 from .repo_specs import _paths, assert_repo_spec_approval, write_spec_pair
 from .specs import content_hash
-from .store import WorkflowError, read_state, transact
+from .store import WorkflowError, transact
+from .storage_access import read_current
 
 
-def require_current_spec(root: Path, state: dict, phase: str) -> dict:
+def require_current_spec(root: Path, state: dict, phase: str, *, record_drift=True) -> dict:
     data = state.get('data', state)
     pair = data.get('spec_pair')
     approval = data.get('approval') or {}
@@ -28,8 +29,8 @@ def require_current_spec(root: Path, state: dict, phase: str) -> dict:
     except WorkflowError as exc:
         # Persist the observation, not filesystem-dependent replay logic. Approval itself
         # remains historical evidence; only a new approval clears this marker.
-        if exc.code != 'SPEC_NOT_APPROVED':
-            latest = read_state(root)
+        if record_drift and exc.code != 'SPEC_NOT_APPROVED':
+            latest = read_current(root)
             if latest['data'].get('spec_pair') == pair and not latest['data'].get('spec_approval_invalidated'):
                 transact(root, latest['version'], 'spec-drift:' + uuid4().hex,
                          {'kind': 'spec.invalidated', 'payload': {'spec_approval_invalidated': {'phase': phase, 'code': exc.code}}})
@@ -38,7 +39,7 @@ def require_current_spec(root: Path, state: dict, phase: str) -> dict:
 
 
 def migrate_legacy_spec(root: Path, repo_id: str, relative_json: str, operation_id: str) -> dict:
-    state = read_state(root)
+    state = read_current(root, operations=(operation_id,))
     previous = state['operations'].get(operation_id)
     if previous:
         payload = previous['payload']
@@ -66,13 +67,13 @@ def require_current_inputs(root: Path, state: dict, phase: str, run_id: str | No
     return preflight_inputs(root,state,phase,run_id)['inputs']
 
 
-def preflight_inputs(root: Path, state: dict, phase: str, run_id: str | None = None) -> dict:
+def preflight_inputs(root: Path, state: dict, phase: str, run_id: str | None = None, *, record=True) -> dict:
     """Validate once and carry transaction-returned authority through owned writes."""
     import time
     from .document_approvals import preflight_governing_inputs
     started=time.monotonic()
-    spec=require_current_spec(root,state,phase)
-    governed=preflight_governing_inputs(root,state,phase)
+    spec=require_current_spec(root,state,phase,record_drift=record)
+    governed=preflight_governing_inputs(root,state,phase,record=record)
     state=governed['state'];governing=governed['receipt'];data=state.get('data',state)
     pair=data.get('spec_pair');grounding={}
     if pair:
@@ -87,3 +88,8 @@ def preflight_inputs(root: Path, state: dict, phase: str, run_id: str | None = N
                 'This run uses prior governing inputs; preserve it for audit and start a fresh run from the reassessed plan.')
     return {'state':state,'inputs':{'spec':spec,'governing':governing,'grounding':grounding},
             'timing':{'preflight_ms':max(0,int((time.monotonic()-started)*1000))}}
+
+
+def inspect_current_inputs(root, state, phase, run_id=None):
+    """Check current files and policy without recording observations or approval."""
+    return preflight_inputs(root,state,phase,run_id,record=False)['inputs']

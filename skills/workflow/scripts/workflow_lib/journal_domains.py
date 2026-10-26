@@ -38,21 +38,21 @@ def current_snapshot(data, fingerprint):
     return snapshot
 
 
-def reduce_event(data, kind, payload, version):
+def reduce_event(data, kind, payload, version, *, metrics_source_hash=None):
     require(isinstance(payload, dict) and set(payload) == {'request'}, 'domain event requires a request')
     request = payload['request']
     require(isinstance(request, dict), 'request must be an object')
     require('state' not in request, 'caller-supplied state is forbidden')
     try:
         json.dumps(request, allow_nan=False)
-        return _reduce(data, kind, request, version)
+        return _reduce(data, kind, request, version, metrics_source_hash=metrics_source_hash)
     except WorkflowError:
         raise
     except (KeyError, TypeError, ValueError, AttributeError) as exc:
         raise WorkflowError('INVALID_EVENT', str(exc)) from exc
 
 
-def _reduce(data, kind, req, version):
+def _reduce(data, kind, req, version, *, metrics_source_hash=None):
     if kind == 'domain.pr.rework':
         run = data.get('runs', {}).get(req.get('run_id'))
         require(run and run.get('status') == 'active' and run.get('pending_pr')
@@ -398,19 +398,9 @@ def _reduce(data, kind, req, version):
             data[key] = updated[key]
         return {'snapshot_hash': req['snapshot_hash'], 'revision': len(data['group_revisions'])}
     if kind == 'domain.issues.start':
-        from .issues import start_issue_run
         current_snapshot(data, req['snapshot_hash'])
-        link = start_issue_run(data, req['group_id'], req['intent'])
-        group = next(g for g in data['groups'] if g['id'] == req['group_id'])
-        scope = group.get('requirement_ids', {})
-        require(req['intent'] != 'build' or (isinstance(scope, dict) and set(scope) == set(group['issue_ids'])
-                and all(isinstance(ids, list) and ids and all(text(i) for i in ids) for ids in scope.values())),
-                'issue run requires per-issue requirement_ids mapping')
-        link['snapshot_hash'] = req['snapshot_hash']
-        link['issue_ids'] = deepcopy(group['issue_ids'])
-        link['requirement_ids'] = deepcopy(scope)
-        link['group_revision'] = len(data.get('group_revisions', []))
-        link['run_id'] = digest(link)[:24]
+        link = issue_run_link(data, req)
+        scope = link['requirement_ids']
         links = data.setdefault('issue_runs', {})
         require(link['run_id'] not in links, 'linked issue run already exists')
         if req['intent'] == 'build':
@@ -729,7 +719,7 @@ def _reduce(data, kind, req, version):
         report = calculate_metrics(runs, {}, as_of)
         report['excluded_run_ids'] = sorted(set(data.get('runs', {})) - set(report['run_ids']))
         report['source_version'] = version
-        report['source_hash'] = digest({k: data.get(k) for k in ('runs', 'classifications', 'usage', 'prices')})
+        report['source_hash'] = metrics_source_hash if metrics_source_hash is not None else digest({k: data.get(k) for k in ('runs', 'classifications', 'usage', 'prices')})
         report['price_version'] = req.get('price_version')
         report['project'] = req.get('project')
         report['version'] = req.get('version')
@@ -845,3 +835,19 @@ def parity_proof(data, increment_id, criterion, ref, repository_fingerprints=Non
     required = definition.get('requirement_ids')
     require(isinstance(required, list) and required and ref.get('requirement_ids') == required
             and set(required).issubset(item.get('requirement_ids', [])), 'criterion requirement scope mismatch')
+
+
+def issue_run_link(data, req):
+    from .issues import start_issue_run
+    link = start_issue_run(data, req['group_id'], req['intent'])
+    group = next(g for g in data['groups'] if g['id'] == req['group_id'])
+    scope = group.get('requirement_ids', {})
+    require(req['intent'] != 'build' or (isinstance(scope, dict) and set(scope) == set(group['issue_ids'])
+            and all(isinstance(ids, list) and ids and all(text(i) for i in ids) for ids in scope.values())),
+            'issue run requires per-issue requirement_ids mapping')
+    link['snapshot_hash'] = req['snapshot_hash']
+    link['issue_ids'] = deepcopy(group['issue_ids'])
+    link['requirement_ids'] = deepcopy(scope)
+    link['group_revision'] = len(data.get('group_revisions', []))
+    link['run_id'] = digest(link)[:24]
+    return link

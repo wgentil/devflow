@@ -11,7 +11,8 @@ import subprocess
 import uuid
 import xml.etree.ElementTree as ET
 
-from .store import WorkflowError, read_state, transact
+from .store import WorkflowError, transact
+from .storage_access import read_current
 
 
 def _now() -> str:
@@ -129,7 +130,7 @@ def capture_evidence(root: Path, run_id: str, token: str, phase: str, command: l
             or any(not isinstance(name, str) or not name for name in target_ids)):
         raise WorkflowError("INVALID_EVIDENCE_REQUEST", "timeout, test paths, and target IDs are required")
     root = Path(root).expanduser().resolve()
-    state = read_state(root)
+    state = read_current(root, run_id=run_id, run_ids=(red_run_id,) if red_run_id else ())
     run = state["data"].get("runs", {}).get(run_id)
     active = run.get("active_attempt") if run else None
     if not active or active.get("token") != token:

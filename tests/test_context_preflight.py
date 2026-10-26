@@ -24,12 +24,12 @@ class ContextPreflightTests(unittest.TestCase):
         return gates.preflight_inputs(self.root,state or read_state(self.root),phase,run_id)
     def test_unchanged_inputs_reuse_one_authoritative_state(self):
         state=read_state(self.root)
-        with patch('workflow_lib.repo_input_gate.read_state',side_effect=AssertionError('duplicate replay')),patch('workflow_lib.document_approvals.read_state',side_effect=AssertionError('duplicate replay')):
+        with patch('workflow_lib.repo_input_gate.read_current',side_effect=AssertionError('duplicate replay')),patch('workflow_lib.document_approvals.read_current',side_effect=AssertionError('duplicate replay')):
             result=self.preflight(state)
         self.assertEqual(result['state']['version'],state['version']);self.assertEqual(result['inputs']['spec']['content_hash'],state['data']['spec_pair']['content_hash'])
     def test_receipt_write_returns_updated_state(self):
         self.governed();before=read_state(self.root)
-        with patch('workflow_lib.document_approvals.read_state',side_effect=AssertionError('must use transaction state')):
+        with patch('workflow_lib.document_approvals.read_current',side_effect=AssertionError('must use transaction state')):
             result=self.preflight(before,'plan-validation',None)
         self.assertGreater(result['state']['version'],before['version'])
         self.assertEqual(result['state']['data']['governing_input_receipt'],result['inputs']['governing'])

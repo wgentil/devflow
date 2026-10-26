@@ -134,3 +134,115 @@ def object_references(physical, *, root=None):
                         pending.append(json.loads(read_object(root, ref, max_bytes=MAX_RECORD_BYTES)))
             else: pending.extend(node.values())
         elif isinstance(node, list): pending.extend(node)
+
+
+def _string_parts(value):
+    yield b'"'
+    for offset in range(0,len(value),1024*1024):
+        yield json.dumps(value[offset:offset+1024*1024],ensure_ascii=False)[1:-1].encode('utf-8')
+    yield b'"'
+
+
+def _value_parts(value):
+    if isinstance(value,str): yield from _string_parts(value)
+    elif isinstance(value,dict):
+        yield b'{'
+        for i,key in enumerate(sorted(value)):
+            if i:yield b','
+            yield canonical(key);yield b':';yield from _value_parts(value[key])
+        yield b'}'
+    elif isinstance(value,list):
+        yield b'['
+        for i,item in enumerate(value):
+            if i:yield b','
+            yield from _value_parts(item)
+        yield b']'
+    else: yield canonical(value)
+
+
+def _node_parts(root,node):
+    if isinstance(node,list):
+        yield b'['
+        for i,item in enumerate(node):
+            if i:yield b','
+            yield from _node_parts(root,item)
+        yield b']';return
+    if not isinstance(node,dict):yield from _value_parts(node);return
+    if set(node)=={'map'} and isinstance(node['map'],dict):
+        yield b'{'
+        for i,key in enumerate(sorted(node['map'])):
+            if i:yield b','
+            yield canonical(key);yield b':';yield from _node_parts(root,node['map'][key])
+        yield b'}';return
+    if set(node)!={'object'}:raise WorkflowError('INVALID_STORED_RECORD','Unrecognized physical node in streamed audit.')
+    record=node['object'];ref=record['reference']
+    if record.get('record_version')!=1 or ref.get('kind')!=record.get('record_kind') or ref.get('size_bytes',MAX_RECORD_BYTES+1)>MAX_RECORD_BYTES:
+        raise WorkflowError('INVALID_STORED_RECORD','Unsupported streamed record kind or budget.')
+    if record['record_kind']=='source-field':
+        import codecs
+        from .storage_objects import stream_object
+        decoder=codecs.getincrementaldecoder('utf-8')();hasher=hashlib.sha256()
+        if record.get('summary')!={}:raise WorkflowError('INVALID_STORED_RECORD','Invalid source-field summary.')
+        yield b'"'
+        for chunk in stream_object(root,ref):
+            hasher.update(chunk);text=decoder.decode(chunk)
+            if text:yield json.dumps(text,ensure_ascii=False)[1:-1].encode('utf-8')
+        tail=decoder.decode(b'',final=True)
+        if tail:yield json.dumps(tail,ensure_ascii=False)[1:-1].encode('utf-8')
+        if hasher.hexdigest()!=record['logical_sha256']:raise WorkflowError('INVALID_STORED_RECORD','Streamed source identity differs.')
+        yield b'"';return
+    if record['record_kind']!='review-package':raise WorkflowError('INVALID_STORED_RECORD','Unsupported streamed object kind.')
+    package=json.loads(read_object(root,ref,max_bytes=MAX_RECORD_BYTES))
+    if set(package)!={'map'} or not isinstance(package['map'],dict):raise WorkflowError('INVALID_PACKAGE','Malformed streamed package body.')
+    fields=package['map'];summary={key:_unpack(root,fields[key]) for key in SUMMARY_FIELDS if key in fields}
+    if summary!=record['summary'] or 'package_hash' not in summary:raise WorkflowError('INVALID_PACKAGE','Streamed package routing summary differs.')
+    full=hashlib.sha256();unsigned=hashlib.sha256();unsigned.update(b'{');full.update(b'{');yield b'{'
+    unsigned_count=0
+    for i,key in enumerate(sorted(fields)):
+        prefix=(b',' if i else b'')+canonical(key)+b':'
+        full.update(prefix);yield prefix
+        included=key!='package_hash'
+        if included:
+            unsigned.update((b',' if unsigned_count else b'')+canonical(key)+b':');unsigned_count+=1
+        for chunk in _node_parts(root,fields[key]):
+            full.update(chunk)
+            if included:unsigned.update(chunk)
+            yield chunk
+    full.update(b'}');unsigned.update(b'}')
+    if full.hexdigest()!=record['logical_sha256'] or unsigned.hexdigest()!=summary['package_hash']:
+        raise WorkflowError('INVALID_PACKAGE','Streamed package body differs from its logical hashes.')
+    yield b'}'
+
+
+def stream_cell_json(root,codec,payload,expected):
+    """Yield canonical logical JSON; EOF verifies every contributing identity."""
+    from .storage_objects import stream_object
+    def parts():
+        if codec=='json':yield from _value_parts(json.loads(payload));return
+        if codec=='object':
+            ref=json.loads(payload)
+            if ref['size_bytes']>MAX_RECORD_BYTES:raise WorkflowError('STORAGE_OBJECT_LIMIT','Logical record exceeds audit materialization budget.')
+            yield from _value_parts(json.loads(read_object(root,ref,max_bytes=MAX_RECORD_BYTES)));return
+        if codec in {'record','record-object'}:
+            value=json.loads(payload)
+            if codec=='record-object':value=json.loads(read_object(root,value,max_bytes=MAX_RECORD_BYTES))
+            if value.get('record_version')!=1 or set(value)!={'record_version','node'}:
+                raise WorkflowError('INVALID_STORED_RECORD','Unsupported streamed physical record.')
+            yield from _node_parts(root,value['node']);return
+        if codec=='archive':
+            from .run_archives import summary_from_record
+            value=json.loads(payload);summary_from_record(value)
+            if value['logical_sha256']!=expected:raise WorkflowError('INVALID_RUN_ARCHIVE','Archive logical identity differs.')
+            envelope=json.loads(read_object(root,value['reference'],max_bytes=MAX_RECORD_BYTES))
+            if envelope.get('archive_version')!=1:raise WorkflowError('INVALID_RUN_ARCHIVE','Unsupported streamed terminal archive.')
+            if envelope['codec']=='record':
+                body=envelope['body']
+                if body.get('record_version')!=1:raise WorkflowError('INVALID_STORED_RECORD','Unsupported archive physical record.')
+                yield from _node_parts(root,body['node'])
+            elif envelope['codec']=='json':yield from _value_parts(envelope['body'])
+            else:raise WorkflowError('INVALID_RUN_ARCHIVE','Unsupported streamed archive encoding.')
+            return
+        raise WorkflowError('CORRUPT_STORAGE','Unsupported logical JSON stream codec.')
+    checksum=hashlib.sha256()
+    for chunk in parts():checksum.update(chunk);yield chunk
+    if checksum.hexdigest()!=expected:raise WorkflowError('CORRUPT_STORAGE','Streamed logical record checksum mismatch.')

@@ -152,3 +152,35 @@ of reference-declared lengths; new oversized records are refused before commit.
 Oversized legacy records block conversion while preserving legacy authority.
 Database checkpoint files use streaming publication/verification rather than
 whole-file materialization. Manifest and decompression chunk limits still apply.
+
+## Scoped operational consumers
+
+`storage_access` declares current globals, selected runs/entities and exact
+operation IDs for workflow commands. Legacy roots retain their existing full
+journal fallback. V2 unknown extension keys remain stored when an operational
+view omits them; namespace replacement and partial updates have separate write
+semantics. Original retry receipts are selected before a newly supplied request
+is interpreted, after the existing host/live guard.
+
+Governing approval lookup indexes the owning repository, path and exact diff
+record, then verifies the selected proposal/approval bodies. Context and ingest
+caches use exact content keys. New v2 `context.resolution.recorded` events merge
+keyed projection deltas; original legacy replacement events keep their meaning.
+These changes retain unloaded cache history and existing cache-hit outputs.
+
+Indexed routing/trace/metrics projections exclude package/source/context bodies
+that their consumers do not use. Selected trace/feedback reads retrieve attributed
+usage for the named run. Frozen report lookup uses its indexed ID. Cumulative
+metrics intentionally stream canonical complete run JSON to preserve the original
+flat `source_hash`; that explicit history operation can read more than routine
+status or context preparation. Physical records retain logical iteration order
+where derived arrays depend on it, while logical hashes remain canonical.
+Full verification compares these reporting and document indexes with logical
+records. Current selected-run hydration remains complete at this implementation
+stage; host/current-package preparation integration follows separately.
+
+Read-only planning readiness and delivery inspection check live inputs without
+recording approval invalidation or governing observations. Mutating work retains
+its current-input preflight and drift records. Existing best-effort CLI telemetry
+may create measurement files for inspection, including a missing root; it does
+not initialize authority, issue work or advance journal state.

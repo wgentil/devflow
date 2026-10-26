@@ -6,12 +6,13 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+from workflow_lib.storage_access import read_command, read_current, operation_lookup, read_history, read_entity
 
 from workflow_lib.reviews import correction_impact, prepare_review, record_review
 from workflow_lib.pr_reviews import (prepare_pr_review, read_pr_snapshot, validate_pr_snapshot,
                                      record_pr_review, record_pr_human_decision, current_pr_inputs, _hash)
 from workflow_lib.github_pr import GithubClient
-from workflow_lib.store import WorkflowError, read_state, transact
+from workflow_lib.store import WorkflowError, transact
 
 
 def register_commands(parser: argparse.ArgumentParser) -> None:
@@ -57,7 +58,7 @@ def register_commands(parser: argparse.ArgumentParser) -> None:
 
 def dispatch(parsed: argparse.Namespace) -> dict:
     root = Path(parsed.root).expanduser().resolve()
-    state = read_state(root)
+    state = read_command(root, parsed, family='review')
     run = state["data"].get("runs", {}).get(parsed.run_id)
     if not run:
         raise WorkflowError("RUN_NOT_FOUND", f"unknown run {parsed.run_id}")
@@ -81,7 +82,7 @@ def dispatch(parsed: argparse.Namespace) -> dict:
                                     state['data'].get('spec'),
                                     state['data'].get('governing_input_receipt'))
         operation_id = parsed.operation_id or f"pr-review-package:{parsed.run_id}:{package['package_hash']}"
-        previous = state['operations'].get(operation_id)
+        previous = operation_lookup(root, operation_id, state)
         if previous:
             if previous['payload']['package']['package_hash'] != package['package_hash']:
                 raise WorkflowError('OPERATION_CONFLICT', 'PR package operation belongs to different evidence')
@@ -95,7 +96,7 @@ def dispatch(parsed: argparse.Namespace) -> dict:
                                  input_paths=json.loads(parsed.input_paths_json) if parsed.input_paths_json else None)
         operation_id = (parsed.operation_id if getattr(parsed, "operation_id_explicit", False)
                         else f"review-package:{parsed.run_id}:{package['package_hash']}")
-        previous = state["operations"].get(operation_id)
+        previous = operation_lookup(root, operation_id, state)
         if previous is not None:
             return {"package": previous["payload"]["package"], "state_version": state["version"], "replayed": True}
         response = transact(root, state["version"], operation_id,
@@ -111,7 +112,7 @@ def dispatch(parsed: argparse.Namespace) -> dict:
                         else "review-record:" + parsed.package_hash + ":" + parsed.actor_id + ":" +
                         hashlib.sha256(json.dumps(report, sort_keys=True,
                             separators=(",", ":")).encode()).hexdigest())
-        previous = state["operations"].get(operation_id)
+        previous = operation_lookup(root, operation_id, state)
         if previous is not None:
             return {**previous["payload"]["review"], "state_version": state["version"], "replayed": True}
         if reviewer['role'] == 'pr':

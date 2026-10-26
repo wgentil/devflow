@@ -1,11 +1,12 @@
 """Scoped source indexing and durable content-bound cache reuse."""
 import json
 from pathlib import Path
+from workflow_lib.storage_access import read_command, read_current, operation_lookup, read_history, read_entity
 from .journal import add_journal_options, commit
 from workflow_lib.ingestion import ingest_sources, project_source_index
 from workflow_lib.documentation import load_documentation_policy
 from workflow_lib.evidence import repository_fingerprint
-from workflow_lib.store import read_state, WorkflowError
+from workflow_lib.store import WorkflowError
 
 
 def register_commands(parser):
@@ -31,7 +32,7 @@ def dispatch(parsed):
         if parsed.output_mode == 'refs':
             raise WorkflowError('CONTROL_ROOT_REQUIRED', 'reference indexing requires a selected control root')
         return ingest_sources(json.loads(Path(parsed.repo_json).read_text(encoding='utf-8')), parsed.scope, profile, {}, selection_policy=selection)
-    state = read_state(Path(parsed.root))
+    state = read_command(Path(parsed.root), parsed, family='ingest')
     repository = state['data'].get('repositories', {}).get(parsed.repo_id)
     if repository is None:
         raise WorkflowError('REPOSITORY_NOT_REGISTERED', 'indexing requires a registered --repo-id')
@@ -49,8 +50,10 @@ def dispatch(parsed):
     selection['required_paths'] = sorted(set(selection['required_paths'] + required))
     scope.update(selection_policy=selection, discovery_options=discovery)
     fingerprint = repository_fingerprint(Path(repository['location']))
-    cache = dict(state['data'].get('ingestion_cache', {}))
-    index = ingest_sources(repository, parsed.scope, profile, cache, selection_policy=selection)
+    indexed = bool(state.get('_storage'))
+    cache = {} if indexed else dict(state['data'].get('ingestion_cache', {}))
+    index = ingest_sources(repository, parsed.scope, profile, cache, selection_policy=selection,
+        cache_lookup=(lambda key:read_entity(Path(parsed.root),'ingestion_cache',key)) if indexed else None)
     if repository_fingerprint(Path(repository['location'])) != fingerprint:
         raise WorkflowError('SOURCE_CHANGED', 'repository changed during indexing')
     parsed.expected_version = state['version'] if parsed.expected_version is None else parsed.expected_version
@@ -65,6 +68,6 @@ def _project(result, parsed):
     if 'index' in result:
         return {**result, 'index': project_source_index(result['index'], Path(parsed.root))}
     if 'index_id' in result:
-        index = read_state(Path(parsed.root))['data']['source_indexes'][result['index_id']]
+        index = read_entity(Path(parsed.root), 'source_indexes', result['index_id'])
         return {**result, 'index': project_source_index(index, Path(parsed.root))}
     return result

@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+from workflow_lib.storage_access import read_command, read_current, operation_lookup, read_history, read_entity
 
 from workflow_lib.github_pr import GithubClient
 from workflow_lib.pr_setup import configure_pr_setup, inspect_pr_setup, verify_pr_setup, _matches
@@ -14,7 +15,7 @@ from workflow_lib.pr_reviews import (read_pr_snapshot, validate_pr_snapshot,
                                      current_pr_inputs, _hash as review_hash)
 from workflow_lib.pr_reporting import publish_pr_review, complete_pr_delivery, _latest_status, _paths
 from workflow_lib.host_completion import package_current
-from workflow_lib.store import WorkflowError, read_state, transact
+from workflow_lib.store import WorkflowError, transact
 
 
 def register_commands(parser: argparse.ArgumentParser) -> None:
@@ -88,7 +89,7 @@ def dispatch(parsed: argparse.Namespace) -> dict:
         return _sync(parsed, client)
     if parsed.pr_command == 'rework':
         root = Path(parsed.root).expanduser().resolve()
-        state = read_state(root)
+        state = read_command(root, parsed, family='pr')
         direction = _request(parsed.direction_file) if parsed.direction_file else None
         response = transact(root, state['version'], parsed.operation_id,
             {'kind': 'domain.pr.rework', 'payload': {'request': {
@@ -110,7 +111,7 @@ def dispatch(parsed: argparse.Namespace) -> dict:
     root = Path(parsed.root).expanduser().resolve()
     operation_id = parsed.operation_id
     request_hash = _hash(request)
-    state = read_state(root)
+    state = read_command(root, parsed, family='pr')
     prior = state['data'].get('pr_setup', {}).get(operation_id)
     if prior and prior['request_hash'] != request_hash:
         raise WorkflowError('OPERATION_CONFLICT', 'PR setup operation ID belongs to different input')
@@ -133,14 +134,14 @@ def dispatch(parsed: argparse.Namespace) -> dict:
     except WorkflowError as exc:
         status = 'uncertain' if exc.code in {'GITHUB_WRITE_UNCERTAIN', 'PR_RULESET_UNVERIFIED',
                                            'GITHUB_UNAVAILABLE', 'PR_SETUP_UNCERTAIN'} else 'failed'
-        latest = read_state(root)
+        latest = read_command(root, parsed, family='pr')
         if latest['data']['pr_setup'][operation_id]['status'] != status:
             transact(root, latest['version'], f'pr-setup-{status}:{operation_id}',
                      {'kind': 'domain.pr.setup-finish', 'payload': {'request': {
                          'operation_id': operation_id, 'request_hash': request_hash,
                          'status': status, 'error_code': exc.code}}})
         raise
-    latest = read_state(root)
+    latest = read_command(root, parsed, family='pr')
     transact(root, latest['version'], f'pr-setup-verified:{operation_id}',
              {'kind': 'domain.pr.setup-finish', 'payload': {'request': {
                  'operation_id': operation_id, 'request_hash': request_hash,
@@ -150,7 +151,7 @@ def dispatch(parsed: argparse.Namespace) -> dict:
 
 def _sync(parsed: argparse.Namespace, client: GithubClient) -> dict:
     root = Path(parsed.root).expanduser().resolve()
-    state = read_state(root)
+    state = read_command(root, parsed, family='pr')
     run = state['data'].get('runs', {}).get(parsed.run_id)
     pending = run.get('pending_pr') if run else None
     if not pending or run.get('status') != 'active' or run.get('pr_rework') or run.get('pr_rejected'):
@@ -179,7 +180,7 @@ def _sync(parsed: argparse.Namespace, client: GithubClient) -> dict:
 
 def _refresh(parsed: argparse.Namespace, client: GithubClient) -> dict:
     root = Path(parsed.root).expanduser().resolve()
-    state = read_state(root)
+    state = read_command(root, parsed, family='pr')
     run = state['data'].get('runs', {}).get(parsed.run_id)
     if not run:
         raise WorkflowError('RUN_NOT_FOUND', 'PR refresh needs an active run')
@@ -205,7 +206,7 @@ def _refresh(parsed: argparse.Namespace, client: GithubClient) -> dict:
 
 def _review_delivery(parsed: argparse.Namespace, client: GithubClient) -> dict:
     root = Path(parsed.root).expanduser().resolve()
-    state = read_state(root)
+    state = read_command(root, parsed, family='pr')
     run = state['data'].get('runs', {}).get(parsed.run_id)
     if not run or not run.get('pending_pr'):
         raise WorkflowError('PR_NOT_OPEN', 'pending PR is required')
@@ -265,7 +266,7 @@ def _open(parsed: argparse.Namespace, request: dict, client: GithubClient) -> di
         manifest = json.loads(Path(parsed.manifest_file).read_text(encoding='utf-8'))
     except (OSError, json.JSONDecodeError) as exc:
         raise WorkflowError('PR_MANIFEST_INVALID', 'read a verified delivery manifest JSON file') from exc
-    state = read_state(root)
+    state = read_command(root, parsed, family='pr')
     run = state['data'].get('runs', {}).get(parsed.run_id)
     if not run:
         raise WorkflowError('RUN_NOT_FOUND', 'PR opening needs an active DevFlow run')
@@ -300,14 +301,14 @@ def _open(parsed: argparse.Namespace, request: dict, client: GithubClient) -> di
         code = exc.code if isinstance(exc, WorkflowError) else 'PR_OPEN_INVALID'
         status = ('uncertain' if code in {'GITHUB_WRITE_UNCERTAIN', 'GITHUB_UNAVAILABLE',
                                         'PR_STATUS_UNVERIFIED', 'PR_OUTCOME_UNCERTAIN'} else 'failed')
-        latest = read_state(root)
+        latest = read_command(root, parsed, family='pr')
         if latest['data']['runs'][parsed.run_id]['pr_open']['status'] != status:
             transact(root, latest['version'], f'pr-open-{status}:{parsed.operation_id}',
                      {'kind': 'domain.pr.open-finish', 'payload': {'request': {
                          'run_id': parsed.run_id, 'operation_id': parsed.operation_id,
                          'request_hash': request_hash, 'status': status, 'error_code': code}}})
         raise
-    latest = read_state(root)
+    latest = read_command(root, parsed, family='pr')
     result['setup_operation_id'] = request['setup_operation_id']
     transact(root, latest['version'], f'pr-open-verified:{parsed.operation_id}',
              {'kind': 'domain.pr.open-finish', 'payload': {'request': {

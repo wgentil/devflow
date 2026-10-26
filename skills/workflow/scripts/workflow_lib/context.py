@@ -139,12 +139,15 @@ def resolve_context(org: dict, project: dict, user_overrides: dict, budgets: dic
 
 
 def resolve_context_cached(org: dict, project: dict, user_overrides: dict, budgets: dict,
-                           cache: dict, source_hashes: dict, resolver_version: str = RESOLVER_VERSION) -> dict:
+                           cache: dict, source_hashes: dict, resolver_version: str = RESOLVER_VERSION, *, cache_lookup=None) -> dict:
     """Reuse a projection only when source, inputs, budget, and resolver match."""
     inputs = {"org": org, "project": project, "user_overrides": user_overrides, "budgets": budgets}
     input_hash = hashlib.sha256(json.dumps(inputs, sort_keys=True, ensure_ascii=False,
                                            separators=(",", ":")).encode("utf-8")).hexdigest()
     key = projection_key({"declared": source_hashes, "inputs": input_hash}, resolver_version)
+    if key not in cache and cache_lookup is not None:
+        found = cache_lookup(key)
+        if found is not None: cache[key] = found
     if key in cache:
         return {"key": key, "cache_hit": True, "resolved": deepcopy(cache[key])}
     resolved = resolve_context(org, project, user_overrides, budgets)

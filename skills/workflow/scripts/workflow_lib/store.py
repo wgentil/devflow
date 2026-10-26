@@ -31,10 +31,19 @@ def _empty() -> dict:
     return {"schema_version": STATE_SCHEMA_VERSION, "version": 0, "data": {}, "operations": {}}
 
 
-def _apply_event(state: dict, event: dict) -> None:
+def _apply_event(state: dict, event: dict, *, metrics_source_hash=None) -> None:
     """Materialize generic patches and compact run deltas from journal events."""
     kind, payload = event["kind"], deepcopy(event["payload"])
     data = state["data"]
+    if kind == 'context.resolution.recorded':
+        if (not isinstance(payload.get('resolved_context'),dict)
+                or not isinstance(payload.get('resolved_context_source_hash'),str)
+                or not isinstance(payload.get('context_projections_delta'),dict)):
+            raise WorkflowError('INVALID_EVENT','Resolved context and keyed cache delta are required.')
+        data['resolved_context'] = payload['resolved_context']
+        data['resolved_context_source_hash'] = payload['resolved_context_source_hash']
+        data.setdefault('context_projections',{}).update(payload['context_projections_delta'])
+        return
     if kind == 'document.proposed':
         proposal = payload.get('proposal', {})
         if not all(proposal.get(k) for k in ('proposal_hash', 'repo_id', 'files', 'diff_digest')):
@@ -84,7 +93,8 @@ def _apply_event(state: dict, event: dict) -> None:
             raise WorkflowError('NATIVE_INVOCATION_ACTIVE', 'Stop or finish native work before changing the attempt.')
     if kind.startswith("domain."):
         from .journal_domains import reduce_event
-        result = reduce_event(data, kind, payload, event.get("sequence", 1) - 1)
+        result = (reduce_event(data, kind, payload, event.get("sequence", 1) - 1, metrics_source_hash=metrics_source_hash)
+                  if metrics_source_hash is not None else reduce_event(data, kind, payload, event.get("sequence", 1) - 1))
         data.setdefault("domain_receipts", {})[event["operation_id"]] = result
     elif kind == "run.started":
         run = payload.get("run")

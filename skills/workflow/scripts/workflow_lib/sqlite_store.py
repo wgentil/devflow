@@ -23,11 +23,19 @@ CREATE TABLE spaces(path TEXT PRIMARY KEY, parent TEXT REFERENCES spaces(path) O
                     name TEXT NOT NULL, shape TEXT NOT NULL, position INTEGER NOT NULL);
 CREATE TABLE entities(space TEXT REFERENCES spaces(path) ON DELETE CASCADE, key TEXT,
     position INTEGER NOT NULL, codec TEXT NOT NULL, payload TEXT NOT NULL, value_hash TEXT NOT NULL,
-    run_id TEXT, status TEXT, host TEXT, session_id TEXT, package_hash TEXT,
+    run_id TEXT, status TEXT, host TEXT, session_id TEXT, package_hash TEXT, record_id TEXT,
     PRIMARY KEY(space,key));
 CREATE INDEX entities_run ON entities(space,run_id);
+CREATE INDEX entities_identity ON entities(space,record_id);
 CREATE INDEX entities_status ON entities(space,status);
 CREATE INDEX entities_session ON entities(space,host,session_id,status);
+CREATE TABLE run_views(rspace TEXT, run_id TEXT, kind TEXT, codec TEXT NOT NULL, payload TEXT NOT NULL,
+    value_hash TEXT NOT NULL, PRIMARY KEY(kind,run_id),
+    FOREIGN KEY(rspace,run_id) REFERENCES entities(space,key) ON DELETE CASCADE);
+CREATE TABLE document_files(space TEXT, proposal_id TEXT, repo_id TEXT, path TEXT, record_hash TEXT,
+    PRIMARY KEY(proposal_id,path),
+    FOREIGN KEY(space,proposal_id) REFERENCES entities(space,key) ON DELETE CASCADE);
+CREATE INDEX document_file_lookup ON document_files(repo_id,path,record_hash);
 CREATE TABLE events(sequence INTEGER PRIMARY KEY, operation_id TEXT UNIQUE NOT NULL,
     kind TEXT NOT NULL, codec TEXT NOT NULL, payload TEXT NOT NULL, event_hash TEXT NOT NULL);
 CREATE TABLE dependencies(kind TEXT, source TEXT, space TEXT, run_id TEXT, entity_key TEXT,
@@ -179,19 +187,20 @@ def connection(root: Path, *, write=False):
 
 
 def _encode(root, value, kind):
-    raw = _json(value).encode('utf-8')
+    logical = _json(value).encode('utf-8')
+    raw = json.dumps(value,sort_keys=False,ensure_ascii=False,separators=(',', ':'),allow_nan=False).encode('utf-8')
     from .stored_records import encode_record, MAX_RECORD_BYTES
     if len(raw) > MAX_RECORD_BYTES:
         raise WorkflowError('STORAGE_RECORD_LIMIT', 'Required logical record exceeds the 256 MiB materialization budget; no event was committed.')
     physical = encode_record(root, value)
     if physical is not None:
-        encoded = _json(physical).encode('utf-8')
+        encoded = json.dumps(physical,sort_keys=False,ensure_ascii=False,separators=(',', ':'),allow_nan=False).encode('utf-8')
         if len(encoded) > INLINE_BYTES:
-            return 'record-object', _json(put_object(root, kind + '-record', encoded)), _sha(raw)
-        return 'record', encoded.decode('utf-8'), _sha(raw)
+            return 'record-object', _json(put_object(root, kind + '-record', encoded)), _sha(logical)
+        return 'record', encoded.decode('utf-8'), _sha(logical)
     if len(raw) > INLINE_BYTES:
-        return 'object', _json(put_object(root, kind, raw)), _sha(raw)
-    return 'json', raw.decode('utf-8'), _sha(raw)
+        return 'object', _json(put_object(root, kind, raw)), _sha(logical)
+    return 'json', raw.decode('utf-8'), _sha(logical)
 
 
 def _decode(root, codec, payload, expected):
@@ -219,8 +228,9 @@ def _decode(root, codec, payload, expected):
             raw = read_object(root, ref, max_bytes=MAX_RECORD_BYTES)
         elif codec == 'json': raw = payload.encode('utf-8')
         else: raise ValueError('unsupported cell codec')
-        if _sha(raw) != expected: raise ValueError('stored logical checksum mismatch')
-        return json.loads(raw)
+        value = json.loads(raw)
+        if _sha(_json(value).encode('utf-8')) != expected: raise ValueError('stored logical checksum mismatch')
+        return value
     except (ValueError, TypeError, KeyError) as exc:
         raise WorkflowError('CORRUPT_STORAGE', 'A database record is invalid: ' + str(exc)) from exc
 
@@ -270,8 +280,11 @@ def _sync_space(conn, root, path, value, *, before=None, complete=True):
         child = conn.execute('SELECT payload FROM entities WHERE space=? AND key=? AND codec=?', (name,key,'space')).fetchone()
         if child: conn.execute('DELETE FROM spaces WHERE path=?', (child[0],))
         conn.execute('DELETE FROM entities WHERE space=? AND key=?', (name,key))
-    for key, item in entries.items():
-        if key in old and item == old[key]: continue
+    position_base = _meta(conn,'position') if complete else None
+    for index,(key, item) in enumerate(entries.items(),1):
+        if key in old and item == old[key]:
+            if complete: conn.execute('UPDATE entities SET position=? WHERE space=? AND key=?',(position_base+index,name,key))
+            continue
         if path == ('usage',) and key == 'events' and isinstance(item,list):
             _sync_space(conn,root,path+(key,),item,complete=True)
             codec,payload,digest = 'space',_space(path+(key,)),_sha(_json(item).encode())
@@ -284,13 +297,13 @@ def _sync_space(conn, root, path, value, *, before=None, complete=True):
             else: codec,payload,digest = _encode(root,item,'projection-json')
         meta = item if isinstance(item,dict) else {}
         position = conn.execute('SELECT position FROM entities WHERE space=? AND key=?', (name,key)).fetchone()
-        ordinal = position[0] if position else _next_position(conn)
+        ordinal = position_base+index if complete else position[0] if position else _next_position(conn)
         fields = (name,key,ordinal,codec,payload,digest,
-            meta.get('run_id') or (meta.get('id') if path==('runs',) else None),
-            meta.get('status'),meta.get('host'),meta.get('session_id'),meta.get('package_hash'))
-        conn.execute('''INSERT INTO entities VALUES(?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(space,key) DO UPDATE SET
-            codec=excluded.codec,payload=excluded.payload,value_hash=excluded.value_hash,run_id=excluded.run_id,
-            status=excluded.status,host=excluded.host,session_id=excluded.session_id,package_hash=excluded.package_hash''', fields)
+            meta.get('run_id') or (meta.get('binding') or {}).get('run_id') if path==('usage','events') else meta.get('run_id') or (meta.get('id') if path==('runs',) else None),
+            meta.get('status'),meta.get('host'),meta.get('session_id'),meta.get('package_hash'),meta.get('id'))
+        conn.execute('''INSERT INTO entities VALUES(?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(space,key) DO UPDATE SET
+            position=excluded.position,codec=excluded.codec,payload=excluded.payload,value_hash=excluded.value_hash,run_id=excluded.run_id,
+            status=excluded.status,host=excluded.host,session_id=excluded.session_id,package_hash=excluded.package_hash,record_id=excluded.record_id''', fields)
         if path == ('runs',):
             from .run_archives import dependencies
             new_dependencies = dependencies(meta)
@@ -302,6 +315,18 @@ def _sync_space(conn, root, path, value, *, before=None, complete=True):
             conn.execute('DELETE FROM dependencies WHERE space=? AND run_id=?', (name,key))
             for kind,source,entity_key in new_dependencies:
                 conn.execute('INSERT INTO dependencies VALUES(?,?,?,?,?)', (kind,source,name,key,entity_key))
+            from .storage_access import history_projections
+            for view, value in history_projections(meta).items():
+                view_codec,view_payload,view_hash = _encode(root,value,'run-history')
+                conn.execute('INSERT INTO run_views VALUES(?,?,?,?,?,?) ON CONFLICT(kind,run_id) DO UPDATE SET codec=excluded.codec,payload=excluded.payload,value_hash=excluded.value_hash',
+                    (name,key,view,view_codec,view_payload,view_hash))
+        if path == ('document_proposals',):
+            conn.execute('DELETE FROM document_files WHERE proposal_id=?', (key,))
+            for file,record in meta.get('files',{}).items():
+                conn.execute('INSERT INTO document_files VALUES(?,?,?,?,?)',
+                    (name,key,meta.get('repo_id'),file,_sha(_json(record).encode('utf-8'))))
+
+    if complete: _set_meta(conn,'position',max(_meta(conn,'position'),position_base+len(entries)))
 
 
 def _read_view(conn, root, scope):
@@ -312,7 +337,18 @@ def _read_view(conn, root, scope):
     for name in complete:
         if conn.execute('SELECT 1 FROM spaces WHERE path=?', (_space((name,)),)).fetchone():
             data[name] = _load_space(conn, root, (name,))
-    selections = list(scope.entity_keys) + [('runs',key) for key in scope.run_ids]
+    if scope.run_view:
+        if scope.run_view not in {'metrics','routing','trace'}:
+            raise WorkflowError('UNDECLARED_STORAGE_SCOPE', 'Unknown historical projection.')
+        all_ids = [row[0] for row in conn.execute('SELECT key FROM entities WHERE space=? ORDER BY position', (_space(('runs',)),))]
+        selected_ids = all_ids if scope.history_all else [key for key in all_ids if key in scope.run_ids]
+        runs = {key:{'id':key} for key in all_ids} if scope.history_all else {}
+        for key in selected_ids:
+            row=conn.execute('SELECT codec,payload,value_hash FROM run_views WHERE kind=? AND run_id=?', (scope.run_view,key)).fetchone()
+            if row is None: raise WorkflowError('CORRUPT_STORAGE', 'Required indexed run history is missing; verify/rebuild explicitly.')
+            runs[key]=_decode(root,*row)
+        if runs: data['runs']=runs
+    selections = list(scope.entity_keys) + ([] if scope.run_view else [('runs',key) for key in scope.run_ids])
     for namespace,key in selections:
         if namespace in complete: continue
         value = _lookup_entity(conn,root,namespace,key)
@@ -321,7 +357,7 @@ def _read_view(conn, root, scope):
     if scope.active_runs: queries.append(EntityQuery('runs', (('status','active'),)))
     for query in queries:
         if query.namespace in complete: continue
-        allowed = {'run_id','status','host','session_id','package_hash','key'}
+        allowed = {'run_id','status','host','session_id','package_hash','record_id','key'}
         if any(field not in allowed for field,_ in query.filters):
             raise WorkflowError('UNDECLARED_STORAGE_SCOPE', 'An unindexed query is not an operational scope.')
         where = ' AND '.join(field+'=?' for field,_ in query.filters)
@@ -329,6 +365,13 @@ def _read_view(conn, root, scope):
         rows = conn.execute(sql, (_space((query.namespace,)),*(value for _,value in query.filters))).fetchall()
         values = _load_space(conn,root,(query.namespace,),rows)
         if isinstance(values,dict): data.setdefault(query.namespace,{}).update(values)
+    if scope.usage_run_ids:
+        events = []
+        for run_id in scope.usage_run_ids:
+            rows = conn.execute('SELECT key,codec,payload,value_hash FROM entities WHERE space=? AND run_id=? ORDER BY position',
+                (_space(('usage','events')),run_id)).fetchall()
+            events.extend(_load_space(conn,root,('usage','events'),rows) or [])
+        data['usage'] = {'events':events}
     operations = {}
     if scope.full:
         rows = conn.execute('SELECT operation_id,codec,payload,event_hash FROM events ORDER BY sequence')
@@ -366,14 +409,37 @@ def _transact_locked(root, expected_version, operation_id, event, *, precommit=N
     from . import store
     with connection(root,write=True) as conn:
         guard=store.HOST_CONTEXT.get()
+        guard_entities = (('host_bindings',guard['binding_id']),) if guard else ()
+        minimal, _ = _read_view(conn,root,ReadScope(global_keys=(),operation_ids=(operation_id,),
+            entity_keys=guard_entities+(('domain_receipts',operation_id),)))
+        store._guard_transaction(minimal,event)
+        previous=minimal['operations'].get(operation_id)
+        if previous is not None:
+            if previous['kind'].startswith('domain.'):
+                return {'state':minimal,'event':previous,'replayed':True}
+            original_scope, replacements = scope_for_event(previous,operation_id,binding_id=guard.get('binding_id') if guard else None)
+            original_scope = ReadScope(**{**original_scope.__dict__,
+                'global_keys':tuple(dict.fromkeys(original_scope.global_keys+tuple(replacements)))})
+            prior_state,_ = _read_view(conn,root,original_scope)
+            return {'state':prior_state,'event':previous,'replayed':True}
+        if expected_version != minimal['version']:
+            raise WorkflowError('STALE_STATE',f"expected state version {expected_version}, current version is {minimal['version']}")
         scope,replacements=scope_for_event(event,operation_id,binding_id=guard.get('binding_id') if guard else None)
         # Stored handoff identity selects its source binding; request data cannot replace it.
         if event['kind'] == 'domain.host.handoff-accept':
             request = event['payload'].get('request', {})
+            if not isinstance(request,dict): request = {}
             envelope = _lookup_entity(conn, root, 'host_handoffs', request.get('handoff_id'))
             if envelope:
                 scope = ReadScope(**{**scope.__dict__, 'entity_keys': scope.entity_keys +
                     (('host_bindings', envelope['binding_id']),)})
+        if event['kind'] == 'domain.improve.case-approve':
+            request = event['payload'].get('request', {})
+            if not isinstance(request,dict): request = {}
+            feedback = _lookup_entity(conn,root,'improvement_feedback',request.get('feedback_id'))
+            if feedback:
+                scope = ReadScope(**{**scope.__dict__, 'entity_keys': scope.entity_keys +
+                    (('improvement_cases',(feedback.get('candidate') if isinstance(feedback.get('candidate'),dict) else {}).get('case_id','')),)})
         # Binding-selected commands and cross-run proof invalidation declare extra rows explicitly.
         extra_runs=set(scope.run_ids)
         for namespace,key in scope.entity_keys:
@@ -397,18 +463,28 @@ def _transact_locked(root, expected_version, operation_id, event, *, precommit=N
                 for run_id in extra_runs for namespace in ('host_bindings', 'host_tasks'))
         scope=ReadScope(**{**scope.__dict__,'run_ids':tuple(sorted(extra_runs)), 'queries': queries})
         state,complete=_read_view(conn,root,scope)
-        store._guard_transaction(state,event)
-        previous=state['operations'].get(operation_id)
-        if previous is not None:return {'state':state,'event':previous,'replayed':True}
-        if expected_version != state['version']:
-            raise WorkflowError('STALE_STATE',f"expected state version {expected_version}, current version is {state['version']}")
+        if event['kind'] == 'domain.issues.start':
+            from .journal_domains import issue_run_link
+            request = event['payload'].get('request',{})
+            try: link = issue_run_link(state['data'],request)
+            except (WorkflowError,KeyError,TypeError,ValueError,AttributeError): link = None
+            # Derivation does not replace the reducer's original validation order.
+            if link is not None:
+                existing = _lookup_entity(conn,root,'runs',link['run_id'])
+                if existing is not None:state['data'].setdefault('runs',{})[link['run_id']] = existing
         if precommit is not None:precommit(state)
         store._guard_spec_approval(state,event)
         committed={'schema_version':1,'sequence':state['version']+1,'operation_id':operation_id,
                    'kind':event['kind'],'payload':event['payload']}
         if guard:committed['host_binding']={key:guard[key] for key in ('binding_id','revision')}
+        # Legacy journal JSON canonicalizes event mappings before future replay.
+        committed = json.loads(_json(committed))
         projected=deepcopy(state)
-        store._apply_event(projected,committed)
+        source_hash = None
+        if event['kind'] == 'domain.stats.metrics':
+            from .storage_access import metrics_source_hash
+            source_hash = metrics_source_hash(root,conn,state['data'])
+        store._apply_event(projected,committed,metrics_source_hash=source_hash)
         before,after=state['data'],projected['data']
         for key in set(before)|set(after):
             if key not in after:

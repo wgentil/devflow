@@ -5,10 +5,11 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from workflow_lib.storage_access import read_command, read_current, operation_lookup, read_history, read_entity
 
 from workflow_lib.evidence import capture_evidence
 from workflow_lib.test_changes import approve_test_change, apply_approved_patch, propose_test_change
-from workflow_lib.store import WorkflowError, read_state, transact
+from workflow_lib.store import WorkflowError, transact
 from workflow_lib.verifiers import record_typed_proof, verify_eval_set, verify_iac_apply, verify_iac_plan
 
 
@@ -106,7 +107,7 @@ def _dispatch(parsed: argparse.Namespace) -> dict:
             'changed_paths': parsed.changed_path, 'observed_config_hash': parsed.observed_config_hash})
     if parsed.build_command == "authorize-apply":
         root = Path(parsed.root).expanduser().resolve()
-        state = read_state(root)
+        state = read_command(root, parsed, family='build')
         run = state["data"].get("runs", {}).get(parsed.run_id)
         active = run.get("active_attempt") if run else None
         if not active or active.get("token") != parsed.attempt_id:
@@ -133,7 +134,7 @@ def _dispatch(parsed: argparse.Namespace) -> dict:
         return {**record, "state_version": response["state"]["version"]}
     if parsed.build_command in {"verify-iac-plan", "verify-iac-apply", "verify-eval-set"}:
         root = Path(parsed.root).expanduser().resolve()
-        state = read_state(root)
+        state = read_command(root, parsed, family='build')
         run = state["data"].get("runs", {}).get(parsed.run_id)
         active = run.get("active_attempt") if run else None
         if not active or active.get("token") != parsed.attempt_id:
@@ -178,7 +179,7 @@ def _dispatch(parsed: argparse.Namespace) -> dict:
         return proof
     if parsed.build_command == "test-change":
         root = Path(parsed.root).expanduser().resolve()
-        state = read_state(root)
+        state = read_command(root, parsed, family='build')
         run = state["data"].get("runs", {}).get(parsed.run_id)
         if run is None:
             raise WorkflowError("RUN_NOT_FOUND", f"unknown run {parsed.run_id}")
@@ -193,7 +194,7 @@ def _dispatch(parsed: argparse.Namespace) -> dict:
                                            Path(repository["location"]))
             operation_id = (parsed.operation_id if getattr(parsed, "operation_id_explicit", False)
                             else f"test-change:propose:{parsed.run_id}:{proposal['id']}")
-            previous = state["operations"].get(operation_id)
+            previous = operation_lookup(root, operation_id, state)
             if previous is not None:
                 return {"proposal": previous["payload"]["proposal"], "state_version": state["version"], "replayed": True}
             response = transact(root, state["version"], operation_id,
@@ -209,7 +210,7 @@ def _dispatch(parsed: argparse.Namespace) -> dict:
             approval = approve_test_change(proposal, parsed.confirm_hash, parsed.actor_id)
             operation_id = (parsed.operation_id if getattr(parsed, "operation_id_explicit", False)
                             else f"test-change:approve:{parsed.run_id}:{parsed.proposal_id}:{parsed.actor_id}")
-            previous = state["operations"].get(operation_id)
+            previous = operation_lookup(root, operation_id, state)
             if previous is not None:
                 return {**previous["payload"]["approval"], "state_version": state["version"], "replayed": True}
             response = transact(root, state["version"], operation_id,
@@ -218,7 +219,7 @@ def _dispatch(parsed: argparse.Namespace) -> dict:
             return {**approval, "state_version": response["state"]["version"], "replayed": response["replayed"]}
         operation_id = (parsed.operation_id if getattr(parsed, "operation_id_explicit", False)
                         else f"test-change:apply:{parsed.run_id}:{parsed.proposal_id}")
-        previous = state["operations"].get(operation_id)
+        previous = operation_lookup(root, operation_id, state)
         if previous is not None:
             return {"proposal_id": parsed.proposal_id, "after_hashes": previous["payload"]["after_hashes"],
                     "state_version": state["version"], "replayed": True}

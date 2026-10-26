@@ -6,7 +6,8 @@ from pathlib import Path
 import re
 import time
 from .document_units import canonical,digest,document_path
-from .store import WorkflowError,read_state
+from .store import WorkflowError
+from .storage_access import read_current
 from .repo_input_gate import preflight_inputs
 
 
@@ -109,7 +110,7 @@ def prepare_context(root:Path,run:dict,envelope:dict,item_ids:list[str],*,stage:
                     max_bytes:int=20000,representation:str='markdown',output_mode:str='full')->PreparedContext:
     started=time.monotonic();root=Path(root).resolve()
     borrowed_read_ms=state.get('_context_read_ms',0) if state is not None else 0
-    state=read_state(root) if state is None else state
+    state=read_current(root,run_id=run['id'],binding_id=envelope.get('binding_id')) if state is None else state
     grounding_files=_grounding_files(state['data'])
     checked=preflight_inputs(root,state,'context-preparation',run['id']);state=checked['state'];data=state['data']
     _assert_files_current(grounding_files)
@@ -171,7 +172,7 @@ def prepare_context(root:Path,run:dict,envelope:dict,item_ids:list[str],*,stage:
             files[str(path)]=current_hash
     tail=next((event for event in state['operations'].values() if event['sequence']==state['version']),None)
     bindings={'run_hash':digest(actual),'locations':locations,'spec_pair':deepcopy(pair),'approval_hash':digest(data.get('approval')),
-        'governing_hash':digest(data.get('governing_input_receipt')),'files':files,'tail_hash':digest(tail) if tail else None}
+        'governing_hash':digest(data.get('governing_input_receipt')),'files':files,'tail_hash':state.get('_storage',{}).get('head_hash') if state.get('_storage') else digest(tail) if tail else None}
     projected={'id':run['id'],'plan':{'work_items':deepcopy(chosen)}}
     scoped_envelope=deepcopy(envelope)
     # Reserve diagnostic shape before optional content spends the byte budget.
@@ -191,15 +192,18 @@ def _assert_preparation_current(root:Path,prepared:PreparedContext,state:dict)->
     _require(isinstance(prepared,PreparedContext) and str(Path(root).resolve())==prepared.root,'Prepared context belongs to another root.')
     _require(prepared.binding_hash==_identity(prepared.root,prepared.journal_version,prepared.scope,prepared.payload,prepared.source_bindings),'Prepared context content changed.')
     _require(state['version']==prepared.journal_version,'Journal advanced after preparation.')
-    event_dir=Path(root)/'events';next_event=event_dir/f'{prepared.journal_version+1:08d}.json'
-    _require(not next_event.exists() and not next_event.is_symlink(),'Journal advanced after preparation.')
-    if prepared.journal_version:
-        import json
-        tail=event_dir/f'{prepared.journal_version:08d}.json'
-        _require(not tail.is_symlink(),'Journal tail changed.')
-        try:current=json.loads(tail.read_text(encoding='utf-8'))
-        except (OSError,ValueError) as exc:raise WorkflowError('CONTEXT_PREPARATION_STALE','Journal tail unavailable; retry.') from exc
-        _require(digest(current)==prepared.source_bindings['tail_hash'],'Journal tail changed.')
+    if state.get('_storage'):
+        _require(state['_storage']['head_hash']==prepared.source_bindings['tail_hash'],'Journal head changed.')
+    else:
+        event_dir=Path(root)/'events';next_event=event_dir/f'{prepared.journal_version+1:08d}.json'
+        _require(not next_event.exists() and not next_event.is_symlink(),'Journal advanced after preparation.')
+        if prepared.journal_version:
+            import json
+            tail=event_dir/f'{prepared.journal_version:08d}.json'
+            _require(not tail.is_symlink(),'Journal tail changed.')
+            try:current=json.loads(tail.read_text(encoding='utf-8'))
+            except (OSError,ValueError) as exc:raise WorkflowError('CONTEXT_PREPARATION_STALE','Journal tail unavailable; retry.') from exc
+            _require(digest(current)==prepared.source_bindings['tail_hash'],'Journal tail changed.')
     data=state['data'];actual=data.get('runs',{}).get(prepared.scope['run_id'])
     _require(digest(actual)==prepared.source_bindings['run_hash'],'Run changed after preparation.')
     _require(data.get('spec_pair')==prepared.source_bindings['spec_pair'] and digest(data.get('approval'))==prepared.source_bindings['approval_hash']
@@ -236,9 +240,9 @@ def normalize_stage(stage):
         'architecture':'project-context','security':'review-work','delivery':'workflow','pr-opening':'workflow','delivered':'workflow','discarded':'workflow'}.get(stage,stage)
 
 
-def read_context_state(root:Path)->dict:
+def read_context_state(root:Path,*,run_id=None,operation_id=None,binding_id=None)->dict:
     """Internal caller timing, kept outside the public replayed state shape."""
-    started=time.perf_counter();state=read_state(root)
+    started=time.perf_counter();state=read_current(root,run_id=run_id,operations=(operation_id,),binding_id=binding_id,active_runs=run_id is None)
     return {**state,'_context_read_ms':max(0,int((time.perf_counter()-started)*1000))}
 
 

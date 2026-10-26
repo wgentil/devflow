@@ -34,7 +34,7 @@ def store_detail(root, run):
     envelope = {'archive_version': 1, 'codec': 'record' if record is not None else 'json',
                 'body': record if record is not None else run}
     summary = summarize_run(run)
-    raw = canonical(envelope)
+    raw = json.dumps(envelope,sort_keys=False,ensure_ascii=False,separators=(',', ':'),allow_nan=False).encode('utf-8')
     from .stored_records import MAX_RECORD_BYTES
     if len(raw) > MAX_RECORD_BYTES:
         raise WorkflowError('STORAGE_RECORD_LIMIT', 'Archive detail exceeds its materialization budget; the original record was retained.')

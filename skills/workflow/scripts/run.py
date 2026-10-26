@@ -24,7 +24,8 @@ from workflow_lib.specs import approval_record, content_hash, find_gaps, render_
 from workflow_lib.plans import ready_items, validate_plan  # noqa: E402
 from workflow_lib.runs import (abandon_attempt, issue_attempt, record_result, run_summary,
                                start_run)  # noqa: E402
-from workflow_lib.store import WorkflowError, read_state, transact  # noqa: E402
+from workflow_lib.store import WorkflowError, transact  # noqa: E402
+from workflow_lib.storage_access import read_command, read_current, read_operation_context, operation_lookup, read_entity
 from workflow_lib.telemetry import record_offload  # noqa: E402
 from workflow_lib.gates import (accept_requirements, amend_item, discard_run, gate_status,
                                 park_finding, resolve_finding, waive_finding)  # noqa: E402
@@ -336,7 +337,7 @@ def main(argv: list[str] | None = None) -> int:
             if not parsed.mutation_binding_id or parsed.binding_revision is None or not getattr(parsed,'root',None):
                 raise WorkflowError('BINDING_REQUIRED','Binding ID, revision and control root must be supplied together.')
             from workflow_lib.hosts import validate_binding
-            bound=validate_binding(read_state(Path(parsed.root))['data'],parsed.mutation_binding_id,parsed.binding_revision)
+            bound=validate_binding(read_command(Path(parsed.root), parsed)['data'],parsed.mutation_binding_id,parsed.binding_revision)
             from workflow_lib.releases import release_descriptor, check_release
             parity=check_release(bound['release'],release_descriptor(),1)
             if parity['status'] != 'allow':raise WorkflowError('RELEASE_MISMATCH',parity['message'],parity)
@@ -362,7 +363,7 @@ def main(argv: list[str] | None = None) -> int:
         mutation = mutation or run_command in {"amend-item", "discard", "accept", "park-finding", "waive-finding", "adjudicate", "resolve-finding"}
         mutation = mutation or getattr(parsed, "delivery_command", None) == "record"
         if mutation and getattr(parsed, "root", None):
-            initial_state = read_state(Path(parsed.root))
+            initial_state = read_operation_context(Path(parsed.root), parsed.operation_id)
             previous = initial_state["operations"].get(parsed.operation_id)
             if previous is not None:
                 if run_command == 'reverify' and (previous.get('kind') != 'run.reverification.started'
@@ -370,6 +371,7 @@ def main(argv: list[str] | None = None) -> int:
                         or previous['payload'].get('attempt',{}).get('item_id') != parsed.item):
                     raise WorkflowError('OPERATION_CONFLICT','Reverification operation belongs to different run/item input.')
                 raise _OperationReplay(_replay_result(initial_state, previous))
+            initial_state = read_command(Path(parsed.root), parsed)
         # One live preflight for all approval-consuming command transitions.
         # Replay above deliberately returns historical receipts without filesystem reads.
         phase = None
@@ -384,12 +386,14 @@ def main(argv: list[str] | None = None) -> int:
         if getattr(parsed, 'review_command', None): phase = 'review'
         if getattr(parsed, 'delivery_command', None): phase = 'delivery'
         if phase and getattr(parsed, 'root', None):
-            gate_state = read_state(Path(parsed.root))
+            gate_state = read_command(Path(parsed.root), parsed)
             if (gate_state['data'].get('spec_pair')
                     and not (run_command in {'next', 'retry'} and parsed.operation_id in gate_state['operations'])):
-                from workflow_lib.repo_input_gate import require_current_inputs
-                require_current_inputs(Path(parsed.root), gate_state, phase, getattr(parsed, 'run_id', None))
-                initial_state = read_state(Path(parsed.root))
+                from workflow_lib.repo_input_gate import require_current_inputs, inspect_current_inputs
+                readonly = (getattr(parsed,'plan_command',None)=='ready' or getattr(parsed,'delivery_command',None) in {'prepare','verify'})
+                check = inspect_current_inputs if readonly else require_current_inputs
+                check(Path(parsed.root), gate_state, phase, getattr(parsed, 'run_id', None))
+                initial_state = read_command(Path(parsed.root), parsed)
         if parsed.command == 'document':
             from workflow_lib.document_approvals import propose_document_change, approve_document_change
             if parsed.document_command == 'propose':
@@ -408,29 +412,31 @@ def main(argv: list[str] | None = None) -> int:
                 raise WorkflowError("INVALID_CONTEXT", "--org-repo requires --project-repo")
             elif parsed.root:
                 root = Path(parsed.root).expanduser().resolve()
-                state = initial_state if initial_state is not None else read_state(root)
+                state = initial_state if initial_state is not None else read_command(root, parsed)
                 layers = state["data"].get("context", {})
                 override_values, budget_values = _json_file(parsed.overrides), _json_file(parsed.budgets)
                 source_hashes = {key: hashlib.sha256(json.dumps(value, sort_keys=True, ensure_ascii=False,
                     separators=(",", ":")).encode("utf-8")).hexdigest() for key, value in layers.items()}
-                cache = dict(state["data"].get("context_projections", {}))
+                indexed = bool(state.get("_storage"))
+                cache = {} if indexed else dict(state["data"].get("context_projections", {}))
                 projection = resolve_context_cached(layers.get("org", {}), layers.get("project", {}),
-                    override_values, budget_values, cache, source_hashes)
+                    override_values, budget_values, cache, source_hashes,
+                    cache_lookup=(lambda key: read_entity(root,'context_projections',key)) if indexed else None)
                 resolved = projection["resolved"]
                 source_hash = context_sources_hash(layers)
                 if (not projection["cache_hit"] or state["data"].get("resolved_context") != resolved
-                        or state["data"].get("context_projections") != cache
+                        or (not indexed and state["data"].get("context_projections") != cache)
                         or state["data"].get("resolved_context_source_hash") != source_hash):
                     _commit(root, state["version"], _operation_id(parsed, uuid4().hex),
-                        {"kind": "context.resolved", "payload": {"resolved_context": resolved,
-                         "context_projections": cache, "resolved_context_source_hash": source_hash}})
+                        {"kind": "context.resolution.recorded" if indexed else "context.resolved", "payload": {"resolved_context": resolved,
+                         ("context_projections_delta" if indexed else "context_projections"): cache, "resolved_context_source_hash": source_hash}})
                 result = {**resolved, "projection_cache_hit": projection["cache_hit"]}
             else:
                 result = resolve_context(_json_file(parsed.org), _json_file(parsed.project),
                                          _json_file(parsed.overrides), _json_file(parsed.budgets))
         elif parsed.command == "context" and parsed.context_command == "set":
             root = Path(parsed.root).expanduser().resolve()
-            state = initial_state if initial_state is not None else read_state(root)
+            state = initial_state if initial_state is not None else read_command(root, parsed)
             layer = _json_file(parsed.file)
             validate_context_layer(layer)
             digest = hashlib.sha256(json.dumps(layer, sort_keys=True, ensure_ascii=False,
@@ -445,7 +451,7 @@ def main(argv: list[str] | None = None) -> int:
                 result = {"stored_layer": parsed.layer, **receipt}
         elif parsed.command == "repo" and parsed.repo_command == "register":
             root = Path(parsed.root).expanduser().resolve()
-            state = initial_state if initial_state is not None else read_state(root)
+            state = initial_state if initial_state is not None else read_command(root, parsed)
             updated = register_repo(state["data"], parsed.repo_id, parsed.location)
             location = updated["repositories"][parsed.repo_id]["location"]
             if state["data"].get("repositories", {}).get(parsed.repo_id, {}).get("location") == location:
@@ -470,7 +476,7 @@ def main(argv: list[str] | None = None) -> int:
             root = Path(parsed.root).expanduser().resolve()
             specification = _json_file(parsed.file)
             validation = validate_spec(specification)
-            state = initial_state if initial_state is not None else read_state(root)
+            state = initial_state if initial_state is not None else read_command(root, parsed)
             pair = None
             if parsed.repo_id or parsed.path:
                 if not parsed.repo_id or not parsed.path:
@@ -488,7 +494,7 @@ def main(argv: list[str] | None = None) -> int:
                 result = {"stored": True, "content_hash": validation["content_hash"], "spec_pair": pair, **receipt}
         elif parsed.command == "spec" and parsed.spec_command == "approve":
             root = Path(parsed.root).expanduser().resolve()
-            state = initial_state if initial_state is not None else read_state(root)
+            state = initial_state if initial_state is not None else read_command(root, parsed)
             specification = state["data"].get("spec")
             if specification is None:
                 raise WorkflowError("SPEC_NOT_FOUND", "store a specification before approving it")
@@ -510,7 +516,7 @@ def main(argv: list[str] | None = None) -> int:
                 result = {"approval": approval, **receipt}
         elif parsed.command == "plan" and parsed.plan_command == "validate":
             root = Path(parsed.root).expanduser().resolve()
-            state = initial_state if initial_state is not None else read_state(root)
+            state = initial_state if initial_state is not None else read_command(root, parsed)
             specification = state["data"].get("spec")
             if specification is None:
                 raise WorkflowError("SPEC_NOT_FOUND", "store and approve a specification before planning")
@@ -532,7 +538,7 @@ def main(argv: list[str] | None = None) -> int:
                 result = {"validation": validation, **receipt}
         elif parsed.command == "plan" and parsed.plan_command == "ready":
             root = Path(parsed.root).expanduser().resolve()
-            state = initial_state if initial_state is not None else read_state(root)
+            state = initial_state if initial_state is not None else read_command(root, parsed)
             work_plan = state["data"].get("plan")
             if work_plan is None:
                 raise WorkflowError("PLAN_NOT_FOUND", "validate and store a plan before requesting eligible items")
@@ -548,7 +554,7 @@ def main(argv: list[str] | None = None) -> int:
             result = {"ready": ready_items(work_plan, set(completed))}
         elif parsed.command == "run" and parsed.run_command == "start":
             root = Path(parsed.root).expanduser().resolve()
-            state = initial_state if initial_state is not None else read_state(root)
+            state = initial_state if initial_state is not None else read_command(root, parsed)
             data = state["data"]
             existing = data.get("runs", {}).get(parsed.run_id)
             if existing:
@@ -563,7 +569,7 @@ def main(argv: list[str] | None = None) -> int:
         elif parsed.command == "run" and parsed.run_command in {"next", "retry"}:
             root = Path(parsed.root).expanduser().resolve()
             from workflow_lib.context_preparation import read_context_state,prepare_context,commit_prepared_attempt
-            state = initial_state if initial_state is not None else read_context_state(root)
+            state = initial_state if initial_state is not None else read_context_state(root, run_id=parsed.run_id, operation_id=parsed.operation_id)
             data = state["data"]
             run = data.get("runs", {}).get(parsed.run_id)
             if run is None:
@@ -572,7 +578,7 @@ def main(argv: list[str] | None = None) -> int:
                     and parsed.item != run["active_attempt"]["item_id"]):
                 raise WorkflowError("ITEM_INELIGIBLE", "another work item has the active attempt")
             operation_id = _operation_id(parsed, uuid4().hex)
-            previous = state["operations"].get(operation_id)
+            previous = operation_lookup(root, operation_id, state)
             if previous is not None:
                 prior_attempt = previous.get("payload", {}).get("attempt", {})
                 if (previous.get("kind") == "run.attempt.issued"
@@ -637,7 +643,7 @@ def main(argv: list[str] | None = None) -> int:
             from workflow_lib.reverification import begin_reverification
             root = Path(parsed.root).expanduser().resolve()
             from workflow_lib.context_preparation import read_context_state,prepare_context,commit_prepared_attempt
-            state = initial_state if initial_state is not None else read_context_state(root)
+            state = initial_state if initial_state is not None else read_context_state(root, run_id=parsed.run_id, operation_id=parsed.operation_id)
             run = state['data'].get('runs',{}).get(parsed.run_id)
             if run is None: raise WorkflowError('RUN_NOT_FOUND','Known run required.')
             updated = begin_reverification(run,parsed.item)
@@ -653,7 +659,7 @@ def main(argv: list[str] | None = None) -> int:
                 'operation_id':parsed.operation_id,'replayed':False}
         elif parsed.command == "run" and parsed.run_command in {"status", "summary"}:
             root = Path(parsed.root).expanduser().resolve()
-            state = initial_state if initial_state is not None else read_state(root)
+            state = initial_state if initial_state is not None else read_command(root, parsed)
             run = state["data"].get("runs", {}).get(parsed.run_id)
             if run is None:
                 raise WorkflowError("RUN_NOT_FOUND", f"unknown run {parsed.run_id}")
@@ -661,7 +667,7 @@ def main(argv: list[str] | None = None) -> int:
         elif parsed.command == "run" and parsed.run_command == "brief":
             root = Path(parsed.root).expanduser().resolve()
             from workflow_lib.context_preparation import read_context_state
-            state = initial_state if initial_state is not None else read_context_state(root)
+            state = initial_state if initial_state is not None else read_context_state(root, run_id=parsed.run_id, operation_id=parsed.operation_id)
             run = state["data"].get("runs", {}).get(parsed.run_id)
             if run is None:
                 raise WorkflowError("RUN_NOT_FOUND", f"unknown run {parsed.run_id}")
@@ -683,13 +689,13 @@ def main(argv: list[str] | None = None) -> int:
                 since=parsed.since_checkpoint, full=parsed.full_context)
         elif parsed.command == "run" and parsed.run_command == "inspect":
             root = Path(parsed.root).expanduser().resolve()
-            run = read_state(root)["data"].get("runs", {}).get(parsed.run_id)
+            run = read_command(root, parsed)["data"].get("runs", {}).get(parsed.run_id)
             if run is None:
                 raise WorkflowError("RUN_NOT_FOUND", f"unknown run {parsed.run_id}")
             result = {"run": run}
         elif parsed.command == "run" and parsed.run_command == "abandon":
             root = Path(parsed.root).expanduser().resolve()
-            state = initial_state if initial_state is not None else read_state(root)
+            state = initial_state if initial_state is not None else read_command(root, parsed)
             data = state["data"]
             run = data.get("runs", {}).get(parsed.run_id)
             if run is None:
@@ -701,7 +707,7 @@ def main(argv: list[str] | None = None) -> int:
             result = run_summary(updated)
         elif parsed.command == "run" and parsed.run_command == "result":
             root = Path(parsed.root).expanduser().resolve()
-            state = initial_state if initial_state is not None else read_state(root)
+            state = initial_state if initial_state is not None else read_command(root, parsed)
             data = state["data"]
             run = data.get("runs", {}).get(parsed.run_id)
             if run is None:
@@ -716,13 +722,13 @@ def main(argv: list[str] | None = None) -> int:
                         "verifier_proof_id": submission.get("verifier_proof_id")}})
             result = run_summary(updated)
         elif parsed.command == "run" and parsed.run_command == "gate-status":
-            state = initial_state if initial_state is not None else read_state(Path(parsed.root))
+            state = initial_state if initial_state is not None else read_command(Path(parsed.root), parsed)
             run = state["data"].get("runs", {}).get(parsed.run_id)
             if run is None:
                 raise WorkflowError("RUN_NOT_FOUND", f"unknown run {parsed.run_id}")
             result = gate_status(run)
         elif parsed.command == "run" and parsed.run_command == "amend-item":
-            state = initial_state if initial_state is not None else read_state(Path(parsed.root))
+            state = initial_state if initial_state is not None else read_command(Path(parsed.root), parsed)
             run = state["data"].get("runs", {}).get(parsed.run_id)
             if run is None:
                 raise WorkflowError("RUN_NOT_FOUND", f"unknown run {parsed.run_id}")
@@ -732,7 +738,7 @@ def main(argv: list[str] | None = None) -> int:
                  "plan": updated["plan"], "amendment": updated["amendments"][-1]}})
             result = {"amendment": updated["amendments"][-1], "state_version": receipt["state"]["version"]}
         elif parsed.command == "run" and parsed.run_command == "discard":
-            state = initial_state if initial_state is not None else read_state(Path(parsed.root))
+            state = initial_state if initial_state is not None else read_command(Path(parsed.root), parsed)
             run = state["data"].get("runs", {}).get(parsed.run_id)
             if run is None:
                 raise WorkflowError("RUN_NOT_FOUND", f"unknown run {parsed.run_id}")
@@ -742,7 +748,7 @@ def main(argv: list[str] | None = None) -> int:
                     "reason": discarded["discard_reason"], "actor_id": parsed.actor_id}})
             result = {**run_summary(discarded), "state_version": receipt["state"]["version"]}
         elif parsed.command == "run" and parsed.run_command == "accept":
-            state = initial_state if initial_state is not None else read_state(Path(parsed.root))
+            state = initial_state if initial_state is not None else read_command(Path(parsed.root), parsed)
             run = state["data"].get("runs", {}).get(parsed.run_id)
             if run is None:
                 raise WorkflowError("RUN_NOT_FOUND", f"unknown run {parsed.run_id}")
@@ -751,7 +757,7 @@ def main(argv: list[str] | None = None) -> int:
                 {"kind": "acceptance.recorded", "payload": {"run_id": parsed.run_id, "acceptance": acceptance}})
             result = {**acceptance, "state_version": receipt["state"]["version"]}
         elif parsed.command == "run" and parsed.run_command == "park-finding":
-            state = initial_state if initial_state is not None else read_state(Path(parsed.root))
+            state = initial_state if initial_state is not None else read_command(Path(parsed.root), parsed)
             run = state["data"].get("runs", {}).get(parsed.run_id)
             if run is None:
                 raise WorkflowError("RUN_NOT_FOUND", f"unknown run {parsed.run_id}")
@@ -762,7 +768,7 @@ def main(argv: list[str] | None = None) -> int:
                  "ruling": ruling}})
             result = {"finding_id": parsed.finding_id, "status": "parked", "state_version": receipt["state"]["version"]}
         elif parsed.command == "run" and parsed.run_command == "waive-finding":
-            state = initial_state if initial_state is not None else read_state(Path(parsed.root))
+            state = initial_state if initial_state is not None else read_command(Path(parsed.root), parsed)
             run = state["data"].get("runs", {}).get(parsed.run_id)
             if run is None:
                 raise WorkflowError("RUN_NOT_FOUND", f"unknown run {parsed.run_id}")
@@ -773,7 +779,7 @@ def main(argv: list[str] | None = None) -> int:
                  "finding_id": parsed.finding_id, "authorization": authorization}})
             result = {"finding_id": parsed.finding_id, "status": "waived", "state_version": receipt["state"]["version"]}
         elif parsed.command == "run" and parsed.run_command == "adjudicate":
-            state = initial_state if initial_state is not None else read_state(Path(parsed.root))
+            state = initial_state if initial_state is not None else read_command(Path(parsed.root), parsed)
             run = state["data"].get("runs", {}).get(parsed.run_id)
             if run is None:
                 raise WorkflowError("RUN_NOT_FOUND", f"unknown run {parsed.run_id}")
@@ -784,7 +790,7 @@ def main(argv: list[str] | None = None) -> int:
                     "adjudication": adjudication}})
             result = {**adjudication, "state_version": receipt["state"]["version"]}
         elif parsed.command == "run" and parsed.run_command == "resolve-finding":
-            state = initial_state if initial_state is not None else read_state(Path(parsed.root))
+            state = initial_state if initial_state is not None else read_command(Path(parsed.root), parsed)
             run = state["data"].get("runs", {}).get(parsed.run_id)
             if run is None:
                 raise WorkflowError("RUN_NOT_FOUND", f"unknown run {parsed.run_id}")

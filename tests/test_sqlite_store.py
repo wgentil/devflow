@@ -32,6 +32,10 @@ class SQLiteStoreTests(unittest.TestCase):
         retry = store.transact(self.root, 0, 'one', {'kind': 'different', 'payload': {'x': 2}})
         self.assertTrue(retry['replayed'])
         self.assertEqual(retry['event'], first['event'])
+        for kind in ('domain.future.changed','domain.host.attach'):
+            retry = store.transact(self.root, -1, 'one', {'kind':kind,'payload':{'request':None}})
+            self.assertEqual(retry['event'],first['event'])
+            self.assertTrue(retry['replayed'])
         self.assertEqual(sql.lookup_operation(self.root, 'one'), first['event'])
         self.assertIsNone(sql.lookup_operation(self.root, 'missing'))
         self.assertEqual(sql.read_head_event(self.root), first['event'])
@@ -121,7 +125,7 @@ class SQLiteStoreTests(unittest.TestCase):
         from copy import deepcopy
         from unittest.mock import patch
         from storage_event_cases import (basic_event_streams, captured_event_streams,
-                                         supplemental_domain_streams, registered_domain_kinds)
+                                         supplemental_domain_streams, registered_domain_kinds, registered_core_kinds)
         from workflow_lib.storage_scopes import CORE_KINDS
         sql = self.backend()
         streams = list(basic_event_streams()) + captured_event_streams() + list(supplemental_domain_streams())
@@ -158,6 +162,7 @@ class SQLiteStoreTests(unittest.TestCase):
                     self.assertEqual(actual['operations'], old['operations'])
                     self.assertEqual(actual['version'], position)
                     covered.add(event['kind'])
+        self.assertEqual(CORE_KINDS,registered_core_kinds())
         self.assertFalse(CORE_KINDS - covered, f'Missing valid core fixtures: {CORE_KINDS - covered}')
         self.assertFalse(registered_domain_kinds() - covered, f'Missing domain branches: {registered_domain_kinds() - covered}')
         families = {kind.split('.')[1] for kind in covered if kind.startswith('domain.')}
@@ -166,7 +171,7 @@ class SQLiteStoreTests(unittest.TestCase):
 
     def test_invalid_reducer_variants_have_legacy_failure_parity(self):
         from storage_event_cases import (basic_event_streams, captured_event_streams,
-                                         supplemental_domain_streams, registered_domain_kinds)
+                                         supplemental_domain_streams, registered_domain_kinds, registered_core_kinds)
         kinds = {row['kind'] for stream in list(basic_event_streams()) + captured_event_streams() + list(supplemental_domain_streams())
                  for row in stream}
         sql = self.backend()
@@ -184,6 +189,17 @@ class SQLiteStoreTests(unittest.TestCase):
                         outcomes.append((getattr(exc, 'code', type(exc).__name__),))
                         self.assertEqual(store.read_state(root)['version'], 0)
                 self.assertEqual(outcomes[0], outcomes[1])
+
+    def test_projection_records_preserve_derived_iteration_order(self):
+        sql = self.backend()
+        from workflow_lib.run_archives import store_detail, hydrate_detail
+        with owned_control() as root:
+            run = {'id':'r','status':'discarded','active_attempt':None,
+                   'native_invocations':{'z':{'status':'completed'},'a':{'status':'completed'}}}
+            codec,payload,expected = sql._encode(root,run,'projection-json')
+            self.assertEqual(list(sql._decode(root,codec,payload,expected)['native_invocations']),['z','a'])
+            record=store_detail(root,run)
+            self.assertEqual(list(hydrate_detail(root,record)['native_invocations']),['z','a'])
 
     def test_generic_replacement_does_not_hydrate_old_namespace(self):
         from unittest.mock import patch
