@@ -10,8 +10,8 @@ from workflow_lib.evidence import capture_evidence
 
 
 class RedReuseTests(unittest.TestCase):
-    def setUp(self):
-        self.fixture=evidence_fixtures.EvidenceTests();self.fixture.setUp();self.addCleanup(self.fixture.tearDown)
+    def setUp(self, *, legacy=False):
+        self.fixture=evidence_fixtures.EvidenceTests();self.fixture.setUp(legacy=legacy or self._testMethodName == "test_replay_validates_red_lineage_without_running_tests");self.addCleanup(self.fixture.tearDown)
         self.root=self.fixture.root;self.repo=self.fixture.repo
         self.runner=self.repo/'test_target.py'
         self.runner.write_text("import json,sys\nfrom pathlib import Path\nok=Path('implementation').read_text()=='fixed'\nprint(json.dumps({'tests':[{'id':'target','outcome':'passed' if ok else 'failed'}]}))\nsys.exit(0 if ok else 1)\n",encoding='utf-8')

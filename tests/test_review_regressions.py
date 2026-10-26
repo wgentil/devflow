@@ -125,6 +125,8 @@ class ReviewRegressions(unittest.TestCase):
             validate_spec(spec)
 
     def test_historical_event_payloads_remain_equal_to_disk(self):
+        from control_store_fixtures import legacy_root
+        legacy_root(self.control)
         self.start()
         token = self.next()['attempt_id']
         self.cli('run', 'abandon', '--root', self.control, '--run-id', 'r', '--attempt-id', token)

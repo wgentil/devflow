@@ -107,6 +107,8 @@ class FoundationFlowTests(unittest.TestCase):
         self.assertIn('SPEC_DIAGRAM_REQUIRED', rejected.stdout)
 
     def test_next_brief_resume_atomic_result_retry_and_state_location(self):
+        from control_store_fixtures import legacy_root
+        legacy_root(self.control) # This case verifies legacy state.json placement.
         self.cli("repo", "register", "--root", self.control, "--repo-id", "backend", "--location", self.repo)
         self.put_json("org.json", {"slices": {"architecture": {"status": "answered", "value": "hexagonal"}}})
         self.cli("context", "set", "--root", self.control, "--layer", "org", "--file", self.control / "org.json")

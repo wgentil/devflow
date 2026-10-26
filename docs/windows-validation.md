@@ -104,3 +104,14 @@ reports remain in the evidence directory. The historical
 [WSL2 plan](superpowers/plans/2026-10-08-wsl2-validation.md) and
 [native Windows plan](superpowers/plans/2026-10-08-native-windows-port.md) retain
 original planning scope; current results and missing host gates are above.
+
+## Archive-backed storage checks
+
+New-root helpers require standard-library SQLite and advertise storage formats
+1/2 separately from logical schema 1. Existing legacy roots remain usable without
+automatic conversion. The installed-package validator creates owned control roots
+through each actual installed helper, verifies both formats, and runs the actual
+installed Claude hook script suite against v1 and v2 fixtures. This validates
+script/package behavior; signed-in model/event/worker acceptance remains a
+separate gate. Platform reports must retain SQLite version, compile options and
+effective durability settings before release acceptance.

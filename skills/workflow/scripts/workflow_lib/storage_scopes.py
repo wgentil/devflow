@@ -123,6 +123,11 @@ def scope_for_event(event, operation_id, *, binding_id=None):
         replacements.update(payload)
         # Replacement needs only existing SQL keys, never obsolete logical bodies.
         if kind != 'spec.approved': globals_ = [key for key in globals_ if key not in payload]
+    if kind == 'verification.recorded':
+        proof = payload.get('proof')
+        source = proof.get('red_source') if isinstance(proof, dict) else None
+        if isinstance(source, dict) and isinstance(source.get('run_id'), str):
+            run_ids.add(source['run_id'])
     if kind=='maintenance.policy.recorded':
         globals_.extend(('maintenance_policy','maintenance_policy_authorization'))
     if kind == 'plan.validated':

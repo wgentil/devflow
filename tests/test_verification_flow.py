@@ -97,11 +97,14 @@ class VerificationFlowTests(unittest.TestCase):
                 {"id": "R1", "verdict": "MET", "citations": [{"repo_id": "service", "path": "app.py", "line": 1}]}]}),
             "--repositories-json", json.dumps(snapshot))
         self.assertTrue(accepted["complete"])
+        from workflow_lib.store import read_state
+        version_before = read_state(self.control)["version"]
         before = len(list((self.control / "events").glob("*.json")))
         manifest = self.cli("delivery", "prepare", "--root", self.control, "--run-id", "flow-1",
             "--repositories-json", json.dumps(repositories), "--outcome", "retained-branch")
         after = len(list((self.control / "events").glob("*.json")))
         self.assertEqual(before, after, "delivery preparation must be read-only")
+        self.assertEqual(read_state(self.control)["version"], version_before)
         self.assertEqual(manifest["repositories"]["service"]["head"], head)
         self.assertEqual(manifest["acceptance_hash"], accepted["acceptance_hash"])
         self.assertEqual(manifest["unresolved_findings"], [])

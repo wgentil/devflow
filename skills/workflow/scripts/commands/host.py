@@ -272,11 +272,27 @@ def _repair_task_index(data, result, root):
 def _repair_retired_task_indexes(data, current, root):
     from workflow_lib.host_locators import read_locator, write_task_index
     from workflow_lib.store import WorkflowError
-    for binding in data.get('host_bindings',{}).values():
+    # Attachment and exact retries repair stale project hints from retired
+    # session metadata without expanding any retired run or review payload.
+    from workflow_lib.storage_format import detect_layout
+    statuses={key:run.get('status') for key,run in data.get('runs',{}).items()}
+    bindings=dict(data.get('host_bindings',{}))
+    if detect_layout(root)['layout']=='v2':
+        from workflow_lib import sqlite_store as sql
+        from workflow_lib.storage_scopes import ReadScope,EntityQuery
+        with sql.connection(root) as conn:
+            retired=sql._read_view(conn,root,ReadScope(global_keys=(),queries=(EntityQuery('host_bindings',
+                (('host',current['host']),('session_id',current['session_id']),('status','detached'))),)))[0]
+            bindings.update(retired['data'].get('host_bindings',{}))
+            for binding in bindings.values():
+                row=conn.execute('SELECT status FROM entities WHERE space=? AND key=?',
+                    (sql._space(('runs',)),binding['run_id'])).fetchone()
+                if row is not None:statuses[binding['run_id']]=row[0]
+    for binding in bindings.values():
         if (binding['binding_id'] == current['binding_id'] or binding['host'] != current['host']
                 or binding['session_id'] != current['session_id'] or binding['status'] != 'detached'
                 or binding['project_dir'] == current['project_dir']
-                or data['runs'][binding['run_id']]['status'] not in {'delivered','discarded'}):
+                or statuses.get(binding['run_id']) not in {'delivered','discarded'}):
             continue
         project=Path(binding['project_dir'])
         if not project.is_dir():continue

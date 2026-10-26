@@ -8,6 +8,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "skills/workflow/scripts"))
 
 from workflow_lib.store import WorkflowError, read_state, transact
+from control_store_fixtures import legacy_root
 
 
 def tree_bytes(root):
@@ -17,7 +18,7 @@ def tree_bytes(root):
 class StoreTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
-        self.root = Path(self.temp.name)
+        self.root = legacy_root(Path(self.temp.name))
 
     def tearDown(self):
         self.temp.cleanup()
@@ -61,7 +62,7 @@ class StoreTests(unittest.TestCase):
 
     def test_corrupt_and_future_event_schemas_fail_closed(self):
         journal = self.root / "events"
-        journal.mkdir()
+        journal.mkdir(exist_ok=True)
         (journal / "00000001.json").write_text("{")
         with self.assertRaises(WorkflowError) as caught:
             read_state(self.root)

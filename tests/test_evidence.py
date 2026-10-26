@@ -13,9 +13,12 @@ ENTRY = Path(__file__).resolve().parents[1] / "skills/workflow/scripts/run.py"
 
 
 class EvidenceTests(unittest.TestCase):
-    def setUp(self):
+    def setUp(self, *, legacy=False):
         self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name) / "control"
+        if legacy:
+            from control_store_fixtures import legacy_root
+            legacy_root(self.root)
         self.repo = Path(self.temp.name) / "repo"
         self.repo.mkdir()
         subprocess.run(["git", "init", "-q"], cwd=self.repo, check=True)

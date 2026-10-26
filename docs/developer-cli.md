@@ -763,3 +763,9 @@ The [example policy](examples/maintenance-policy.json) disables post-terminal
 compaction by default. Inspect with `--details` for complete bound candidate
 paths/reasons. Maintenance inspection does not mutate live application approval
 state. No automatic root conversion or GC is enabled by installing an upgrade.
+
+New roots use storage format 2; legacy event layouts remain format 1 until explicit
+conversion. `version` advertises storage formats separately from logical schema.
+For interrupted first-root initialization, `state compact --resume` takes a fresh
+recovery operation ID and actor; then retry the original first-work ID. Compaction
+resume keeps its original maintenance ID/actor. See [recovery](reference/control-maintenance.md).

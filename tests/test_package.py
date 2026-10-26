@@ -54,7 +54,8 @@ class PackageTests(unittest.TestCase):
             self.assertEqual(len(manifest["skills"]), 11)
             for skill in manifest["skills"]:
                 self.assertTrue((relocated / skill / "SKILL.md").is_file(), skill)
-            control = Path(temp_name) / "control"
+            from control_store_fixtures import legacy_root
+            control = legacy_root(Path(temp_name) / "control")
             layer = Path(temp_name) / "org.json"
             layer.write_text(json.dumps({"slices": {"architecture": {"status": "answered", "value": "ports"}}}))
             original = subprocess.run([sys.executable, str(ENTRY), "context", "set", "--root", str(control),

@@ -366,6 +366,13 @@ prices and provider records are fixtures unless explicitly described as live.
 
 ## Recovery and maintenance
 
+New control roots initialize archive-backed storage format 2 using standard-library
+SQLite with Python 3.11+. Existing legacy roots stay format 1 on read, initialization,
+upgrade, host attachment and delivery unless explicitly converted. Legacy reads
+remain available without SQLite; new/v2 work reports a missing SQLite runtime
+before proceeding. Logical workflow schema remains 1. Capture the helper's release
+and storage capabilities; reload an older helper before using a v2 root.
+
 Ask the harness to inspect control storage and explain a concrete maintenance
 plan. It guides backup, explicit compaction/conversion and safe GC; you do not need
 skill names or storage internals. Installing an upgrade does not convert existing
@@ -381,7 +388,10 @@ stopped-owner reconciliation, never age deletion. See [maintenance and recovery]
 for authorization, resume, disk requirements and limitations. Corrupt/future-schema
 records require diagnosis, not history edits.
 Stale active bindings require refresh; detached ones require explicit revision-bound
-resume. Stale proof requires verification; changed review
+resume. Interrupted first-root initialization uses a fresh recovery operation ID,
+then retries the original first-work ID; interrupted compaction retains its
+original maintenance ID and actor. The harness validates the durable intent and
+never replaces a newer committed tail with empty state. Stale proof requires verification; changed review
 inputs require a renewed package. Uncertain provider outcomes require reconciliation.
 
 Review this guide and affected skills, guides, diagrams and examples whenever

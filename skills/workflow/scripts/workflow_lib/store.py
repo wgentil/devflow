@@ -737,6 +737,10 @@ def _transact_once(root: Path, expected_version: int, operation_id: str, event: 
     with _exclusive(root):
         from .storage_format import detect_layout
         layout = detect_layout(root)
+        if layout['layout']=='uninitialized':
+            from .sqlite_store import initialize_store
+            initialize_store(root,operation_id=operation_id)
+            layout=detect_layout(root)
         if layout['layout'] == 'v2':
             from .sqlite_store import _transact_locked
             return _transact_locked(root, expected_version, operation_id, event, precommit=precommit)

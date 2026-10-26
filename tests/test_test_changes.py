@@ -130,7 +130,12 @@ class TestChangeCLITests(unittest.TestCase):
             capture_output=True, encoding='utf-8', timeout=30)
 
     def authoritative_files(self):
-        paths = [self.root / 'state.json', *(self.root / 'events').glob('*.json')]
+        # Capture both formats' authority; telemetry, context caches and lock
+        # files are advisory and may be published by a read-only command.
+        paths = [self.root / name for name in ('state.json', 'format.json', 'store-v2/control.sqlite3')]
+        paths += [p for name in ('events', 'objects', 'maintenance-receipts')
+                  for p in (self.root / name).rglob('*') if p.is_file()]
+        paths = [p for p in paths if p.is_file()]
         return {str(path): path.read_bytes() for path in paths}
 
     def repository_files(self, repo=None):

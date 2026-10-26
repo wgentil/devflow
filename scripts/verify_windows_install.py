@@ -10,6 +10,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'skills/workflow/scripts'))
@@ -33,6 +34,25 @@ def verify_package(package: Path, expected: dict) -> dict:
         if not path.is_relative_to(package.resolve()) or not path.is_file():
             raise ValueError('installed skill is missing or escapes the package')
     return {'status': 'PASS', 'skill_count': len(skills), 'descriptor': expected}
+
+
+def verify_control_formats(package: Path) -> dict:
+    entry=package/'skills/workflow/scripts/run.py'
+    with tempfile.TemporaryDirectory(prefix='devflow-installed-storage-') as temporary:
+        base=Path(temporary);layer=base/'layer.json'
+        layer.write_text(json.dumps({'slices':{'architecture':{'status':'answered','value':'owned installed probe'}}}),encoding='utf-8')
+        for version in (1,2):
+            root=base/('control é東京 '+str(version))
+            if version==1:(root/'events').mkdir(parents=True)
+            for arguments in (
+                    ['context','set','--root',str(root),'--layer','org','--file',str(layer),'--operation-id','installed-probe'],
+                    ['state','verify','--root',str(root),'--full']):
+                result=subprocess.run([sys.executable,'-B',str(entry),*arguments],cwd=base,capture_output=True,encoding='utf-8',timeout=30)
+                if result.returncode:raise ValueError('Installed format probe failed: '+result.stdout+result.stderr)
+                value=json.loads(result.stdout)
+            if value.get('storage_format')!=version or not value.get('valid'):
+                raise ValueError('Installed helper selected the wrong control storage format')
+    return {'status':'PASS','storage_formats':[1,2],'logical_schema':1}
 
 
 def find_codex_plugin(records: dict, expected: dict, cache: Path) -> Path:
@@ -70,6 +90,8 @@ def main():
         claude = find_installed_plugin(json.loads(args.claude_list.read_text(encoding='utf-8-sig')), expected['plugin_version'])
         gates['codex_install'] = verify_package(codex, expected)
         gates['claude_install'] = verify_package(claude, expected)
+        gates['codex_control_formats']=verify_control_formats(codex)
+        gates['claude_control_formats']=verify_control_formats(claude)
         for host in ('codex', 'claude'):
             result = run_bounded([host, '--version'], args.source_root, 15)
             if result.returncode:
@@ -96,13 +118,16 @@ def main():
         if check.returncode:
             raise ValueError('required hook Python executable is older than 3.11')
         environment = {**os.environ, 'DEVFLOW_HOOK_PATH': str(claude / 'adapters/claude-code/hook.py')}
-        result = subprocess.run([sys.executable, '-m', 'unittest', 'discover', '-s', 'tests', '-p', 'test_claude_hooks.py', '-v'],
-            cwd=args.source_root, env=environment, capture_output=True, timeout=120)
+        logs=[]
         args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.with_suffix('.hooks.log').write_bytes(result.stdout + result.stderr)
-        if result.returncode:
-            raise ValueError('installed hook-script suite failed; inspect hook log')
-        gates['claude_hook_scripts'] = {'status': 'PASS', 'python_command': command, 'live_event_dispatch': 'NOT_RUN'}
+        for pattern in ('test_claude_hooks.py','test_storage_host_views.py'):
+            result = subprocess.run([sys.executable, '-m', 'unittest', 'discover', '-s', 'tests', '-p', pattern, '-v'],
+                cwd=args.source_root, env=environment, capture_output=True, timeout=180)
+            logs.extend((result.stdout,result.stderr))
+            args.output.with_suffix('.hooks.log').write_bytes(b''.join(logs))
+            if result.returncode:
+                raise ValueError('installed v1/v2 hook-script suite failed; inspect hook log')
+        gates['claude_hook_scripts'] = {'status': 'PASS', 'python_command': command,'storage_formats':[1,2], 'live_event_dispatch': 'NOT_RUN'}
         report['success'] = True
     except Exception as exc:
         report['success'] = False

@@ -38,6 +38,11 @@ class WindowsInstallSmokeTests(unittest.TestCase):
         self.assertEqual(found, self.copy.resolve())
         self.assertEqual(verifier.verify_package(found, self.expected)['skill_count'], 11)
 
+    def test_installed_helper_exercises_both_control_formats(self):
+        verifier=self.verifier();self.assertTrue(hasattr(verifier,'verify_control_formats'),'installed control-format probe is missing')
+        report=verifier.verify_control_formats(self.copy)
+        self.assertEqual(report['status'],'PASS');self.assertEqual(report['storage_formats'],[1,2]);self.assertEqual(report['logical_schema'],1)
+
     def test_disabled_available_only_and_wrong_fingerprint_are_rejected(self):
         verifier = self.verifier()
         for listing in ({'installed': [], 'available': [self.record]},

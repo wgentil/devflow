@@ -2,7 +2,7 @@
 
 Explicit `state compact/gc/verify/backup/policy/pins` commands provide reviewed
 maintenance and recovery. Existing legacy roots remain unchanged until explicit
-conversion; new-root initialization is still legacy at this implementation stage.
+conversion; new roots initialize format 2.
 See the [maintenance guide](control-maintenance.md) for actual commands, defaults
 and limitations, and the [design](../superpowers/specs/2026-10-26-control-state-compaction-design.md)
 for the accepted invariants.
@@ -42,7 +42,7 @@ storage APIs are not onboarding requirements.
 ## Implemented indexed authority (internal)
 
 Owned fixtures can explicitly initialize format 2 with `sqlite_store.initialize_store`.
-Public initialization remains legacy until migration and host integration are ready.
+Public initialization creates format 2 only for new roots; legacy journals stay v1.
 The standard-library SQLite module is loaded only when v2 is selected; missing
 support fails with `SQLITE_UNAVAILABLE`. Each connection uses foreign keys, a
 one-second busy timeout, WAL with FULL durability, and transactional snapshots.
@@ -80,7 +80,7 @@ fails before a gate, reviewer attachment or approval can consume it. Existing
 pure validator results and logical CLI outputs keep their current shapes and checks;
 physical summaries are never handed to them as complete packages. Governing
 bytes and approvals round-trip unchanged and do not require reapproval simply
-because their physical storage differs. Public initialization remains legacy; conversion uses the explicit maintenance
+because their physical storage differs. Public initialization creates v2 for new roots; existing-root conversion uses explicit maintenance
 command and preserves original logical records.
 
 ## Explicit terminal archives (internal)
@@ -246,3 +246,19 @@ Policy is a reducer-validated schema-1 boolean plus actor/operation provenance.
 After-commit delivery/discard/PR hooks honor it on v2 only. Root work/pin blockers
 and maintenance failure produce diagnostics without changing the terminal result.
 No automatic GC or legacy conversion is included.
+
+## New-root activation and initialization recovery
+
+First authoritative writes on missing/new roots initialize format 2 under the
+root lock, then commit the workflow operation. Existing legacy events directories
+remain v1. Reads never initialize. Release descriptors advertise format 2 and
+support for formats 1/2 separately from logical schema 1; plugin version remains
+unchanged until an explicitly authorized release. SQLite availability is checked
+before creating initialization intent.
+
+An initialization intent records the initiating operation's hash. Audited public
+resume uses a fresh recovery ID so the first-work ID stays retryable. Before
+activation, recovery verifies the same schema/head/dependency contract as normal
+SQLite readers, proves the unselected store empty, and refuses any late legacy
+writer. It retains a valid newer selected tail. Unknown/corrupt identities or
+partial databases fail closed; recovery never invents an empty authority.

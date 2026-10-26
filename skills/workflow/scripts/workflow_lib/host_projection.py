@@ -46,7 +46,7 @@ def _read_host(root,*,host=None,session_id=None,binding_id=None,run_id=None,requ
         from .model_policy import effective_preferences
         from .releases import PACKAGE_ROOT
         stages=json.loads((PACKAGE_ROOT/'definitions/model-policy.json').read_text(encoding='utf-8'))['stages']
-        hosts={row['host'] for row in state['data'].get('host_bindings',{}).values()} | ({host} if host else set())
+        hosts={row['host'] for row in state['data'].get('host_bindings',{}).values() if row.get('host') in {'claude','codex'}} | ({host} if host in {'claude','codex'} else set())
         versions={effective_preferences(run,stage,current_host).get('price_version')
             for run in state['data'].get('runs',{}).values() for stage in stages for current_host in hosts}
         for version in versions-{None}:

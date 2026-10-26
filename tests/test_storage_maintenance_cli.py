@@ -16,10 +16,13 @@ sys.path.insert(0,str(ROOT/'skills/workflow/scripts'))
 from workflow_lib import store,sqlite_store
 from workflow_lib.storage_format import detect_layout
 from workflow_lib.storage_backups import verify_backup
+from control_store_fixtures import legacy_root
 
 class MaintenanceCLITests(unittest.TestCase):
     def setUp(self):
         self.temp=self.enterContext(tempfile.TemporaryDirectory());self.base=Path(self.temp);self.root=self.base/'control é東京'
+        from control_store_fixtures import legacy_root
+        legacy_root(self.root) # Explicit legacy conversion and old-client fixtures.
         store.transact(self.root,0,'seed',{'kind':'fixture','payload':{'runs':{'closed':{'id':'closed','status':'discarded','active_attempt':None}}}})
     def cli(self,*args,expected=0):
         result=subprocess.run([sys.executable,str(ROOT/'skills/workflow/scripts/run.py'),'state',*map(str,args)],cwd=ROOT,capture_output=True,encoding='utf-8',timeout=45)
@@ -87,7 +90,7 @@ class MaintenanceCLITests(unittest.TestCase):
                         ('--apply','--operation-id','missing-plan','--actor-id','owner')):
             self.cli('compact','--root',self.root,*options,expected=2)
         self.assertEqual(self.files(),before)
-        other=self.base/'other';store.transact(other,0,'seed',{'kind':'fixture','payload':{'runs':{}}})
+        other=self.base/'other';legacy_root(other);store.transact(other,0,'seed',{'kind':'fixture','payload':{'runs':{}}})
         self.assertEqual(self.cli('compact','--root',other,'--apply','--plan-hash',plan['plan_hash'],'--operation-id','wrong-root','--actor-id','owner',expected=2)['error'],'STALE_MAINTENANCE_PLAN')
         self.assertEqual(detect_layout(other)['layout'],'legacy')
 

@@ -17,7 +17,10 @@ For delegated model work, the harness supplies [task facts](../../docs/reference
 
 Coordinate the whole process shown in [SKILL.md](SKILL.md). Begin with registered
 repositories, resolved context, a human-approved specification and a validated
-plan. Preparation is covered by the context, specification and planning guides.
+plan. New control roots initialize storage format 2 with Python 3.11+ and SQLite.
+Existing legacy roots remain format 1 across initialization and upgrades until explicit maintenance conversion;
+SQLite absence does not block legacy reads. Preparation is covered by the context,
+specification and planning guides.
 
 ## First-use ground interview
 
@@ -227,8 +230,34 @@ remain readable after later repository edits or relocation.
 
 Say “start DevFlow in this project.” Workflow discovers the Git/worktree root,
 initializes `.devflow/control` and excludes runtime state locally. Existing records
-are reused. Multiple resumable runs require a selection. Missing compatible Python
-is diagnosed; the plugin does not bundle an interpreter. See [hosts](../../docs/hosts.md).
+are reused without converting legacy storage. New roots use format 2; it requires
+standard-library SQLite support. Multiple resumable runs require a selection.
+Missing compatible Python or required SQLite support is diagnosed; the plugin does not bundle an interpreter. See [hosts](../../docs/hosts.md).
+
+### Initialization recovery
+
+An interrupted first-root initialization may leave a durable initialization intent.
+Use `state compact --root ROOT --resume --operation-id NEW_RECOVERY_OP
+--actor-id ACTOR` with a fresh recovery ID and the authorized recovering actor (not necessarily
+the first-work actor). Retry that recovery with its same ID/actor. Then retry the original first-work
+request with its original ID. Do not consume that first-work ID for recovery.
+This differs from interrupted compaction, which resumes with its original
+compaction ID and actor. Recovery validates root/layout/schema and preserves a
+newer selected tail. A late legacy writer or unverifiable database blocks
+activation; preserve both histories for diagnosis rather than resetting to empty.
+Missing SQLite is checked before creating a new initialization intent.
+
+```mermaid
+flowchart TD
+    Init[Initialize project] --> Existing{Existing legacy journal?}
+    Existing -->|Yes| Legacy[Reuse v1 without conversion]
+    Existing -->|New root| Runtime[Check Python and SQLite]
+    Runtime --> New[Initialize v2 atomically]
+    New --> Interrupted{Initialization interrupted?}
+    Interrupted -->|Yes| Recovery[Fresh recovery ID; verify authority]
+    Recovery --> Retry[Retry first work with original ID]
+    Interrupted -->|No| Work[Continue guided workflow]
+```
 
 ## Host usage example
 

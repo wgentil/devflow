@@ -1,5 +1,5 @@
 {
-  "aggregate_entry_bytes": 26327,
+  "aggregate_entry_bytes": 26347,
   "baseline": {
     "aggregate_entry_bytes": 65937
   },
@@ -15,11 +15,11 @@
     "skills/specify/SKILL.md": 2244,
     "skills/stats/SKILL.md": 1981,
     "skills/ux-reviewer/SKILL.md": 1872,
-    "skills/workflow/SKILL.md": 4068
+    "skills/workflow/SKILL.md": 4088
   },
   "schema_version": 1,
   "stage_load_bytes": {
-    "acceptance": 10550,
+    "acceptance": 10802,
     "build-work": 10435,
     "context": 6348,
     "implementation": 10435,
@@ -35,7 +35,7 @@
     "specify": 9707,
     "stats": 7710,
     "ux-reviewer": 6674,
-    "workflow": 10550
+    "workflow": 10802
   },
   "unit_bytes": {
     "common#1e6f0adae858d8e7": 3702,
@@ -101,7 +101,7 @@
     "guide.ux-reviewer.2#c60d72843aca9d51": 227,
     "guide.ux-reviewer.3#547a7a3be20dff74": 1225,
     "guide.ux-reviewer.4#ac4094c509328317": 472,
-    "guide.workflow#9e07883791b13172": 489,
+    "guide.workflow#9e07883791b13172": 721,
     "guide.workflow.10#f8f9bc5f244b2981": 113,
     "guide.workflow.11#e51607672fb9549d": 3024,
     "guide.workflow.12#1757cf0219546475": 171,
@@ -114,7 +114,7 @@
     "guide.workflow.6#d6a8ea53db16da72": 2352,
     "guide.workflow.7#efe49938aab31de8": 867,
     "guide.workflow.8#1fab5625e73a1d08": 3049,
-    "guide.workflow.9#fcc8d853fb00b40d": 935,
+    "guide.workflow.9#fcc8d853fb00b40d": 2404,
     "host-lifecycle.1#cfedd292c1723bfb": 3547,
     "procedure.build-work#1e6f0adae858d8e7": 8309,
     "procedure.build-work.1#8802045e96dc9375": 5282,
@@ -155,6 +155,6 @@
     "skill.specify#1e6f0adae858d8e7": 2244,
     "skill.stats#1e6f0adae858d8e7": 1981,
     "skill.ux-reviewer#1e6f0adae858d8e7": 1872,
-    "skill.workflow#1e6f0adae858d8e7": 4068
+    "skill.workflow#1e6f0adae858d8e7": 4088
   }
 }

@@ -69,7 +69,8 @@ class RoutingReceiptTests(unittest.TestCase):
         seed=copy.deepcopy(self.state)
         record=self.start()
         with tempfile.TemporaryDirectory() as temp:
-            root=Path(temp)
+            from control_store_fixtures import legacy_root
+            root=legacy_root(Path(temp))
             transact(root,0,'seed',{'kind':'fixture','payload':seed})
             event={'kind':'domain.host.native-start','payload':{'request':record}}
             committed=transact(root,1,'start',event)

@@ -61,6 +61,8 @@ class ItemReviewRecoveryTests(unittest.TestCase):
             transact(self.root,1,'bad-actor',{'kind':'review.recorded','payload':{'run_id':'run-1','review':record}})
         self.assertEqual(read_state(self.root),before)
     def test_old_record_replays_without_new_reopening_semantics(self):
+        from control_store_fixtures import legacy_root
+        legacy_root(self.root)
         pkg=self.package(legacy=True);record=record_review(self.run,pkg['package_hash'],self.reviewer,self.report(pkg))
         self.seed();transact(self.root,1,'legacy',{'kind':'review.recorded','payload':{'run_id':'run-1','review':record}})
         (self.root/'state.json').unlink()

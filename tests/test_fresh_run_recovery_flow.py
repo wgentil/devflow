@@ -19,6 +19,9 @@ class FreshRunRecoveryFlowTests(unittest.TestCase):
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory(prefix='devflow recovery 東京 ');self.addCleanup(self.temp.cleanup)
         self.repo=Path(self.temp.name).resolve()/'application';self.repo.mkdir();self.control=Path(self.temp.name).resolve()/'control'
+        if self._testMethodName == 'test_one_run_three_items_review_fix_and_final_delivery_without_file_swapping':
+            from control_store_fixtures import legacy_root
+            legacy_root(self.control)
         self.env=dict(os.environ)
         self.git('init','-q');self.git('config','user.email','test@example.test');self.git('config','user.name','Fixture')
         (self.repo/'tests').mkdir()

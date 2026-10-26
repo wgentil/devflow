@@ -9,7 +9,7 @@ Start with the [primary guide](../setup-and-usage.md#recovery-and-maintenance).
 
 Existing legacy roots remain usable. Root conversion is explicit; installing an
 upgrade, attaching a host or enabling post-terminal policy never converts one.
-New-root initialization is still legacy at this implementation stage. Format 2
+New roots initialize format 2. Format 2
 requires Python 3.11+ with standard-library SQLite and a local filesystem that
 supports locking/durability; network shares are not a claimed target.
 
@@ -70,6 +70,14 @@ Quiesce all older clients before conversion: a schema guard makes old readers/
 writers fail instead of appending divergent history. Resume the exact durable
 intent after interruption; never remove the guard or restore a checkpoint over a
 newer committed tail. Preserve corrupt/unsupported roots for explicit diagnosis.
+
+For interrupted first-root initialization, resume with a **new recovery operation
+ID** and explicit actor, then retry the original first-work request with its
+original ID. Compaction recovery instead uses the original compaction ID/actor.
+Initialization recovery proves a supported empty unselected database and rejects
+a late legacy journal; a valid already selected newer tail remains intact. Missing
+SQLite is checked before creating an initialization intent. Unverifiable partial
+databases remain preserved for diagnosis.
 
 Live preparations, context publishers, native/interactive dispatch, transfers,
 attempts, repair leases and uncertain work block maintenance application. A dead

@@ -58,6 +58,13 @@ def dispatch(parsed):
             _identity(parsed)
             from workflow_lib.storage_audit import operation_reserved
             prior=operation_reserved(root,parsed.operation_id)
+            from workflow_lib.storage_format import confined_path,INTENT_FILE
+            from workflow_lib.storage_maintenance import _read_json,resume_initialization_audited
+            intent_path=confined_path(root,INTENT_FILE)
+            intent=_read_json(intent_path) if intent_path.exists() else {}
+            if intent.get('kind')=='initialize' or prior and prior.get('kind')=='initialize-resume':
+                identity=prior['request']['format'] if prior else intent['format']
+                return resume_initialization_audited(root,identity,operation_id=parsed.operation_id,actor_id=parsed.actor_id)
             if not prior or prior.get('kind')!='compact':raise WorkflowError('MAINTENANCE_RECOVERY_REQUIRED','Resume using the original compact operation ID and actor.')
             return _summary(apply_authorized_compaction(root,prior['request']['plan_hash'],operation_id=parsed.operation_id,actor_id=parsed.actor_id),parsed.details)
         if not parsed.apply:

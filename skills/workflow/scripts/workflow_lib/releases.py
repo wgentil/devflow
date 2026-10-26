@@ -25,6 +25,7 @@ def release_descriptor(package_root: Path = PACKAGE_ROOT) -> dict:
     fingerprint = digest.hexdigest()
     return {'plugin': 'devflow', 'plugin_version': manifest['version'],
             'state_schema_version': 1, 'supported_schemas': SCHEMAS,
+            'storage_format_version':2,'supported_storage_formats':[1,2],
             'host_protocol_version': PROTOCOL, 'release_id': fingerprint,
             'fingerprint': fingerprint}
 

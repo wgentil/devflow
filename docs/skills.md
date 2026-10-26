@@ -110,3 +110,8 @@ Optional developer reference: [control-storage contracts](reference/control-stor
 Control maintenance is guided by the workflow harness. See the optional
 [maintenance reference](reference/control-maintenance.md); onboarding does not
 require storage commands, shell variables or skill names.
+
+New project control roots use format 2 with Python's SQLite support. Existing
+legacy roots are preserved until explicit conversion; logical workflow schema
+remains 1. The harness reports runtime/recovery needs without requiring users to
+understand formats or command names.

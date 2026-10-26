@@ -96,7 +96,7 @@ def _next_position(conn):
     return value
 
 
-def initialize_store(root: Path):
+def initialize_store(root: Path,*,operation_id=None):
     from .store import _exclusive, _atomic_json
     from .platform_lock import sync_directory
     root = Path(root).resolve()
@@ -107,13 +107,14 @@ def initialize_store(root: Path):
             raise WorkflowError('MAINTENANCE_RECOVERY_REQUIRED', 'Resume the existing storage intent before initialization.')
         if list((root / 'events').glob('[0-9]*.json')):
             raise WorkflowError('LEGACY_MIGRATION_REQUIRED', 'Existing events require explicit verified migration.')
+        sqlite = _sqlite()
+        initiating_hash=_sha(operation_id.encode('utf-8')) if operation_id is not None else None
         database = confined_path(root, DATABASE_FILE, create_parents=True)
         if database.exists(): raise WorkflowError('MAINTENANCE_RECOVERY_REQUIRED', 'An unactivated database already exists; preserve and verify it.')
         identity = {'storage_format': 2, 'database_schema': DATABASE_SCHEMA,
                     'root_id': uuid.uuid4().hex, 'layout_id': uuid.uuid4().hex, 'database': DATABASE_FILE}
         intent = confined_path(root, INTENT_FILE, create_parents=True)
-        _atomic_json(intent, {'kind': 'initialize', 'format': identity, 'phase': 'preparing', 'source_head': 0})
-        sqlite = _sqlite()
+        _atomic_json(intent, {'kind': 'initialize', 'format': identity, 'phase': 'preparing', 'source_head': 0,'initiating_operation_hash':initiating_hash})
         conn = sqlite.connect(database)
         os.chmod(database, 0o600)
         try:
@@ -130,13 +131,34 @@ def initialize_store(root: Path):
             conn.close()
         with database.open('rb') as handle: os.fsync(handle.fileno())
         sync_directory(database.parent)
-        _atomic_json(intent, {'kind': 'initialize', 'format': identity, 'phase': 'ready', 'source_head': 0})
+        _atomic_json(intent, {'kind': 'initialize', 'format': identity, 'phase': 'ready', 'source_head': 0,'initiating_operation_hash':initiating_hash})
         guard = confined_path(root, 'events/00000001.json', create_parents=True)
         _atomic_json(guard, LEGACY_GUARD)
         _atomic_json(confined_path(root, FORMAT_FILE), identity)
         intent.unlink()
         sync_directory(intent.parent)
         return detect_layout(root)
+
+
+def validate_connection(conn,layout):
+    if (conn.execute('PRAGMA user_version').fetchone()[0] != DATABASE_SCHEMA
+            or any(_meta(conn, key) != layout[key] for key in ('root_id', 'layout_id', 'storage_format', 'database_schema'))):
+        raise WorkflowError('CORRUPT_STORAGE', 'Database identity/schema does not match its selected root.')
+    catalog = conn.execute("SELECT type,name,sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY type,name").fetchall()
+    if catalog != _expected_catalog():
+        raise WorkflowError('UNSUPPORTED_STORAGE_SCHEMA', 'Database tables, indexes or triggers differ from the supported catalog; preserve and verify this root.')
+    for key in ('head', 'generation', 'position', 'dependency_head'):
+        value = _meta(conn, key)
+        if type(value) is not int or value < 0:
+            raise WorkflowError('CORRUPT_STORAGE', 'Database generation/head/position metadata is invalid; preserve and verify this root.')
+    head = conn.execute('SELECT sequence,event_hash FROM events ORDER BY sequence DESC LIMIT 1').fetchone()
+    if (head[0] if head else 0) != _meta(conn, 'head') or (head[1] if head else None) != _meta(conn, 'head_hash'):
+        raise WorkflowError('CORRUPT_STORAGE', 'Database event head and projection head disagree.')
+    if (_meta(conn, 'dependency_schema') != 1 or _meta(conn, 'dependency_head') != _meta(conn, 'head')
+            or conn.execute("SELECT 1 FROM sqlite_master WHERE type='index' AND name='dependency_source'").fetchone() is None):
+        raise WorkflowError('CORRUPT_DEPENDENCY_INDEX', 'Dependency catalog is missing or stale; verify/rebuild explicitly before work.')
+    if conn.execute('SELECT 1 FROM dependency_dirty LIMIT 1').fetchone():
+        raise WorkflowError('CORRUPT_DEPENDENCY_INDEX', 'Dependency witnesses are incomplete; verify/rebuild explicitly.')
 
 
 @contextmanager
@@ -166,24 +188,7 @@ def _connection(root: Path, *, write=False):
         conn.execute('PRAGMA synchronous=FULL')
         if not write: conn.execute('PRAGMA query_only=ON')
         conn.execute('BEGIN IMMEDIATE' if write else 'BEGIN')
-        if (conn.execute('PRAGMA user_version').fetchone()[0] != DATABASE_SCHEMA
-                or any(_meta(conn, key) != layout[key] for key in ('root_id', 'layout_id', 'storage_format', 'database_schema'))):
-            raise WorkflowError('CORRUPT_STORAGE', 'Database identity/schema does not match its selected root.')
-        catalog = conn.execute("SELECT type,name,sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY type,name").fetchall()
-        if catalog != _expected_catalog():
-            raise WorkflowError('UNSUPPORTED_STORAGE_SCHEMA', 'Database tables, indexes or triggers differ from the supported catalog; preserve and verify this root.')
-        for key in ('head', 'generation', 'position', 'dependency_head'):
-            value = _meta(conn, key)
-            if type(value) is not int or value < 0:
-                raise WorkflowError('CORRUPT_STORAGE', 'Database generation/head/position metadata is invalid; preserve and verify this root.')
-        head = conn.execute('SELECT sequence,event_hash FROM events ORDER BY sequence DESC LIMIT 1').fetchone()
-        if (head[0] if head else 0) != _meta(conn, 'head') or (head[1] if head else None) != _meta(conn, 'head_hash'):
-            raise WorkflowError('CORRUPT_STORAGE', 'Database event head and projection head disagree.')
-        if (_meta(conn, 'dependency_schema') != 1 or _meta(conn, 'dependency_head') != _meta(conn, 'head')
-                or conn.execute("SELECT 1 FROM sqlite_master WHERE type='index' AND name='dependency_source'").fetchone() is None):
-            raise WorkflowError('CORRUPT_DEPENDENCY_INDEX', 'Dependency catalog is missing or stale; verify/rebuild explicitly before work.')
-        if conn.execute('SELECT 1 FROM dependency_dirty LIMIT 1').fetchone():
-            raise WorkflowError('CORRUPT_DEPENDENCY_INDEX', 'Dependency witnesses are incomplete; verify/rebuild explicitly.')
+        validate_connection(conn,layout)
         yield conn
         if write: conn.commit()
     except sqlite.Error as exc:
@@ -515,7 +520,7 @@ def _transact_locked(root, expected_version, operation_id, event, *, precommit=N
                    'kind':event['kind'],'payload':event['payload']}
         if guard:committed['host_binding']={key:guard[key] for key in ('binding_id','revision')}
         # Legacy journal JSON canonicalizes event mappings before future replay.
-        committed = json.loads(_json(committed))
+        committed = json.loads(json.dumps(committed, sort_keys=True, ensure_ascii=False))
         projected=deepcopy(state)
         source_hash = None
         if event['kind'] == 'domain.stats.metrics':

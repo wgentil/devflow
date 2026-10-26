@@ -13,7 +13,7 @@ ENTRY=Path(__file__).resolve().parents[1]/'skills/workflow/scripts/run.py'
 
 class ReverificationTests(unittest.TestCase):
     def setUp(self):
-        self.f=red_fixtures.RedReuseTests();self.f.setUp();self.addCleanup(self.f.doCleanups)
+        self.f=red_fixtures.RedReuseTests();self.f.setUp(legacy=self._testMethodName == "test_exact_replay_and_rebuild_do_not_issue_second_token");self.addCleanup(self.f.doCleanups)
         self.root=self.f.root;self.repo=self.f.repo
         state=read_state(self.root);run=state['data']['runs']['run-1']
         from test_hosts import host_state

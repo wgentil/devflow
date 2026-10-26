@@ -40,24 +40,38 @@ def write_record(path,body):
     if len(json.dumps(encoded).encode('utf-8'))>LIMIT:raise WorkflowError('MAINTENANCE_AUDIT_LIMIT','Maintenance audit exceeds its bounded record limit.')
     _atomic_json(path,encoded)
 
-def perform(root,kind,request,operation_id,actor_id,action):
+def perform(root,kind,request,operation_id,actor_id,action,*,initializing=None):
     if not all(isinstance(value,str) and value.strip() for value in (operation_id,actor_id)):
         raise WorkflowError('MAINTENANCE_IDENTITY_REQUIRED','An explicit operation ID and actor ID are required.')
     root=Path(root).resolve()
     with _exclusive(root):
         from .storage_access import read_current,operation_lookup
+        from .storage_format import detect_layout,INTENT_FILE
+        unavailable_history=detect_layout(root)['layout']=='incomplete'
+        if unavailable_history and initializing is not None:
+            path=confined_path(root,INTENT_FILE)
+            with path.open('rb') as stream:raw=stream.read(65537)
+            try:intent=json.loads(raw)
+            except ValueError as exc:raise WorkflowError('MAINTENANCE_METADATA_INVALID','Initialization intent is invalid; preserve it.') from exc
+            if len(raw)>65536 or intent.get('kind')!='initialize' or intent.get('format')!=initializing or intent.get('source_head')!=0:
+                raise WorkflowError('MAINTENANCE_RECOVERY_REQUIRED','Only the exact empty-root initialization can bypass unavailable history lookup.')
+        elif unavailable_history:
+            raise WorkflowError('MAINTENANCE_RECOVERY_REQUIRED','Resume the existing maintenance intent first.')
         guard=HOST_CONTEXT.get()
+        if guard and unavailable_history:raise WorkflowError('STALE_BINDING','An unselected initialization cannot authorize a host binding.')
         if guard:
             state=read_current(root,global_keys=(),binding_id=guard['binding_id'])
             _guard_transaction(state,{'kind':'maintenance.physical','payload':{}})
-        if operation_lookup(root,operation_id) is not None:
+        if not unavailable_history and operation_lookup(root,operation_id) is not None:
             raise WorkflowError('OPERATION_CONFLICT','Operation ID already belongs to workflow history.')
         receipt,pending=paths(root,operation_id)
         fingerprint=digest({'kind':kind,'request':request,'actor_id':actor_id})
         prior=operation_reserved(root,operation_id)
         if prior:
             if prior.get('request_hash')!=fingerprint:raise WorkflowError('OPERATION_CONFLICT','Maintenance operation belongs to another actor or request.')
-            if 'result' in prior:return {**prior['result'],'replayed':True}
+            if 'result' in prior:
+                if unavailable_history:raise WorkflowError('MAINTENANCE_RECOVERY_REQUIRED','A completed receipt cannot replace missing selected authority.')
+                return {**prior['result'],'replayed':True}
         else:
             prior={'audit_version':1,'operation_id':operation_id,'actor_id':actor_id,'kind':kind,
                 'request':request,'request_hash':fingerprint}
@@ -82,7 +96,7 @@ def verify_receipts(root,conn=None,*,logical_operations=()):
         operation_id=body.get('operation_id');actor_id=body.get('actor_id')
         if (not isinstance(operation_id,str) or not operation_id or operation_key(operation_id)!=path.stem
                 or not isinstance(actor_id,str) or not actor_id.strip()
-                or body.get('kind') not in {'gc','compact','backup','pins-reconcile'}
+                or body.get('kind') not in {'gc','compact','backup','pins-reconcile','initialize-resume'}
                 or digest({'kind':body['kind'],'request':body.get('request'),'actor_id':actor_id})!=body.get('request_hash')
                 or operation_id in logical_operations
                 or conn is not None and conn.execute('SELECT 1 FROM events WHERE operation_id=?',(operation_id,)).fetchone()):

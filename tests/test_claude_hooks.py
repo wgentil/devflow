@@ -22,6 +22,8 @@ class HookTests(unittest.TestCase):
         payload={'hook_event_name':event,'session_id':'s1','cwd':str(self.project),'task_id':task,'task_subject':'ignored $(touch hacked)'}
         return subprocess.run([sys.executable,'-B',str(HOOK)],input=raw if raw is not None else json.dumps(payload),text=True,encoding='utf-8',capture_output=True,timeout=12)
     def attach(self):
+        from control_store_fixtures import legacy_root
+        legacy_root(self.root) # Preserve the v1 hook/replay-count regressions.
         transact(self.root,0,'seed',{'kind':'fixture','payload':host_state(str(self.project))})
         transact(self.root,1,'attach',{'kind':'domain.host.attach','payload':{'request':attachment(str(self.project),host='claude')}})
         transact(self.root,2,'task',{'kind':'domain.host.task-bind','payload':{'request':{'binding_id':'b1','revision':1,'task_id':'task','scope':'item','item_id':'W1','token':'t'}}})

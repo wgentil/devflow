@@ -369,24 +369,46 @@ def resume_compaction(root):
 
 
 def _resume_initialization(root, intent):
-    identity = intent.get('format',{})
-    database = confined_path(root,DATABASE_FILE)
-    sqlite = sql._sqlite();conn = sqlite.connect(database.as_uri()+'?mode=ro',uri=True)
+    import re
+    identity=intent.get('format',{})
+    if (intent.get('kind')!='initialize' or intent.get('phase') not in {'preparing','ready'}
+            or type(intent.get('source_head')) is not int or intent['source_head']!=0
+            or set(identity)!=set(FORMAT_KEYS)
+            or type(identity.get('storage_format')) is not int or identity['storage_format']!=2
+            or type(identity.get('database_schema')) is not int or identity['database_schema']!=1
+            or identity.get('database')!=DATABASE_FILE
+            or any(not isinstance(identity.get(key),str) or not re.fullmatch('[0-9a-f]{32}',identity[key]) for key in ('root_id','layout_id'))):
+        raise WorkflowError('MAINTENANCE_METADATA_INVALID','Initialization identity is incomplete or unsupported; preserve the root.')
+    initiating=intent.get('initiating_operation_hash')
+    if initiating is not None and (not isinstance(initiating,str) or not re.fullmatch('[0-9a-f]{64}',initiating)):
+        raise WorkflowError('MAINTENANCE_METADATA_INVALID','Initializing operation identity is corrupt; preserve the root.')
+    selected=confined_path(root,FORMAT_FILE).exists()
+    if not selected:
+        for path in confined_path(root,'events').glob('[0-9]*.json'):
+            path=confined_path(root,path.relative_to(root).as_posix())
+            if path.name!='00000001.json' or _read_json(path)!=GUARD:
+                raise WorkflowError('STALE_INITIALIZATION_SOURCE','A legacy writer committed after initialization began; preserve both histories for explicit recovery.')
+    database=confined_path(root,DATABASE_FILE);sqlite=sql._sqlite();conn=None
     try:
-        if (conn.execute('PRAGMA integrity_check').fetchone()[0]!='ok'
-                or any(sql._meta(conn,key)!=identity.get(key) for key in FORMAT_KEYS)
-                or conn.execute("SELECT type,name,sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY type,name").fetchall()!=sql._expected_catalog()):
-            raise WorkflowError('MAINTENANCE_RECOVERY_REQUIRED','Incomplete initialization database cannot be safely activated.')
-        if not confined_path(root,FORMAT_FILE).exists() and sql._meta(conn,'head')!=0:
-            raise WorkflowError('MAINTENANCE_RECOVERY_REQUIRED','Unselected initialization contains unexpected history.')
-    finally: conn.close()
-    if not confined_path(root,FORMAT_FILE).exists():
+        conn=sqlite.connect(database.as_uri()+'?mode=ro',uri=True)
+        if conn.execute('PRAGMA integrity_check').fetchone()[0]!='ok' or conn.execute('PRAGMA foreign_key_check').fetchone():
+            raise WorkflowError('MAINTENANCE_RECOVERY_REQUIRED','Incomplete initialization database cannot be verified.')
+        sql.validate_connection(conn,identity)
+        if not selected:
+            tables=[row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name!='metadata'")]
+            if sql._meta(conn,'head')!=0 or any(conn.execute('SELECT 1 FROM '+table+' LIMIT 1').fetchone() for table in tables):
+                raise WorkflowError('MAINTENANCE_RECOVERY_REQUIRED','Unselected initialization contains unexpected history; preserve it.')
+    except sqlite.Error as exc:
+        raise WorkflowError('MAINTENANCE_RECOVERY_REQUIRED','Initialization database is unavailable or incomplete; preserve the root for verified recovery: '+str(exc)) from exc
+    finally:
+        if conn is not None:conn.close()
+    if not selected:
         _atomic_json(confined_path(root,'events/00000001.json',create_parents=True),GUARD)
         _atomic_json(confined_path(root,FORMAT_FILE),identity)
     elif any(detect_layout(root).get(key)!=identity.get(key) for key in FORMAT_KEYS):
-        raise WorkflowError('MAINTENANCE_RECOVERY_REQUIRED','Initialization intent differs from the selected authority.')
+        raise WorkflowError('MAINTENANCE_RECOVERY_REQUIRED','Initialization intent differs from selected authority.')
     confined_path(root,INTENT_FILE).unlink();sync_directory(root/'maintenance')
-    return {'completed':True,'kind':'initialize','storage_format':2}
+    return {'completed':True,'kind':'initialize','storage_format':2,'root_id':identity['root_id'],'layout_id':identity['layout_id']}
 
 
 def verify_store(root, *, full=False):
@@ -497,3 +519,23 @@ def post_terminal(root,event,*,committed_data=None):
         apply_authorized_compaction(root,plan['plan_hash'],operation_id=event['operation_id']+':post-terminal',actor_id=actor)
     except Exception as exc:
         warn_utf8('devflow: post-terminal compaction deferred; terminal result remains valid: '+str(exc)[:400])
+
+
+def resume_initialization_audited(root,identity,*,operation_id,actor_id):
+    from .storage_audit import perform,operation_key
+    root=Path(root).resolve()
+    def resume(audit):
+        path=confined_path(root,INTENT_FILE)
+        if path.exists():
+            intent=_read_json(path)
+            if intent.get('kind')!='initialize' or intent.get('format')!=identity:
+                raise WorkflowError('OPERATION_CONFLICT','Recovery belongs to another initialization.')
+            if intent.get('initiating_operation_hash')==operation_key(operation_id):
+                raise WorkflowError('OPERATION_CONFLICT','Use a new recovery operation ID; preserve the original first-work ID for retry.')
+            return resume_compaction(root)
+        layout=detect_layout(root)
+        if layout['layout']!='v2' or any(layout.get(key)!=identity.get(key) for key in FORMAT_KEYS):
+            raise WorkflowError('MAINTENANCE_RECOVERY_REQUIRED','Selected root differs from the initialization being recovered.')
+        with sql.connection(root):pass
+        return {'completed':True,'kind':'initialize','storage_format':2,'root_id':identity['root_id'],'layout_id':identity['layout_id']}
+    return perform(root,'initialize-resume',{'format':identity},operation_id,actor_id,resume,initializing=identity)
