@@ -21,8 +21,26 @@ jobs:
         run: git fetch --depth=1 origin refs/tags/v0.3.15:refs/tags/v0.3.15
       - name: Complete ordinary platform suite
         run: python scripts/run_platform_tests.py --output platform-report.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: platform-${{ matrix.os }}-${{ matrix.python }}
+          path: '*-report.json'
+  windows-legacy:
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.11', '3.x']
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Fetch frozen old-client baseline
+        run: git fetch --depth=1 origin refs/tags/v0.3.15:refs/tags/v0.3.15
       - name: Explicit legacy Windows code page
-        if: always() && runner.os == 'Windows'
         shell: pwsh
         run: |
           $env:PYTHONIOENCODING = 'cp1252'
@@ -32,8 +50,8 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: platform-${{ matrix.os }}-${{ matrix.python }}
-          path: '*-report.json'
+          name: legacy-windows-${{ matrix.python }}
+          path: legacy-report.json
   claude-plugin-windows:
     timeout-minutes: 20
     runs-on: windows-latest

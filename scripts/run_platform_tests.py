@@ -46,9 +46,15 @@ def run_suite(start_dir: Path, patterns: list[str], report_path: Path) -> dict:
         suite.addTests(loader.discover(str(start_dir.resolve()), pattern=pattern))
     result = unittest.TextTestRunner(verbosity=2, failfast=False).run(suite)
     git = subprocess.run(['git', '--version'], capture_output=True, encoding='utf-8', check=False)
+    def traces(rows):
+        limit=65536
+        return [{'id':test.id(),'traceback':trace if len(trace)<=limit else
+                 trace[:limit//2]+'\n[traceback excerpt truncated]\n'+trace[-limit//2:],
+                 'truncated':len(trace)>limit} for test,trace in rows]
     report = {'schema_version': 1, 'success': result.wasSuccessful() and result.testsRun > 0,
         'tests_run': result.testsRun, 'failures': [test.id() for test, _ in result.failures],
         'errors': [test.id() for test, _ in result.errors],
+        'failure_traces':traces(result.failures),'error_traces':traces(result.errors),
         'skips': [{'id': test.id(), 'reason': reason} for test, reason in result.skipped],
         'expected_failures': [test.id() for test, _ in result.expectedFailures],
         'unexpected_successes': [test.id() for test in result.unexpectedSuccesses],

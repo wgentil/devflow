@@ -1,0 +1,23 @@
+{
+  "installed": [
+    {
+      "pluginId": "devflow@devflow-marketplace",
+      "name": "devflow",
+      "marketplaceName": "devflow-marketplace",
+      "version": "0.3.15",
+      "installed": true,
+      "enabled": true,
+      "source": {
+        "source": "local",
+        "path": "D:\\a\\devflow\\devflow"
+      },
+      "marketplaceSource": {
+        "sourceType": "local",
+        "source": "\\\\?\\D:\\a\\devflow\\devflow"
+      },
+      "installPolicy": "AVAILABLE",
+      "authPolicy": "ON_INSTALL"
+    }
+  ],
+  "available": []
+}

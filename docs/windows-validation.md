@@ -130,3 +130,12 @@ write access before durability flush. Windows requires a write-capable handle
 for [FlushFileBuffers](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-flushfilebuffers).
 The storage durability regressions preserve complete database content while
 exercising that access rule; native installed-helper CI confirms the OS behavior.
+
+
+Ordinary suites and Windows CP1252 suites run in independent jobs with separate
+reports. The six ordinary jobs, two legacy Windows jobs and installed-host job
+retain complete coverage without sharing one cumulative timeout. Report JSON
+keeps every failure/error ID plus bounded head/tail traceback excerpts (64K
+characters, with an explicit truncation flag), so diagnosis does not depend on a
+subsequent job's logs surviving cancellation. The process exit status remains
+nonzero for any failure, error or empty suite.

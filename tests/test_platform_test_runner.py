@@ -39,6 +39,9 @@ class Cases(unittest.TestCase):
             self.assertEqual(report['tests_run'], 4)
             self.assertEqual(len(report['failures']), 1)
             self.assertEqual(len(report['errors']), 1)
+            self.assertIn('first failure',report['failure_traces'][0]['traceback'])
+            self.assertIn('later error',report['error_traces'][0]['traceback'])
+            self.assertFalse(report['failure_traces'][0]['truncated'])
             self.assertIn('test_b_error', report['errors'][0])
             self.assertEqual(report['skips'][0]['reason'], 'fixture skip')
             result = subprocess.run([sys.executable, str(ROOT / 'scripts/run_platform_tests.py'),

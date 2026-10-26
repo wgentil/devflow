@@ -3,7 +3,8 @@
 Candidate: `feat/archive-backed-control-state`, based on `36e10f4`.
 Status: final local gate passed; native CI and final review in progress.
 Runtime commit: `b36f4ce5b529e5a9ae86bb270f34ccc1c2079338`.
-[Exact corrected candidate CI](https://github.com/wgentil/devflow/actions/runs/40405162340).
+Validation commit: `d3aaeedf6a69e5cd8059bea270384198096e6816` (fixture/docs only).
+[Exact final validation CI](https://github.com/wgentil/devflow/actions/runs/40407384992).
 No merge or release.
 Source: [approved design](../specs/2026-10-26-control-state-compaction-design.md),
 [plan](../plans/2026-10-26-control-state-compaction.md),
@@ -173,3 +174,20 @@ first commit using [documented Git controls](https://git-scm.com/docs/git-mainte
 All repository-byte assertions remain unchanged. Nine focused strict-inspection
 and benchmark tests pass; the complete final candidate CI is rerun for this
 fixture-only change. Product runtime/fingerprint is unchanged by that correction.
+
+
+### Independent native gates and retained diagnostics
+
+The preceding Windows ordinary suites failed after 35–36 minutes. Their combined
+legacy steps continued under `always()`; after the superseded run was stopped,
+GitHub omitted both cancelled Windows job logs and artifacts. Their exact failure
+IDs/causes are unavailable and are not attributed to the fixed Git-fixture race.
+No final native compatibility claim relies on that run.
+
+The final workflow now runs six ordinary suites, two independent Windows CP1252
+suites and the installed-host suite. Every existing test remains enabled. Separate
+jobs retain their own 45-minute budgets and artifacts, so ordinary results are
+published without waiting for another full storage suite. JSON reports retain
+all failure/error IDs and bounded head/tail traceback excerpts with truncation
+flags. Reporter tests observed RED before those fields were implemented, then
+passed; workflow YAML parsed successfully. Product runtime/fingerprint is unchanged.
