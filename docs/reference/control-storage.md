@@ -61,3 +61,22 @@ The legacy event directory receives an unsupported-schema sentinel before v2
 activation so older clients cannot mistake the root for empty history.
 Incomplete initialization requires explicit recovery; no automatic repair or
 legacy migration is exposed at this stage.
+
+## Verified payload sharing (internal)
+
+V2 persistence uses a versioned physical record tree. Complete review packages
+are stored once as `review-package` objects with small routing summaries; shared
+source text, diffs and governing before/after base64 fields use `source-field`
+objects. A physical checksum never replaces a logical package/proposal hash.
+The physical tree escapes original dictionaries, so user fields cannot be
+mistaken for storage references. Legacy inline records remain readable.
+
+Selected record hydration verifies every referenced body before returning logical
+state or an operation receipt. Package hydration also checks the original
+unsigned-package hash and all routing summary fields. Missing content therefore
+fails before a gate, reviewer attachment or approval can consume it. Existing
+pure validators and logical CLI outputs keep their current shapes and checks;
+physical summaries are never handed to them as complete packages. Governing
+bytes and approvals round-trip unchanged and do not require reapproval simply
+because their physical storage differs. Public initialization and migration are
+still unchanged at this stage.

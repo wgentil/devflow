@@ -148,6 +148,13 @@ def connection(root: Path, *, write=False):
 
 def _encode(root, value, kind):
     raw = _json(value).encode('utf-8')
+    from .stored_records import encode_record
+    physical = encode_record(root, value)
+    if physical is not None:
+        encoded = _json(physical).encode('utf-8')
+        if len(encoded) > INLINE_BYTES:
+            return 'record-object', _json(put_object(root, kind + '-record', encoded)), _sha(raw)
+        return 'record', encoded.decode('utf-8'), _sha(raw)
     if len(raw) > INLINE_BYTES:
         return 'object', _json(put_object(root, kind, raw)), _sha(raw)
     return 'json', raw.decode('utf-8'), _sha(raw)
@@ -155,6 +162,15 @@ def _encode(root, value, kind):
 
 def _decode(root, codec, payload, expected):
     try:
+        if codec in {'record', 'record-object'}:
+            from .stored_records import decode_record
+            physical = json.loads(payload)
+            if codec == 'record-object':
+                physical = json.loads(read_object(root, physical, max_bytes=physical['size_bytes']))
+            value = decode_record(root, physical)
+            if _sha(_json(value).encode('utf-8')) != expected:
+                raise ValueError('hydrated logical checksum mismatch')
+            return value
         if codec == 'object':
             ref = json.loads(payload)
             raw = read_object(root, ref, max_bytes=ref['size_bytes'])
