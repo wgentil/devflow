@@ -98,6 +98,18 @@ def _apply_event(state: dict, event: dict, *, metrics_source_hash=None) -> None:
         result = (reduce_event(data, kind, payload, event.get("sequence", 1) - 1, metrics_source_hash=metrics_source_hash)
                   if metrics_source_hash is not None else reduce_event(data, kind, payload, event.get("sequence", 1) - 1))
         data.setdefault("domain_receipts", {})[event["operation_id"]] = result
+    elif kind == 'maintenance.policy.recorded':
+        policy=payload.get('maintenance_policy');authorization=payload.get('maintenance_policy_authorization')
+        if (not isinstance(policy,dict) or set(policy)!={'schema_version','post_terminal_compaction'}
+                or type(policy.get('schema_version')) is not int or policy['schema_version']!=1
+                or type(policy.get('post_terminal_compaction')) is not bool
+                or set(payload)!={'maintenance_policy','maintenance_policy_authorization'}
+                or not isinstance(authorization,dict) or set(authorization)!={'actor_id','operation_id'}
+                or not isinstance(authorization.get('actor_id'),str) or not authorization['actor_id'].strip()
+                or authorization.get('operation_id')!=event['operation_id']):
+            raise WorkflowError('INVALID_EVENT','Maintenance policy needs schema 1, a boolean setting and an explicit actor.')
+        data['maintenance_policy']=deepcopy(policy)
+        data['maintenance_policy_authorization']=deepcopy(authorization)
     elif kind == "run.started":
         run = payload.get("run")
         if not isinstance(run, dict) or not run.get("id") or run["id"] in data.setdefault("runs", {}):
@@ -707,6 +719,14 @@ def _atomic_json(path: Path, value: dict) -> None:
 
 
 def transact(root: Path, expected_version: int, operation_id: str, event: dict, *, precommit=None) -> dict:
+    result=_transact_once(root,expected_version,operation_id,event,precommit=precommit)
+    if not result['replayed'] and result['event']['kind'] in {'delivery.recorded','run.discarded','domain.pr.delivered'}:
+        from .storage_maintenance import post_terminal
+        post_terminal(root,result['event'],committed_data=result['state']['data'])
+    return result
+
+
+def _transact_once(root: Path, expected_version: int, operation_id: str, event: dict, *, precommit=None) -> dict:
     """Append one idempotent event if the caller's state version is current."""
     root = Path(root)
     if not isinstance(operation_id, str) or not operation_id:
@@ -724,6 +744,8 @@ def transact(root: Path, expected_version: int, operation_id: str, event: dict, 
             raise WorkflowError('MAINTENANCE_RECOVERY_REQUIRED', 'Resume the incomplete storage intent before work.')
         state, _ = _read_journal(root)
         _guard_transaction(state, event)
+        from .storage_audit import operation_reserved
+        if operation_reserved(root,operation_id):raise WorkflowError('OPERATION_CONFLICT','Operation ID belongs to physical maintenance.')
         previous = state["operations"].get(operation_id)
         if previous is not None:
             return {"state": state, "event": previous, "replayed": True}

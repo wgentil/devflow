@@ -224,7 +224,8 @@ preflight time can omit that replay cost.
 `total_ms` covers those measured phases, not the final locked replay or every
 parent artifact/freshness operation. Full CLI time is measured separately. Legacy
 journal replay still grows with history. The internal v2 backend uses selected
-indexed reads; public compaction/archive commands are not provided at this stage. Preserve the journal rather than deleting history to advance a gate.
+indexed reads; explicit compaction/GC commands are described in the
+[maintenance reference](reference/control-maintenance.md). Preserve the journal rather than deleting history to advance a gate.
 Exact historical operation receipts retain their existing replay semantics; new
 attempts always use the live guard.
 
@@ -239,6 +240,5 @@ The internal v2 backend reads selected host/run records without replaying unrela
 history. Package bodies are resolved for the selected body consumer; routine
 preparation and attempt commits preserve historical package references. Explicit
 inspection and full audit still restore complete logical detail. Legacy public
-roots retain replay until explicitly migrated through the maintenance interface
-when available. Preparation also checks layout/generation changes and reserves
+roots retain replay until explicitly migrated through the maintenance interface. Preparation also checks layout/generation changes and reserves
 in-flight content so maintenance cannot remove it during composition or dispatch.

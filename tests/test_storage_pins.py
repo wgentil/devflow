@@ -34,6 +34,8 @@ def acquire_root(root,ready,result):
     ready.set()
     with store._exclusive(Path(root)):result.put('acquired')
 
+def close_inherited_pin(pin):pin.close()
+
 class StoragePinTests(unittest.TestCase):
     def setUp(self):
         self.temp=self.enterContext(tempfile.TemporaryDirectory());self.root=Path(self.temp)/'control';sqlite_store.initialize_store(self.root)
@@ -97,6 +99,15 @@ class StoragePinTests(unittest.TestCase):
             self.assertEqual(result.get(timeout=5),'acquired')
         finally:child.join(5)
         self.assertEqual(child.exitcode,0)
+
+    @unittest.skipUnless('fork' in multiprocessing.get_all_start_methods(),'POSIX inherited lease ownership probe')
+    def test_fork_child_cannot_release_parent_pin(self):
+        pins=self.component()
+        with pins.reserve(self.root,'prepared-context') as pin:
+            child=multiprocessing.get_context('fork').Process(target=close_inherited_pin,args=(pin,));child.start();child.join(5)
+            self.assertEqual(child.exitcode,0);self.assertTrue(pin.path.exists())
+            with self.assertRaises(store.WorkflowError):pins.reconcile(self.root)
+        self.assertEqual(compaction_plan(self.root)['pins'],[])
 
     def test_layout_change_invalidates_prepared_commit(self):
         from large_context_fixtures import make_context_project

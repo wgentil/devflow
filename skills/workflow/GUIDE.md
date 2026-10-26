@@ -343,6 +343,50 @@ that runtime clone and rerun guided setup to clone the source anew. Retry contex
 resolution and policy review afterward. Source HEAD must be advertised and reachable;
 custom pinned older revisions are not currently supported.
 
+## Control-state maintenance
+
+The harness explains and runs maintenance; users do not need skill names or
+storage internals. Begin with `state compact --root ROOT --dry-run` (also the
+default). Use the returned `plan_hash` for apply. Maintenance inspection reads recorded authority without mutating live
+input preflight; unapproved application Markdown need not be repaired for this
+inspection. Preserve history and existing active runs.
+
+Apply only an authorized exact plan with `state compact --root ROOT --apply
+--plan-hash HASH --operation-id OP --actor-id ACTOR`. Quiesce old clients first.
+Use `--details` to review all bound files/reasons; changed head, policy, files or
+pins require a fresh plan. Resume interrupted compaction with `state compact
+--root ROOT --resume --operation-id ORIGINAL_OP --actor-id ORIGINAL_ACTOR`.
+`state verify --root ROOT --full` checks complete history; `state backup --root
+ROOT --output PATH --operation-id OP --actor-id ACTOR` makes a consistent backup.
+
+For v2 unreachable content, `state gc --root ROOT --dry-run` reports candidates;
+apply requires the same plan hash, explicit operation and actor. Unknown content
+is retained or blocks proof. Never age-delete archives, active runs or pins.
+Inspect `state pins --root ROOT`; `state pins --root ROOT --reconcile
+--operation-id OP --actor-id ACTOR` releases only reservations with provably
+stopped OS owners and matching root identity. Native/repair work still needs its
+separate stopped-worker reconciliation.
+
+Post-terminal compaction is off by default. `state policy --root ROOT --file
+POLICY --operation-id OP --actor-id ACTOR` records schema-1 settings with boolean
+`post_terminal_compaction`, for example
+`{"schema_version":1,"post_terminal_compaction":false}`. Enabling it never converts a legacy root or runs GC.
+On v2, the helper attempts compaction after delivery/discard commits only when no
+work remains in flight. Busy/failure diagnostics leave the terminal result valid.
+See [maintenance details](../../docs/reference/control-maintenance.md).
+
+```mermaid
+flowchart TD
+    Request[Requested maintenance] --> Dry[Read-only dry-run; no live approval repair]
+    Dry --> Auth[Authorized exact plan, actor and operation]
+    Auth --> Safe{Current plan and no in-flight work?}
+    Safe -->|No| Refuse[Explain blocker; preserve authority]
+    Safe -->|Yes| Apply[Backup, verify and apply under coordination]
+    Delivered[Terminal event committed] --> Opt{Opted-in v2 and idle root?}
+    Opt -->|Yes| Best[Best-effort compaction; terminal receipt unchanged]
+    Opt -->|No| Keep[Keep successful outcome; no migration or GC]
+```
+
 ## Governing input reassessment
 
 Read [canonical guidance](../../docs/reference/governing-inputs.md#governing-input-reassessment). Stage routing is declared in this skill.

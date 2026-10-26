@@ -366,8 +366,20 @@ prices and provider records are fixtures unless explicitly described as live.
 
 ## Recovery and maintenance
 
-Back up the authoritative control journal. `state.json`, locators and brief caches
-are rebuildable. Corrupt/future-schema events require diagnosis, not history edits.
+Ask the harness to inspect control storage and explain a concrete maintenance
+plan. It guides backup, explicit compaction/conversion and safe GC; you do not need
+skill names or storage internals. Installing an upgrade does not convert existing
+roots. Compaction and GC default to dry-run; applying requires an authorized exact
+plan, actor and operation identity. Post-terminal compaction is optional and off by
+default; it never automatically migrates a legacy root or runs GC.
+
+Back up authoritative control storage through the helper. Legacy event journals
+and v2 database/object/archive content must be retained together; `state.json`,
+locators and brief caches are not substitutes for authority. Use coordinated
+backup and full verification, not a bare live SQLite file copy. Crashed pins need
+stopped-owner reconciliation, never age deletion. See [maintenance and recovery](reference/control-maintenance.md)
+for authorization, resume, disk requirements and limitations. Corrupt/future-schema
+records require diagnosis, not history edits.
 Stale active bindings require refresh; detached ones require explicit revision-bound
 resume. Stale proof requires verification; changed review
 inputs require a renewed package. Uncertain provider outcomes require reconciliation.
@@ -582,6 +594,7 @@ context before trying again. Required context errors do not issue a new attempt.
 For a context byte-budget error, the harness can explain which components are
 large. Explicitly allow a larger context budget or split the task while retaining
 all applicable rules. Unrelated delivered history is not task prompt content.
-There is no automatic journal compaction or archival step. See the
+Storage compaction is manual by default; optional v2 post-terminal compaction
+never changes a successful outcome. See [maintenance](reference/control-maintenance.md) and the
 [context limits and diagnostics](context-efficiency.md#mandatory-context-byte-diagnostics)
 and [preparation recovery](context-efficiency.md#preparation-recovery).

@@ -106,3 +106,7 @@ Task model/effort guidance lives in the bounded [task routing reference](referen
 Recovery details load only when needed: [recorded RED](../skills/build-work/REFERENCE.md#reusing-recorded-red), [completed-item verification](../skills/build-work/REFERENCE.md#reverify-completed-work), [scoped review](../skills/review-work/REFERENCE.md#scoped-item-review-liveness), and [runner/prior-finding examples](examples/README.md).
 
 Optional developer reference: [control-storage contracts](reference/control-storage.md).
+
+Control maintenance is guided by the workflow harness. See the optional
+[maintenance reference](reference/control-maintenance.md); onboarding does not
+require storage commands, shell variables or skill names.

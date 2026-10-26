@@ -815,7 +815,7 @@ def main(argv: list[str] | None = None) -> int:
                                                       Path(parsed.root) if parsed.root else None)
         elif parsed.command == "build":
             result = dispatch_command_group(parsed)
-        elif parsed.command in {"review", "delivery", "issues", "migrate", "stats", "ingest", "docs", "harden", "host", "repair", "improve", "pr", "context-artifact"}:
+        elif parsed.command in {"review", "delivery", "issues", "migrate", "stats", "ingest", "docs", "harden", "host", "repair", "improve", "pr", "context-artifact", "state"}:
             result = dispatch_command_group(parsed)
         else:
             parser.error("select a supported command")

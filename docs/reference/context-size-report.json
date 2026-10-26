@@ -1,5 +1,5 @@
 {
-  "aggregate_entry_bytes": 25982,
+  "aggregate_entry_bytes": 26327,
   "baseline": {
     "aggregate_entry_bytes": 65937
   },
@@ -15,11 +15,11 @@
     "skills/specify/SKILL.md": 2244,
     "skills/stats/SKILL.md": 1981,
     "skills/ux-reviewer/SKILL.md": 1872,
-    "skills/workflow/SKILL.md": 3723
+    "skills/workflow/SKILL.md": 4068
   },
   "schema_version": 1,
   "stage_load_bytes": {
-    "acceptance": 10205,
+    "acceptance": 10550,
     "build-work": 10435,
     "context": 6348,
     "implementation": 10435,
@@ -35,7 +35,7 @@
     "specify": 9707,
     "stats": 7710,
     "ux-reviewer": 6674,
-    "workflow": 10205
+    "workflow": 10550
   },
   "unit_bytes": {
     "common#1e6f0adae858d8e7": 3702,
@@ -155,6 +155,6 @@
     "skill.specify#1e6f0adae858d8e7": 2244,
     "skill.stats#1e6f0adae858d8e7": 1981,
     "skill.ux-reviewer#1e6f0adae858d8e7": 1872,
-    "skill.workflow#1e6f0adae858d8e7": 3723
+    "skill.workflow#1e6f0adae858d8e7": 4068
   }
 }

@@ -5,6 +5,10 @@ No fixture contains a real project control root or requires those paths to exist
 
 
 def basic_event_streams():
+    yield [{'id':'maintenance-policy','kind':'maintenance.policy.recorded','payload':{
+        'maintenance_policy_authorization':{'actor_id':'owner','operation_id':'maintenance-policy'},
+        'maintenance_policy':{'schema_version':1,'post_terminal_compaction':False}}}]
+
     yield [{'id': 'note', 'kind': 'note', 'payload': {'unknown': {'bytes': 'é東京'}}},
            {'id': 'replace', 'kind': 'another-extension', 'payload': {'unknown': None}}]
     yield [{'id': 'register', 'kind': 'domain.host.init', 'payload': {'request': {

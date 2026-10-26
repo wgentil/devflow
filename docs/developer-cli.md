@@ -753,3 +753,13 @@ command metrics can still be recorded.
 An unknown run returns the structured `RUN_NOT_FOUND` error. Approve/apply retain
 required proposal IDs and exact-hash approval gates. See the
 [runnable developer example](examples/test-change-list.md).
+
+## Control maintenance
+
+Use the [maintenance command contracts](reference/control-maintenance.md) for
+`state compact/gc/verify/backup/policy/pins`. Compact/GC default to dry-run; effects
+require the exact plan hash where applicable and explicit actor/operation IDs.
+The [example policy](examples/maintenance-policy.json) disables post-terminal
+compaction by default. Inspect with `--details` for complete bound candidate
+paths/reasons. Maintenance inspection does not mutate live application approval
+state. No automatic root conversion or GC is enabled by installing an upgrade.

@@ -3,6 +3,7 @@ from contextlib import nullcontext
 from functools import wraps
 import json
 import os
+import re
 from pathlib import Path
 from uuid import uuid4
 from .platform_lock import exclusive_file,sync_directory
@@ -11,7 +12,7 @@ from .store import _exclusive,WorkflowError
 
 class Pin:
     def __init__(self,root,kind):
-        self.root=Path(root).resolve();self.handle=None;self.lease=None;self.path=None
+        self.root=Path(root).resolve();self.handle=None;self.lease=None;self.path=None;self.owner_pid=os.getpid()
         if detect_layout(self.root)['layout'] not in {'v2','legacy'}:return
         with _exclusive(self.root):
             layout=detect_layout(self.root)
@@ -23,6 +24,9 @@ class Pin:
             self.handle.write(json.dumps(body,sort_keys=True).encode('utf-8'));self.handle.flush();os.fsync(self.handle.fileno());sync_directory(self.path.parent)
     def close(self):
         if self.handle is None:return
+        if os.getpid()!=self.owner_pid:
+            self.handle.close();self.handle=None;self.lease=None
+            return
         with _exclusive(self.root):
             self.lease.__exit__(None,None,None);self.handle.close();self.handle=None
             self.path.unlink(missing_ok=True);sync_directory(self.path.parent)
@@ -40,6 +44,7 @@ def reconcile(root):
     with _exclusive(root):
         directory=confined_path(root,'pins')
         files=list(directory.iterdir()) if directory.exists() else []
+        layout=detect_layout(root)
         # Prove ALL owners stopped before changing any descriptor.
         from contextlib import ExitStack
         with ExitStack() as stack:
@@ -50,7 +55,12 @@ def reconcile(root):
                 except BlockingIOError as exc:raise WorkflowError('PIN_OWNER_ACTIVE','A reservation still has a live OS owner; stop/reconcile the worker first.') from exc
                 try:body=json.loads(handle.read(65537))
                 except (ValueError,OSError) as exc:raise WorkflowError('INVALID_STORAGE_PIN','Malformed reservation; preserve it for explicit recovery.') from exc
-                if body.get('pin_version')!=1 or body.get('id')!=path.stem:raise WorkflowError('INVALID_STORAGE_PIN','Unsupported reservation identity.')
+                if (type(body.get('pin_version')) is not int or body['pin_version']!=1
+                        or body.get('id')!=path.stem or not re.fullmatch('[0-9a-f]{32}',path.stem)
+                        or any(body.get(key)!=layout.get(key) for key in ('root_id','layout_id'))
+                        or type(body.get('pid')) is not int or body['pid']<=0
+                        or not isinstance(body.get('kind'),str) or not body['kind']):
+                    raise WorkflowError('INVALID_STORAGE_PIN','Reservation identity differs from this root; preserve it for explicit recovery.')
         for path in files:path.unlink();released+=1
         if directory.exists():sync_directory(directory)
     return {'released':released,'basis':'exclusive OS ownership; no age expiry'}

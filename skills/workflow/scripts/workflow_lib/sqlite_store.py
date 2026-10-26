@@ -448,6 +448,8 @@ def _transact_locked(root, expected_version, operation_id, event, *, precommit=N
         minimal, _ = _read_view(conn,root,ReadScope(global_keys=(),operation_ids=(operation_id,),
             entity_keys=guard_entities+(('domain_receipts',operation_id),)))
         store._guard_transaction(minimal,event)
+        from .storage_audit import operation_reserved
+        if operation_reserved(root,operation_id):raise WorkflowError('OPERATION_CONFLICT','Operation ID belongs to physical maintenance.')
         previous=minimal['operations'].get(operation_id)
         if previous is not None:
             if previous['kind'].startswith('domain.'):

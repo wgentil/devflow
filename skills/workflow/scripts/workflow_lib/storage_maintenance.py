@@ -81,6 +81,7 @@ def compaction_plan(root):
     pins = _pins(root)
     files = []
     for relative, path in source_files(root):
+        if relative in {'offload.jsonl','.offload.lock','context-metrics.jsonl','.context-metrics.lock'} or relative.startswith(('maintenance-receipts/pending/','maintenance-receipts/progress/')):continue
         stat = path.stat()
         files.append({'path':relative,'size_bytes':stat.st_size,'sha256':file_hash(path),
                       'device':stat.st_dev,'inode':stat.st_ino})
@@ -90,6 +91,7 @@ def compaction_plan(root):
         'layout':layout['layout'],'head':state['version'], **metadata,
         'policy_hash':digest(state['data'].get('maintenance_policy',{})), 'pins':pins,'files':files,
         'terminal_candidates': sorted(key for key,run in state['data'].get('runs',{}).items() if run.get('status') in TERMINAL),
+        'telemetry_excluded':['offload.jsonl','.offload.lock','context-metrics.jsonl','.context-metrics.lock'],
         'blockers':_blockers(state['data'],pins),'source_bytes':size,'required_free_bytes':max(16*1024*1024,size*3)}
     if layout['layout'] == 'uninitialized': body['blockers'].append('initialize a project before maintenance')
     return {**body,'plan_hash':digest(body)}
@@ -128,6 +130,9 @@ def _disk_check(root, required):
 def backup_control(root, output, *, resume=False):
     root = Path(root).resolve()
     with _exclusive(root):
+        _,state,_=_snapshot(root)
+        blockers=_blockers(state['data'],_pins(root))
+        if blockers:raise WorkflowError('MAINTENANCE_BLOCKED','; '.join(blockers))
         _disk_check(root,max(16*1024*1024,sum(path.stat().st_size for _,path in source_files(root))*2))
         return backup_locked(root,output,resume=resume)
 
@@ -390,6 +395,9 @@ def verify_store(root, *, full=False):
         layout = detect_layout(root)
         if layout['layout'] in {'legacy','uninitialized'}:
             state,_ = _read_journal(root)
+            if full:
+                from .storage_audit import verify_receipts
+                verify_receipts(root,logical_operations=state['operations'])
             return {'valid':True,'storage_format':layout.get('storage_format'),'head':state['version'],'full':full}
         if layout['layout'] != 'v2': raise WorkflowError('MAINTENANCE_RECOVERY_REQUIRED','Resume incomplete initialization/migration before full verification.')
         with sql.connection(root) as conn:
@@ -397,6 +405,8 @@ def verify_store(root, *, full=False):
                 raise WorkflowError('CORRUPT_STORAGE','SQLite integrity or foreign-key verification failed.')
             head = sql._meta(conn,'head')
             if full:
+                from .storage_audit import verify_receipts
+                verify_receipts(root,conn)
                 replay = _empty(); seen = set()
                 for expected,row in enumerate(conn.execute('SELECT sequence,operation_id,codec,payload,event_hash FROM events ORDER BY sequence'),1):
                     sequence,op,codec,payload,event_hash = row
@@ -448,3 +458,42 @@ def verify_store(root, *, full=False):
             return {'valid':True,'storage_format':2,'head':head,'full':full}
     except (WorkflowError,OSError,ValueError,TypeError,KeyError) as exc:
         return {'valid':False,'errors':[str(exc)],'error_code':getattr(exc,'code','STORAGE_VERIFY_FAILED'),'full':full}
+
+
+def apply_authorized_compaction(root,plan_hash,*,operation_id,actor_id):
+    from .storage_audit import perform,paths,write_record
+    root=Path(root).resolve()
+    def apply(audit):
+        intent_path=confined_path(root,INTENT_FILE)
+        if intent_path.exists():
+            intent=_read_json(intent_path)
+            if intent.get('plan',{}).get('plan_hash')!=plan_hash:raise WorkflowError('OPERATION_CONFLICT','Resume the original maintenance request.')
+            return resume_compaction(root)
+        if 'plan' not in audit:
+            plan=compaction_plan(root)
+            if plan['plan_hash']!=plan_hash:raise WorkflowError('STALE_MAINTENANCE_PLAN','Root/head/policy/pins or source files changed.')
+            audit['plan']=plan;write_record(paths(root,operation_id)[1],audit)
+        return apply_compaction(root,plan_hash)
+    return perform(root,'compact',{'plan_hash':plan_hash},operation_id,actor_id,apply)
+
+
+def post_terminal(root,event,*,committed_data=None):
+    """Opt-in physical work after success; never migration, GC or a new outcome."""
+    from .storage_access import read_current
+    from .utf8_io import warn_utf8
+    root=Path(root).resolve()
+    try:
+        if detect_layout(root)['layout']!='v2':
+            if (committed_data or {}).get('maintenance_policy',{}).get('post_terminal_compaction') is True:
+                warn_utf8('devflow: post-terminal compaction skipped: legacy conversion requires explicit manual maintenance.')
+            return
+        data=read_current(root,global_keys=('maintenance_policy','maintenance_policy_authorization'))['data']
+        if data.get('maintenance_policy',{}).get('post_terminal_compaction') is not True:return
+        plan=compaction_plan(root)
+        if plan['blockers']:
+            warn_utf8('devflow: post-terminal compaction skipped: '+'; '.join(plan['blockers']))
+            return
+        actor=data.get('maintenance_policy_authorization',{}).get('actor_id') or 'system:post-terminal'
+        apply_authorized_compaction(root,plan['plan_hash'],operation_id=event['operation_id']+':post-terminal',actor_id=actor)
+    except Exception as exc:
+        warn_utf8('devflow: post-terminal compaction deferred; terminal result remains valid: '+str(exc)[:400])

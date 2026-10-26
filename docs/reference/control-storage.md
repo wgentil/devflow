@@ -1,10 +1,11 @@
 # Control-storage contracts
 
-The archive-backed design is being implemented in stages. Public new-root initialization
-and existing legacy roots retain v1 behavior at this stage; there is no public v2 initializer,
-compaction, migration or GC command yet. See the
-[design](../superpowers/specs/2026-10-26-control-state-compaction-design.md) for
-planned behavior, not installation instructions.
+Explicit `state compact/gc/verify/backup/policy/pins` commands provide reviewed
+maintenance and recovery. Existing legacy roots remain unchanged until explicit
+conversion; new-root initialization is still legacy at this implementation stage.
+See the [maintenance guide](control-maintenance.md) for actual commands, defaults
+and limitations, and the [design](../superpowers/specs/2026-10-26-control-state-compaction-design.md)
+for the accepted invariants.
 
 ## Implemented immutable object foundation
 
@@ -59,8 +60,8 @@ precommit failures retain legacy ordering. Generic root patches replace their
 named namespaces completely; scoped run updates retain unloaded records.
 The legacy event directory receives an unsupported-schema sentinel before v2
 activation so older clients cannot mistake the root for empty history.
-Incomplete initialization requires explicit recovery; no automatic repair or
-legacy migration is exposed at this stage.
+Incomplete initialization requires explicit recovery. Explicit compaction can
+convert a verified legacy root; no automatic repair or conversion is performed.
 
 ## Verified payload sharing (internal)
 
@@ -79,8 +80,8 @@ fails before a gate, reviewer attachment or approval can consume it. Existing
 pure validator results and logical CLI outputs keep their current shapes and checks;
 physical summaries are never handed to them as complete packages. Governing
 bytes and approvals round-trip unchanged and do not require reapproval simply
-because their physical storage differs. Public initialization and migration are
-still unchanged at this stage.
+because their physical storage differs. Public initialization remains legacy; conversion uses the explicit maintenance
+command and preserves original logical records.
 
 ## Explicit terminal archives (internal)
 
@@ -102,7 +103,7 @@ content-bound per-source witnesses reject missing/stale indexes and incomplete
 source links rather than silently skipping a dependent. Full maintenance audit
 must also compare catalogs against authoritative logical runs; these checks do
 not turn SQLite into an authentication boundary against an administrator rewriting
-both data and checksums. No public archive/compaction command is exposed yet.
+both data and checksums. The explicit compaction command applies these transitions after a bound dry-run.
 
 ## Verified migration and checkpoints (internal)
 
@@ -113,7 +114,7 @@ and terminal candidates. `apply_compaction(root, plan_hash)` revalidates under t
 existing control lock, refuses in-flight work/pins or insufficient staging and
 backup space, and verifies complete history before creating an intent. Legacy
 roots remain legacy unless this explicit internal API is called; the public
-maintenance commands are not exposed yet.
+maintenance commands expose these verified transitions explicitly.
 
 Migration first creates a verified complete backup, then builds a separate v2
 catalog/projection, preserving every original legacy event filename and raw byte.
@@ -217,7 +218,31 @@ internal explicit reconciliation proves exclusive OS ownership before releasing
 it. Age and PID reuse never establish that a worker stopped. Durable native and
 repair state still needs its existing stopped-worker reconciliation independently.
 
-There is no public maintenance/pin-reconciliation command at this stage. Published
+Use the explicit maintenance and stopped-owner pin-reconciliation commands. Published
 context artifacts/checkpoints remain retained; any future GC must preserve exact
 published references and unknown legacy provenance. Pins protect in-flight reads
 and publications, rather than grant permission to remove historical evidence.
+
+## Audited maintenance and conservative collection
+
+Physical maintenance requests, progress and completed receipts are checksum-bound
+files under `maintenance-receipts/`, included in backups and full verification.
+Their operation IDs cannot collide with workflow events. Pending/progress files
+are excluded only from their own plan fingerprints, along with named ordinary
+telemetry; the complete bound plan remains in the audit. Records are limited to
+16 MiB, with explicit refusal before an oversized audit can authorize effects.
+
+GC verifies complete history before marking current rows, immutable events,
+archives, all checkpoint database catalogs and published context/receipt roots.
+It does not infer reachability from age. Unknown bytes and published legacy
+contexts/artifacts remain retained; unsupported object kinds block graph proof.
+All required chunk paths use the object's declared logical chunk identity; stored
+compressed checksums are separate. Orphan chunks need a valid bounded encoding
+and matching content identity before collection. Failed manifest unlinks protect
+its chunks. Interrupted apply rechecks current roots, and absent observations are
+reported separately from measured successful unlinks.
+
+Policy is a reducer-validated schema-1 boolean plus actor/operation provenance.
+After-commit delivery/discard/PR hooks honor it on v2 only. Root work/pin blockers
+and maintenance failure produce diagnostics without changing the terminal result.
+No automatic GC or legacy conversion is included.

@@ -29,7 +29,7 @@ class ReadScope:
     usage_run_ids: tuple = ()
 
 
-CORE_KINDS = frozenset(('context.resolution.recorded', 'acceptance.recorded', 'authorization.recorded', 'delivery.recorded',
+CORE_KINDS = frozenset(('maintenance.policy.recorded', 'context.resolution.recorded', 'acceptance.recorded', 'authorization.recorded', 'delivery.recorded',
     'document.approved', 'document.proposed', 'finding.parked', 'finding.resolved', 'finding.waived',
     'governing.inputs.recorded', 'governing.reassessment.required', 'plan.validated',
     'review.adjudicated', 'review.package.prepared', 'review.recorded', 'run.attempt.abandoned',
@@ -123,6 +123,8 @@ def scope_for_event(event, operation_id, *, binding_id=None):
         replacements.update(payload)
         # Replacement needs only existing SQL keys, never obsolete logical bodies.
         if kind != 'spec.approved': globals_ = [key for key in globals_ if key not in payload]
+    if kind=='maintenance.policy.recorded':
+        globals_.extend(('maintenance_policy','maintenance_policy_authorization'))
     if kind == 'plan.validated':
         replacements.update(payload)
         globals_ = [key for key in globals_ if key not in payload or key in

@@ -10,6 +10,7 @@ def exclusive_file(handle, *, blocking: bool = True):
 
     A nonblocking contention raises BlockingIOError on every platform.
     """
+    owner_pid=os.getpid()
     if os.name == 'nt':
         import msvcrt
         handle.seek(0, os.SEEK_END)
@@ -31,15 +32,16 @@ def exclusive_file(handle, *, blocking: bool = True):
         try:
             yield
         finally:
-            handle.seek(0)
-            msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+            if os.getpid()==owner_pid:
+                handle.seek(0)
+                msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
     else:
         import fcntl
         fcntl.flock(handle.fileno(), fcntl.LOCK_EX | (0 if blocking else fcntl.LOCK_NB))
         try:
             yield
         finally:
-            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+            if os.getpid()==owner_pid:fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
 
 
 def sync_directory(path):
