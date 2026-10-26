@@ -1,0 +1,14 @@
+[
+  {
+    "id": "devflow@devflow-marketplace",
+    "version": "0.3.15",
+    "scope": "user",
+    "enabled": true,
+    "installPath": "D:\\a\\_temp\\devflow-claude\\plugins\\cache\\devflow-marketplace\\devflow\\0.3.15",
+    "readFromFolder": "D:\\a\\devflow\\devflow",
+    "folderVersion": "0.3.15",
+    "installedAt": "2026-10-26T23:12:12.555Z",
+    "lastUpdated": "2026-10-26T23:12:12.555Z",
+    "projectEnabled": false
+  }
+]

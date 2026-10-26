@@ -255,8 +255,10 @@ invalid; cache absence cannot waive completion checks in that journal.
 
 ## Prompt refresh and timeouts
 
-An attached refresh reuses one authoritative journal read for context preparation;
-that read still grows with history. The helper keeps its eight-second deadline.
+An attached refresh reuses its authoritative read for context preparation. Legacy
+format 1 replays the journal once and that read grows with history; format 2 uses
+indexed selected state and exact current-context shards. The helper keeps its
+eight-second deadline.
 A UserPromptSubmit helper timeout emits a best-effort UTF-8 warning and lets the
 prompt continue, without successful-context output. SessionStart timeouts remain
 advisory. An explicit returned policy/context block still blocks the prompt;

@@ -9,7 +9,7 @@
           {
             "command": "run status",
             "temperature": "cold",
-            "elapsed_ms": 26.11737500410527,
+            "elapsed_ms": 26.723333168774843,
             "result_status": "active",
             "attempt_id": null,
             "queries": 140,
@@ -20,14 +20,14 @@
             "object_file_reads": 18,
             "object_physical_bytes": 4620,
             "object_logical_bytes": 108,
-            "sqlite_scope_ms": 16.00391697138548,
-            "object_read_ms": 3.6943741142749786,
-            "subprocess_total_ms": 256.0902499826625
+            "sqlite_scope_ms": 19.085458014160395,
+            "object_read_ms": 4.622540669515729,
+            "subprocess_total_ms": 202.75491615757346
           },
           {
             "command": "run status",
             "temperature": "warm",
-            "elapsed_ms": 20.089167053811252,
+            "elapsed_ms": 23.066583089530468,
             "result_status": "active",
             "attempt_id": null,
             "queries": 140,
@@ -38,14 +38,14 @@
             "object_file_reads": 18,
             "object_physical_bytes": 4620,
             "object_logical_bytes": 108,
-            "sqlite_scope_ms": 8.626291994005442,
-            "object_read_ms": 3.298916039057076,
-            "subprocess_total_ms": 256.0926249716431
+            "sqlite_scope_ms": 8.384207962080836,
+            "object_read_ms": 3.2608341425657272,
+            "subprocess_total_ms": 202.75904098525643
           },
           {
             "command": "context resolve",
             "temperature": "cold",
-            "elapsed_ms": 49.390042084269226,
+            "elapsed_ms": 56.18004105053842,
             "result_status": null,
             "attempt_id": null,
             "queries": 469,
@@ -56,14 +56,14 @@
             "object_file_reads": 36,
             "object_physical_bytes": 9252,
             "object_logical_bytes": 228,
-            "sqlite_scope_ms": 35.382501082494855,
-            "object_read_ms": 5.84354205057025,
-            "subprocess_total_ms": 175.07016705349088
+            "sqlite_scope_ms": 40.467374958097935,
+            "object_read_ms": 7.213751319795847,
+            "subprocess_total_ms": 190.18024997785687
           },
           {
             "command": "context resolve",
             "temperature": "warm",
-            "elapsed_ms": 28.56337500270456,
+            "elapsed_ms": 30.46504082158208,
             "result_status": null,
             "attempt_id": null,
             "queries": 338,
@@ -74,14 +74,14 @@
             "object_file_reads": 24,
             "object_physical_bytes": 6168,
             "object_logical_bytes": 152,
-            "sqlite_scope_ms": 16.105583985336125,
-            "object_read_ms": 3.5966670839115977,
-            "subprocess_total_ms": 175.07216706871986
+            "sqlite_scope_ms": 17.094667302444577,
+            "object_read_ms": 4.093413939699531,
+            "subprocess_total_ms": 190.18199993297458
           },
           {
             "command": "host brief",
             "temperature": "cold",
-            "elapsed_ms": 877.7452090289444,
+            "elapsed_ms": 1118.2703750673681,
             "result_status": "implementation",
             "attempt_id": null,
             "queries": 206,
@@ -92,14 +92,14 @@
             "object_file_reads": 42,
             "object_physical_bytes": 10764,
             "object_logical_bytes": 108,
-            "sqlite_scope_ms": 40.263373986817896,
-            "object_read_ms": 4.083750885911286,
-            "subprocess_total_ms": 1887.9160840297118
+            "sqlite_scope_ms": 38.89145818538964,
+            "object_read_ms": 4.859416978433728,
+            "subprocess_total_ms": 2549.430500017479
           },
           {
             "command": "host brief",
             "temperature": "warm",
-            "elapsed_ms": 920.3245829558,
+            "elapsed_ms": 1288.8379578944296,
             "result_status": "implementation",
             "attempt_id": null,
             "queries": 206,
@@ -110,16 +110,16 @@
             "object_file_reads": 42,
             "object_physical_bytes": 10764,
             "object_logical_bytes": 108,
-            "sqlite_scope_ms": 30.656250077299774,
-            "object_read_ms": 3.213917021639645,
-            "subprocess_total_ms": 1887.9178339848295
+            "sqlite_scope_ms": 27.859084075316787,
+            "object_read_ms": 4.090874455869198,
+            "subprocess_total_ms": 2549.4322499725968
           },
           {
             "command": "run next",
             "temperature": "cold",
-            "elapsed_ms": 898.3449159422889,
+            "elapsed_ms": 1276.9102910533547,
             "result_status": "implementation",
-            "attempt_id": "81fd9a69e4aea632b25b2cdf19fd2a3a8a043ebc5cc4c99f",
+            "attempt_id": "b467f8a9b330d21e8fc2effdbbfc6410a377430499ea3651",
             "queries": 378,
             "sqlite_vm_steps": 10375,
             "terminal_body_reads": 0,
@@ -128,16 +128,16 @@
             "object_file_reads": 78,
             "object_physical_bytes": 19992,
             "object_logical_bytes": 216,
-            "sqlite_scope_ms": 53.39650029782206,
-            "object_read_ms": 5.699913832359016,
-            "subprocess_total_ms": 1974.2520829895511
+            "sqlite_scope_ms": 86.54091716744006,
+            "object_read_ms": 7.3682083748281,
+            "subprocess_total_ms": 2498.905915999785
           },
           {
             "command": "run next",
             "temperature": "warm",
-            "elapsed_ms": 953.7389579927549,
+            "elapsed_ms": 1098.5017910134047,
             "result_status": "implementation",
-            "attempt_id": "81fd9a69e4aea632b25b2cdf19fd2a3a8a043ebc5cc4c99f",
+            "attempt_id": "b467f8a9b330d21e8fc2effdbbfc6410a377430499ea3651",
             "queries": 181,
             "sqlite_vm_steps": 4942,
             "terminal_body_reads": 0,
@@ -146,14 +146,14 @@
             "object_file_reads": 42,
             "object_physical_bytes": 10764,
             "object_logical_bytes": 108,
-            "sqlite_scope_ms": 32.6959160156548,
-            "object_read_ms": 3.8895419565960765,
-            "subprocess_total_ms": 1974.2541250307113
+            "sqlite_scope_ms": 34.262457862496376,
+            "object_read_ms": 5.290209082886577,
+            "subprocess_total_ms": 2498.9076661877334
           },
           {
             "command": "host check",
             "temperature": "cold",
-            "elapsed_ms": 55.937416036613286,
+            "elapsed_ms": 63.12362477183342,
             "result_status": "block",
             "attempt_id": null,
             "queries": 213,
@@ -164,14 +164,14 @@
             "object_file_reads": 18,
             "object_physical_bytes": 4620,
             "object_logical_bytes": 108,
-            "sqlite_scope_ms": 18.446208094246686,
-            "object_read_ms": 2.9996668454259634,
-            "subprocess_total_ms": 193.77791706938297
+            "sqlite_scope_ms": 22.433000151067972,
+            "object_read_ms": 4.719874123111367,
+            "subprocess_total_ms": 224.9999998603016
           },
           {
             "command": "host check",
             "temperature": "warm",
-            "elapsed_ms": 37.54941700026393,
+            "elapsed_ms": 44.23116706311703,
             "result_status": "block",
             "attempt_id": null,
             "queries": 213,
@@ -182,25 +182,25 @@
             "object_file_reads": 18,
             "object_physical_bytes": 4620,
             "object_logical_bytes": 108,
-            "sqlite_scope_ms": 11.885208077728748,
-            "object_read_ms": 3.8149580359458923,
-            "subprocess_total_ms": 193.77975002862513
+            "sqlite_scope_ms": 15.610791044309735,
+            "object_read_ms": 5.011625122278929,
+            "subprocess_total_ms": 225.00191698782146
           }
         ],
-        "compaction_ms": 791.3000000407919,
+        "compaction_ms": 807.4439158663154,
         "full_audit_valid": true,
         "physical": {
           "database_bytes": 262144,
-          "objects_bytes": 55626,
-          "cache_bytes": 221805,
+          "objects_bytes": 55619,
+          "cache_bytes": 221813,
           "backup_bytes": 22860,
-          "other_bytes": 9161,
-          "total_bytes": 571596,
+          "other_bytes": 9165,
+          "total_bytes": 571601,
           "catalog_btree_bytes": 163840,
           "catalog_btree_measurement": "SQLite dbstat, includes schema/index/metadata pages; overlaps database_bytes"
         },
         "before_total_bytes": 22235,
-        "net_physical_change_bytes": 549361,
+        "net_physical_change_bytes": 549366,
         "actual_reclaimed_bytes": 0
       },
       {
@@ -209,7 +209,7 @@
           {
             "command": "run status",
             "temperature": "cold",
-            "elapsed_ms": 29.588583973236382,
+            "elapsed_ms": 27.984166983515024,
             "result_status": "active",
             "attempt_id": null,
             "queries": 140,
@@ -220,14 +220,14 @@
             "object_file_reads": 18,
             "object_physical_bytes": 4620,
             "object_logical_bytes": 108,
-            "sqlite_scope_ms": 22.050291998311877,
-            "object_read_ms": 3.1736670061945915,
-            "subprocess_total_ms": 213.18891702685505
+            "sqlite_scope_ms": 18.845709040760994,
+            "object_read_ms": 3.3189987298101187,
+            "subprocess_total_ms": 214.96562496758997
           },
           {
             "command": "run status",
             "temperature": "warm",
-            "elapsed_ms": 20.198166952468455,
+            "elapsed_ms": 20.503291860222816,
             "result_status": "active",
             "attempt_id": null,
             "queries": 140,
@@ -238,14 +238,14 @@
             "object_file_reads": 18,
             "object_physical_bytes": 4620,
             "object_logical_bytes": 108,
-            "sqlite_scope_ms": 8.310333010740578,
-            "object_read_ms": 3.469998831860721,
-            "subprocess_total_ms": 213.19187502376735
+            "sqlite_scope_ms": 8.142208913341165,
+            "object_read_ms": 3.5005409736186266,
+            "subprocess_total_ms": 214.9671670049429
           },
           {
             "command": "context resolve",
             "temperature": "cold",
-            "elapsed_ms": 56.056875037029386,
+            "elapsed_ms": 56.32350011728704,
             "result_status": null,
             "attempt_id": null,
             "queries": 469,
@@ -256,14 +256,14 @@
             "object_file_reads": 36,
             "object_physical_bytes": 9252,
             "object_logical_bytes": 228,
-            "sqlite_scope_ms": 42.46999917086214,
-            "object_read_ms": 6.075625889934599,
-            "subprocess_total_ms": 189.35933301690966
+            "sqlite_scope_ms": 40.60708382166922,
+            "object_read_ms": 7.911625783890486,
+            "subprocess_total_ms": 191.64429185912013
           },
           {
             "command": "context resolve",
             "temperature": "warm",
-            "elapsed_ms": 41.409374913200736,
+            "elapsed_ms": 32.07645798102021,
             "result_status": null,
             "attempt_id": null,
             "queries": 338,
@@ -274,14 +274,14 @@
             "object_file_reads": 24,
             "object_physical_bytes": 6168,
             "object_logical_bytes": 152,
-            "sqlite_scope_ms": 23.536416119895875,
-            "object_read_ms": 3.65537591278553,
-            "subprocess_total_ms": 189.3606249941513
+            "sqlite_scope_ms": 18.36333447135985,
+            "object_read_ms": 4.436499904841185,
+            "subprocess_total_ms": 191.64758292026818
           },
           {
             "command": "host brief",
             "temperature": "cold",
-            "elapsed_ms": 979.3868329143152,
+            "elapsed_ms": 1116.0568750929087,
             "result_status": "implementation",
             "attempt_id": null,
             "queries": 206,
@@ -292,14 +292,14 @@
             "object_file_reads": 42,
             "object_physical_bytes": 10764,
             "object_logical_bytes": 108,
-            "sqlite_scope_ms": 38.505458971485496,
-            "object_read_ms": 2.862456953153014,
-            "subprocess_total_ms": 1959.799833013676
+            "sqlite_scope_ms": 37.16704109683633,
+            "object_read_ms": 5.827334243804216,
+            "subprocess_total_ms": 2248.7748749554157
           },
           {
             "command": "host brief",
             "temperature": "warm",
-            "elapsed_ms": 891.5184579091147,
+            "elapsed_ms": 1000.1064999960363,
             "result_status": "implementation",
             "attempt_id": null,
             "queries": 206,
@@ -310,16 +310,16 @@
             "object_file_reads": 42,
             "object_physical_bytes": 10764,
             "object_logical_bytes": 108,
-            "sqlite_scope_ms": 21.79008407983929,
-            "object_read_ms": 3.224039915949106,
-            "subprocess_total_ms": 1959.8012500209734
+            "sqlite_scope_ms": 23.305125767365098,
+            "object_read_ms": 4.184375051409006,
+            "subprocess_total_ms": 2248.776708031073
           },
           {
             "command": "run next",
             "temperature": "cold",
-            "elapsed_ms": 926.5585839748383,
+            "elapsed_ms": 1057.1450830902904,
             "result_status": "implementation",
-            "attempt_id": "0440a9da2b98b57c1dc180a3619d54a9aaa40f5511b9beb8",
+            "attempt_id": "723612522cb74690a2a9970d62ed2d2becf6715370a691bd",
             "queries": 378,
             "sqlite_vm_steps": 10375,
             "terminal_body_reads": 0,
@@ -328,16 +328,16 @@
             "object_file_reads": 78,
             "object_physical_bytes": 19992,
             "object_logical_bytes": 216,
-            "sqlite_scope_ms": 46.91158200148493,
-            "object_read_ms": 5.99908281583339,
-            "subprocess_total_ms": 1886.3246670225635
+            "sqlite_scope_ms": 64.13404317572713,
+            "object_read_ms": 8.194083580747247,
+            "subprocess_total_ms": 2352.1139579825103
           },
           {
             "command": "run next",
             "temperature": "warm",
-            "elapsed_ms": 859.4919589813799,
+            "elapsed_ms": 1166.6631249245256,
             "result_status": "implementation",
-            "attempt_id": "0440a9da2b98b57c1dc180a3619d54a9aaa40f5511b9beb8",
+            "attempt_id": "723612522cb74690a2a9970d62ed2d2becf6715370a691bd",
             "queries": 181,
             "sqlite_vm_steps": 4942,
             "terminal_body_reads": 0,
@@ -346,14 +346,14 @@
             "object_file_reads": 42,
             "object_physical_bytes": 10764,
             "object_logical_bytes": 108,
-            "sqlite_scope_ms": 22.555542062036693,
-            "object_read_ms": 2.798084053210914,
-            "subprocess_total_ms": 1886.3260840298608
+            "sqlite_scope_ms": 26.833333307877183,
+            "object_read_ms": 3.0613329727202654,
+            "subprocess_total_ms": 2352.1165419369936
           },
           {
             "command": "host check",
             "temperature": "cold",
-            "elapsed_ms": 56.42287491355091,
+            "elapsed_ms": 66.20995816774666,
             "result_status": "block",
             "attempt_id": null,
             "queries": 213,
@@ -364,14 +364,14 @@
             "object_file_reads": 18,
             "object_physical_bytes": 4620,
             "object_logical_bytes": 108,
-            "sqlite_scope_ms": 16.51229104027152,
-            "object_read_ms": 2.921957988291979,
-            "subprocess_total_ms": 188.95358394365758
+            "sqlite_scope_ms": 16.92162500694394,
+            "object_read_ms": 4.244000418111682,
+            "subprocess_total_ms": 202.2555829025805
           },
           {
             "command": "host check",
             "temperature": "warm",
-            "elapsed_ms": 26.566041982732713,
+            "elapsed_ms": 30.952833127230406,
             "result_status": "block",
             "attempt_id": null,
             "queries": 213,
@@ -382,25 +382,25 @@
             "object_file_reads": 18,
             "object_physical_bytes": 4620,
             "object_logical_bytes": 108,
-            "sqlite_scope_ms": 8.305832976475358,
-            "object_read_ms": 3.599001094698906,
-            "subprocess_total_ms": 188.95600002724677
+            "sqlite_scope_ms": 11.46599999628961,
+            "object_read_ms": 4.039583960548043,
+            "subprocess_total_ms": 202.2583750076592
           }
         ],
-        "compaction_ms": 49176.600666949525,
+        "compaction_ms": 38380.35516580567,
         "full_audit_valid": true,
         "physical": {
           "database_bytes": 4214784,
-          "objects_bytes": 2687734,
-          "cache_bytes": 221824,
+          "objects_bytes": 2687727,
+          "cache_bytes": 221830,
           "backup_bytes": 1113952,
-          "other_bytes": 9159,
-          "total_bytes": 8247453,
+          "other_bytes": 9164,
+          "total_bytes": 8247457,
           "catalog_btree_bytes": 2031616,
           "catalog_btree_measurement": "SQLite dbstat, includes schema/index/metadata pages; overlaps database_bytes"
         },
         "before_total_bytes": 1113321,
-        "net_physical_change_bytes": 7134132,
+        "net_physical_change_bytes": 7134136,
         "actual_reclaimed_bytes": 0
       }
     ],
@@ -418,21 +418,26 @@
     "hot_payload_ratio": 3.606496243794111e-05,
     "physical": {
       "database_bytes": 262144,
-      "objects_bytes": 175106,
+      "objects_bytes": 175125,
       "cache_bytes": 0,
       "backup_bytes": 209738110,
       "other_bytes": 988,
-      "total_bytes": 210176348,
+      "total_bytes": 210176367,
       "catalog_btree_bytes": 155648,
       "catalog_btree_measurement": "SQLite dbstat, includes schema/index/metadata pages; overlaps database_bytes"
     },
-    "compaction_ms": 9391.29945798777,
+    "compaction_ms": 9485.283042071387,
     "full_audit_valid": true,
     "logical_parity": true,
     "before_total_bytes": 209737475,
-    "net_physical_change_bytes": 438873,
+    "net_physical_change_bytes": 438892,
     "actual_reclaimed_bytes": 0,
     "reclamation_measurement": "net root file bytes with verified backups retained; not filesystem allocated blocks or GC unlink totals",
     "owned_roots_removed": true
+  },
+  "source_identity": {
+    "runtime_source_commit": "3e683d16fe9642e04f6e4217a4049b3e770afd44",
+    "fingerprint": "5b339d3d70e37eead3e74e890931c3ff228f8584fe48617627817dba15e4873a",
+    "measurement": "completed local benchmark of frozen candidate runtime; added source binding after measurement"
   }
 }

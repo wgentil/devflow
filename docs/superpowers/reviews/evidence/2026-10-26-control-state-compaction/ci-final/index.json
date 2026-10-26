@@ -1,0 +1,268 @@
+{
+  "runtime_source_commit": "3e683d16fe9642e04f6e4217a4049b3e770afd44",
+  "fingerprint": "5b339d3d70e37eead3e74e890931c3ff228f8584fe48617627817dba15e4873a",
+  "ci_run": "https://github.com/wgentil/devflow/actions/runs/40418033016",
+  "all_nine_gates_pass": true,
+  "reports": [
+    {
+      "gate": "legacy-windows-3.11",
+      "report": "ci-final/legacy-windows-3.11/legacy-report.json",
+      "sha256": "255b54dff3c14636a9c5ae2d6ef9b65a3fba65a385ab1f3f0bb49e30090063fe",
+      "success": true,
+      "tests_run": 167,
+      "skips": [
+        {
+          "id": "test_storage_migration.StorageMigrationTests.test_sqlite_authority_and_backup_keep_private_file_permissions",
+          "reason": "POSIX private-file permission semantics"
+        },
+        {
+          "id": "test_storage_pins.StoragePinTests.test_fork_child_cannot_release_parent_pin",
+          "reason": "POSIX inherited lease ownership probe"
+        },
+        {
+          "id": "test_storage_pins.StoragePinTests.test_reentrant_coordination_does_not_cross_process_owner",
+          "reason": "POSIX fork ownership probe"
+        }
+      ],
+      "elapsed_seconds": 1083.031,
+      "host_gates": {}
+    },
+    {
+      "gate": "legacy-windows-3.x",
+      "report": "ci-final/legacy-windows-3.x/legacy-report.json",
+      "sha256": "2358eb99747280a10c0ae49313c3db6acabe192c0de101d4aec6753c69f584ae",
+      "success": true,
+      "tests_run": 167,
+      "skips": [
+        {
+          "id": "test_storage_migration.StorageMigrationTests.test_sqlite_authority_and_backup_keep_private_file_permissions",
+          "reason": "POSIX private-file permission semantics"
+        },
+        {
+          "id": "test_storage_pins.StoragePinTests.test_fork_child_cannot_release_parent_pin",
+          "reason": "POSIX inherited lease ownership probe"
+        },
+        {
+          "id": "test_storage_pins.StoragePinTests.test_reentrant_coordination_does_not_cross_process_owner",
+          "reason": "POSIX fork ownership probe"
+        }
+      ],
+      "elapsed_seconds": 725.97,
+      "host_gates": {}
+    },
+    {
+      "gate": "platform-macos-latest-3.11",
+      "report": "ci-final/platform-macos-latest-3.11/platform-report.json",
+      "sha256": "e75c0296f18fd5b1067f044ac4e7aaba85823e030b1be5504d734d71d3468320",
+      "success": true,
+      "tests_run": 903,
+      "skips": [
+        {
+          "id": "test_platform_lock.PlatformLockTests.test_blocking_lock_waits_longer_than_msvcrt_default_retry_window",
+          "reason": "Windows byte-range lock retry behavior"
+        },
+        {
+          "id": "test_process_transport.WindowsJobCompletionTests.test_exited_leader_descendant_is_signaled_before_close_returns",
+          "reason": "requires native Windows Job and process handles"
+        },
+        {
+          "id": "test_storage_objects.StorageObjectTests.test_junction_escape_never_publishes_outside_root",
+          "reason": "native NTFS junction containment"
+        },
+        {
+          "id": "test_storage_objects.StorageObjectTests.test_repeated_concurrent_fresh_windows_roots_preserve_confinement",
+          "reason": "native Windows fresh-root canonicalization race"
+        },
+        {
+          "id": "test_storage_recovery.StorageRecoveryTests.test_windows_open_snapshot_cleanup_resumes",
+          "reason": "native Windows file-handle semantics"
+        },
+        {
+          "id": "test_windows_workflow.WindowsWorkflowTests.test_junction_escape_is_rejected",
+          "reason": "native NTFS junction containment"
+        }
+      ],
+      "elapsed_seconds": 630.521,
+      "host_gates": {}
+    },
+    {
+      "gate": "platform-macos-latest-3.x",
+      "report": "ci-final/platform-macos-latest-3.x/platform-report.json",
+      "sha256": "0ca3a2a22cd797166a8cbc0389f087827db2d94f5575160d449834967c00f3a9",
+      "success": true,
+      "tests_run": 903,
+      "skips": [
+        {
+          "id": "test_platform_lock.PlatformLockTests.test_blocking_lock_waits_longer_than_msvcrt_default_retry_window",
+          "reason": "Windows byte-range lock retry behavior"
+        },
+        {
+          "id": "test_process_transport.WindowsJobCompletionTests.test_exited_leader_descendant_is_signaled_before_close_returns",
+          "reason": "requires native Windows Job and process handles"
+        },
+        {
+          "id": "test_storage_objects.StorageObjectTests.test_junction_escape_never_publishes_outside_root",
+          "reason": "native NTFS junction containment"
+        },
+        {
+          "id": "test_storage_objects.StorageObjectTests.test_repeated_concurrent_fresh_windows_roots_preserve_confinement",
+          "reason": "native Windows fresh-root canonicalization race"
+        },
+        {
+          "id": "test_storage_recovery.StorageRecoveryTests.test_windows_open_snapshot_cleanup_resumes",
+          "reason": "native Windows file-handle semantics"
+        },
+        {
+          "id": "test_windows_workflow.WindowsWorkflowTests.test_junction_escape_is_rejected",
+          "reason": "native NTFS junction containment"
+        }
+      ],
+      "elapsed_seconds": 489.356,
+      "host_gates": {}
+    },
+    {
+      "gate": "platform-ubuntu-latest-3.11",
+      "report": "ci-final/platform-ubuntu-latest-3.11/platform-report.json",
+      "sha256": "a602dc2ea635a270c0e3a87ad163342533b811a6be5eff8a7083df2dde9c2f00",
+      "success": true,
+      "tests_run": 903,
+      "skips": [
+        {
+          "id": "test_platform_lock.PlatformLockTests.test_blocking_lock_waits_longer_than_msvcrt_default_retry_window",
+          "reason": "Windows byte-range lock retry behavior"
+        },
+        {
+          "id": "test_process_transport.WindowsJobCompletionTests.test_exited_leader_descendant_is_signaled_before_close_returns",
+          "reason": "requires native Windows Job and process handles"
+        },
+        {
+          "id": "test_storage_objects.StorageObjectTests.test_junction_escape_never_publishes_outside_root",
+          "reason": "native NTFS junction containment"
+        },
+        {
+          "id": "test_storage_objects.StorageObjectTests.test_repeated_concurrent_fresh_windows_roots_preserve_confinement",
+          "reason": "native Windows fresh-root canonicalization race"
+        },
+        {
+          "id": "test_storage_recovery.StorageRecoveryTests.test_windows_open_snapshot_cleanup_resumes",
+          "reason": "native Windows file-handle semantics"
+        },
+        {
+          "id": "test_windows_workflow.WindowsWorkflowTests.test_junction_escape_is_rejected",
+          "reason": "native NTFS junction containment"
+        }
+      ],
+      "elapsed_seconds": 257.662,
+      "host_gates": {}
+    },
+    {
+      "gate": "platform-ubuntu-latest-3.x",
+      "report": "ci-final/platform-ubuntu-latest-3.x/platform-report.json",
+      "sha256": "3140c05f116d67f07d59b4262c304f8cb88dd677db2f321fa9d70158406a222a",
+      "success": true,
+      "tests_run": 903,
+      "skips": [
+        {
+          "id": "test_platform_lock.PlatformLockTests.test_blocking_lock_waits_longer_than_msvcrt_default_retry_window",
+          "reason": "Windows byte-range lock retry behavior"
+        },
+        {
+          "id": "test_process_transport.WindowsJobCompletionTests.test_exited_leader_descendant_is_signaled_before_close_returns",
+          "reason": "requires native Windows Job and process handles"
+        },
+        {
+          "id": "test_storage_objects.StorageObjectTests.test_junction_escape_never_publishes_outside_root",
+          "reason": "native NTFS junction containment"
+        },
+        {
+          "id": "test_storage_objects.StorageObjectTests.test_repeated_concurrent_fresh_windows_roots_preserve_confinement",
+          "reason": "native Windows fresh-root canonicalization race"
+        },
+        {
+          "id": "test_storage_recovery.StorageRecoveryTests.test_windows_open_snapshot_cleanup_resumes",
+          "reason": "native Windows file-handle semantics"
+        },
+        {
+          "id": "test_windows_workflow.WindowsWorkflowTests.test_junction_escape_is_rejected",
+          "reason": "native NTFS junction containment"
+        }
+      ],
+      "elapsed_seconds": 341.291,
+      "host_gates": {}
+    },
+    {
+      "gate": "platform-windows-latest-3.11",
+      "report": "ci-final/platform-windows-latest-3.11/platform-report.json",
+      "sha256": "995de8dcf1bf6b96d8fd33e43658c8bc78f75ae70aa78d843a8af1fe677e4a5f",
+      "success": true,
+      "tests_run": 903,
+      "skips": [
+        {
+          "id": "test_git_paths.GitPathsTests.test_diff_paths_preserve_newline",
+          "reason": "newline is not a valid Windows filename"
+        },
+        {
+          "id": "test_storage_migration.StorageMigrationTests.test_sqlite_authority_and_backup_keep_private_file_permissions",
+          "reason": "POSIX private-file permission semantics"
+        },
+        {
+          "id": "test_storage_pins.StoragePinTests.test_fork_child_cannot_release_parent_pin",
+          "reason": "POSIX inherited lease ownership probe"
+        },
+        {
+          "id": "test_storage_pins.StoragePinTests.test_reentrant_coordination_does_not_cross_process_owner",
+          "reason": "POSIX fork ownership probe"
+        }
+      ],
+      "elapsed_seconds": 2381.375,
+      "host_gates": {}
+    },
+    {
+      "gate": "platform-windows-latest-3.x",
+      "report": "ci-final/platform-windows-latest-3.x/platform-report.json",
+      "sha256": "8bbab0c73f355bcaa20afe4853eeb72d79847ad575f9e22b336c7a929f792f26",
+      "success": true,
+      "tests_run": 903,
+      "skips": [
+        {
+          "id": "test_git_paths.GitPathsTests.test_diff_paths_preserve_newline",
+          "reason": "newline is not a valid Windows filename"
+        },
+        {
+          "id": "test_storage_migration.StorageMigrationTests.test_sqlite_authority_and_backup_keep_private_file_permissions",
+          "reason": "POSIX private-file permission semantics"
+        },
+        {
+          "id": "test_storage_pins.StoragePinTests.test_fork_child_cannot_release_parent_pin",
+          "reason": "POSIX inherited lease ownership probe"
+        },
+        {
+          "id": "test_storage_pins.StoragePinTests.test_reentrant_coordination_does_not_cross_process_owner",
+          "reason": "POSIX fork ownership probe"
+        }
+      ],
+      "elapsed_seconds": 2120.13,
+      "host_gates": {}
+    },
+    {
+      "gate": "windows-installed-hosts",
+      "report": "ci-final/windows-installed-hosts/installed-report.json",
+      "sha256": "a611dbf58830716975b7dc76ece63250bea095e6273c60f68565bc19867bd9ae",
+      "success": true,
+      "tests_run": null,
+      "skips": [],
+      "elapsed_seconds": null,
+      "host_gates": {
+        "codex_install": "PASS",
+        "claude_install": "PASS",
+        "codex_control_formats": "PASS",
+        "claude_control_formats": "PASS",
+        "codex_startup": "PASS",
+        "claude_startup": "PASS",
+        "codex_protocol": "PASS",
+        "claude_hook_scripts": "PASS"
+      }
+    }
+  ],
+  "authenticated_model_dispatch": "NOT_RUN"
+}

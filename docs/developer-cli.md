@@ -727,11 +727,12 @@ accepted as passing startup evidence.
 ## Hook refresh replay scope
 
 An attached Claude SessionStart/UserPromptSubmit refresh reuses its authoritative
-journal read during context preparation, including the original read-time
-attribution. It does not replay again to build the same brief. That remaining
-read still scales with journal history; this is not an authoritative state cache.
-Undiscoverable optional refreshes skip journal and snapshot reads. Live source
-preflight, context budgets and task-completion authority remain enforced.
+read during context preparation, including the original read-time attribution.
+Legacy format 1 replays the journal once, so that read still scales with history.
+Format 2 uses indexed selected state and exact current-context shards, without
+loading unrelated archived runs or historical package bodies. Undiscoverable
+optional refreshes skip authoritative reads. Live source preflight, context
+budgets and task-completion authority remain enforced.
 
 The Claude adapter treats only the UserPromptSubmit helper's eight-second timeout
 as advisory: exit 0, bounded best-effort UTF-8 diagnostic, no partial/successful
