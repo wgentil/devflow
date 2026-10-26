@@ -1,13 +1,14 @@
 # Archive-backed control-state storage
 
-Status: user directed continuation after design commit `7806af8`; implementation
-plan is prepared and awaits review before implementation.
+Status: approved design implemented on the isolated candidate branch;
+[verification and final review](../reviews/2026-10-26-control-state-compaction.md) are in progress.
 Source: [issue #5](https://github.com/wgentil/devflow/issues/5).
 Baseline: DevFlow v0.3.15, `bd1842b`.
 [Read-only investigation](2026-10-26-control-state-compaction-discovery.md).
 The user selected the full archive approach. Backend, defaults and interfaces
 below are proposed engineering decisions, not additional user instructions.
-Nothing here describes functionality already implemented.
+This design is the binding contract; the linked review distinguishes observed
+behavior and validation limits.
 
 ## Intent and evidence
 

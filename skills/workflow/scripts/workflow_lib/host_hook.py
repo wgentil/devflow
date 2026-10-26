@@ -27,8 +27,10 @@ def evaluate(project_dir, session_id, event, task_id=None):
     if not root.is_dir():
         return {'status':'block' if known_mapped else 'inactive','reason_code':'CONTROL_ROOT_UNAVAILABLE'}
     from .host_projection import read_host
-    authoritative=read_host(root,host='claude',session_id=session_id,hint_binding_id=locator['binding_id'] if locator else None)
+    authoritative=read_host(root,host='claude',session_id=session_id,hint_binding_id=locator['binding_id'] if locator else None,task_id=task_id if event=='TaskCompleted' else None)
     state=authoritative['data']
+    if event=='TaskCompleted' and 'claude:'+session_id+':'+task_id in state.get('host_tasks',{}):
+        known_mapped=True
     binding=binding_for_session(state,'claude',session_id)
     if locator:
         pointed=state.get('host_bindings',{}).get(locator['binding_id'])

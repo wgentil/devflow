@@ -11,7 +11,7 @@ def read_host(root,**scope):
     return {**state,'_context_read_ms':max(0,int((time.perf_counter()-started)*1000))}
 
 
-def _read_host(root,*,host=None,session_id=None,binding_id=None,run_id=None,request=None,operation_id=None,hint_binding_id=None):
+def _read_host(root,*,host=None,session_id=None,binding_id=None,run_id=None,request=None,operation_id=None,hint_binding_id=None,task_id=None):
     root=Path(root);request=request or {}
     if detect_layout(root)['layout']!='v2':return read_current(root)
     from . import sqlite_store as sql
@@ -25,11 +25,15 @@ def _read_host(root,*,host=None,session_id=None,binding_id=None,run_id=None,requ
     if hint_binding_id:entities.append(('host_bindings',hint_binding_id))
     if request.get('handoff_id'):entities.append(('host_handoffs',request['handoff_id']))
     if operation_id:entities.append(('domain_receipts',operation_id))
+    if host and session_id and task_id:
+        entities.append(("host_tasks",host+":"+session_id+":"+task_id))
     queries=[]
     if host and session_id:queries.append(EntityQuery('host_bindings',(('host',host),('session_id',session_id),('status','active'))))
     with sql.connection(root) as conn:
         initial=sql._read_view(conn,root,ReadScope(global_keys=(),entity_keys=tuple(entities),queries=tuple(queries),operation_ids=(operation_id,) if operation_id else ()))[0]
         for binding in initial['data'].get('host_bindings',{}).values():
+            if binding.get('binding_id')==binding_id and (task_id or request.get('task_id')):
+                entities.append(('host_tasks',binding['host']+':'+binding['session_id']+':'+(task_id or request['task_id'])))
             if binding.get('status')=='active' or binding['binding_id']==binding_id:ids.add(binding['run_id'])
         for handoff in initial['data'].get('host_handoffs',{}).values():
             if handoff.get('run_id'):ids.add(handoff['run_id'])

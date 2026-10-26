@@ -11,12 +11,31 @@ import platform
 import subprocess
 import sys
 import time
+import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / 'skills/workflow/scripts'))
 from workflow_lib.utf8_io import write_utf8
+
+
+def sqlite_metadata():
+    try:
+        import sqlite3
+        with tempfile.TemporaryDirectory(prefix='devflow-sqlite-platform-') as temporary:
+            conn=sqlite3.connect(Path(temporary)/'probe.sqlite3',timeout=1)
+            try:
+                conn.execute('PRAGMA journal_mode=WAL')
+                conn.execute('PRAGMA synchronous=FULL')
+                conn.execute('PRAGMA foreign_keys=ON')
+                return {'version':sqlite3.sqlite_version,
+                    'compile_options':[row[0] for row in conn.execute('PRAGMA compile_options')],
+                    'durability':{key:conn.execute('PRAGMA '+key).fetchone()[0]
+                        for key in ('journal_mode','synchronous','foreign_keys','busy_timeout')}}
+            finally:conn.close()
+    except (ImportError,OSError,RuntimeError) as exc:
+        return {'status':'UNAVAILABLE','reason':str(exc)}
 
 
 def run_suite(start_dir: Path, patterns: list[str], report_path: Path) -> dict:
@@ -39,7 +58,7 @@ def run_suite(start_dir: Path, patterns: list[str], report_path: Path) -> dict:
             'filesystem_encoding': sys.getfilesystemencoding(), 'stdout_encoding': sys.stdout.encoding,
             'stderr_encoding': sys.stderr.encoding, 'utf8_mode': sys.flags.utf8_mode,
             'PYTHONUTF8': os.environ.get('PYTHONUTF8'), 'PYTHONIOENCODING': os.environ.get('PYTHONIOENCODING'),
-            'git_sha': os.environ.get('GITHUB_SHA'), 'patterns': patterns}}
+            'git_sha': os.environ.get('GITHUB_SHA'), 'patterns': patterns, 'sqlite':sqlite_metadata()}}
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     return report

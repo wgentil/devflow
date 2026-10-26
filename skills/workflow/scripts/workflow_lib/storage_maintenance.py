@@ -146,6 +146,8 @@ def _archive_runs(conn, root):
         record = store_working_detail(root,run)
         conn.execute('UPDATE entities SET codec=?,payload=?,value_hash=? WHERE space=? AND key=?',
                      ('archive2',sql._json(record),record['physical_sha256'],sql._space(('runs',)),key))
+        conn.execute('UPDATE entity_catalog SET value_hash=? WHERE space=? AND key=?',
+                     (record['physical_sha256'],sql._space(('runs',)),key))
 
 
 def _commit_record(conn, plan, generation):
@@ -429,6 +431,7 @@ def verify_store(root, *, full=False):
             if full:
                 from .storage_audit import verify_receipts
                 verify_receipts(root,conn)
+                sql.storage_catalog.verify(conn)
                 replay = _empty(); seen = set()
                 for expected,row in enumerate(conn.execute('SELECT sequence,operation_id,codec,payload,event_hash FROM events ORDER BY sequence'),1):
                     sequence,op,codec,payload,event_hash = row

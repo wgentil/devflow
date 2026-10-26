@@ -1,0 +1,2963 @@
+{
+  "schema_version": 1,
+  "baseline": "bd1842b",
+  "access_points": 163,
+  "files": 33,
+  "dispositions": [
+    {
+      "path": "skills/workflow/scripts/commands/build.py",
+      "baseline_line": 109,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        8,
+        110,
+        137,
+        182
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/build.py",
+      "baseline_line": 136,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        8,
+        110,
+        137,
+        182
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/build.py",
+      "baseline_line": 181,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        8,
+        110,
+        137,
+        182
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/build.py",
+      "baseline_line": 196,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        8,
+        110,
+        137,
+        182
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/build.py",
+      "baseline_line": 212,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        8,
+        110,
+        137,
+        182
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/build.py",
+      "baseline_line": 221,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        8,
+        110,
+        137,
+        182
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/delivery.py",
+      "baseline_line": 38,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        8,
+        39
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/delivery.py",
+      "baseline_line": 51,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        8,
+        39
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/harden.py",
+      "baseline_line": 38,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        4,
+        39,
+        73
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/harden.py",
+      "baseline_line": 39,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        4,
+        39,
+        73
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/harden.py",
+      "baseline_line": 44,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        4,
+        39,
+        73
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/harden.py",
+      "baseline_line": 46,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        4,
+        39,
+        73
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/harden.py",
+      "baseline_line": 72,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        4,
+        39,
+        73
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/host.py",
+      "baseline_line": 105,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        88,
+        93,
+        94,
+        113,
+        121,
+        127,
+        135,
+        147,
+        157,
+        178,
+        201,
+        220,
+        227,
+        251,
+        255
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/host.py",
+      "baseline_line": 113,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        88,
+        93,
+        94,
+        113,
+        121,
+        127,
+        135,
+        147,
+        157,
+        178,
+        201,
+        220,
+        227,
+        251,
+        255
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/host.py",
+      "baseline_line": 119,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        88,
+        93,
+        94,
+        113,
+        121,
+        127,
+        135,
+        147,
+        157,
+        178,
+        201,
+        220,
+        227,
+        251,
+        255
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/host.py",
+      "baseline_line": 127,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        88,
+        93,
+        94,
+        113,
+        121,
+        127,
+        135,
+        147,
+        157,
+        178,
+        201,
+        220,
+        227,
+        251,
+        255
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/host.py",
+      "baseline_line": 139,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        88,
+        93,
+        94,
+        113,
+        121,
+        127,
+        135,
+        147,
+        157,
+        178,
+        201,
+        220,
+        227,
+        251,
+        255
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/host.py",
+      "baseline_line": 149,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        88,
+        93,
+        94,
+        113,
+        121,
+        127,
+        135,
+        147,
+        157,
+        178,
+        201,
+        220,
+        227,
+        251,
+        255
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/host.py",
+      "baseline_line": 150,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        88,
+        93,
+        94,
+        113,
+        121,
+        127,
+        135,
+        147,
+        157,
+        178,
+        201,
+        220,
+        227,
+        251,
+        255
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/host.py",
+      "baseline_line": 170,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        88,
+        93,
+        94,
+        113,
+        121,
+        127,
+        135,
+        147,
+        157,
+        178,
+        201,
+        220,
+        227,
+        251,
+        255
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/host.py",
+      "baseline_line": 193,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        88,
+        93,
+        94,
+        113,
+        121,
+        127,
+        135,
+        147,
+        157,
+        178,
+        201,
+        220,
+        227,
+        251,
+        255
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/host.py",
+      "baseline_line": 212,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        88,
+        93,
+        94,
+        113,
+        121,
+        127,
+        135,
+        147,
+        157,
+        178,
+        201,
+        220,
+        227,
+        251,
+        255
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/host.py",
+      "baseline_line": 219,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        88,
+        93,
+        94,
+        113,
+        121,
+        127,
+        135,
+        147,
+        157,
+        178,
+        201,
+        220,
+        227,
+        251,
+        255
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/host.py",
+      "baseline_line": 243,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        88,
+        93,
+        94,
+        113,
+        121,
+        127,
+        135,
+        147,
+        157,
+        178,
+        201,
+        220,
+        227,
+        251,
+        255
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/host.py",
+      "baseline_line": 247,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        88,
+        93,
+        94,
+        113,
+        121,
+        127,
+        135,
+        147,
+        157,
+        178,
+        201,
+        220,
+        227,
+        251,
+        255
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/improve.py",
+      "baseline_line": 30,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        5,
+        34
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/ingest.py",
+      "baseline_line": 34,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        4,
+        35
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/ingest.py",
+      "baseline_line": 39,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        4,
+        35
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/ingest.py",
+      "baseline_line": 46,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        4,
+        35
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/ingest.py",
+      "baseline_line": 68,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        4,
+        35
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/issues.py",
+      "baseline_line": 20,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        4,
+        21
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/journal.py",
+      "baseline_line": 18,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        3,
+        19
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/journal.py",
+      "baseline_line": 19,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        3,
+        19
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/journal.py",
+      "baseline_line": 24,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        3,
+        19
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/journal.py",
+      "baseline_line": 34,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        3,
+        19
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/migrate.py",
+      "baseline_line": 20,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        4,
+        21,
+        41,
+        77
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/migrate.py",
+      "baseline_line": 40,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        4,
+        21,
+        41,
+        77
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/migrate.py",
+      "baseline_line": 41,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        4,
+        21,
+        41,
+        77
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/migrate.py",
+      "baseline_line": 45,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        4,
+        21,
+        41,
+        77
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/migrate.py",
+      "baseline_line": 46,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        4,
+        21,
+        41,
+        77
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/migrate.py",
+      "baseline_line": 76,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        4,
+        21,
+        41,
+        77
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/pr.py",
+      "baseline_line": 91,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        9,
+        92,
+        114,
+        137,
+        144,
+        154,
+        183,
+        209,
+        269,
+        304,
+        311
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/pr.py",
+      "baseline_line": 97,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        9,
+        92,
+        114,
+        137,
+        144,
+        154,
+        183,
+        209,
+        269,
+        304,
+        311
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/pr.py",
+      "baseline_line": 113,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        9,
+        92,
+        114,
+        137,
+        144,
+        154,
+        183,
+        209,
+        269,
+        304,
+        311
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/pr.py",
+      "baseline_line": 136,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        9,
+        92,
+        114,
+        137,
+        144,
+        154,
+        183,
+        209,
+        269,
+        304,
+        311
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/pr.py",
+      "baseline_line": 143,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        9,
+        92,
+        114,
+        137,
+        144,
+        154,
+        183,
+        209,
+        269,
+        304,
+        311
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/pr.py",
+      "baseline_line": 153,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        9,
+        92,
+        114,
+        137,
+        144,
+        154,
+        183,
+        209,
+        269,
+        304,
+        311
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/pr.py",
+      "baseline_line": 158,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        9,
+        92,
+        114,
+        137,
+        144,
+        154,
+        183,
+        209,
+        269,
+        304,
+        311
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/pr.py",
+      "baseline_line": 162,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        9,
+        92,
+        114,
+        137,
+        144,
+        154,
+        183,
+        209,
+        269,
+        304,
+        311
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/pr.py",
+      "baseline_line": 176,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        9,
+        92,
+        114,
+        137,
+        144,
+        154,
+        183,
+        209,
+        269,
+        304,
+        311
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/pr.py",
+      "baseline_line": 182,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        9,
+        92,
+        114,
+        137,
+        144,
+        154,
+        183,
+        209,
+        269,
+        304,
+        311
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/pr.py",
+      "baseline_line": 191,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        9,
+        92,
+        114,
+        137,
+        144,
+        154,
+        183,
+        209,
+        269,
+        304,
+        311
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/pr.py",
+      "baseline_line": 208,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        9,
+        92,
+        114,
+        137,
+        144,
+        154,
+        183,
+        209,
+        269,
+        304,
+        311
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/pr.py",
+      "baseline_line": 212,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        9,
+        92,
+        114,
+        137,
+        144,
+        154,
+        183,
+        209,
+        269,
+        304,
+        311
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/pr.py",
+      "baseline_line": 227,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        9,
+        92,
+        114,
+        137,
+        144,
+        154,
+        183,
+        209,
+        269,
+        304,
+        311
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/pr.py",
+      "baseline_line": 268,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        9,
+        92,
+        114,
+        137,
+        144,
+        154,
+        183,
+        209,
+        269,
+        304,
+        311
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/pr.py",
+      "baseline_line": 303,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        9,
+        92,
+        114,
+        137,
+        144,
+        154,
+        183,
+        209,
+        269,
+        304,
+        311
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/pr.py",
+      "baseline_line": 310,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        9,
+        92,
+        114,
+        137,
+        144,
+        154,
+        183,
+        209,
+        269,
+        304,
+        311
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/repair.py",
+      "baseline_line": 45,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        5,
+        46
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/review.py",
+      "baseline_line": 60,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        9,
+        61
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/review.py",
+      "baseline_line": 84,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        9,
+        61
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/review.py",
+      "baseline_line": 98,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        9,
+        61
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/review.py",
+      "baseline_line": 106,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        9,
+        61
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/review.py",
+      "baseline_line": 114,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        9,
+        61
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/review.py",
+      "baseline_line": 119,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        9,
+        61
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/review.py",
+      "baseline_line": 135,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        9,
+        61
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/stats.py",
+      "baseline_line": 24,
+      "disposition": "streaming/history",
+      "explanation": "Explicit report/history projections; source identity streams canonical full logical records when required.",
+      "current_evidence_lines": [
+        4,
+        42,
+        47,
+        66
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/stats.py",
+      "baseline_line": 35,
+      "disposition": "streaming/history",
+      "explanation": "Explicit report/history projections; source identity streams canonical full logical records when required.",
+      "current_evidence_lines": [
+        4,
+        42,
+        47,
+        66
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/stats.py",
+      "baseline_line": 41,
+      "disposition": "streaming/history",
+      "explanation": "Explicit report/history projections; source identity streams canonical full logical records when required.",
+      "current_evidence_lines": [
+        4,
+        42,
+        47,
+        66
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/stats.py",
+      "baseline_line": 46,
+      "disposition": "streaming/history",
+      "explanation": "Explicit report/history projections; source identity streams canonical full logical records when required.",
+      "current_evidence_lines": [
+        4,
+        42,
+        47,
+        66
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/stats.py",
+      "baseline_line": 48,
+      "disposition": "streaming/history",
+      "explanation": "Explicit report/history projections; source identity streams canonical full logical records when required.",
+      "current_evidence_lines": [
+        4,
+        42,
+        47,
+        66
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/commands/stats.py",
+      "baseline_line": 65,
+      "disposition": "streaming/history",
+      "explanation": "Explicit report/history projections; source identity streams canonical full logical records when required.",
+      "current_evidence_lines": [
+        4,
+        42,
+        47,
+        66
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/run.py",
+      "baseline_line": 339,
+      "disposition": "targeted",
+      "explanation": "Operational dispatch uses explicit command scopes; selected run inspection resolves complete requested history.",
+      "current_evidence_lines": [
+        28,
+        340,
+        374,
+        389,
+        396,
+        415,
+        439,
+        454,
+        479,
+        497,
+        519,
+        541,
+        557,
+        571,
+        572,
+        645,
+        646,
+        662,
+        669,
+        670,
+        692,
+        699,
+        711,
+        726,
+        732,
+        742,
+        752,
+        761,
+        772,
+        783,
+        794
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/run.py",
+      "baseline_line": 365,
+      "disposition": "targeted",
+      "explanation": "Operational dispatch uses explicit command scopes; selected run inspection resolves complete requested history.",
+      "current_evidence_lines": [
+        28,
+        340,
+        374,
+        389,
+        396,
+        415,
+        439,
+        454,
+        479,
+        497,
+        519,
+        541,
+        557,
+        571,
+        572,
+        645,
+        646,
+        662,
+        669,
+        670,
+        692,
+        699,
+        711,
+        726,
+        732,
+        742,
+        752,
+        761,
+        772,
+        783,
+        794
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/run.py",
+      "baseline_line": 366,
+      "disposition": "targeted",
+      "explanation": "Operational dispatch uses explicit command scopes; selected run inspection resolves complete requested history.",
+      "current_evidence_lines": [
+        28,
+        340,
+        374,
+        389,
+        396,
+        415,
+        439,
+        454,
+        479,
+        497,
+        519,
+        541,
+        557,
+        571,
+        572,
+        645,
+        646,
+        662,
+        669,
+        670,
+        692,
+        699,
+        711,
+        726,
+        732,
+        742,
+        752,
+        761,
+        772,
+        783,
+        794
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/run.py",
+      "baseline_line": 387,
+      "disposition": "targeted",
+      "explanation": "Operational dispatch uses explicit command scopes; selected run inspection resolves complete requested history.",
+      "current_evidence_lines": [
+        28,
+        340,
+        374,
+        389,
+        396,
+        415,
+        439,
+        454,
+        479,
+        497,
+        519,
+        541,
+        557,
+        571,
+        572,
+        645,
+        646,
+        662,
+        669,
+        670,
+        692,
+        699,
+        711,
+        726,
+        732,
+        742,
+        752,
+        761,
+        772,
+        783,
+        794
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/run.py",
+      "baseline_line": 389,
+      "disposition": "targeted",
+      "explanation": "Operational dispatch uses explicit command scopes; selected run inspection resolves complete requested history.",
+      "current_evidence_lines": [
+        28,
+        340,
+        374,
+        389,
+        396,
+        415,
+        439,
+        454,
+        479,
+        497,
+        519,
+        541,
+        557,
+        571,
+        572,
+        645,
+        646,
+        662,
+        669,
+        670,
+        692,
+        699,
+        711,
+        726,
+        732,
+        742,
+        752,
+        761,
+        772,
+        783,
+        794
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/run.py",
+      "baseline_line": 392,
+      "disposition": "targeted",
+      "explanation": "Operational dispatch uses explicit command scopes; selected run inspection resolves complete requested history.",
+      "current_evidence_lines": [
+        28,
+        340,
+        374,
+        389,
+        396,
+        415,
+        439,
+        454,
+        479,
+        497,
+        519,
+        541,
+        557,
+        571,
+        572,
+        645,
+        646,
+        662,
+        669,
+        670,
+        692,
+        699,
+        711,
+        726,
+        732,
+        742,
+        752,
+        761,
+        772,
+        783,
+        794
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/run.py",
+      "baseline_line": 411,
+      "disposition": "targeted",
+      "explanation": "Operational dispatch uses explicit command scopes; selected run inspection resolves complete requested history.",
+      "current_evidence_lines": [
+        28,
+        340,
+        374,
+        389,
+        396,
+        415,
+        439,
+        454,
+        479,
+        497,
+        519,
+        541,
+        557,
+        571,
+        572,
+        645,
+        646,
+        662,
+        669,
+        670,
+        692,
+        699,
+        711,
+        726,
+        732,
+        742,
+        752,
+        761,
+        772,
+        783,
+        794
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/run.py",
+      "baseline_line": 433,
+      "disposition": "targeted",
+      "explanation": "Operational dispatch uses explicit command scopes; selected run inspection resolves complete requested history.",
+      "current_evidence_lines": [
+        28,
+        340,
+        374,
+        389,
+        396,
+        415,
+        439,
+        454,
+        479,
+        497,
+        519,
+        541,
+        557,
+        571,
+        572,
+        645,
+        646,
+        662,
+        669,
+        670,
+        692,
+        699,
+        711,
+        726,
+        732,
+        742,
+        752,
+        761,
+        772,
+        783,
+        794
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/run.py",
+      "baseline_line": 448,
+      "disposition": "targeted",
+      "explanation": "Operational dispatch uses explicit command scopes; selected run inspection resolves complete requested history.",
+      "current_evidence_lines": [
+        28,
+        340,
+        374,
+        389,
+        396,
+        415,
+        439,
+        454,
+        479,
+        497,
+        519,
+        541,
+        557,
+        571,
+        572,
+        645,
+        646,
+        662,
+        669,
+        670,
+        692,
+        699,
+        711,
+        726,
+        732,
+        742,
+        752,
+        761,
+        772,
+        783,
+        794
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/run.py",
+      "baseline_line": 473,
+      "disposition": "targeted",
+      "explanation": "Operational dispatch uses explicit command scopes; selected run inspection resolves complete requested history.",
+      "current_evidence_lines": [
+        28,
+        340,
+        374,
+        389,
+        396,
+        415,
+        439,
+        454,
+        479,
+        497,
+        519,
+        541,
+        557,
+        571,
+        572,
+        645,
+        646,
+        662,
+        669,
+        670,
+        692,
+        699,
+        711,
+        726,
+        732,
+        742,
+        752,
+        761,
+        772,
+        783,
+        794
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/run.py",
+      "baseline_line": 491,
+      "disposition": "targeted",
+      "explanation": "Operational dispatch uses explicit command scopes; selected run inspection resolves complete requested history.",
+      "current_evidence_lines": [
+        28,
+        340,
+        374,
+        389,
+        396,
+        415,
+        439,
+        454,
+        479,
+        497,
+        519,
+        541,
+        557,
+        571,
+        572,
+        645,
+        646,
+        662,
+        669,
+        670,
+        692,
+        699,
+        711,
+        726,
+        732,
+        742,
+        752,
+        761,
+        772,
+        783,
+        794
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/run.py",
+      "baseline_line": 513,
+      "disposition": "targeted",
+      "explanation": "Operational dispatch uses explicit command scopes; selected run inspection resolves complete requested history.",
+      "current_evidence_lines": [
+        28,
+        340,
+        374,
+        389,
+        396,
+        415,
+        439,
+        454,
+        479,
+        497,
+        519,
+        541,
+        557,
+        571,
+        572,
+        645,
+        646,
+        662,
+        669,
+        670,
+        692,
+        699,
+        711,
+        726,
+        732,
+        742,
+        752,
+        761,
+        772,
+        783,
+        794
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/run.py",
+      "baseline_line": 535,
+      "disposition": "targeted",
+      "explanation": "Operational dispatch uses explicit command scopes; selected run inspection resolves complete requested history.",
+      "current_evidence_lines": [
+        28,
+        340,
+        374,
+        389,
+        396,
+        415,
+        439,
+        454,
+        479,
+        497,
+        519,
+        541,
+        557,
+        571,
+        572,
+        645,
+        646,
+        662,
+        669,
+        670,
+        692,
+        699,
+        711,
+        726,
+        732,
+        742,
+        752,
+        761,
+        772,
+        783,
+        794
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/run.py",
+      "baseline_line": 551,
+      "disposition": "targeted",
+      "explanation": "Operational dispatch uses explicit command scopes; selected run inspection resolves complete requested history.",
+      "current_evidence_lines": [
+        28,
+        340,
+        374,
+        389,
+        396,
+        415,
+        439,
+        454,
+        479,
+        497,
+        519,
+        541,
+        557,
+        571,
+        572,
+        645,
+        646,
+        662,
+        669,
+        670,
+        692,
+        699,
+        711,
+        726,
+        732,
+        742,
+        752,
+        761,
+        772,
+        783,
+        794
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/run.py",
+      "baseline_line": 575,
+      "disposition": "targeted",
+      "explanation": "Operational dispatch uses explicit command scopes; selected run inspection resolves complete requested history.",
+      "current_evidence_lines": [
+        28,
+        340,
+        374,
+        389,
+        396,
+        415,
+        439,
+        454,
+        479,
+        497,
+        519,
+        541,
+        557,
+        571,
+        572,
+        645,
+        646,
+        662,
+        669,
+        670,
+        692,
+        699,
+        711,
+        726,
+        732,
+        742,
+        752,
+        761,
+        772,
+        783,
+        794
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/run.py",
+      "baseline_line": 656,
+      "disposition": "targeted",
+      "explanation": "Operational dispatch uses explicit command scopes; selected run inspection resolves complete requested history.",
+      "current_evidence_lines": [
+        28,
+        340,
+        374,
+        389,
+        396,
+        415,
+        439,
+        454,
+        479,
+        497,
+        519,
+        541,
+        557,
+        571,
+        572,
+        645,
+        646,
+        662,
+        669,
+        670,
+        692,
+        699,
+        711,
+        726,
+        732,
+        742,
+        752,
+        761,
+        772,
+        783,
+        794
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/run.py",
+      "baseline_line": 686,
+      "disposition": "targeted",
+      "explanation": "Operational dispatch uses explicit command scopes; selected run inspection resolves complete requested history.",
+      "current_evidence_lines": [
+        28,
+        340,
+        374,
+        389,
+        396,
+        415,
+        439,
+        454,
+        479,
+        497,
+        519,
+        541,
+        557,
+        571,
+        572,
+        645,
+        646,
+        662,
+        669,
+        670,
+        692,
+        699,
+        711,
+        726,
+        732,
+        742,
+        752,
+        761,
+        772,
+        783,
+        794
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/run.py",
+      "baseline_line": 692,
+      "disposition": "targeted",
+      "explanation": "Operational dispatch uses explicit command scopes; selected run inspection resolves complete requested history.",
+      "current_evidence_lines": [
+        28,
+        340,
+        374,
+        389,
+        396,
+        415,
+        439,
+        454,
+        479,
+        497,
+        519,
+        541,
+        557,
+        571,
+        572,
+        645,
+        646,
+        662,
+        669,
+        670,
+        692,
+        699,
+        711,
+        726,
+        732,
+        742,
+        752,
+        761,
+        772,
+        783,
+        794
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/run.py",
+      "baseline_line": 704,
+      "disposition": "targeted",
+      "explanation": "Operational dispatch uses explicit command scopes; selected run inspection resolves complete requested history.",
+      "current_evidence_lines": [
+        28,
+        340,
+        374,
+        389,
+        396,
+        415,
+        439,
+        454,
+        479,
+        497,
+        519,
+        541,
+        557,
+        571,
+        572,
+        645,
+        646,
+        662,
+        669,
+        670,
+        692,
+        699,
+        711,
+        726,
+        732,
+        742,
+        752,
+        761,
+        772,
+        783,
+        794
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/run.py",
+      "baseline_line": 719,
+      "disposition": "targeted",
+      "explanation": "Operational dispatch uses explicit command scopes; selected run inspection resolves complete requested history.",
+      "current_evidence_lines": [
+        28,
+        340,
+        374,
+        389,
+        396,
+        415,
+        439,
+        454,
+        479,
+        497,
+        519,
+        541,
+        557,
+        571,
+        572,
+        645,
+        646,
+        662,
+        669,
+        670,
+        692,
+        699,
+        711,
+        726,
+        732,
+        742,
+        752,
+        761,
+        772,
+        783,
+        794
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/run.py",
+      "baseline_line": 725,
+      "disposition": "targeted",
+      "explanation": "Operational dispatch uses explicit command scopes; selected run inspection resolves complete requested history.",
+      "current_evidence_lines": [
+        28,
+        340,
+        374,
+        389,
+        396,
+        415,
+        439,
+        454,
+        479,
+        497,
+        519,
+        541,
+        557,
+        571,
+        572,
+        645,
+        646,
+        662,
+        669,
+        670,
+        692,
+        699,
+        711,
+        726,
+        732,
+        742,
+        752,
+        761,
+        772,
+        783,
+        794
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/run.py",
+      "baseline_line": 735,
+      "disposition": "targeted",
+      "explanation": "Operational dispatch uses explicit command scopes; selected run inspection resolves complete requested history.",
+      "current_evidence_lines": [
+        28,
+        340,
+        374,
+        389,
+        396,
+        415,
+        439,
+        454,
+        479,
+        497,
+        519,
+        541,
+        557,
+        571,
+        572,
+        645,
+        646,
+        662,
+        669,
+        670,
+        692,
+        699,
+        711,
+        726,
+        732,
+        742,
+        752,
+        761,
+        772,
+        783,
+        794
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/run.py",
+      "baseline_line": 745,
+      "disposition": "targeted",
+      "explanation": "Operational dispatch uses explicit command scopes; selected run inspection resolves complete requested history.",
+      "current_evidence_lines": [
+        28,
+        340,
+        374,
+        389,
+        396,
+        415,
+        439,
+        454,
+        479,
+        497,
+        519,
+        541,
+        557,
+        571,
+        572,
+        645,
+        646,
+        662,
+        669,
+        670,
+        692,
+        699,
+        711,
+        726,
+        732,
+        742,
+        752,
+        761,
+        772,
+        783,
+        794
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/run.py",
+      "baseline_line": 754,
+      "disposition": "targeted",
+      "explanation": "Operational dispatch uses explicit command scopes; selected run inspection resolves complete requested history.",
+      "current_evidence_lines": [
+        28,
+        340,
+        374,
+        389,
+        396,
+        415,
+        439,
+        454,
+        479,
+        497,
+        519,
+        541,
+        557,
+        571,
+        572,
+        645,
+        646,
+        662,
+        669,
+        670,
+        692,
+        699,
+        711,
+        726,
+        732,
+        742,
+        752,
+        761,
+        772,
+        783,
+        794
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/run.py",
+      "baseline_line": 765,
+      "disposition": "targeted",
+      "explanation": "Operational dispatch uses explicit command scopes; selected run inspection resolves complete requested history.",
+      "current_evidence_lines": [
+        28,
+        340,
+        374,
+        389,
+        396,
+        415,
+        439,
+        454,
+        479,
+        497,
+        519,
+        541,
+        557,
+        571,
+        572,
+        645,
+        646,
+        662,
+        669,
+        670,
+        692,
+        699,
+        711,
+        726,
+        732,
+        742,
+        752,
+        761,
+        772,
+        783,
+        794
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/run.py",
+      "baseline_line": 776,
+      "disposition": "targeted",
+      "explanation": "Operational dispatch uses explicit command scopes; selected run inspection resolves complete requested history.",
+      "current_evidence_lines": [
+        28,
+        340,
+        374,
+        389,
+        396,
+        415,
+        439,
+        454,
+        479,
+        497,
+        519,
+        541,
+        557,
+        571,
+        572,
+        645,
+        646,
+        662,
+        669,
+        670,
+        692,
+        699,
+        711,
+        726,
+        732,
+        742,
+        752,
+        761,
+        772,
+        783,
+        794
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/run.py",
+      "baseline_line": 787,
+      "disposition": "targeted",
+      "explanation": "Operational dispatch uses explicit command scopes; selected run inspection resolves complete requested history.",
+      "current_evidence_lines": [
+        28,
+        340,
+        374,
+        389,
+        396,
+        415,
+        439,
+        454,
+        479,
+        497,
+        519,
+        541,
+        557,
+        571,
+        572,
+        645,
+        646,
+        662,
+        669,
+        670,
+        692,
+        699,
+        711,
+        726,
+        732,
+        742,
+        752,
+        761,
+        772,
+        783,
+        794
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/bootstrap.py",
+      "baseline_line": 57,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        8,
+        58,
+        70
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/bootstrap.py",
+      "baseline_line": 68,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        8,
+        58,
+        70
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/bootstrap.py",
+      "baseline_line": 69,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        8,
+        58,
+        70
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/context_preparation.py",
+      "baseline_line": 112,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        10,
+        127,
+        268,
+        272,
+        273,
+        274
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/context_preparation.py",
+      "baseline_line": 172,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        10,
+        127,
+        268,
+        272,
+        273,
+        274
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/context_preparation.py",
+      "baseline_line": 241,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        10,
+        127,
+        268,
+        272,
+        273,
+        274
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/document_approvals.py",
+      "baseline_line": 50,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        12,
+        51,
+        64,
+        99
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/document_approvals.py",
+      "baseline_line": 63,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        12,
+        51,
+        64,
+        99
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/document_approvals.py",
+      "baseline_line": 69,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        12,
+        51,
+        64,
+        99
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/evidence.py",
+      "baseline_line": 132,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        15,
+        133
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/gates.py",
+      "baseline_line": 221,
+      "disposition": "selected-package",
+      "explanation": "Pure validator/reducer resolves the selected complete verified package; metadata scans use explicit summaries.",
+      "current_evidence_lines": [
+        222,
+        223
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/host_completion.py",
+      "baseline_line": 97,
+      "disposition": "selected-package",
+      "explanation": "Pure validator/reducer resolves the selected complete verified package; metadata scans use explicit summaries.",
+      "current_evidence_lines": [
+        17,
+        18,
+        100,
+        101,
+        128,
+        129
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/host_completion.py",
+      "baseline_line": 123,
+      "disposition": "selected-package",
+      "explanation": "Pure validator/reducer resolves the selected complete verified package; metadata scans use explicit summaries.",
+      "current_evidence_lines": [
+        17,
+        18,
+        100,
+        101,
+        128,
+        129
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/hosts.py",
+      "baseline_line": 150,
+      "disposition": "selected-package",
+      "explanation": "Pure validator/reducer resolves the selected complete verified package; metadata scans use explicit summaries.",
+      "current_evidence_lines": [
+        151,
+        152
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/interactive_routing.py",
+      "baseline_line": 26,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        20,
+        29,
+        120,
+        127
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/interactive_routing.py",
+      "baseline_line": 116,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        20,
+        29,
+        120,
+        127
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/interactive_routing.py",
+      "baseline_line": 123,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        20,
+        29,
+        120,
+        127
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/journal_domains.py",
+      "baseline_line": 145,
+      "disposition": "selected-package",
+      "explanation": "Pure validator/reducer resolves the selected complete verified package; metadata scans use explicit summaries.",
+      "current_evidence_lines": [
+        146,
+        147,
+        165,
+        166
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/journal_domains.py",
+      "baseline_line": 162,
+      "disposition": "selected-package",
+      "explanation": "Pure validator/reducer resolves the selected complete verified package; metadata scans use explicit summaries.",
+      "current_evidence_lines": [
+        146,
+        147,
+        165,
+        166
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/lifecycle_hooks.py",
+      "baseline_line": 161,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        159,
+        161
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/native_runtime.py",
+      "baseline_line": 113,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        11,
+        116,
+        144,
+        156,
+        184,
+        185,
+        288,
+        342
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/native_runtime.py",
+      "baseline_line": 141,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        11,
+        116,
+        144,
+        156,
+        184,
+        185,
+        288,
+        342
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/native_runtime.py",
+      "baseline_line": 147,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        11,
+        116,
+        144,
+        156,
+        184,
+        185,
+        288,
+        342
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/native_runtime.py",
+      "baseline_line": 152,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        11,
+        116,
+        144,
+        156,
+        184,
+        185,
+        288,
+        342
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/native_runtime.py",
+      "baseline_line": 284,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        11,
+        116,
+        144,
+        156,
+        184,
+        185,
+        288,
+        342
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/native_runtime.py",
+      "baseline_line": 337,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        11,
+        116,
+        144,
+        156,
+        184,
+        185,
+        288,
+        342
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/native_runtime.py",
+      "baseline_line": 339,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        11,
+        116,
+        144,
+        156,
+        184,
+        185,
+        288,
+        342
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/native_runtime.py",
+      "baseline_line": 342,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        11,
+        116,
+        144,
+        156,
+        184,
+        185,
+        288,
+        342
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/outbox.py",
+      "baseline_line": 34,
+      "disposition": "targeted queue traversal",
+      "explanation": "Explicit queue flush enumerates selected business queue, then re-reads each receipt under its durable reservation.",
+      "current_evidence_lines": [
+        35,
+        37,
+        38,
+        74,
+        83
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/outbox.py",
+      "baseline_line": 35,
+      "disposition": "targeted queue traversal",
+      "explanation": "Explicit queue flush enumerates selected business queue, then re-reads each receipt under its durable reservation.",
+      "current_evidence_lines": [
+        35,
+        37,
+        38,
+        74,
+        83
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/outbox.py",
+      "baseline_line": 71,
+      "disposition": "targeted queue traversal",
+      "explanation": "Explicit queue flush enumerates selected business queue, then re-reads each receipt under its durable reservation.",
+      "current_evidence_lines": [
+        35,
+        37,
+        38,
+        74,
+        83
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/outbox.py",
+      "baseline_line": 80,
+      "disposition": "targeted queue traversal",
+      "explanation": "Explicit queue flush enumerates selected business queue, then re-reads each receipt under its durable reservation.",
+      "current_evidence_lines": [
+        35,
+        37,
+        38,
+        74,
+        83
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/pr_reviews.py",
+      "baseline_line": 198,
+      "disposition": "selected-package",
+      "explanation": "Pure validator/reducer resolves the selected complete verified package; metadata scans use explicit summaries.",
+      "current_evidence_lines": [
+        199,
+        200,
+        288,
+        289
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/pr_reviews.py",
+      "baseline_line": 285,
+      "disposition": "selected-package",
+      "explanation": "Pure validator/reducer resolves the selected complete verified package; metadata scans use explicit summaries.",
+      "current_evidence_lines": [
+        199,
+        200,
+        288,
+        289
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/project_setup.py",
+      "baseline_line": 172,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        156,
+        172,
+        201,
+        203
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/project_setup.py",
+      "baseline_line": 202,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        156,
+        172,
+        201,
+        203
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/repair_runtime.py",
+      "baseline_line": 37,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        13,
+        39,
+        75,
+        122,
+        134
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/repair_runtime.py",
+      "baseline_line": 39,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        13,
+        39,
+        75,
+        122,
+        134
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/repair_runtime.py",
+      "baseline_line": 43,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        13,
+        39,
+        75,
+        122,
+        134
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/repair_runtime.py",
+      "baseline_line": 72,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        13,
+        39,
+        75,
+        122,
+        134
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/repair_runtime.py",
+      "baseline_line": 77,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        13,
+        39,
+        75,
+        122,
+        134
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/repair_runtime.py",
+      "baseline_line": 119,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        13,
+        39,
+        75,
+        122,
+        134
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/repair_runtime.py",
+      "baseline_line": 131,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        13,
+        39,
+        75,
+        122,
+        134
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/repo_input_gate.py",
+      "baseline_line": 32,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        8,
+        33,
+        42
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/repo_input_gate.py",
+      "baseline_line": 41,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        8,
+        33,
+        42
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/repo_input_gate.py",
+      "baseline_line": 42,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        8,
+        33,
+        42
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/reviews.py",
+      "baseline_line": 139,
+      "disposition": "selected-package",
+      "explanation": "Pure validator/reducer resolves the selected complete verified package; metadata scans use explicit summaries.",
+      "current_evidence_lines": [
+        140,
+        141,
+        215,
+        216,
+        223
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/reviews.py",
+      "baseline_line": 213,
+      "disposition": "selected-package",
+      "explanation": "Pure validator/reducer resolves the selected complete verified package; metadata scans use explicit summaries.",
+      "current_evidence_lines": [
+        140,
+        141,
+        215,
+        216,
+        223
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/reviews.py",
+      "baseline_line": 217,
+      "disposition": "selected-package",
+      "explanation": "Pure validator/reducer resolves the selected complete verified package; metadata scans use explicit summaries.",
+      "current_evidence_lines": [
+        140,
+        141,
+        215,
+        216,
+        223
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/store.py",
+      "baseline_line": 88,
+      "disposition": "scoped reducer + explicit full",
+      "explanation": "v2 mutations use declared scopes; read_state is the explicit full API and v1 replay remains available.",
+      "current_evidence_lines": [
+        340,
+        341,
+        676,
+        745,
+        746
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/store.py",
+      "baseline_line": 300,
+      "disposition": "scoped reducer + explicit full",
+      "explanation": "v2 mutations use declared scopes; read_state is the explicit full API and v1 replay remains available.",
+      "current_evidence_lines": [
+        340,
+        341,
+        676,
+        745,
+        746
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/store.py",
+      "baseline_line": 307,
+      "disposition": "scoped reducer + explicit full",
+      "explanation": "v2 mutations use declared scopes; read_state is the explicit full API and v1 replay remains available.",
+      "current_evidence_lines": [
+        340,
+        341,
+        676,
+        745,
+        746
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/store.py",
+      "baseline_line": 312,
+      "disposition": "scoped reducer + explicit full",
+      "explanation": "v2 mutations use declared scopes; read_state is the explicit full API and v1 replay remains available.",
+      "current_evidence_lines": [
+        340,
+        341,
+        676,
+        745,
+        746
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/store.py",
+      "baseline_line": 315,
+      "disposition": "scoped reducer + explicit full",
+      "explanation": "v2 mutations use declared scopes; read_state is the explicit full API and v1 replay remains available.",
+      "current_evidence_lines": [
+        340,
+        341,
+        676,
+        745,
+        746
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/store.py",
+      "baseline_line": 616,
+      "disposition": "scoped reducer + explicit full",
+      "explanation": "v2 mutations use declared scopes; read_state is the explicit full API and v1 replay remains available.",
+      "current_evidence_lines": [
+        340,
+        341,
+        676,
+        745,
+        746
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/store.py",
+      "baseline_line": 639,
+      "disposition": "scoped reducer + explicit full",
+      "explanation": "v2 mutations use declared scopes; read_state is the explicit full API and v1 replay remains available.",
+      "current_evidence_lines": [
+        340,
+        341,
+        676,
+        745,
+        746
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/store.py",
+      "baseline_line": 646,
+      "disposition": "scoped reducer + explicit full",
+      "explanation": "v2 mutations use declared scopes; read_state is the explicit full API and v1 replay remains available.",
+      "current_evidence_lines": [
+        340,
+        341,
+        676,
+        745,
+        746
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/store.py",
+      "baseline_line": 650,
+      "disposition": "scoped reducer + explicit full",
+      "explanation": "v2 mutations use declared scopes; read_state is the explicit full API and v1 replay remains available.",
+      "current_evidence_lines": [
+        340,
+        341,
+        676,
+        745,
+        746
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/store.py",
+      "baseline_line": 652,
+      "disposition": "scoped reducer + explicit full",
+      "explanation": "v2 mutations use declared scopes; read_state is the explicit full API and v1 replay remains available.",
+      "current_evidence_lines": [
+        340,
+        341,
+        676,
+        745,
+        746
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/store.py",
+      "baseline_line": 691,
+      "disposition": "scoped reducer + explicit full",
+      "explanation": "v2 mutations use declared scopes; read_state is the explicit full API and v1 replay remains available.",
+      "current_evidence_lines": [
+        340,
+        341,
+        676,
+        745,
+        746
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/store.py",
+      "baseline_line": 714,
+      "disposition": "scoped reducer + explicit full",
+      "explanation": "v2 mutations use declared scopes; read_state is the explicit full API and v1 replay remains available.",
+      "current_evidence_lines": [
+        340,
+        341,
+        676,
+        745,
+        746
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/store.py",
+      "baseline_line": 752,
+      "disposition": "scoped reducer + explicit full",
+      "explanation": "v2 mutations use declared scopes; read_state is the explicit full API and v1 replay remains available.",
+      "current_evidence_lines": [
+        340,
+        341,
+        676,
+        745,
+        746
+      ]
+    },
+    {
+      "path": "skills/workflow/scripts/workflow_lib/verifiers.py",
+      "baseline_line": 129,
+      "disposition": "targeted",
+      "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
+      "current_evidence_lines": [
+        12,
+        130
+      ]
+    }
+  ]
+}

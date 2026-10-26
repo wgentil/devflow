@@ -91,3 +91,18 @@ and bounded-read tests rather than changing expected authority semantics.
 Every row is dispositioned in the final report: targeted, streaming, explicit full
 view, or removed. Source grep is a completeness aid; query/byte instrumentation
 and mutation tests prove the actual behavior.
+
+## Implemented disposition
+
+All 163 baseline access points across 33 files are mapped individually in the
+[machine-readable disposition](../reviews/evidence/2026-10-26-control-state-compaction/consumer-dispositions.json),
+including current evidence lines and mode. Operational v2 consumers have no
+remaining full-history read_state imports. The only remaining calls are the
+explicit full API/backend and the legacy-only storage_access fallback.
+
+New adapters not present in the baseline include storage_access, host_projection,
+storage_catalog, storage_scopes, stored_records, storage_pins and the explicit
+maintenance/backup/journal/GC modules. They are covered by the storage-specific
+command, host, safety, scale, migration, recovery, object and maintenance suites.
+The final report records observed outcomes; this inventory alone is not runtime
+proof.

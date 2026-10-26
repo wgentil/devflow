@@ -262,3 +262,28 @@ activation, recovery verifies the same schema/head/dependency contract as normal
 SQLite readers, proves the unselected store empty, and refuses any late legacy
 writer. It retains a valid newer selected tail. Unknown/corrupt identities or
 partial databases fail closed; recovery never invents an empty authority.
+
+## Catalog witnesses and current retrieval
+
+Format 2 keeps a second small indexed entity catalog containing query headers,
+positions and physical checksums. Query discovery uses the union of matching indexed authority/catalog keys, so
+loss on either side is detectable. Witnesses do not cascade from a damaged
+namespace; intended deletion updates both copies atomically. Explicit full reads
+also compare complete catalog parity. Selected lookups compare it with the stored row
+and decoded logical headers. An omitted task row or changed session/status header
+fails closed rather than making mapped work appear inactive. Full verification
+compares every witness with complete authoritative history. Normal deletion and
+archive checksum changes update both rows atomically. This detects inconsistent
+corruption; checksums are not authentication against coordinated manual edits.
+
+Completion and remapping look up the exact host/session/task key even when its
+record points outside the selected run. Missing advisory locators cannot hide a
+stale authoritative mapping. Routine session refresh still excludes retired run
+bodies; explicit attachment retry cleans stale project hints using session
+metadata and terminal headers only.
+
+Format 2 context retrieval uses one advisory index shard per selection scope.
+The retained legacy monolithic index is a cold cache, with no routine fallback
+scan. First use rebuilds only the requested context; sources and content identity
+are rechecked on hits. Explicit invalidation may enumerate shards and removes
+retrieval locators while retaining immutable content and legacy caches.

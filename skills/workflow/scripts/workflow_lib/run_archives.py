@@ -109,6 +109,8 @@ def archive_run(root: Path, run_id: str):
         record = store_working_detail(root, run)
         conn.execute('UPDATE entities SET codec=?,payload=?,value_hash=? WHERE space=? AND key=?',
                      ('archive2', sql._json(record),record['physical_sha256'], sql._space(('runs',)), run_id))
+        conn.execute('UPDATE entity_catalog SET value_hash=? WHERE space=? AND key=?',
+                     (record['physical_sha256'],sql._space(('runs',)),run_id))
         sql._set_meta(conn, 'generation', sql._meta(conn, 'generation') + 1)
         return record['summary']
 

@@ -63,9 +63,33 @@ def inspect_context_artifact(root: Path, artifact_id: str) -> dict:
         raise WorkflowError('CONTEXT_ARTIFACT_UNAVAILABLE', 'context artifact is missing or corrupt') from exc
 
 
-def _index(root):
+def _sharded(root):
+    from .storage_format import detect_layout
+    return detect_layout(Path(root))['layout']=='v2'
+
+
+def _scope_path(root,scope):
+    from .storage_format import confined_path
+    if not re.fullmatch(r'[0-9a-f]{64}',scope):
+        raise ValueError('invalid cache scope identity')
+    return confined_path(Path(root),'context-artifacts/scopes/'+scope+'.json',create_parents=True)
+
+
+def _index(root,scope=None):
+    if _sharded(root) and scope is None:
+        entries={};valid=True
+        directory=_scope_path(root,'0'*64).parent
+        for path in directory.glob('*.json'):
+            try:
+                current,ok=_index(root,path.stem)
+                entries.update(current['entries']);valid=valid and ok
+            except ValueError:valid=False
+        return {'schema_version':VERSION,'entries':entries},valid
     try:
-        index = _read(_directory(root) / 'index.json')
+        path=_scope_path(root,scope) if _sharded(root) else _directory(root)/'index.json'
+        index = _read(path)
+        if scope is not None and _sharded(root) and set(index.get('entries',{}))!={scope}:
+            raise ValueError('cache shard does not bind requested scope')
         if index.get('schema_version') != VERSION or not isinstance(index.get('entries'), dict):
             raise ValueError('stale index schema')
         for entry in index['entries'].values():
@@ -104,7 +128,7 @@ def resolve_cached_units(root: Path, selection: dict) -> dict:
     # Source locations define scope, while commits/provenance never define reusable content.
     scope = digest({'sources': {sid: {k: source[k] for k in ('root', 'path')} for sid, source in sources.items()},
                     'selections': selections, 'policy': policy, 'builder_version': VERSION})
-    index, _ = _index(root)
+    index, _ = _index(root,scope)
     entry = index['entries'].get(scope)
     validation_reads = 0
     if entry:
@@ -132,7 +156,7 @@ def resolve_cached_units(root: Path, selection: dict) -> dict:
         'source_hashes': hashes, 'selectors': [u['selector'] for u in value['units']], 'closure': value['dependencies']})
     index['entries'][scope] = {**ref, 'policy_hash': digest(policy), 'source_hashes': hashes,
                                'dependencies': value['dependencies']}
-    _atomic_json(_directory(root) / 'index.json', index)
+    _atomic_json(_scope_path(root,scope) if _sharded(root) else _directory(root)/'index.json', index)
     return {**value, **ref, 'cache_outcome': 'miss', 'source_provenance': provenance,
             'retrieval_calls': value['retrieval_calls'] + len(hashes) + validation_reads}
 
@@ -157,7 +181,14 @@ def invalidate_context_artifacts(root: Path, observed_sources: dict, policy_hash
         else:
             retained[scope] = entry
     index['entries'] = retained
-    _atomic_json(_directory(root) / 'index.json', index)
+    if _sharded(root):
+        # Only retrieval locators are invalidated; content remains inspectable.
+        directory=_scope_path(root,'0'*64).parent
+        for path in directory.glob('*.json'):
+            if re.fullmatch(r'[0-9a-f]{64}',path.stem) and path.stem not in retained:
+                _scope_path(root,path.stem).unlink(missing_ok=True)
+    else:
+        _atomic_json(_directory(root) / 'index.json', index)
     return {'status': 'ok', 'reason_code': 'CONSERVATIVE_INVALIDATION' if unknown or not valid else 'DEPENDENCIES_CHECKED',
             'affected_ids': sorted(affected), 'reasons': {key: sorted(set(value)) for key, value in sorted(affected.items())},
             'retained_entries': len(retained), 'scope': 'retrieval-only', 'affected_ids_complete': valid,

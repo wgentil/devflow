@@ -118,7 +118,7 @@ def _dispatch(parsed):
         return discover(Path(parsed.root),binding,parsed.refresh)
     if parsed.host_command == 'check':
         from workflow_lib.host_completion import check_completion
-        state=read_host(Path(parsed.root),binding_id=getattr(parsed,'binding_id',None),host=getattr(parsed,'host',None),session_id=getattr(parsed,'session_id',None),operation_id=getattr(parsed,'operation_id',None),request=locals().get('request'))
+        state=read_host(Path(parsed.root),binding_id=getattr(parsed,'binding_id',None),host=getattr(parsed,'host',None),session_id=getattr(parsed,'session_id',None),operation_id=getattr(parsed,'operation_id',None),request=locals().get('request'),task_id=parsed.task_id)
         binding=state['data'].get('host_bindings',{}).get(parsed.binding_id)
         if not binding: raise WorkflowError('BINDING_REQUIRED','Known binding required.')
         from workflow_lib.releases import release_descriptor

@@ -59,3 +59,7 @@ class Cases(unittest.TestCase):
             self.assertEqual(report['metadata']['preferred_encoding'], locale.getpreferredencoding(False))
             self.assertEqual(report['metadata']['utf8_mode'], sys.flags.utf8_mode)
             self.assertEqual(report['metadata']['python'], sys.version)
+            sqlite=report['metadata']['sqlite']
+            self.assertTrue(sqlite['version'])
+            self.assertTrue(sqlite['compile_options'])
+            self.assertEqual(sqlite['durability'],{'journal_mode':'wal','synchronous':2,'foreign_keys':1,'busy_timeout':1000})

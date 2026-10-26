@@ -769,3 +769,15 @@ conversion. `version` advertises storage formats separately from logical schema.
 For interrupted first-root initialization, `state compact --resume` takes a fresh
 recovery operation ID and actor; then retry the original first-work ID. Compaction
 resume keeps its original maintenance ID/actor. See [recovery](reference/control-maintenance.md).
+
+
+## Disposable storage benchmark
+
+`python3 scripts/benchmark_control_storage.py --output storage-benchmark.json`
+creates owned synthetic Git/control roots, measures real cold/warm commands with
+10 and 1,000 terminal runs, and verifies a complete 100 MiB closed-review corpus.
+It reports queries, SQLite work, actual object bytes, complete-command/stage
+timings, hot logical payload and separate physical storage categories. It cleans
+only its own temporary roots. This maintainer check does not migrate Bandpick or
+any existing project and does not submit model work. Timings describe the measured
+machine and generated corpus; they are not universal latency promises.

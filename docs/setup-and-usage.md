@@ -608,3 +608,10 @@ Storage compaction is manual by default; optional v2 post-terminal compaction
 never changes a successful outcome. See [maintenance](reference/control-maintenance.md) and the
 [context limits and diagnostics](context-efficiency.md#mandatory-context-byte-diagnostics)
 and [preparation recovery](context-efficiency.md#preparation-recovery).
+
+
+If storage reports a catalog/header mismatch, preserve the control root and run
+full verification through the harness before continuing. Rebuilding an advisory
+locator or context cache does not repair authoritative storage. Current-context
+retrieval on format 2 rebuilds its selected cache scope on first use after
+conversion; historical context artifacts remain available.

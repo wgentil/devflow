@@ -115,3 +115,12 @@ installed Claude hook script suite against v1 and v2 fixtures. This validates
 script/package behavior; signed-in model/event/worker acceptance remains a
 separate gate. Platform reports must retain SQLite version, compile options and
 effective durability settings before release acceptance.
+
+
+The archive-storage candidate runs ordinary jobs on Ubuntu, macOS and Windows
+with Python 3.11 and latest supported Python. CI fetches the frozen v0.3.15 tag for
+actual old-helper refusal checks. Windows CP1252 jobs include storage, indexed
+transactions, archived runs and typed records in addition to encoding fixtures.
+The platform report measures SQLite version/build options and WAL/FULL,
+foreign-key and busy-timeout settings on an owned database. These checks retain
+the signed-in acceptance limitation described above.

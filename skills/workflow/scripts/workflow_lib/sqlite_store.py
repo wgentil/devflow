@@ -16,6 +16,8 @@ from .storage_objects import put_object, read_object
 from .storage_scopes import ReadScope, EntityQuery, scope_for_event
 from .store import WorkflowError
 
+from . import storage_catalog
+
 INLINE_BYTES = 65536
 SCHEMA = '''
 CREATE TABLE metadata(key TEXT PRIMARY KEY, value TEXT NOT NULL);
@@ -60,6 +62,7 @@ CREATE TABLE maintenance_commits(plan_hash TEXT PRIMARY KEY, source_head INTEGER
     generation INTEGER NOT NULL, receipt TEXT NOT NULL);
 
 '''
+SCHEMA += storage_catalog.SCHEMA
 
 
 def _json(value):
@@ -277,11 +280,16 @@ def _decode(root, codec, payload, expected, *, working=False):
 def _load_space(conn, root, path, rows=None, *, working=False):
     name = _space(path)
     shape = conn.execute('SELECT shape FROM spaces WHERE path=?', (name,)).fetchone()
-    if shape is None: return None
-    if rows is None: rows = conn.execute('SELECT key,codec,payload,value_hash FROM entities WHERE space=? ORDER BY position', (name,)).fetchall()
+    if shape is None:
+        if rows or storage_catalog.rows(conn,name):
+            raise WorkflowError('CORRUPT_STORAGE','Required entity namespace is missing; preserve and verify the root.')
+        return None
+    if rows is None: rows = storage_catalog.rows(conn,name)
     values = []
     for key, codec, payload, digest in rows:
+        storage_catalog.check(conn,name,key)
         value = _load_space(conn, root, tuple(json.loads(payload))) if codec == 'space' else _decode(root, codec, payload, digest,working=working and path==('runs',))
+        storage_catalog.check(conn,name,key,path=path,value=value)
         values.append((key, value))
     if shape[0] == 'map': return dict(values)
     if shape[0] == 'list': return [value for _, value in values]
@@ -290,6 +298,7 @@ def _load_space(conn, root, path, rows=None, *, working=False):
 
 
 def _lookup_entity(conn, root, namespace, key, *, working=True):
+    storage_catalog.check(conn,_space((namespace,)),key)
     rows = conn.execute('SELECT key,codec,payload,value_hash FROM entities WHERE space=? AND key=?', (_space((namespace,)), key)).fetchall()
     if not rows: return None
     value = _load_space(conn, root, (namespace,), rows,working=working)
@@ -302,7 +311,7 @@ def _sync_space(conn, root, path, value, *, before=None, complete=True):
     prior = conn.execute('SELECT shape FROM spaces WHERE path=?', (name,)).fetchone()
     if prior is not None and prior[0] != shape:
         if not complete: raise WorkflowError('UNDECLARED_STORAGE_SCOPE', 'A partial scope cannot replace a namespace shape.')
-        conn.execute('DELETE FROM spaces WHERE path=?', (name,));prior = None
+        storage_catalog.delete_space(conn,name);prior = None
     if prior is None:
         conn.execute('INSERT INTO spaces VALUES(?,?,?,?,?)', (name, _space(path[:-1]) if len(path) > 1 else None,
                      path[-1], shape, _next_position(conn)))
@@ -317,12 +326,15 @@ def _sync_space(conn, root, path, value, *, before=None, complete=True):
             for kind, source in conn.execute('SELECT DISTINCT kind,source FROM dependencies WHERE space=? AND run_id=?', (name,key)).fetchall():
                 select_dependents(conn, kind, source)
         child = conn.execute('SELECT payload FROM entities WHERE space=? AND key=? AND codec=?', (name,key,'space')).fetchone()
-        if child: conn.execute('DELETE FROM spaces WHERE path=?', (child[0],))
+        if child: storage_catalog.delete_space(conn,child[0])
         conn.execute('DELETE FROM entities WHERE space=? AND key=?', (name,key))
+        conn.execute('DELETE FROM entity_catalog WHERE space=? AND key=?', (name,key))
     position_base = _meta(conn,'position') if complete else None
     for index,(key, item) in enumerate(entries.items(),1):
         if key in old and item == old[key]:
-            if complete: conn.execute('UPDATE entities SET position=? WHERE space=? AND key=?',(position_base+index,name,key))
+            if complete:
+                conn.execute('UPDATE entities SET position=? WHERE space=? AND key=?',(position_base+index,name,key))
+                conn.execute('UPDATE entity_catalog SET position=? WHERE space=? AND key=?',(position_base+index,name,key))
             continue
         if path == ('usage',) and key == 'events' and isinstance(item,list):
             _sync_space(conn,root,path+(key,),item,complete=True)
@@ -338,12 +350,11 @@ def _sync_space(conn, root, path, value, *, before=None, complete=True):
         meta = item if isinstance(item,dict) else {}
         position = conn.execute('SELECT position FROM entities WHERE space=? AND key=?', (name,key)).fetchone()
         ordinal = position_base+index if complete else position[0] if position else _next_position(conn)
-        fields = (name,key,ordinal,codec,payload,digest,
-            meta.get('run_id') or (meta.get('binding') or {}).get('run_id') if path==('usage','events') else meta.get('run_id') or (meta.get('id') if path==('runs',) else None),
-            meta.get('status'),meta.get('host'),meta.get('session_id'),meta.get('package_hash'),meta.get('id'))
+        fields = (name,key,ordinal,codec,payload,digest,*storage_catalog.headers(path,item))
         conn.execute('''INSERT INTO entities VALUES(?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(space,key) DO UPDATE SET
             position=excluded.position,codec=excluded.codec,payload=excluded.payload,value_hash=excluded.value_hash,run_id=excluded.run_id,
             status=excluded.status,host=excluded.host,session_id=excluded.session_id,package_hash=excluded.package_hash,record_id=excluded.record_id''', fields)
+        storage_catalog.sync(conn,fields)
         if path == ('runs',):
             from .run_archives import dependencies
             new_dependencies = dependencies(meta)
@@ -370,6 +381,7 @@ def _sync_space(conn, root, path, value, *, before=None, complete=True):
 
 
 def _read_view(conn, root, scope):
+    if scope.full:storage_catalog.verify(conn)
     data = {}
     complete = set(scope.global_keys) | set(scope.namespaces)
     if scope.full:
@@ -402,7 +414,7 @@ def _read_view(conn, root, scope):
             raise WorkflowError('UNDECLARED_STORAGE_SCOPE', 'An unindexed query is not an operational scope.')
         where = ' AND '.join(field+'=?' for field,_ in query.filters)
         sql = 'SELECT key,codec,payload,value_hash FROM entities WHERE space=?' + (' AND '+where if where else '') + ' ORDER BY position'
-        rows = conn.execute(sql, (_space((query.namespace,)),*(value for _,value in query.filters))).fetchall()
+        rows = storage_catalog.rows(conn,_space((query.namespace,)),query.filters)
         values = _load_space(conn,root,(query.namespace,),rows,working=not scope.full_packages)
         if isinstance(values,dict): data.setdefault(query.namespace,{}).update(values)
     if scope.usage_run_ids:
@@ -488,6 +500,10 @@ def _transact_locked(root, expected_version, operation_id, event, *, precommit=N
             if namespace=='host_bindings':
                 binding=_lookup_entity(conn,root,namespace,key)
                 if binding and binding.get('run_id'):extra_runs.add(binding['run_id'])
+                request=event['payload'].get('request',{})
+                if binding and isinstance(request,dict) and isinstance(request.get('task_id'),str):
+                    task_key=binding['host']+':'+binding['session_id']+':'+request['task_id']
+                    scope=ReadScope(**{**scope.__dict__,'entity_keys':scope.entity_keys+(('host_tasks',task_key),)})
         for query in scope.queries:
             if query.namespace == 'host_bindings':
                 where = ' AND '.join(field+'=?' for field,_ in query.filters)
@@ -531,7 +547,7 @@ def _transact_locked(root, expected_version, operation_id, event, *, precommit=N
         for key in set(before)|set(after):
             if key not in after:
                 if key not in complete:raise WorkflowError('UNDECLARED_STORAGE_SCOPE','Cannot remove a partially loaded namespace.')
-                conn.execute('DELETE FROM spaces WHERE path=?',(_space((key,)),))
+                storage_catalog.delete_space(conn,_space((key,)))
             elif key not in before or after[key] != before[key]:
                 _sync_space(conn,root,(key,),after[key],before=before.get(key),complete=key in complete or key in replacements)
         _refresh_dependency_witnesses(conn)
