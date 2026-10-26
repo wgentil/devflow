@@ -13,7 +13,7 @@ from .context_artifacts import resolve_cached_units, store_context_artifact
 from .document_units import canonical, digest, document_path, select_document_units
 from .documentation import load_documentation_policy
 from .specs import content_hash, render_spec, validate_spec
-from .store import WorkflowError, read_state
+from .store import WorkflowError
 
 PACKAGE_ROOT = Path(__file__).resolve().parents[4]
 

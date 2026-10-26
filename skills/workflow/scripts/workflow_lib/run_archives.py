@@ -43,11 +43,15 @@ def store_detail(root, run):
 
 
 def summary_from_record(record):
-    if (not isinstance(record, dict) or set(record) != {'archive_version', 'reference', 'logical_sha256', 'summary', 'summary_sha256'}
-            or record['archive_version'] != 1 or record['reference'].get('kind') != 'terminal-run'
-            or digest(record['summary']) != record['summary_sha256']
+    if not isinstance(record,dict):raise WorkflowError('INVALID_RUN_ARCHIVE','Malformed terminal archive.')
+    version=record.get('archive_version')
+    identity='logical_sha256' if version==1 else 'physical_sha256'
+    if (type(version) is not int or version not in {1,2}
+            or set(record)!={'archive_version','reference',identity,'summary','summary_sha256'}
+            or record['reference'].get('kind')!='terminal-run'
+            or digest(record['summary'])!=record['summary_sha256']
             or record['summary'].get('status') not in TERMINAL):
-        raise WorkflowError('INVALID_RUN_ARCHIVE', 'Terminal archive identity/summary is invalid; preserve the root.')
+        raise WorkflowError('INVALID_RUN_ARCHIVE','Terminal archive identity/summary is invalid; preserve the root.')
     return record['summary']
 
 
@@ -70,6 +74,27 @@ def hydrate_detail(root, record):
         raise WorkflowError('INVALID_RUN_ARCHIVE', str(exc)) from exc
 
 
+def store_working_detail(root,run):
+    from .stored_records import _pack
+    _terminal(run);node,_=_pack(root,run)
+    body={'record_version':1,'node':node};summary=summarize_run(run)
+    raw=json.dumps(body,sort_keys=False,ensure_ascii=False,separators=(',',':')).encode('utf-8')
+    return {'archive_version':2,'reference':put_object(root,'terminal-run',raw),
+        'physical_sha256':digest(body),'summary':summary,'summary_sha256':digest(summary)}
+
+
+def hydrate_working_detail(root,record,*,packages=True):
+    from .stored_records import MAX_RECORD_BYTES
+    summary_from_record(record)
+    if record.get('archive_version')!=2:
+        raise WorkflowError('INVALID_RUN_ARCHIVE','Unsupported or corrupt terminal archive summary.')
+    body=json.loads(read_object(root,record['reference'],max_bytes=MAX_RECORD_BYTES))
+    if digest(body)!=record.get('physical_sha256'):raise WorkflowError('INVALID_RUN_ARCHIVE','Terminal physical identity differs.')
+    run=decode_record(root,body,packages=packages)
+    if summarize_run(run)!=record['summary']:raise WorkflowError('INVALID_RUN_ARCHIVE','Terminal summary differs.')
+    _terminal(run);return run
+
+
 def archive_run(root: Path, run_id: str):
     from . import sqlite_store as sql
     from .store import _exclusive
@@ -78,12 +103,12 @@ def archive_run(root: Path, run_id: str):
         row = conn.execute('SELECT codec,payload,value_hash FROM entities WHERE space=? AND key=?',
                            (sql._space(('runs',)), run_id)).fetchone()
         if row is None: raise WorkflowError('RUN_NOT_FOUND', 'Select an existing run to archive.')
-        run = sql._decode(root, *row)
+        run = sql._decode(root, *row,working=True)
         _terminal(run)
-        if row[0] == 'archive': return summary_from_record(json.loads(row[1]))
-        record = store_detail(root, run)
-        conn.execute('UPDATE entities SET codec=?,payload=? WHERE space=? AND key=?',
-                     ('archive', sql._json(record), sql._space(('runs',)), run_id))
+        if row[0] in {'archive','archive2'}: return summary_from_record(json.loads(row[1]))
+        record = store_working_detail(root, run)
+        conn.execute('UPDATE entities SET codec=?,payload=?,value_hash=? WHERE space=? AND key=?',
+                     ('archive2', sql._json(record),record['physical_sha256'], sql._space(('runs',)), run_id))
         sql._set_meta(conn, 'generation', sql._meta(conn, 'generation') + 1)
         return record['summary']
 
@@ -91,7 +116,13 @@ def archive_run(root: Path, run_id: str):
 def read_run(root, run_id):
     from .sqlite_store import read_working_state
     from .storage_scopes import ReadScope
-    run = read_working_state(root, ReadScope(global_keys=(), run_ids=(run_id,)))['data'].get('runs', {}).get(run_id)
+    from .storage_format import detect_layout
+    if detect_layout(Path(root))['layout']=='v2':
+        state=read_working_state(root,ReadScope(global_keys=(),run_ids=(run_id,),full_packages=True))
+    else:
+        from .storage_access import read_current
+        state=read_current(root,run_id=run_id)
+    run=state['data'].get('runs',{}).get(run_id)
     if run is None: raise WorkflowError('RUN_NOT_FOUND', 'Requested historical run is unavailable.')
     return run
 
@@ -109,7 +140,7 @@ def iter_run_summaries(root, *, page_size=100):
                               (sql._space(('runs',)),))
         while rows := cursor.fetchmany(_page_size(page_size)):
             for codec, payload, expected in rows:
-                yield summary_from_record(json.loads(payload)) if codec == 'archive' else summarize_run(sql._decode(root, codec, payload, expected))
+                yield summary_from_record(json.loads(payload)) if codec in {'archive','archive2'} else summarize_run(sql._decode(root, codec, payload, expected,working=True))
 
 
 def iter_events(root, *, after_sequence=0, page_size=100):
@@ -142,7 +173,13 @@ def dependencies(run):
     pending = [((), run)]
     while pending:
         path, node = pending.pop()
-        if isinstance(node, dict):
+        from .stored_records import StoredPackage
+        if isinstance(node,StoredPackage):
+            for kind,source,relative,absolute in node.record['summary']['_storage_dependency_links']:
+                # Named artifact/source map links use their original entry key.
+                entity_key=relative if absolute else '/'.join((*path,relative))
+                rows.add((kind,source,entity_key))
+        elif isinstance(node, dict):
             for key, value in node.items():
                 if key in names and isinstance(value, str): rows.add((names[key], value, '/'.join((*path, key))))
                 if key in {'artifacts', 'current_source_indexes'} and isinstance(value, dict):

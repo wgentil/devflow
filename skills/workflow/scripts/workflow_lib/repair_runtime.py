@@ -10,7 +10,9 @@ import tempfile
 import time
 
 from .repair import failure_delta, repair_decision
-from .store import WorkflowError, read_state, transact
+from .host_projection import read_host
+from .storage_pins import reservation
+from .store import WorkflowError, transact
 from .native_runtime import invoke
 
 
@@ -34,7 +36,7 @@ def _preflight_worker(root: Path, data: dict, binding: dict) -> dict:
 
 
 def _event(root: Path, operation_id: str, action: str, request: dict) -> dict:
-    state = read_state(root)
+    state = read_host(root,request=request,operation_id=operation_id)
     event = {'kind': 'domain.repair.' + action, 'payload': {'request': request}}
     prior = state['operations'].get(operation_id)
     if prior and (prior['kind'] != event['kind'] or prior['payload'] != event['payload']):
@@ -66,10 +68,11 @@ def _abort(root: Path, run_id: str, cycle_id: str, reason_code: str, worker_ref:
             'remaining_failures': cycle['remaining_failures']}
 
 
+@reservation('repair-dispatch')
 def run_repair(root: Path, run_id: str, operation_id: str, estimated_cost: float | None = None) -> dict:
     """Run one claimed cycle. A replay never launches another worker."""
     root = Path(root)
-    state = read_state(root)
+    state = read_host(root,run_id=run_id,operation_id=operation_id+':claim')
     run = state['data'].get('runs', {}).get(run_id)
     if not run:
         raise WorkflowError('RUN_UNAVAILABLE', 'known repair run required')
@@ -116,7 +119,7 @@ def run_repair(root: Path, run_id: str, operation_id: str, estimated_cost: float
     except Exception:
         # A running native invocation must retain its lease until reconciliation.
         if any(row.get('status') == 'running' for row in
-               read_state(root)['data']['runs'][run_id].get('native_invocations', {}).values()):
+               read_host(root,run_id=run_id)['data']['runs'][run_id].get('native_invocations', {}).values()):
             raise
         return _abort(root, run_id, operation_id, 'WORKER_UNAVAILABLE', request['invocation_id'])
     if worker.get('status') != 'allow':
@@ -128,7 +131,7 @@ def run_repair(root: Path, run_id: str, operation_id: str, estimated_cost: float
             proofs.append(_run_gate(root, run_id, gate_id, operation_id + ':gate:' + gate_id))
     except Exception:
         return _abort(root, run_id, operation_id, 'REPAIR_VERIFICATION_FAILED', request['invocation_id'])
-    current = read_state(root)['data']['runs'][run_id]
+    current = read_host(root,run_id=run_id)['data']['runs'][run_id]
     delta = failure_delta(current)
     record = _event(root, operation_id + ':record', 'record',
                     {'run_id': run_id, 'cycle_id': operation_id,

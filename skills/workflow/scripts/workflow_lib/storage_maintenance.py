@@ -14,7 +14,7 @@ from .storage_objects import put_object, read_object, stream_object
 from .stored_records import canonical, digest
 from .storage_backups import (backup_locked, verify_backup, source_files, file_hash, _copy_file)
 from .storage_journal import (archive_events, checkpoint, verify_checkpoint, read_raw_event)
-from .run_archives import TERMINAL, store_detail, dependencies
+from .run_archives import TERMINAL, store_working_detail, dependencies
 from .store import WorkflowError, _exclusive, _atomic_json, _empty, _apply_event, _read_journal
 from .platform_lock import sync_directory
 
@@ -136,11 +136,11 @@ def _archive_runs(conn, root):
     rows = conn.execute('SELECT key,codec,payload,value_hash FROM entities WHERE space=? AND status IN (?,?)',
                         (sql._space(('runs',)),'delivered','discarded')).fetchall()
     for key,codec,payload,expected in rows:
-        if codec == 'archive': continue
-        run = sql._decode(root,codec,payload,expected)
-        record = store_detail(root,run)
-        conn.execute('UPDATE entities SET codec=?,payload=? WHERE space=? AND key=?',
-                     ('archive',sql._json(record),sql._space(('runs',)),key))
+        if codec in {'archive','archive2'}: continue
+        run = sql._decode(root,codec,payload,expected,working=True)
+        record = store_working_detail(root,run)
+        conn.execute('UPDATE entities SET codec=?,payload=?,value_hash=? WHERE space=? AND key=?',
+                     ('archive2',sql._json(record),record['physical_sha256'],sql._space(('runs',)),key))
 
 
 def _commit_record(conn, plan, generation):

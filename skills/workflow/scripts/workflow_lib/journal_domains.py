@@ -143,6 +143,8 @@ def _reduce(data, kind, req, version, *, metrics_source_hash=None):
         review = next((row for row in run.get('reviews', {}).get('pr', [])
                        if row.get('review_id') == receipt.get('review_id')), None)
         package = run.get('review_packages', {}).get(receipt.get('package_hash'))
+        from .stored_records import require_package
+        package = require_package(package)
         require(review and package and review.get('package_hash') == package.get('package_hash')
                 and receipt.get('pr_id') == package.get('pr_id')
                 and receipt.get('head_sha') == package.get('head_sha')
@@ -160,6 +162,8 @@ def _reduce(data, kind, req, version, *, metrics_source_hash=None):
                         if row.get('state') == 'success'
                         and row.get('review_id') == delivery.get('review_id')), None)
         package = run.get('review_packages', {}).get(delivery.get('package_hash'))
+        from .stored_records import require_package
+        package = require_package(package)
         review = next((row for row in run.get('reviews', {}).get('pr', [])
                        if row.get('review_id') == delivery.get('review_id')), None)
         from .pr_reporting import complete_pr_delivery

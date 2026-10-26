@@ -692,7 +692,8 @@ def main(argv: list[str] | None = None) -> int:
             run = read_command(root, parsed)["data"].get("runs", {}).get(parsed.run_id)
             if run is None:
                 raise WorkflowError("RUN_NOT_FOUND", f"unknown run {parsed.run_id}")
-            result = {"run": run}
+            from workflow_lib.run_archives import read_run
+            result = {"run": read_run(root,parsed.run_id)}
         elif parsed.command == "run" and parsed.run_command == "abandon":
             root = Path(parsed.root).expanduser().resolve()
             state = initial_state if initial_state is not None else read_command(root, parsed)

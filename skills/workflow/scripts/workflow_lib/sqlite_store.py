@@ -141,6 +141,17 @@ def initialize_store(root: Path):
 
 @contextmanager
 def connection(root: Path, *, write=False):
+    # A selected-object read remains coordinated until its SQLite snapshot and
+    # object hydration finish; GC cannot unlink an old projection mid-read.
+    from .store import _exclusive
+    if detect_layout(Path(root))['layout']!='v2':
+        raise WorkflowError('STORAGE_LAYOUT_INVALID','A selected v2 layout is required.')
+    with _exclusive(Path(root)):
+        with _connection(root,write=write) as conn:yield conn
+
+
+@contextmanager
+def _connection(root: Path, *, write=False):
     root = Path(root).resolve()
     layout = detect_layout(root)
     if layout['layout'] != 'v2':
@@ -203,9 +214,32 @@ def _encode(root, value, kind):
     return 'json', raw.decode('utf-8'), _sha(logical)
 
 
-def _decode(root, codec, payload, expected):
+def _encode_run(root,value):
+    from .stored_records import encode_record,_pack,digest,MAX_RECORD_BYTES
+    physical=encode_record(root,value)
+    if physical is None:
+        node,_=_pack(root,value);physical={'record_version':1,'node':node}
+    raw=json.dumps(physical,sort_keys=False,ensure_ascii=False,separators=(',',':')).encode('utf-8')
+    if len(raw)>MAX_RECORD_BYTES:raise WorkflowError('STORAGE_RECORD_LIMIT','Working run exceeds its metadata budget.')
+    identity=digest(physical)
+    if len(raw)>INLINE_BYTES:return 'run-record-object',_json(put_object(root,'working-run',raw)),identity
+    return 'run-record',raw.decode('utf-8'),identity
+
+
+def _decode(root, codec, payload, expected, *, working=False):
     try:
         from .stored_records import MAX_RECORD_BYTES
+        if codec in {'run-record','run-record-object'}:
+            from .stored_records import decode_record,digest
+            physical=json.loads(payload)
+            if codec=='run-record-object':physical=json.loads(read_object(root,physical,max_bytes=MAX_RECORD_BYTES))
+            if digest(physical)!=expected:raise ValueError('working run physical checksum mismatch')
+            return decode_record(root,physical,packages=not working)
+        if codec=='archive2':
+            from .run_archives import hydrate_working_detail
+            record=json.loads(payload)
+            if record.get('physical_sha256')!=expected:raise ValueError('archived run physical checksum mismatch')
+            return hydrate_working_detail(root,record,packages=not working)
         if codec == 'event-archive':
             from .storage_journal import hydrate_event
             return hydrate_event(root, json.loads(payload), expected)
@@ -235,14 +269,14 @@ def _decode(root, codec, payload, expected):
         raise WorkflowError('CORRUPT_STORAGE', 'A database record is invalid: ' + str(exc)) from exc
 
 
-def _load_space(conn, root, path, rows=None):
+def _load_space(conn, root, path, rows=None, *, working=False):
     name = _space(path)
     shape = conn.execute('SELECT shape FROM spaces WHERE path=?', (name,)).fetchone()
     if shape is None: return None
     if rows is None: rows = conn.execute('SELECT key,codec,payload,value_hash FROM entities WHERE space=? ORDER BY position', (name,)).fetchall()
     values = []
     for key, codec, payload, digest in rows:
-        value = _load_space(conn, root, tuple(json.loads(payload))) if codec == 'space' else _decode(root, codec, payload, digest)
+        value = _load_space(conn, root, tuple(json.loads(payload))) if codec == 'space' else _decode(root, codec, payload, digest,working=working and path==('runs',))
         values.append((key, value))
     if shape[0] == 'map': return dict(values)
     if shape[0] == 'list': return [value for _, value in values]
@@ -250,10 +284,10 @@ def _load_space(conn, root, path, rows=None):
     raise WorkflowError('CORRUPT_STORAGE', 'A projection namespace has an invalid shape.')
 
 
-def _lookup_entity(conn, root, namespace, key):
+def _lookup_entity(conn, root, namespace, key, *, working=True):
     rows = conn.execute('SELECT key,codec,payload,value_hash FROM entities WHERE space=? AND key=?', (_space((namespace,)), key)).fetchall()
     if not rows: return None
-    value = _load_space(conn, root, (namespace,), rows)
+    value = _load_space(conn, root, (namespace,), rows,working=working)
     return value.get(key) if isinstance(value, dict) else value
 
 
@@ -290,10 +324,11 @@ def _sync_space(conn, root, path, value, *, before=None, complete=True):
             codec,payload,digest = 'space',_space(path+(key,)),_sha(_json(item).encode())
         else:
             prior_codec = conn.execute('SELECT codec FROM entities WHERE space=? AND key=?', (name,key)).fetchone()
-            if path == ('runs',) and prior_codec and prior_codec[0] == 'archive':
-                from .run_archives import store_detail
-                record = store_detail(root, item)
-                codec,payload,digest = 'archive',_json(record),_sha(_json(item).encode('utf-8'))
+            if path == ('runs',) and prior_codec and prior_codec[0] in {'archive','archive2'}:
+                from .run_archives import store_working_detail
+                record = store_working_detail(root, item)
+                codec,payload,digest = 'archive2',_json(record),record['physical_sha256']
+            elif path==('runs',):codec,payload,digest=_encode_run(root,item)
             else: codec,payload,digest = _encode(root,item,'projection-json')
         meta = item if isinstance(item,dict) else {}
         position = conn.execute('SELECT position FROM entities WHERE space=? AND key=?', (name,key)).fetchone()
@@ -336,7 +371,7 @@ def _read_view(conn, root, scope):
         complete = {row[0] for row in conn.execute('SELECT name FROM spaces WHERE parent IS NULL ORDER BY position')}
     for name in complete:
         if conn.execute('SELECT 1 FROM spaces WHERE path=?', (_space((name,)),)).fetchone():
-            data[name] = _load_space(conn, root, (name,))
+            data[name] = _load_space(conn, root, (name,),working=not scope.full and not scope.full_packages)
     if scope.run_view:
         if scope.run_view not in {'metrics','routing','trace'}:
             raise WorkflowError('UNDECLARED_STORAGE_SCOPE', 'Unknown historical projection.')
@@ -351,7 +386,7 @@ def _read_view(conn, root, scope):
     selections = list(scope.entity_keys) + ([] if scope.run_view else [('runs',key) for key in scope.run_ids])
     for namespace,key in selections:
         if namespace in complete: continue
-        value = _lookup_entity(conn,root,namespace,key)
+        value = _lookup_entity(conn,root,namespace,key,working=not scope.full_packages)
         if value is not None: data.setdefault(namespace,{})[key] = value
     queries = list(scope.queries)
     if scope.active_runs: queries.append(EntityQuery('runs', (('status','active'),)))
@@ -363,7 +398,7 @@ def _read_view(conn, root, scope):
         where = ' AND '.join(field+'=?' for field,_ in query.filters)
         sql = 'SELECT key,codec,payload,value_hash FROM entities WHERE space=?' + (' AND '+where if where else '') + ' ORDER BY position'
         rows = conn.execute(sql, (_space((query.namespace,)),*(value for _,value in query.filters))).fetchall()
-        values = _load_space(conn,root,(query.namespace,),rows)
+        values = _load_space(conn,root,(query.namespace,),rows,working=not scope.full_packages)
         if isinstance(values,dict): data.setdefault(query.namespace,{}).update(values)
     if scope.usage_run_ids:
         events = []

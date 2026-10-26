@@ -26,8 +26,8 @@ def evaluate(project_dir, session_id, event, task_id=None):
     if not locator and index:issue=issue or 'LOCATOR_MISSING' 
     if not root.is_dir():
         return {'status':'block' if known_mapped else 'inactive','reason_code':'CONTROL_ROOT_UNAVAILABLE'}
-    from .context_preparation import read_context_state
-    authoritative=read_context_state(root)
+    from .host_projection import read_host
+    authoritative=read_host(root,host='claude',session_id=session_id,hint_binding_id=locator['binding_id'] if locator else None)
     state=authoritative['data']
     binding=binding_for_session(state,'claude',session_id)
     if locator:

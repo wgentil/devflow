@@ -196,6 +196,8 @@ def read_pr_snapshot(client, pending: dict, governing_digest: str) -> dict:
 
 def record_pr_review(run: dict, package_hash: str, reviewer: dict, report: dict) -> dict:
     package = run.get('review_packages', {}).get(package_hash)
+    from .stored_records import require_package
+    package = require_package(package)
     if not package or package.get('role') != 'pr':
         raise ValueError('current PR review package is required')
     if report.get('package_hash') != package_hash or report.get('verdict') not in {
@@ -283,6 +285,8 @@ def record_pr_review(run: dict, package_hash: str, reviewer: dict, report: dict)
 def record_pr_human_decision(run: dict, package_hash: str, actor_id: str,
                              finding_id: str, choice: str, rationale: str) -> dict:
     package = run.get('review_packages', {}).get(package_hash)
+    from .stored_records import require_package
+    package = require_package(package)
     if not package or package.get('role') != 'pr' or not run.get('pending_pr'):
         raise ValueError('current PR package and pending PR are required')
     if any(str(run['pending_pr'].get(key)) != str(package.get(key)) for key in ('pr_id', 'head_sha')):

@@ -5,12 +5,14 @@ from __future__ import annotations
 from contextvars import ContextVar
 
 HOST_CONTEXT = ContextVar("devflow_host_context", default=None)
+HELD_ROOTS = ContextVar("devflow_held_roots", default=frozenset())
 LIVE_TRANSFER = ContextVar("devflow_transfer_preflight", default=None)
 from copy import deepcopy
 import hashlib
 import json
 import os
 import tempfile
+import threading
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator
@@ -323,6 +325,8 @@ def _apply_event(state: dict, event: dict, *, metrics_source_hash=None) -> None:
                 or not isinstance(review, dict) or review.get("review_id") in run.setdefault("review_ids", [])):
             raise WorkflowError("INVALID_EVENT", "review does not reference a stored package")
         package = run["review_packages"][package_hash]
+        from .stored_records import require_package
+        package = require_package(package)
         allowed_verdicts = ({"pass", "changes-requested", "human-decision-required", "blocked"}
                             if package.get("role") == "pr" else {"pass", "request-changes", "block"})
         if (review.get("role") != package.get("role") or review.get("verdict") not in allowed_verdicts
@@ -673,10 +677,16 @@ def read_state(root: Path) -> dict:
 
 @contextmanager
 def _exclusive(root: Path) -> Iterator[None]:
+    root=Path(root).resolve();key=(os.getpid(),threading.get_ident(),str(root))
+    if key in HELD_ROOTS.get():
+        yield
+        return
     root.mkdir(parents=True, exist_ok=True)
     with (root / ".lock").open("a+") as handle:
         with exclusive_file(handle):
-            yield
+            token=HELD_ROOTS.set(HELD_ROOTS.get() | {key})
+            try:yield
+            finally:HELD_ROOTS.reset(token)
 
 
 def _atomic_json(path: Path, value: dict) -> None:

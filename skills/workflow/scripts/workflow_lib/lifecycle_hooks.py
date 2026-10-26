@@ -156,13 +156,14 @@ def run_lifecycle_hook(name: str, request: dict, *, deadline_seconds: float=5,ma
         return _dispatch_worker(name,request,deadline_seconds=deadline_seconds,max_bytes=max_bytes,required=required)
     started=time.monotonic()
     try:
-        from .store import read_state
+        from .storage_access import read_current
         from .context_preparation import prepare_context
-        root=Path(request['root']).resolve();state=read_state(root);run=state['data'].get('runs',{}).get(request.get('run_id'))
+        root=Path(request['root']).resolve();state=read_current(root,run_id=request.get('run_id'),binding_id=request.get('envelope',{}).get('binding_id'));run=state['data'].get('runs',{}).get(request.get('run_id'))
         if not run:raise WorkflowError('RUN_NOT_FOUND','Context preparation needs a current run.')
         prepared=prepare_context(root,run,request.get('envelope',{}),request.get('item_ids',[]),stage=request.get('stage','implementation'),
             state=state,max_bytes=request.get('context_max_bytes',20000),representation=request.get('representation','markdown'),output_mode=request.get('output_mode','full'))
-        return _prepared_response(root,prepared,deadline_seconds=deadline_seconds,max_bytes=max_bytes,required=required)
+        try:return _prepared_response(root,prepared,deadline_seconds=deadline_seconds,max_bytes=max_bytes,required=required)
+        finally:prepared.release()
     except (WorkflowError,KeyError,OSError,TypeError,ValueError) as exc:
         return _finish({'status':'block','reason_code':getattr(exc,'code','HOOK_INPUT_INVALID'),'details':getattr(exc,'details',{})},name,request,started,deadline_seconds,max_bytes,required)
 
@@ -171,6 +172,7 @@ def prepared_context(root: Path, run: dict, envelope: dict, item_ids: list[str],
                       max_bytes: int=20000,representation: str='markdown',output_mode: str='full',state: dict|None=None,prepared=None)->dict:
     from .context_preparation import prepare_context,_require,normalize_stage,_accept_run,PreparedContext
     _require(not (prepared is not None and state is not None),'Supply state or prepared context, not both.')
+    owns_preparation=prepared is None
     if prepared is None:prepared=prepare_context(root,run,envelope,item_ids,stage=stage,state=state,max_bytes=max_bytes,representation=representation,output_mode=output_mode)
     else:
         _require(isinstance(prepared,PreparedContext),'An internal prepared context object is required.')
@@ -180,7 +182,9 @@ def prepared_context(root: Path, run: dict, envelope: dict, item_ids: list[str],
             and prepared.scope['run_id']==run['id'] and prepared.scope['item_ids']==item_ids
             and prepared.scope['context_max_bytes']==max_bytes and prepared.scope['representation']==representation and prepared.scope['output_mode']==output_mode,
             'Prepared scope differs from this context request.')
-    response=_prepared_response(root,prepared)
+    try:response=_prepared_response(root,prepared)
+    finally:
+        if owns_preparation:prepared.release()
     if response['status']!='allow':raise WorkflowError(response['reason_code'],'Required context preparation failed.',{'phase':'composition','hook':response,**response.get('details',{})})
     result=response['result']
     if result.get('full_result_artifact_id'):result=inspect_context_artifact(root,result['full_result_artifact_id'])

@@ -148,6 +148,8 @@ def apply_host_event(state: dict, kind: str, request: dict) -> dict:
         else:
             role = req['role'].removesuffix('-reviewer')
             package = run.get('review_packages', {}).get(req.get('package_hash'), {})
+            from .stored_records import require_package
+            package = require_package(package)
             require(package and package.get('role') == role, 'Matching review package required.')
             require(req['actor_id'] not in history, 'Every implementing actor is excluded from independent review.')
             require(req['actor_id'] not in {entry.get('actor_id') for entries in run.get('reviews', {}).values()

@@ -137,6 +137,8 @@ def record_review(run: dict, package_hash: str, reviewer: dict, report: dict) ->
     if not implementer or actor in set(run.get('implementer_actors', [])) | {implementer}:
         raise ValueError("reviewer actor must be distinct from implementer and prior reviewer roles")
     package = run.get("review_packages", {}).get(package_hash)
+    from .stored_records import require_package
+    package = require_package(package)
     if not package or package.get("package_hash") != package_hash or package.get("role") != role:
         raise ValueError("review package is missing, stale, or bound to a different role")
     current_plan_hash = hashlib.sha256(_canonical(run.get("plan", {})).encode()).hexdigest()
@@ -210,14 +212,15 @@ def record_review(run: dict, package_hash: str, reviewer: dict, report: dict) ->
 def correction_impact(run: dict, changed_inputs: list[str]) -> dict:
     if not isinstance(changed_inputs, list) or any(not isinstance(value, str) for value in changed_inputs):
         raise ValueError("changed_inputs must be a list of paths")
-    known = {path for package in run.get("review_packages", {}).values() for path in package.get("input_paths", [])}
+    from .stored_records import package_metadata
+    known = {path for package in run.get("review_packages", {}).values() for path in package_metadata(package).get("input_paths", [])}
     unknown = not changed_inputs or any(value not in known for value in changed_inputs)
     affected = []
     for role, reviews in run.get("reviews", {}).items():
         packages = run.get("review_packages", {})
         for review in reviews:
             package = packages.get(review.get("package_hash"), {})
-            inputs = set(package.get("input_paths", []))
+            inputs = set(package_metadata(package).get("input_paths", []))
             if unknown or inputs.intersection(changed_inputs):
                 affected.append(review.get("review_id"))
     return {"invalidate_all": unknown, "changed_inputs": sorted(set(changed_inputs)),

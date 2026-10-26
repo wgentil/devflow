@@ -8,6 +8,7 @@ import time
 from .document_units import canonical,digest,document_path
 from .store import WorkflowError
 from .storage_access import read_current
+from .stored_records import working_identity
 from .repo_input_gate import preflight_inputs
 
 
@@ -70,6 +71,10 @@ class PreparedContext:
     preflight_ms:int
     binding_hash:str
     _state:dict=field(repr=False,compare=False)
+    _pin:object=field(default=None,repr=False,compare=False)
+
+    def release(self):
+        if self._pin is not None:self._pin.close()
 
 
 def _identity(root,version,scope,payload,sources):
@@ -106,7 +111,16 @@ def _validate_envelope(data,run,envelope,item_ids,max_bytes):
         'Context control facts differ from authoritative run or host state.','CONTEXT_SCOPE_CHANGED')
 
 
-def prepare_context(root:Path,run:dict,envelope:dict,item_ids:list[str],*,stage:str,state:dict|None=None,
+def prepare_context(root,run,envelope,item_ids,**options):
+    from dataclasses import replace
+    from .storage_pins import reserve
+    pin=reserve(root,'prepared-context')
+    try:return replace(_prepare_context(root,run,envelope,item_ids,**options),_pin=pin)
+    except BaseException:
+        pin.close();raise
+
+
+def _prepare_context(root:Path,run:dict,envelope:dict,item_ids:list[str],*,stage:str,state:dict|None=None,
                     max_bytes:int=20000,representation:str='markdown',output_mode:str='full')->PreparedContext:
     started=time.monotonic();root=Path(root).resolve()
     borrowed_read_ms=state.get('_context_read_ms',0) if state is not None else 0
@@ -170,9 +184,16 @@ def prepare_context(root:Path,run:dict,envelope:dict,item_ids:list[str],*,stage:
                 except (OSError,ValueError) as exc:raise WorkflowError('SPEC_APPROVAL_STALE','Specification changed during preflight.') from exc
                 _require(current_spec==spec and content_hash(current_spec)==pair['content_hash'] and _file_hash(path)==current_hash,'Specification JSON changed during preflight.','SPEC_APPROVAL_STALE')
             files[str(path)]=current_hash
-    tail=next((event for event in state['operations'].values() if event['sequence']==state['version']),None)
-    bindings={'run_hash':digest(actual),'locations':locations,'spec_pair':deepcopy(pair),'approval_hash':digest(data.get('approval')),
-        'governing_hash':digest(data.get('governing_input_receipt')),'files':files,'tail_hash':state.get('_storage',{}).get('head_hash') if state.get('_storage') else digest(tail) if tail else None}
+    if not state.get('_storage'):
+        from .storage_format import detect_layout
+        if detect_layout(root)['layout']=='v2':
+            from . import sqlite_store as sql
+            with sql.connection(root) as conn:
+                _require(sql._meta(conn,'head')==state['version'],'Journal advanced during preparation.')
+                state={**state,'_storage':{key:sql._meta(conn,key) for key in ('root_id','layout_id','generation','head_hash')}}
+    tail=None if state.get('_storage') else next((event for event in state['operations'].values() if event['sequence']==state['version']),None)
+    bindings={'run_hash':working_identity(root,actual),'locations':locations,'spec_pair':deepcopy(pair),'approval_hash':digest(data.get('approval')),
+        'storage_identity':deepcopy(state.get('_storage')),'governing_hash':digest(data.get('governing_input_receipt')),'files':files,'tail_hash':state.get('_storage',{}).get('head_hash') if state.get('_storage') else digest(tail) if tail else None}
     projected={'id':run['id'],'plan':{'work_items':deepcopy(chosen)}}
     scoped_envelope=deepcopy(envelope)
     # Reserve diagnostic shape before optional content spends the byte budget.
@@ -192,8 +213,12 @@ def _assert_preparation_current(root:Path,prepared:PreparedContext,state:dict)->
     _require(isinstance(prepared,PreparedContext) and str(Path(root).resolve())==prepared.root,'Prepared context belongs to another root.')
     _require(prepared.binding_hash==_identity(prepared.root,prepared.journal_version,prepared.scope,prepared.payload,prepared.source_bindings),'Prepared context content changed.')
     _require(state['version']==prepared.journal_version,'Journal advanced after preparation.')
-    if state.get('_storage'):
-        _require(state['_storage']['head_hash']==prepared.source_bindings['tail_hash'],'Journal head changed.')
+    if prepared.source_bindings.get('storage_identity'):
+        from . import sqlite_store as sql
+        with sql.connection(root) as conn:
+            identity={key:sql._meta(conn,key) for key in ('root_id','layout_id','generation','head_hash')}
+            _require(identity==prepared.source_bindings['storage_identity'],'Storage layout, generation or journal head changed.')
+        _require(state.get('_storage')==identity,'Supplied state has an older storage identity.')
     else:
         event_dir=Path(root)/'events';next_event=event_dir/f'{prepared.journal_version+1:08d}.json'
         _require(not next_event.exists() and not next_event.is_symlink(),'Journal advanced after preparation.')
@@ -205,7 +230,7 @@ def _assert_preparation_current(root:Path,prepared:PreparedContext,state:dict)->
             except (OSError,ValueError) as exc:raise WorkflowError('CONTEXT_PREPARATION_STALE','Journal tail unavailable; retry.') from exc
             _require(digest(current)==prepared.source_bindings['tail_hash'],'Journal tail changed.')
     data=state['data'];actual=data.get('runs',{}).get(prepared.scope['run_id'])
-    _require(digest(actual)==prepared.source_bindings['run_hash'],'Run changed after preparation.')
+    _require(working_identity(root,actual)==prepared.source_bindings['run_hash'],'Run changed after preparation.')
     _require(data.get('spec_pair')==prepared.source_bindings['spec_pair'] and digest(data.get('approval'))==prepared.source_bindings['approval_hash']
         and digest(data.get('governing_input_receipt'))==prepared.source_bindings['governing_hash'],'Approval inputs changed.')
     for rid,location in prepared.source_bindings['locations'].items():
@@ -242,7 +267,11 @@ def normalize_stage(stage):
 
 def read_context_state(root:Path,*,run_id=None,operation_id=None,binding_id=None)->dict:
     """Internal caller timing, kept outside the public replayed state shape."""
-    started=time.perf_counter();state=read_current(root,run_id=run_id,operations=(operation_id,),binding_id=binding_id,active_runs=run_id is None)
+    started=time.perf_counter()
+    if binding_id:
+        from .host_projection import read_host
+        state=read_host(root,run_id=run_id,binding_id=binding_id,operation_id=operation_id)
+    else:state=read_current(root,run_id=run_id,operations=(operation_id,),active_runs=run_id is None)
     return {**state,'_context_read_ms':max(0,int((time.perf_counter()-started)*1000))}
 
 
@@ -259,6 +288,7 @@ def commit_prepared_attempt(root:Path,prepared:PreparedContext,operation_id:str,
     except WorkflowError as exc:
         if exc.code=='STALE_STATE':raise WorkflowError('CONTEXT_PREPARATION_STALE','Journal advanced after context preparation; retry with current inputs.',{'phase':'commit','action':'Rebuild current context before retrying.'}) from exc
         raise
+    finally:prepared.release()
     _require(result['event']['kind']==kind and result['event']['payload'].get('run_id')==prepared.scope['run_id'],
         'Operation ID belongs to another transition.','OPERATION_CONFLICT')
     return result

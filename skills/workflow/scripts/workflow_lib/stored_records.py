@@ -1,6 +1,7 @@
 """Typed physical records with explicit, verified logical hydration boundaries."""
 from __future__ import annotations
 from copy import deepcopy
+from dataclasses import dataclass
 import hashlib
 import json
 
@@ -13,6 +14,60 @@ SOURCE_FIELDS = frozenset(('content_base64', 'before_content_base64', 'after_con
                            'text', 'diff', 'patch'))
 SUMMARY_FIELDS = ('package_hash', 'schema_version', 'run_id', 'role', 'item_id', 'plan_hash',
                   'spec_hash', 'pr_id', 'head_sha', 'base_sha')
+
+
+@dataclass(frozen=True)
+class StoredPackage:
+    """An explicit internal handle; JSON/deepcopy never expands package history.
+
+    Access to body fields resolves this one complete verified package. Metadata
+    scans must use package_metadata instead. This is deliberately not a dict.
+    """
+    root: str
+    record: dict
+    def __deepcopy__(self,memo):return self
+    def get(self,key,default=None):return require_package(self).get(key,default)
+    def __getitem__(self,key):return require_package(self)[key]
+    def items(self):return require_package(self).items()
+
+
+def require_package(value):
+    return _resolve(value.root,value.record) if isinstance(value,StoredPackage) else value
+
+
+def package_metadata(value):
+    return value.record['summary'] if isinstance(value,StoredPackage) else value
+
+
+def dependency_links(value):
+    names={'proof_id':'proof','evidence_id':'proof','package_hash':'package','finding_id':'finding',
+        'source_hash':'source','content_digest':'source','artifact_hash':'artifact','artifact_id':'artifact','context_hash':'context'}
+    rows=set();pending=[((),value)]
+    while pending:
+        path,node=pending.pop()
+        if isinstance(node,dict):
+            for key,item in node.items():
+                if key in names and isinstance(item,str):rows.add((names[key],item,'/'.join((*path,key)),False))
+                if key in {'artifacts','current_source_indexes'} and isinstance(item,dict):
+                    for name,identity in item.items():
+                        if isinstance(identity,str):rows.add(('artifact' if key=='artifacts' else 'source',identity,name,True))
+                pending.append(((*path,key),item))
+        elif isinstance(node,list):pending.extend(((*path,str(i)),item) for i,item in enumerate(node))
+    return [list(row) for row in sorted(rows)]
+
+
+def _package_summary(package,version=2):
+    fields=SUMMARY_FIELDS if version==1 else SUMMARY_FIELDS+('input_paths',)
+    summary={key:package[key] for key in fields if key in package}
+    if version==2:summary['_storage_dependency_links']=dependency_links(package)
+    return summary
+
+
+def working_identity(root,value):
+    physical=encode_record(root,value)
+    if physical is None:
+        node,_=_pack(root,value);physical={'record_version':1,'node':node}
+    return digest(physical)
 
 
 def canonical(value):
@@ -42,12 +97,14 @@ def store_package(root, package):
     # between distinct packages. Its physical checksum is not the package hash.
     node, _ = _pack(root, package, package_body=True)
     record = _reference(root, 'review-package', node,
-                        summary={key: package[key] for key in SUMMARY_FIELDS if key in package})
+                        summary=_package_summary(package))
+    record['record_version']=2
     record['logical_sha256'] = digest(package)
     return record
 
 
 def _pack(root, value, *, key=None, package_body=False):
+    if isinstance(value,StoredPackage):return {'object':deepcopy(value.record)},True
     if isinstance(value, dict):
         if not package_body and _valid_package(value):
             return {'object': store_package(root, value)}, True
@@ -74,7 +131,7 @@ def encode_record(root, value):
 
 def _resolve(root, record):
     if (not isinstance(record, dict) or set(record) != {'record_version', 'record_kind', 'reference', 'logical_sha256', 'summary'}
-            or type(record.get('record_version')) is not int or record['record_version'] != 1
+            or type(record.get('record_version')) is not int or record['record_version'] not in {1,2}
             or record['record_kind'] not in {'review-package', 'source-field'}
             or not isinstance(record['summary'], dict)):
         raise WorkflowError('INVALID_STORED_RECORD', 'Unsupported or malformed typed record; preserve the root.')
@@ -90,24 +147,32 @@ def _resolve(root, record):
     except (ValueError, TypeError, KeyError) as exc:
         raise WorkflowError('INVALID_STORED_RECORD', 'Invalid package object tree.') from exc
     if (not _valid_package(value) or digest(value) != record['logical_sha256']
-            or record['summary'] != {key: value[key] for key in SUMMARY_FIELDS if key in value}):
+            or record['summary'] != _package_summary(value,record['record_version'])):
         raise WorkflowError('INVALID_PACKAGE', 'Hydrated body, routing summary or original package hash differs.')
     return value
 
 
-def _unpack(root, node):
-    if isinstance(node, list): return [_unpack(root, child) for child in node]
+def _unpack(root, node, *, packages=True):
+    if isinstance(node, list): return [_unpack(root, child,packages=packages) for child in node]
     if not isinstance(node, dict): return node
     if set(node) == {'map'} and isinstance(node['map'], dict):
-        return {key: _unpack(root, value) for key, value in node['map'].items()}
-    if set(node) == {'object'}: return _resolve(root, node['object'])
+        return {key: _unpack(root, value,packages=packages) for key, value in node['map'].items()}
+    if set(node) == {'object'}:
+        record=node['object']
+        if not packages and record.get('record_kind')=='review-package':
+            if record.get('record_version')!=2:
+                # Compatibility for pre-reference metadata; full verify retains
+                # legacy identities. Newly written working rows always use v2.
+                return _resolve(root,record)
+            return StoredPackage(str(root),record)
+        return _resolve(root, record)
     raise WorkflowError('INVALID_STORED_RECORD', 'A physical record contains an unrecognized node.')
 
 
-def decode_record(root, record):
+def decode_record(root, record, *, packages=True):
     if not isinstance(record, dict) or set(record) != {'record_version', 'node'} or record['record_version'] != 1:
         raise WorkflowError('INVALID_STORED_RECORD', 'Unsupported physical record encoding.')
-    return _unpack(root, record['node'])
+    return _unpack(root, record['node'],packages=packages)
 
 
 def resolve_package(root, package):
@@ -176,7 +241,7 @@ def _node_parts(root,node):
         yield b'}';return
     if set(node)!={'object'}:raise WorkflowError('INVALID_STORED_RECORD','Unrecognized physical node in streamed audit.')
     record=node['object'];ref=record['reference']
-    if record.get('record_version')!=1 or ref.get('kind')!=record.get('record_kind') or ref.get('size_bytes',MAX_RECORD_BYTES+1)>MAX_RECORD_BYTES:
+    if record.get('record_version') not in {1,2} or ref.get('kind')!=record.get('record_kind') or ref.get('size_bytes',MAX_RECORD_BYTES+1)>MAX_RECORD_BYTES:
         raise WorkflowError('INVALID_STORED_RECORD','Unsupported streamed record kind or budget.')
     if record['record_kind']=='source-field':
         import codecs
@@ -194,7 +259,11 @@ def _node_parts(root,node):
     if record['record_kind']!='review-package':raise WorkflowError('INVALID_STORED_RECORD','Unsupported streamed object kind.')
     package=json.loads(read_object(root,ref,max_bytes=MAX_RECORD_BYTES))
     if set(package)!={'map'} or not isinstance(package['map'],dict):raise WorkflowError('INVALID_PACKAGE','Malformed streamed package body.')
-    fields=package['map'];summary={key:_unpack(root,fields[key]) for key in SUMMARY_FIELDS if key in fields}
+    fields=package['map'];summary={key:_unpack(root,fields[key]) for key in SUMMARY_FIELDS+(('input_paths',) if record['record_version']==2 else ()) if key in fields}
+    if record['record_version']==2:
+        # Dependency metadata is verified against the complete logical body by
+        # _resolve in full materialization; streaming verifies original hashes.
+        summary['_storage_dependency_links']=record['summary'].get('_storage_dependency_links')
     if summary!=record['summary'] or 'package_hash' not in summary:raise WorkflowError('INVALID_PACKAGE','Streamed package routing summary differs.')
     full=hashlib.sha256();unsigned=hashlib.sha256();unsigned.update(b'{');full.update(b'{');yield b'{'
     unsigned_count=0
@@ -223,6 +292,16 @@ def stream_cell_json(root,codec,payload,expected):
             ref=json.loads(payload)
             if ref['size_bytes']>MAX_RECORD_BYTES:raise WorkflowError('STORAGE_OBJECT_LIMIT','Logical record exceeds audit materialization budget.')
             yield from _value_parts(json.loads(read_object(root,ref,max_bytes=MAX_RECORD_BYTES)));return
+        if codec in {'run-record','run-record-object'}:
+            value=json.loads(payload)
+            if codec=='run-record-object':value=json.loads(read_object(root,value,max_bytes=MAX_RECORD_BYTES))
+            if digest(value)!=expected:raise WorkflowError('CORRUPT_STORAGE','Working run physical identity differs.')
+            yield from _node_parts(root,value['node']);return
+        if codec=='archive2':
+            from .run_archives import hydrate_working_detail
+            run=hydrate_working_detail(root,json.loads(payload),packages=False)
+            if working_identity(root,run)!=expected:raise WorkflowError('CORRUPT_STORAGE','Archived run physical identity differs.')
+            node,_=_pack(root,run);yield from _node_parts(root,node);return
         if codec in {'record','record-object'}:
             value=json.loads(payload)
             if codec=='record-object':value=json.loads(read_object(root,value,max_bytes=MAX_RECORD_BYTES))
@@ -245,4 +324,4 @@ def stream_cell_json(root,codec,payload,expected):
         raise WorkflowError('CORRUPT_STORAGE','Unsupported logical JSON stream codec.')
     checksum=hashlib.sha256()
     for chunk in parts():checksum.update(chunk);yield chunk
-    if checksum.hexdigest()!=expected:raise WorkflowError('CORRUPT_STORAGE','Streamed logical record checksum mismatch.')
+    if codec not in {'run-record','run-record-object','archive2'} and checksum.hexdigest()!=expected:raise WorkflowError('CORRUPT_STORAGE','Streamed logical record checksum mismatch.')

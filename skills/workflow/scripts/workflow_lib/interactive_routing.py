@@ -16,14 +16,17 @@ from .model_policy import resolve_profile
 from .native_runtime import policy, preferences, prices, invocation_context, _native_lease, _commit
 from .routing_receipts import routing_lineage_id, worker_task_prompt, project_worker_result
 from .releases import check_release, release_descriptor
-from .store import WorkflowError, read_state
+from .store import WorkflowError
+from .host_projection import read_host
+from .storage_pins import reservation
 from .task_routing import normalize_task_facts
 from .evidence import _blob
 
 
+@reservation('interactive-dispatch')
 def prepare_delegation(root: Path, request: dict, host_context: dict | None = None) -> dict:
     root = Path(root)
-    data = read_state(root)['data']
+    data = read_host(root,request=request)['data']
     binding = validate_binding(data, request.get('binding_id'), request.get('revision'))
     parity = check_release(binding['release'], release_descriptor(), 1)
     if parity['status'] != 'allow': raise WorkflowError('RELEASE_MISMATCH', parity['message'])
@@ -110,17 +113,18 @@ def prepare_delegation(root: Path, request: dict, host_context: dict | None = No
             'limitations': ['Preparation is not execution or trusted observation. Hidden host context is outside measured coverage.']}
 
 
+@reservation('interactive-dispatch')
 def dispatch_delegation(root: Path, request: dict, operation_id: str, bridge=None) -> dict:
     root = Path(root)
     if bridge is None: return prepare_delegation(root, request)
-    data = read_state(root)['data']
+    data = read_host(root,request=request)['data']
     binding = validate_binding(data, request.get('binding_id'), request.get('revision'))
     identifier = request.get('invocation_id')
     request_hash = digest(request)
     lease = root / 'native-invocations' / hashlib.sha256((binding['run_id'] + ':' + str(identifier)).encode()).hexdigest()
     lease.parent.mkdir(parents=True, exist_ok=True)
     with _native_lease(lease):
-        data = read_state(root)['data']
+        data = read_host(root,request=request)['data']
         prior = data['runs'][binding['run_id']].get('native_invocations', {}).get(identifier)
         if prior:
             if prior.get('request_hash') != request_hash or prior.get('operation_id') != operation_id:

@@ -4,7 +4,8 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from .store import WorkflowError, read_state
+from .store import WorkflowError
+from .storage_access import read_current
 from .platform_lock import exclusive_file
 
 
@@ -54,7 +55,7 @@ def initialize_project(project_dir: Path, control_root: Path | None, operation_i
     if root.is_relative_to(PACKAGE_ROOT):
         raise WorkflowError('INSTALLED_ROOT_READ_ONLY', 'Control state must be outside the installed package.')
     exclude_runtime(project)
-    state = read_state(root)
+    state = read_current(root,operations=(operation_id,))
     prior = [key for key, repo in state['data'].get('repositories', {}).items()
              if Path(repo['location']).resolve() == project]
     if not prior and root == project/'.devflow/control' and state['data'].get('repositories'):
@@ -66,7 +67,7 @@ def initialize_project(project_dir: Path, control_root: Path | None, operation_i
     request = {'repo_id': identifier, 'location': str(project)}
     receipt = commit(Namespace(root=str(root), operation_id=operation_id, operation_id_explicit=True,
                      expected_version=expected_version), 'domain.host.init', request) if not prior or operation_id in state['operations'] else {'state_version':state['version'], 'unchanged':True}
-    runs = [key for key, run in read_state(root)['data'].get('runs', {}).items()
+    runs = [key for key, run in read_current(root,active_runs=True)['data'].get('runs', {}).items()
             if run.get('status') not in {'delivered','discarded'} and identifier in run.get('repositories', {})]
     from .project_setup import inspect_project_setup
     setup = inspect_project_setup(project)

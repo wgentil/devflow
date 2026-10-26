@@ -14,6 +14,8 @@ def _decision(status, reason, blockers=None, **extra):
 
 
 def package_current(run, package):
+    from .stored_records import require_package
+    package=require_package(package)
     from .reviews import _git
     plan_hash=hashlib.sha256(json.dumps(run.get('plan',{}),sort_keys=True,ensure_ascii=False,separators=(',',':')).encode()).hexdigest()
     if package.get('plan_hash') != plan_hash or package.get('spec_hash') != run.get('plan',{}).get('spec_hash'):return False
@@ -95,6 +97,8 @@ def check_completion(state: dict, binding: dict, task_id: str, live: bool = True
     if task['scope'] == 'review':
         role=binding['role'].removesuffix('-reviewer')
         package=run.get('review_packages',{}).get(task['package_hash'],{})
+        from .stored_records import require_package
+        package = require_package(package)
         if not package or package.get('role') != role or live and not package_current(run,package):return _decision('block','REVIEW_PACKAGE_STALE')
         history=set(run.get('implementer_actors',[]))|{run.get('actors',{}).get('implementer')}
         if binding['actor_id'] in history:return _decision('block','REVIEWER_NOT_INDEPENDENT')
@@ -121,6 +125,8 @@ def host_brief(state: dict, binding: dict, *, control_root: Path | None = None,
              'missing':[key for key in required if key not in values],
              'conflicts':[c for c in run.get('context',{}).get('conflicts',[]) if c.get('slice') in required]}
     package=run.get('review_packages',{}).get(binding.get('package_hash'),{})
+    from .stored_records import require_package
+    package = require_package(package)
     relevant={'work_items':work_items,'context':context,'package':package,'binding_id' :binding['binding_id'],'revision':binding['revision'],'role':binding['role'],
               'run_id':binding['run_id'],'active_attempt':run.get('active_attempt'),
               'stage':gate_status(run,live=False),'tasks':tasks,'model_policy':run.get('model_overrides',[]),

@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import re
 
+from .storage_pins import reservation
 from .document_units import canonical, digest, document_path, select_document_units
 from .store import WorkflowError, _atomic_json
 
@@ -32,6 +33,7 @@ def _read(path: Path):
     return json.loads(raw)
 
 
+@reservation('context-publication')
 def store_context_artifact(root: Path, value: dict, identity: dict) -> dict:
     envelope = {'builder_version': VERSION, 'identity': identity, 'value': value}
     raw = canonical(envelope)
@@ -48,6 +50,7 @@ def store_context_artifact(root: Path, value: dict, identity: dict) -> dict:
     return {'artifact_id': artifact_id, 'artifact_ref': str(path), 'content_bytes': len(canonical(value))}
 
 
+@reservation('context-publication')
 def inspect_context_artifact(root: Path, artifact_id: str) -> dict:
     if not isinstance(artifact_id, str) or not re.fullmatch(r'[0-9a-f]{64}', artifact_id):
         raise WorkflowError('CONTEXT_ARTIFACT_INVALID', 'a valid content-addressed artifact ID is required')
@@ -95,6 +98,7 @@ def _current_sources(sources, ids):
     return hashes, provenance
 
 
+@reservation('context-publication')
 def resolve_cached_units(root: Path, selection: dict) -> dict:
     sources, selections, policy = selection['sources'], selection['selections'], selection['policy']
     # Source locations define scope, while commits/provenance never define reusable content.
@@ -133,6 +137,7 @@ def resolve_cached_units(root: Path, selection: dict) -> dict:
             'retrieval_calls': value['retrieval_calls'] + len(hashes) + validation_reads}
 
 
+@reservation('context-publication')
 def invalidate_context_artifacts(root: Path, observed_sources: dict, policy_hash: str) -> dict:
     index, valid = _index(root)
     known = {sid for entry in index['entries'].values() for sid in entry['source_hashes']}

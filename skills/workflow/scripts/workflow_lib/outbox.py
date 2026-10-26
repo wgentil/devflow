@@ -1,6 +1,7 @@
 """Idempotent external-write queue; connectors are injected by callers."""
 from __future__ import annotations
 from copy import deepcopy
+from .storage_pins import reservation
 import hashlib,json
 
 def _hash(x): return hashlib.sha256(json.dumps(x,sort_keys=True,ensure_ascii=False,separators=(',',':')).encode()).hexdigest()
@@ -26,13 +27,15 @@ def retry_writes(root, adapter):
  return _retry_journal(root, adapter)
 
 
+@reservation('outbox-dispatch')
 def _retry_journal(root, adapter):
  from pathlib import Path
  from uuid import uuid4
- from .store import read_state, transact, WorkflowError
+ from .store import transact, WorkflowError
+ from .storage_access import read_current
  root = Path(root).expanduser().resolve()
- for identifier in list(read_state(root)['data'].get('outbox', {})):
-  state = read_state(root)
+ for identifier in list(read_current(root,global_keys=(),namespaces=('outbox',))['data'].get('outbox', {})):
+  state = read_current(root,global_keys=(),entities=(('outbox',identifier),))
   record = state['data']['outbox'][identifier]
   if record['status'] == 'sent':
    continue
@@ -68,7 +71,7 @@ def _retry_journal(root, adapter):
    kind, operation_id = 'domain.outbox.uncertain', f'outbox:uncertain:{identifier}'
   # A concurrent state update must not lose a known remote receipt.
   while True:
-   latest = read_state(root)
+   latest = read_current(root,global_keys=(),entities=(('outbox',identifier),))
    if latest['data']['outbox'][identifier]['status'] == 'sent':
     break
    try:
@@ -77,7 +80,7 @@ def _retry_journal(root, adapter):
    except WorkflowError as exc:
     if exc.code != 'STALE_STATE':
      raise
- return read_state(root)['data']
+ return read_current(root,global_keys=(),namespaces=('outbox','write_authorizations','issues','snapshots','groups'))['data']
 
 def classify_issue(state:dict,issue_id:str,proposal:dict,confirmed_hash:str|None)->dict:
  import copy

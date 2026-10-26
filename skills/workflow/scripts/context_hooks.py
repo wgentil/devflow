@@ -14,8 +14,10 @@ def main():
         if len(raw) > 262144 or not raw.endswith(b'\n'):
             raise ValueError('hook request exceeds bound')
         value = json.loads(raw)
-        result = execute_hook(value['name'], value['request'], max_bytes=value['max_bytes'],
-                               deadline_seconds=value['deadline_seconds'])
+        from workflow_lib.storage_pins import reserve
+        with reserve(value['request']['root'],'context-worker'):
+            result = execute_hook(value['name'], value['request'], max_bytes=value['max_bytes'],
+                                   deadline_seconds=value['deadline_seconds'])
     except WorkflowError as exc:
         result = {'status': 'block', 'reason_code': exc.code, 'details': exc.details}
     except (ValueError, TypeError, KeyError, OSError, ImportError):

@@ -5,6 +5,7 @@ from copy import deepcopy
 from pathlib import Path
 import re
 
+from .storage_pins import reservation
 from .context_artifacts import _read
 from .document_units import digest
 from .store import WorkflowError, _atomic_json
@@ -12,6 +13,7 @@ from .store import WorkflowError, _atomic_json
 SCOPE_FIELDS = ('consumer_id', 'run_id', 'binding_id', 'session_id', 'revision', 'stage', 'role', 'task_ids')
 
 
+@reservation('context-publication')
 def project_checkpoint(root: Path, full_view: dict, scope: dict, *, since: str | None = None,
                        recovery_reason: str | None = None) -> dict:
     scope = {key: scope.get(key) for key in SCOPE_FIELDS}

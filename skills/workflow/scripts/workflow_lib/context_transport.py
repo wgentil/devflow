@@ -2,6 +2,7 @@
 import json
 from pathlib import Path
 import re
+from .storage_pins import reservation
 from .document_units import canonical,digest
 from .store import WorkflowError,_atomic_json
 
@@ -22,6 +23,7 @@ def _reference(root,ref):
     return _directory(root)/(ref['id']+'.json')
 
 
+@reservation('context-publication')
 def store_preparation(root,prepared):
     from .context_preparation import _identity,PreparedContext
     if not isinstance(prepared,PreparedContext) or str(Path(root).resolve())!=prepared.root or prepared.binding_hash!=_identity(prepared.root,prepared.journal_version,prepared.scope,prepared.payload,prepared.source_bindings):
@@ -34,6 +36,7 @@ def store_preparation(root,prepared):
     return reference
 
 
+@reservation('context-publication')
 def load_preparation(root,reference,expected_binding):
     path=_reference(root,reference)
     try:
@@ -47,6 +50,7 @@ def load_preparation(root,reference,expected_binding):
     except (OSError,ValueError,KeyError,TypeError) as exc:raise WorkflowError('CONTEXT_PREPARATION_INVALID','Scoped worker input is missing, changed or outside its binding.') from exc
 
 
+@reservation('context-publication')
 def remove_preparation(root,reference):
     path=_reference(root,reference)
     # Unlink only this parent-owned name, never follow a replaced symlink.

@@ -56,7 +56,7 @@ class StoredRecordTests(unittest.TestCase):
             with sqlite_store.connection(root) as conn:
                 row = conn.execute("SELECT codec,payload FROM entities WHERE space=? AND key='r'",
                                    (sqlite_store._space(('runs',)),)).fetchone()
-            self.assertEqual(row[0], 'record')
+            self.assertEqual(row[0], 'run-record')
             physical = json.loads(row[1])
             refs = list(records.object_references(physical))
             package_ref = next(ref for ref in refs if ref['kind'] == 'review-package')

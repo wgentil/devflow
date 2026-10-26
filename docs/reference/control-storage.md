@@ -1,7 +1,7 @@
 # Control-storage contracts
 
-The archive-backed design is being implemented in stages. Current public roots
-and journal commands retain v1 behavior at this stage; there is no public v2 initializer,
+The archive-backed design is being implemented in stages. Public new-root initialization
+and existing legacy roots retain v1 behavior at this stage; there is no public v2 initializer,
 compaction, migration or GC command yet. See the
 [design](../superpowers/specs/2026-10-26-control-state-compaction-design.md) for
 planned behavior, not installation instructions.
@@ -71,11 +71,12 @@ objects. A physical checksum never replaces a logical package/proposal hash.
 The physical tree escapes original dictionaries, so user fields cannot be
 mistaken for storage references. Legacy inline records remain readable.
 
-Selected record hydration verifies every referenced body before returning logical
-state or an operation receipt. Package hydration also checks the original
+Full logical materialization and operation receipts verify every referenced body
+before returning it. Working-run views keep explicit package handles until a
+selected body consumer requests hydration. Package hydration also checks the original
 unsigned-package hash and all routing summary fields. Missing content therefore
 fails before a gate, reviewer attachment or approval can consume it. Existing
-pure validators and logical CLI outputs keep their current shapes and checks;
+pure validator results and logical CLI outputs keep their current shapes and checks;
 physical summaries are never handed to them as complete packages. Governing
 bytes and approvals round-trip unchanged and do not require reapproval simply
 because their physical storage differs. Public initialization and migration are
@@ -176,11 +177,47 @@ flat `source_hash`; that explicit history operation can read more than routine
 status or context preparation. Physical records retain logical iteration order
 where derived arrays depend on it, while logical hashes remain canonical.
 Full verification compares these reporting and document indexes with logical
-records. Current selected-run hydration remains complete at this implementation
-stage; host/current-package preparation integration follows separately.
+records. Working-run reads preserve explicit package handles, and selected body
+consumers resolve complete verified packages; full inspection/audit materializes
+the original logical records.
 
 Read-only planning readiness and delivery inspection check live inputs without
 recording approval invalidation or governing observations. Mutating work retains
 its current-input preflight and drift records. Existing best-effort CLI telemetry
 may create measurement files for inspection, including a missing root; it does
 not initialize authority, issue work or advance journal state.
+
+## Indexed hosts and reservations (internal)
+
+V2 host reads select authoritative session/binding/task rows and only their runs
+in one coordinated SQLite snapshot. Session queries select active bindings; a
+locator may select a retired binding for diagnostics without expanding its closed
+run. Model reads select only effective price versions. Locator and brief files remain hints; missing
+project hints do not waive default-root completion checks. Legacy reads retain
+journal replay. Host-read timing remains available to context preparation.
+
+Working runs use `run-record`/`run-record-object` cells; terminal records use
+`archive2`. Their checksum binds the physical tree of immutable references,
+separately from original logical package/evidence hashes. Full inspection and
+`read_state` materialize original logical records. Operational package handles
+are explicit internal objects, not JSON dictionaries: deepcopy preserves a
+reference, JSON encoding cannot advertise an incomplete package, and a selected
+body validator resolves and verifies its complete package. Input-path and reverse
+link scans use hash-bound metadata. Delta writes preserve untouched package
+references without rereading old bodies. Cumulative metrics still streams the
+original canonical logical JSON to retain its existing flat source hash.
+
+Each SQLite snapshot/object read holds root coordination through completion.
+Longer preparation, native/interactive dispatch, repair, outbox and host transfer
+operations own durable OS-locked pins, including before legacy conversion.
+Context workers and publishers also reserve independently. Preparation binds root,
+layout, generation and committed head; stale identity blocks attempt commit.
+Normal completion/failure releases reservations. Process death retains a blocker;
+internal explicit reconciliation proves exclusive OS ownership before releasing
+it. Age and PID reuse never establish that a worker stopped. Durable native and
+repair state still needs its existing stopped-worker reconciliation independently.
+
+There is no public maintenance/pin-reconciliation command at this stage. Published
+context artifacts/checkpoints remain retained; any future GC must preserve exact
+published references and unknown legacy provenance. Pins protect in-flight reads
+and publications, rather than grant permission to remove historical evidence.

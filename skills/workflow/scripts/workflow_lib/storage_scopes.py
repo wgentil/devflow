@@ -23,6 +23,7 @@ class ReadScope:
     operation_ids: tuple = ()
     active_runs: bool = False
     full: bool = False
+    full_packages: bool = False
     run_view: str | None = None
     history_all: bool = False
     usage_run_ids: tuple = ()

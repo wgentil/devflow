@@ -73,6 +73,14 @@ class RunArchiveTests(unittest.TestCase):
         # A separate active record remains independently readable.
         self.assertEqual(archives.read_run(self.root, 'active'), before['data']['runs']['active'])
 
+    def test_tampered_terminal_summary_cannot_route_history(self):
+        archives=self.backend();self.seed({'closed':self.run_record('closed')});archives.archive_run(self.root,'closed')
+        with store._exclusive(self.root),sqlite_store.connection(self.root,write=True) as conn:
+            payload=conn.execute('SELECT payload FROM entities WHERE space=? AND key=?',(sqlite_store._space(('runs',)),'closed')).fetchone()[0]
+            record=json.loads(payload);record['summary']['id']='forged'
+            conn.execute('UPDATE entities SET payload=? WHERE space=? AND key=?',(json.dumps(record),sqlite_store._space(('runs',)),'closed'))
+        with self.assertRaises(store.WorkflowError):list(archives.iter_run_summaries(self.root))
+
     def test_shared_test_invalidation_reaches_archived_runs(self):
         archives = self.backend()
         runs = {key: self.run_record(key, 'active' if key == 'active' else 'discarded',
@@ -92,7 +100,7 @@ class RunArchiveTests(unittest.TestCase):
         self.assertTrue(state['data']['runs']['unrelated']['verification_proofs']['p']['fresh'])
         self.assertTrue(old_objects.issubset(set((self.root / 'objects/manifests').rglob('*.json'))))
         with sqlite_store.connection(self.root) as conn:
-            self.assertEqual(conn.execute("SELECT COUNT(*) FROM entities WHERE codec='archive'").fetchone()[0], 3)
+            self.assertEqual(conn.execute("SELECT COUNT(*) FROM entities WHERE codec IN ('archive','archive2')").fetchone()[0], 3)
 
     def test_incomplete_dependency_rows_cannot_skip_archived_run(self):
         archives = self.backend()

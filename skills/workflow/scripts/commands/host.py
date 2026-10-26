@@ -65,6 +65,13 @@ def register_commands(parser):
 
 
 def dispatch(parsed):
+    if getattr(parsed,'host_command',None) in {'handoff-prepare','handoff-accept'}:
+        from workflow_lib.storage_pins import reserve
+        with reserve(Path(parsed.root),'host-transfer'):return _dispatch(parsed)
+    return _dispatch(parsed)
+
+
+def _dispatch(parsed):
     if parsed.host_command == 'delegation-prepare':
         from workflow_lib.interactive_routing import prepare_delegation
         request = json.loads(Path(parsed.file).read_text(encoding='utf-8'))
@@ -77,13 +84,14 @@ def dispatch(parsed):
         from workflow_lib.bootstrap import initialize_project
         return initialize_project(Path(parsed.project_dir), Path(parsed.root) if parsed.root else None,
                                   parsed.operation_id if parsed.operation_id_explicit else '', parsed.expected_version)
-    from workflow_lib.store import read_state, WorkflowError
+    from workflow_lib.store import WorkflowError
+    from workflow_lib.host_projection import read_host
     from workflow_lib.hosts import binding_for_session
     if parsed.host_command == 'brief':
         from workflow_lib.hosts import validate_binding
         from workflow_lib.host_completion import host_brief
         from workflow_lib.context_preparation import read_context_state
-        authoritative=read_context_state(Path(parsed.root));data=authoritative['data']
+        authoritative=read_context_state(Path(parsed.root),binding_id=parsed.binding_id);data=authoritative['data']
         binding = validate_binding(data, parsed.binding_id, parsed.revision)
         view = host_brief(data, binding, control_root=Path(parsed.root), max_bytes=parsed.max_bytes,
                           representation=parsed.representation, output_mode=parsed.output_mode,authoritative_state=authoritative)
@@ -102,7 +110,7 @@ def dispatch(parsed):
     if parsed.host_command in {'model-discover','model-probe'}:
         from workflow_lib.hosts import validate_binding
         from workflow_lib.releases import check_release, release_descriptor
-        state=read_state(Path(parsed.root));binding=validate_binding(state['data'],parsed.binding_id,parsed.revision)
+        state=read_host(Path(parsed.root),binding_id=getattr(parsed,'binding_id',None),host=getattr(parsed,'host',None),session_id=getattr(parsed,'session_id',None),operation_id=getattr(parsed,'operation_id',None),request=locals().get('request'));binding=validate_binding(state['data'],parsed.binding_id,parsed.revision)
         parity=check_release(binding['release'],release_descriptor(),1)
         if parity['status']!='allow':raise WorkflowError('RELEASE_MISMATCH',parity['message'])
         from workflow_lib.native_runtime import discover, probe
@@ -110,13 +118,13 @@ def dispatch(parsed):
         return discover(Path(parsed.root),binding,parsed.refresh)
     if parsed.host_command == 'check':
         from workflow_lib.host_completion import check_completion
-        state=read_state(Path(parsed.root))
+        state=read_host(Path(parsed.root),binding_id=getattr(parsed,'binding_id',None),host=getattr(parsed,'host',None),session_id=getattr(parsed,'session_id',None),operation_id=getattr(parsed,'operation_id',None),request=locals().get('request'))
         binding=state['data'].get('host_bindings',{}).get(parsed.binding_id)
         if not binding: raise WorkflowError('BINDING_REQUIRED','Known binding required.')
         from workflow_lib.releases import release_descriptor
         return check_completion(state['data'],binding,parsed.task_id,installed_release=release_descriptor(),control_root=Path(parsed.root))
     if parsed.host_command == 'status':
-        state = read_state(Path(parsed.root))
+        state = read_host(Path(parsed.root),binding_id=getattr(parsed,'binding_id',None),host=getattr(parsed,'host',None),session_id=getattr(parsed,'session_id',None),operation_id=getattr(parsed,'operation_id',None),request=locals().get('request'))
         binding = binding_for_session(state['data'],parsed.host,parsed.session_id)
         from workflow_lib.host_completion import host_brief
         from workflow_lib.journal_domains import digest
@@ -124,7 +132,7 @@ def dispatch(parsed):
                   if binding and task['host']==binding['host'] and task['session_id']==binding['session_id']]
         return {'binding':binding,'brief':host_brief(state['data'],binding) if binding else None,'task_mappings':mappings,'state_version':state['version']}
     if parsed.host_command == 'goal-status':
-        state = read_state(Path(parsed.root))['data']
+        state = read_host(Path(parsed.root),binding_id=getattr(parsed,'binding_id',None),host=getattr(parsed,'host',None),session_id=getattr(parsed,'session_id',None),operation_id=getattr(parsed,'operation_id',None),request=locals().get('request'))['data']
         binding = state.get('host_bindings', {}).get(parsed.binding_id)
         if not binding: raise WorkflowError('BINDING_REQUIRED', 'known binding required')
         from workflow_lib.goals import goal_contract
@@ -136,7 +144,7 @@ def dispatch(parsed):
                 'capability': 'manual-host-goal-lifecycle'}
     if parsed.host_command == 'profile-resolve':
         from workflow_lib.hosts import validate_binding
-        state=read_state(Path(parsed.root))
+        state=read_host(Path(parsed.root),binding_id=getattr(parsed,'binding_id',None),host=getattr(parsed,'host',None),session_id=getattr(parsed,'session_id',None),operation_id=getattr(parsed,'operation_id',None),request=locals().get('request'))
         binding=validate_binding(state['data'],parsed.binding_id,parsed.revision)
         return _resolve_model(state['data'],binding,parsed.stage,parsed.root)
     request = json.loads(Path(parsed.file).read_text(encoding='utf-8'))
@@ -146,7 +154,7 @@ def dispatch(parsed):
     if getattr(parsed,'loaded_release',None):client['loaded_release']=json.loads(Path(parsed.loaded_release).read_text(encoding='utf-8'))
     client_hash=digest(client)
     if getattr(parsed,'operation_id_explicit',False) and parsed.root:
-        prior_state=read_state(Path(parsed.root))
+        prior_state=read_host(Path(parsed.root),binding_id=getattr(parsed,'binding_id',None),host=getattr(parsed,'host',None),session_id=getattr(parsed,'session_id',None),operation_id=getattr(parsed,'operation_id',None),request=locals().get('request'))
         previous=prior_state['operations'].get(parsed.operation_id)
         if previous:
             if previous['kind'] != 'domain.host.'+parsed.host_command or previous['payload'].get('request',{}).get('client_request_hash') != client_hash:
@@ -167,7 +175,7 @@ def dispatch(parsed):
     # Committed retry lookup and request-hash validation above are read-only;
     # live specification preflight applies only to a new handoff operation.
     if parsed.host_command in {'handoff-prepare', 'handoff-accept'} and parsed.root:
-        gate_state = read_state(Path(parsed.root))
+        gate_state = read_host(Path(parsed.root),binding_id=getattr(parsed,'binding_id',None),host=getattr(parsed,'host',None),session_id=getattr(parsed,'session_id',None),operation_id=getattr(parsed,'operation_id',None),request=locals().get('request'))
         if gate_state['data'].get('spec_pair'):
             from workflow_lib.repo_input_gate import require_current_inputs
             data = gate_state['data']
@@ -190,7 +198,7 @@ def dispatch(parsed):
         from workflow_lib.releases import PACKAGE_ROOT
         target['package_root'] = str(PACKAGE_ROOT)
         if parsed.host_command == 'handoff-accept':
-            state = read_state(Path(parsed.root))
+            state = read_host(Path(parsed.root),binding_id=getattr(parsed,'binding_id',None),host=getattr(parsed,'host',None),session_id=getattr(parsed,'session_id',None),operation_id=getattr(parsed,'operation_id',None),request=locals().get('request'))
             prepared = state['data'].get('host_handoffs', {}).get(request['handoff_id'], {})
             source = state['data'].get('host_bindings', {}).get(prepared.get('binding_id'), {})
             if not source.get('package_root'): raise WorkflowError('SOURCE_RELEASE_UNKNOWN','Source attachment must record its installed package root.')
@@ -209,14 +217,14 @@ def dispatch(parsed):
     if request.get('binding_id') and parsed.host_command not in {'attach','legacy-adopt'}:
         from workflow_lib.hosts import validate_binding
         from workflow_lib.releases import release_descriptor, check_release
-        state=read_state(Path(parsed.root))
+        state=read_host(Path(parsed.root),binding_id=getattr(parsed,'binding_id',None),host=getattr(parsed,'host',None),session_id=getattr(parsed,'session_id',None),operation_id=getattr(parsed,'operation_id',None),request=locals().get('request'))
         bound=validate_binding(state['data'],request['binding_id'],request.get('revision'))
         parity=check_release(bound['release'],release_descriptor(),1)
         if parity['status'] != 'allow':raise WorkflowError('RELEASE_MISMATCH',parity['message'],parity)
 
     if parsed.host_command == 'model-receipt':
         from workflow_lib.hosts import validate_binding
-        state=read_state(Path(parsed.root))
+        state=read_host(Path(parsed.root),binding_id=getattr(parsed,'binding_id',None),host=getattr(parsed,'host',None),session_id=getattr(parsed,'session_id',None),operation_id=getattr(parsed,'operation_id',None),request=locals().get('request'))
         binding=validate_binding(state['data'],request['binding_id'],request['revision'])
         invocation_id=request['receipt'].get('invocation_id')
         stage=request['receipt'].get('stage','implementation')
@@ -240,11 +248,11 @@ def dispatch(parsed):
     if parsed.host_command in {'attach','handoff-accept','legacy-adopt'}:
         from workflow_lib.host_locators import write_locator
         write_locator(Path(result['project_dir']),result['host'],result['session_id'],Path(parsed.root),result['binding_id'])
-        current_data=read_state(Path(parsed.root))['data']
+        current_data=read_host(Path(parsed.root),binding_id=getattr(parsed,'binding_id',None),host=getattr(parsed,'host',None),session_id=getattr(parsed,'session_id',None),operation_id=getattr(parsed,'operation_id',None),request=locals().get('request'))['data']
         _repair_task_index(current_data,result,Path(parsed.root))
         _repair_retired_task_indexes(current_data,result,Path(parsed.root))
     if parsed.host_command == 'task-bind':
-        _repair_task_index(read_state(Path(parsed.root))['data'],result,Path(parsed.root))
+        _repair_task_index(read_host(Path(parsed.root),binding_id=getattr(parsed,'binding_id',None),host=getattr(parsed,'host',None),session_id=getattr(parsed,'session_id',None),operation_id=getattr(parsed,'operation_id',None),request=locals().get('request'))['data'],result,Path(parsed.root))
     return result
 
 

@@ -197,11 +197,11 @@ class NativeModelTests(unittest.TestCase):
             with patch('workflow_lib.native_runtime.CodexBackend',return_value=backend):
                 invoke(root,request,'once')
                 original=read_state;count=0
-                def stale_first(path):
+                def stale_first(path,**options):
                     nonlocal count
                     count+=1
                     return stale if count==1 else original(path)
-                with patch('workflow_lib.native_runtime.read_state',side_effect=stale_first):result=invoke(root,request,'once')
+                with patch('workflow_lib.native_runtime.read_host',side_effect=stale_first):result=invoke(root,request,'once')
             self.assertTrue(result['replayed']);backend.invoke.assert_called_once()
     def test_codex_reroute_is_reported_as_substitution(self):
         from workflow_lib.native_models import CodexBackend

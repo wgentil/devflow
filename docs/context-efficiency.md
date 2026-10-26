@@ -222,9 +222,9 @@ the caller uses the timed authoritative-read wrapper. The public lifecycle-hook
 entry and reverification currently use untimed initial reads, so their reported
 preflight time can omit that replay cost.
 `total_ms` covers those measured phases, not the final locked replay or every
-parent artifact/freshness operation. Full CLI time is measured separately. Ordinary
-journal replay still grows with history; no journal compaction/archive command is
-provided. Preserve the journal rather than deleting history to advance a gate.
+parent artifact/freshness operation. Full CLI time is measured separately. Legacy
+journal replay still grows with history. The internal v2 backend uses selected
+indexed reads; public compaction/archive commands are not provided at this stage. Preserve the journal rather than deleting history to advance a gate.
 Exact historical operation receipts retain their existing replay semantics; new
 attempts always use the live guard.
 
@@ -232,3 +232,13 @@ Scoped preparation files use POSIX 0700 directory/0600 file modes where supporte
 On native Windows, filesystem access follows the containing directory's inherited
 ACLs; POSIX mode bits do not enforce NTFS ACLs. Root/run/hash/size and symlink
 binding checks apply on both platforms, and temporary inputs are removed after use.
+
+### Archive-backed context reads
+
+The internal v2 backend reads selected host/run records without replaying unrelated
+history. Package bodies are resolved for the selected body consumer; routine
+preparation and attempt commits preserve historical package references. Explicit
+inspection and full audit still restore complete logical detail. Legacy public
+roots retain replay until explicitly migrated through the maintenance interface
+when available. Preparation also checks layout/generation changes and reserves
+in-flight content so maintenance cannot remove it during composition or dispatch.

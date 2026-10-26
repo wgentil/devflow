@@ -8,7 +8,9 @@ import time
 from .platform_lock import exclusive_file
 from .process_liveness import process_alive
 from contextlib import contextmanager
-from .store import WorkflowError, read_state, transact, HOST_CONTEXT, _atomic_json
+from .host_projection import read_host
+from .storage_pins import reservation
+from .store import WorkflowError, transact, HOST_CONTEXT, _atomic_json
 from .hosts import validate_binding, invocation_scope
 from .releases import PACKAGE_ROOT, release_descriptor, check_release
 from .model_policy import effective_preferences, resolve_profile
@@ -109,8 +111,9 @@ def remember_selected(root,binding,context,resolved):
     NativeCache(root).put(binding['host'],context['account_key'],policy()['version'],release_descriptor()['fingerprint'],updated,time.time(),900)
 
 
+@reservation('native-dispatch')
 def probe(root,binding,stage,refresh=False):
-    data=read_state(Path(root))['data'];backend=(CodexBackend if binding['host']=='codex' else ClaudeBackend)(binding['project_dir'])
+    data=read_host(root,binding_id=binding['binding_id'])['data'];backend=(CodexBackend if binding['host']=='codex' else ClaudeBackend)(binding['project_dir'])
     try:
         context=discover(root,binding,refresh,backend);decision=resolve(data,binding,stage,context)
         if not decision.get('resolved'):decision=candidate_intent(data,binding,stage,context)
@@ -138,7 +141,7 @@ def _commit(root,identifier,kind,request,binding):
     try:
         event={'kind':'domain.host.'+kind,'payload':{'request':request}}
         for attempt in range(8):
-            state=read_state(Path(root));previous=state['operations'].get(identifier)
+            state=read_host(root,binding_id=binding['binding_id'],operation_id=identifier);previous=state['operations'].get(identifier)
             if previous and (previous['kind']!=event['kind'] or previous['payload']!=event['payload']):raise WorkflowError('OPERATION_CONFLICT','Native operation ID belongs to another request.')
             try:receipt=transact(Path(root),state['version'],identifier,event)
             except WorkflowError as exc:
@@ -148,8 +151,9 @@ def _commit(root,identifier,kind,request,binding):
     finally:HOST_CONTEXT.reset(token)
 
 
+@reservation('native-dispatch')
 def invoke(root,request,operation_id):
-    root=Path(root);state=read_state(root);data=state['data'];binding=data.get('host_bindings',{}).get(request.get('binding_id'))
+    root=Path(root);state=read_host(root,request=request,operation_id=operation_id);data=state['data'];binding=data.get('host_bindings',{}).get(request.get('binding_id'))
     if not binding:raise WorkflowError('BINDING_REQUIRED','Known native binding required.')
     identifier=request.get('invocation_id');stage=request.get('stage');prompt=request.get('prompt');access=request.get('access','read-only')
     if not isinstance(identifier,str) or not identifier or not isinstance(prompt,str) or not prompt.strip() or len(prompt.encode())>65536:raise WorkflowError('NATIVE_INPUT_REQUIRED','Invocation ID, stage and bounded nonempty prompt are required.')
@@ -178,7 +182,7 @@ def invoke(root,request,operation_id):
     with _native_lease(lease) as lock:
         # Another launcher may have completed between the initial read and lease acquisition.
         from .context_preparation import read_context_state
-        authoritative=read_context_state(root);data=authoritative['data'];run=data['runs'][binding['run_id']]
+        authoritative=read_context_state(root,binding_id=binding['binding_id']);data=authoritative['data'];run=data['runs'][binding['run_id']]
         prior=run.get('native_invocations',{}).get(identifier)
         if prior:
             if prior.get('request_hash')!=request_hash or prior.get('operation_id')!=operation_id:raise WorkflowError('OPERATION_CONFLICT','Invocation ID belongs to another request.')
@@ -281,7 +285,7 @@ def invoke(root,request,operation_id):
                 task.update({k:request[k] for k in ('replace','previous_mapping_hash') if k in request})
                 _commit(root,operation_id+':native-map','task-bind',task,binding)
                 from .host_locators import write_task_index
-                now=read_state(root)['data'];tasks=[t['task_id'] for t in now.get('host_tasks',{}).values() if t['host']==binding['host'] and t['session_id']==binding['session_id']]
+                now=read_host(root,binding_id=binding['binding_id'])['data'];tasks=[t['task_id'] for t in now.get('host_tasks',{}).values() if t['host']==binding['host'] and t['session_id']==binding['session_id']]
                 write_task_index(Path(binding['project_dir']),binding['host'],binding['session_id'],root,tasks)
             if binding['host']=='codex':
                 configuration=backend.configure(decision['resolved'],native_input['configuration_text'],access)
@@ -332,9 +336,10 @@ def handoff_preflight(root,data,target):
     return {**decision,'observed':selected.get('observed'),'observation_source':selected.get('observation_source'),'invocation_ref':selected.get('invocation_ref'),'policy_revision':revision}
 
 
+@reservation('native-dispatch')
 def reconcile(root,request,operation_id):
     """Never kill or restart a worker; explicit stop attestation closes an orphan."""
-    root=Path(root);state=read_state(root);data=state['data']
+    root=Path(root);state=read_host(root,request=request,operation_id=operation_id);data=state['data']
     finish={'binding_id':request.get('binding_id'),'revision':request.get('revision'),'invocation_id':request.get('invocation_id'),'client_request_hash':hashlib.sha256(json.dumps(request,sort_keys=True,separators=(',',':')).encode()).hexdigest(),'result':{'status':'interrupted','error_kind':'unavailable','reason_code':'NATIVE_ORPHAN_RECONCILED','worker_stop_confirmation':request.get('worker_stop_confirmation')}}
     previous=state['operations'].get(operation_id)
     if previous:

@@ -219,6 +219,8 @@ def accept_requirements(run: dict, report: dict, repository_snapshots: dict) -> 
                                    for review in acceptance_reviews):
         raise ValueError("requirement acceptance must bind a fresh independent acceptance review")
     package = run.get("review_packages", {}).get(package_hash)
+    from .stored_records import require_package
+    package = require_package(package)
     if not package or package.get("role") != "acceptance":
         raise ValueError("acceptance review package is unavailable")
     from .reviews import prepare_review
