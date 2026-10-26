@@ -33,6 +33,14 @@ CREATE TABLE dependencies(kind TEXT, source TEXT, space TEXT, run_id TEXT, entit
     PRIMARY KEY(kind,source,run_id,entity_key),
     FOREIGN KEY(space,run_id) REFERENCES entities(space,key) ON DELETE CASCADE);
 CREATE INDEX dependency_source ON dependencies(kind,source);
+CREATE INDEX dependency_run ON dependencies(space,run_id);
+CREATE TABLE dependency_sources(kind TEXT, source TEXT, checksum TEXT NOT NULL, row_count INTEGER NOT NULL,
+    PRIMARY KEY(kind,source));
+CREATE TABLE dependency_dirty(kind TEXT, source TEXT, PRIMARY KEY(kind,source));
+CREATE TRIGGER dependency_insert AFTER INSERT ON dependencies BEGIN
+    INSERT OR IGNORE INTO dependency_dirty VALUES(NEW.kind,NEW.source); END;
+CREATE TRIGGER dependency_delete AFTER DELETE ON dependencies BEGIN
+    INSERT OR IGNORE INTO dependency_dirty VALUES(OLD.kind,OLD.source); END;
 '''
 
 
@@ -93,7 +101,7 @@ def initialize_store(root: Path):
                 raise WorkflowError('SQLITE_UNAVAILABLE', 'This filesystem cannot provide the required SQLite WAL mode.')
             conn.execute('PRAGMA synchronous=FULL')
             conn.executescript(SCHEMA)
-            for key, value in {**identity, 'head': 0, 'head_hash': None, 'generation': 0, 'position': 0}.items():
+            for key, value in {**identity, 'head': 0, 'head_hash': None, 'generation': 0, 'position': 0, 'dependency_schema': 1, 'dependency_head': 0}.items():
                 _set_meta(conn, key, value)
             conn.execute('PRAGMA user_version=1')
             conn.commit()
@@ -133,6 +141,11 @@ def connection(root: Path, *, write=False):
         head = conn.execute('SELECT sequence,event_hash FROM events ORDER BY sequence DESC LIMIT 1').fetchone()
         if (head[0] if head else 0) != _meta(conn, 'head') or (head[1] if head else None) != _meta(conn, 'head_hash'):
             raise WorkflowError('CORRUPT_STORAGE', 'Database event head and projection head disagree.')
+        if (_meta(conn, 'dependency_schema') != 1 or _meta(conn, 'dependency_head') != _meta(conn, 'head')
+                or conn.execute("SELECT 1 FROM sqlite_master WHERE type='index' AND name='dependency_source'").fetchone() is None):
+            raise WorkflowError('CORRUPT_DEPENDENCY_INDEX', 'Dependency catalog is missing or stale; verify/rebuild explicitly before work.')
+        if conn.execute('SELECT 1 FROM dependency_dirty LIMIT 1').fetchone():
+            raise WorkflowError('CORRUPT_DEPENDENCY_INDEX', 'Dependency witnesses are incomplete; verify/rebuild explicitly.')
         yield conn
         if write: conn.commit()
     except sqlite.Error as exc:
@@ -162,6 +175,11 @@ def _encode(root, value, kind):
 
 def _decode(root, codec, payload, expected):
     try:
+        if codec == 'archive':
+            from .run_archives import hydrate_detail
+            value = hydrate_detail(root, json.loads(payload))
+            if _sha(_json(value).encode('utf-8')) != expected: raise ValueError('archive logical checksum mismatch')
+            return value
         if codec in {'record', 'record-object'}:
             from .stored_records import decode_record
             physical = json.loads(payload)
@@ -221,6 +239,9 @@ def _sync_space(conn, root, path, value, *, before=None, complete=True):
         removed = existing - set(entries)
     else: removed = set(old) - set(entries)
     for key in removed:
+        if path == ('runs',):
+            for kind, source in conn.execute('SELECT DISTINCT kind,source FROM dependencies WHERE space=? AND run_id=?', (name,key)).fetchall():
+                select_dependents(conn, kind, source)
         child = conn.execute('SELECT payload FROM entities WHERE space=? AND key=? AND codec=?', (name,key,'space')).fetchone()
         if child: conn.execute('DELETE FROM spaces WHERE path=?', (child[0],))
         conn.execute('DELETE FROM entities WHERE space=? AND key=?', (name,key))
@@ -229,7 +250,13 @@ def _sync_space(conn, root, path, value, *, before=None, complete=True):
         if path == ('usage',) and key == 'events' and isinstance(item,list):
             _sync_space(conn,root,path+(key,),item,complete=True)
             codec,payload,digest = 'space',_space(path+(key,)),_sha(_json(item).encode())
-        else: codec,payload,digest = _encode(root,item,'projection-json')
+        else:
+            prior_codec = conn.execute('SELECT codec FROM entities WHERE space=? AND key=?', (name,key)).fetchone()
+            if path == ('runs',) and prior_codec and prior_codec[0] == 'archive':
+                from .run_archives import store_detail
+                record = store_detail(root, item)
+                codec,payload,digest = 'archive',_json(record),_sha(_json(item).encode('utf-8'))
+            else: codec,payload,digest = _encode(root,item,'projection-json')
         meta = item if isinstance(item,dict) else {}
         position = conn.execute('SELECT position FROM entities WHERE space=? AND key=?', (name,key)).fetchone()
         ordinal = position[0] if position else _next_position(conn)
@@ -240,10 +267,16 @@ def _sync_space(conn, root, path, value, *, before=None, complete=True):
             codec=excluded.codec,payload=excluded.payload,value_hash=excluded.value_hash,run_id=excluded.run_id,
             status=excluded.status,host=excluded.host,session_id=excluded.session_id,package_hash=excluded.package_hash''', fields)
         if path == ('runs',):
+            from .run_archives import dependencies
+            new_dependencies = dependencies(meta)
+            sources = {(kind,source) for kind,source,_ in new_dependencies}
+            sources.update(conn.execute('SELECT DISTINCT kind,source FROM dependencies WHERE space=? AND run_id=?', (name,key)).fetchall())
+            for kind,source in sources:
+                if conn.execute('SELECT 1 FROM dependency_dirty WHERE kind=? AND source=?', (kind,source)).fetchone() is None:
+                    select_dependents(conn,kind,source)
             conn.execute('DELETE FROM dependencies WHERE space=? AND run_id=?', (name,key))
-            for proof_id,proof in meta.get('verification_proofs',{}).items():
-                for source in proof.get('test_hashes',{}):
-                    conn.execute('INSERT OR IGNORE INTO dependencies VALUES(?,?,?,?,?)', ('test-path',source,name,key,proof_id))
+            for kind,source,entity_key in new_dependencies:
+                conn.execute('INSERT INTO dependencies VALUES(?,?,?,?,?)', (kind,source,name,key,entity_key))
 
 
 def _read_view(conn, root, scope):
@@ -332,7 +365,7 @@ def _transact_locked(root, expected_version, operation_id, event, *, precommit=N
             run=_lookup_entity(conn,root,'runs',event['payload']['run_id']) or {}
             proposal=run.get('test_change_proposals',{}).get(event['payload'].get('proposal_id'),{})
             for source in proposal.get('changed_paths',[]):
-                extra_runs.update(row[0] for row in conn.execute('SELECT DISTINCT run_id FROM dependencies WHERE kind=? AND source=?',('test-path',source)))
+                extra_runs.update(select_dependents(conn, 'test-path', source))
         queries = scope.queries
         if event['kind'].startswith('domain.host.'):
             queries += tuple(EntityQuery(namespace, (('run_id', run_id),))
@@ -358,9 +391,30 @@ def _transact_locked(root, expected_version, operation_id, event, *, precommit=N
                 conn.execute('DELETE FROM spaces WHERE path=?',(_space((key,)),))
             elif key not in before or after[key] != before[key]:
                 _sync_space(conn,root,(key,),after[key],before=before.get(key),complete=key in complete or key in replacements)
+        _refresh_dependency_witnesses(conn)
         codec,payload,digest=_encode(root,committed,'event-json')
         conn.execute('INSERT INTO events VALUES(?,?,?,?,?,?)',(committed['sequence'],operation_id,event['kind'],codec,payload,digest))
         _set_meta(conn,'head',committed['sequence']);_set_meta(conn,'head_hash',digest)
+        _set_meta(conn,'dependency_head',committed['sequence'])
         projected['version']=committed['sequence'];projected['operations'][operation_id]=committed
         projected['_storage']['head_hash']=digest
         return {'state':projected,'event':committed,'replayed':False}
+
+
+def select_dependents(conn, kind, source):
+    rows = conn.execute('SELECT run_id,entity_key FROM dependencies WHERE kind=? AND source=? ORDER BY run_id,entity_key', (kind,source)).fetchall()
+    witness = conn.execute('SELECT checksum,row_count FROM dependency_sources WHERE kind=? AND source=?', (kind,source)).fetchone()
+    if (witness is None and rows) or (witness is not None and
+            (witness[0] != _sha(_json(rows).encode('utf-8')) or witness[1] != len(rows))):
+        raise WorkflowError('CORRUPT_DEPENDENCY_INDEX', 'Reverse dependencies disagree with their content-bound source witness; verify/rebuild explicitly.')
+    return sorted({row[0] for row in rows})
+
+
+def _refresh_dependency_witnesses(conn):
+    for kind,source in conn.execute('SELECT kind,source FROM dependency_dirty').fetchall():
+        rows = conn.execute('SELECT run_id,entity_key FROM dependencies WHERE kind=? AND source=? ORDER BY run_id,entity_key', (kind,source)).fetchall()
+        if rows:
+            conn.execute('INSERT INTO dependency_sources VALUES(?,?,?,?) ON CONFLICT(kind,source) DO UPDATE SET checksum=excluded.checksum,row_count=excluded.row_count',
+                (kind,source,_sha(_json(rows).encode('utf-8')),len(rows)))
+        else: conn.execute('DELETE FROM dependency_sources WHERE kind=? AND source=?', (kind,source))
+    conn.execute('DELETE FROM dependency_dirty')

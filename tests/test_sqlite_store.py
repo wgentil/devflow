@@ -147,6 +147,12 @@ class SQLiteStoreTests(unittest.TestCase):
                             {'kind': event['kind'], 'payload': event['payload']})
                     finally: store.HOST_CONTEXT.reset(token)
                     self.assertEqual(new['event'], event)
+                    from workflow_lib.run_archives import archive_run
+                    for run_id, run in old['data'].get('runs', {}).items():
+                        if (run.get('status') in {'delivered', 'discarded'} and not run.get('active_attempt')
+                                and not any(row.get('status') == 'running' for row in run.get('native_invocations', {}).values())
+                                and not any(row.get('status') == 'claimed' for row in run.get('repair_cycles', []))):
+                            archive_run(target, run_id)
                     actual = store.read_state(target)
                     self.assertEqual(actual['data'], old['data'], (index, position, event['kind']))
                     self.assertEqual(actual['operations'], old['operations'])

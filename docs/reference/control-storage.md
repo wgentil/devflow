@@ -80,3 +80,25 @@ physical summaries are never handed to them as complete packages. Governing
 bytes and approvals round-trip unchanged and do not require reapproval simply
 because their physical storage differs. Public initialization and migration are
 still unchanged at this stage.
+
+## Explicit terminal archives (internal)
+
+`run_archives.archive_run` is explicit physical maintenance under the control
+lock. It accepts delivered/discarded runs only when attempts, native work and
+claimed repair cycles are inactive. It retains a small indexed summary and an
+immutable complete-detail object; selected inspection and full audit restore the
+same logical run without opening application checkouts. Earlier immutable detail
+remains available after later freshness updates. Maintenance advances the storage
+generation, preserving logical event sequence and exact operation receipts.
+Idle runs marked active are never inferred to be abandoned.
+
+Historical event/entity and run-summary iterators fetch bounded pages. Complete
+state materialization remains explicit. Reverse catalogs include test paths,
+proofs, findings, packages, sources, artifacts and context identities. Shared-test
+invalidation selects affected active and archived runs, retaining existing
+freshness semantics. Catalog schema/head markers, dirty-link tracking and
+content-bound per-source witnesses reject missing/stale indexes and incomplete
+source links rather than silently skipping a dependent. Full maintenance audit
+must also compare catalogs against authoritative logical runs; these checks do
+not turn SQLite into an authentication boundary against an administrator rewriting
+both data and checksums. No public archive/compaction command is exposed yet.
