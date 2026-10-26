@@ -649,6 +649,13 @@ def _read_journal(root: Path) -> tuple[dict, list[str]]:
 
 def read_state(root: Path) -> dict:
     """Replay committed events; incomplete temporary files are never committed."""
+    from .storage_format import detect_layout
+    layout = detect_layout(root)
+    if layout['layout'] == 'v2':
+        from .sqlite_store import read_state as read_v2
+        return read_v2(root)
+    if layout['layout'] == 'incomplete':
+        raise WorkflowError('MAINTENANCE_RECOVERY_REQUIRED', 'Resume the incomplete storage intent before work.')
     state, ignored = _read_journal(Path(root))
     state["recovery"] = {"ignored_temporary_files": ignored}
     return state
@@ -688,49 +695,22 @@ def transact(root: Path, expected_version: int, operation_id: str, event: dict, 
         raise WorkflowError("INVALID_EVENT", "event requires a non-empty kind and object payload")
     _validate_event_shape(event)
     with _exclusive(root):
+        from .storage_format import detect_layout
+        layout = detect_layout(root)
+        if layout['layout'] == 'v2':
+            from .sqlite_store import _transact_locked
+            return _transact_locked(root, expected_version, operation_id, event, precommit=precommit)
+        if layout['layout'] == 'incomplete':
+            raise WorkflowError('MAINTENANCE_RECOVERY_REQUIRED', 'Resume the incomplete storage intent before work.')
         state, _ = _read_journal(root)
-        guard = HOST_CONTEXT.get()
-        if guard:
-            from .hosts import validate_binding, require
-            binding = validate_binding(state['data'],guard['binding_id'],guard['revision'])
-            if guard.get('release'):
-                from .releases import release_descriptor, check_release
-                require(check_release(binding['release'],release_descriptor(),1)['status']=='allow', 'Installed helper differs from attached release; reload and refresh.', 'RELEASE_MISMATCH')
-            request = event['payload'].get('request',event['payload'])
-            if binding['role'] != 'implementer':
-                require(event['kind'] in {'review.package.prepared','review.recorded','domain.host.detach','domain.host.task-bind','domain.host.model-receipt','domain.host.model-interrupt','domain.host.native-start','domain.host.native-finish'}, 'Reviewer binding cannot mutate implementation.')
-                if event['kind'] == 'review.recorded':
-                    review=request.get('review', {})
-                    require(review.get('actor_id') == binding['actor_id'] and review.get('package_hash') == binding.get('package_hash'), 'Assessment must match reviewer attachment.')
-                    require(review.get('role') == binding['role'].removesuffix('-reviewer'), 'Assessment role must match reviewer attachment.')
-                    if binding['role'] == 'item-reviewer':require(review.get('item_id') == binding.get('item_id'), 'Assessment item must match reviewer attachment.')
-                if event['kind'] == 'review.package.prepared':
-                    package=request.get('package',{})
-                    require(package.get('role') == binding['role'].removesuffix('-reviewer') and package.get('package_hash') == binding.get('package_hash'), 'Reviewer cannot replace attached review package.')
-            run_id = request.get('run_id')
-            require(not run_id or run_id == binding['run_id'], 'Mutation belongs to another attached run.')
-        preflight=LIVE_TRANSFER.get()
-        if preflight:preflight()
+        _guard_transaction(state, event)
         previous = state["operations"].get(operation_id)
         if previous is not None:
             return {"state": state, "event": previous, "replayed": True}
         if expected_version != state["version"]:
             raise WorkflowError("STALE_STATE", f"expected state version {expected_version}, current version is {state['version']}")
         if precommit is not None:precommit(state)
-        if event["kind"] == "spec.approved" and state["data"].get("spec_pair"):
-            from .repo_specs import assert_repo_spec_approval
-            from .specs import require_mermaid_diagram
-            pair = state["data"]["spec_pair"]
-            registered = state["data"].get("repositories", {}).get(pair["repo_id"])
-            if not registered:
-                raise WorkflowError("REPO_NOT_FOUND", "specification repository is no longer registered")
-            current_spec = assert_repo_spec_approval(Path(registered["location"]), pair)["spec"]
-            prior = state["data"].get("approval") or {}
-            if prior.get("content_hash") != pair["content_hash"]:
-                require_mermaid_diagram(current_spec)
-            approval = event["payload"]["approval"]
-            if any(approval.get(key) != value for key, value in pair.items()) or approval.get("confirmed") is not True:
-                raise WorkflowError("SPEC_APPROVAL_STALE", "approval must bind the repository specification receipt")
+        _guard_spec_approval(state, event)
         committed = {
             "schema_version": STATE_SCHEMA_VERSION,
             "sequence": state["version"] + 1,
@@ -738,6 +718,7 @@ def transact(root: Path, expected_version: int, operation_id: str, event: dict, 
             "kind": event["kind"],
             "payload": event["payload"],
         }
+        guard = HOST_CONTEXT.get()
         if guard: committed["host_binding"] = {key:guard[key] for key in ("binding_id","revision")}
         journal = root / "events"
         journal.mkdir(parents=True, exist_ok=True)
@@ -753,3 +734,45 @@ def transact(root: Path, expected_version: int, operation_id: str, event: dict, 
         state["recovery"] = {"ignored_temporary_files": []}
         _atomic_json(root / "state.json", {k: v for k, v in state.items() if k not in {"recovery", "operations"}})
         return {"state": state, "event": committed, "replayed": False}
+
+
+def _guard_transaction(state: dict, event: dict) -> None:
+    guard = HOST_CONTEXT.get()
+    if guard:
+        from .hosts import validate_binding, require
+        binding = validate_binding(state['data'],guard['binding_id'],guard['revision'])
+        if guard.get('release'):
+            from .releases import release_descriptor, check_release
+            require(check_release(binding['release'],release_descriptor(),1)['status']=='allow', 'Installed helper differs from attached release; reload and refresh.', 'RELEASE_MISMATCH')
+        request = event['payload'].get('request',event['payload'])
+        if binding['role'] != 'implementer':
+            require(event['kind'] in {'review.package.prepared','review.recorded','domain.host.detach','domain.host.task-bind','domain.host.model-receipt','domain.host.model-interrupt','domain.host.native-start','domain.host.native-finish'}, 'Reviewer binding cannot mutate implementation.')
+            if event['kind'] == 'review.recorded':
+                review=request.get('review', {})
+                require(review.get('actor_id') == binding['actor_id'] and review.get('package_hash') == binding.get('package_hash'), 'Assessment must match reviewer attachment.')
+                require(review.get('role') == binding['role'].removesuffix('-reviewer'), 'Assessment role must match reviewer attachment.')
+                if binding['role'] == 'item-reviewer':require(review.get('item_id') == binding.get('item_id'), 'Assessment item must match reviewer attachment.')
+            if event['kind'] == 'review.package.prepared':
+                package=request.get('package',{})
+                require(package.get('role') == binding['role'].removesuffix('-reviewer') and package.get('package_hash') == binding.get('package_hash'), 'Reviewer cannot replace attached review package.')
+        run_id = request.get('run_id')
+        require(not run_id or run_id == binding['run_id'], 'Mutation belongs to another attached run.')
+    preflight=LIVE_TRANSFER.get()
+    if preflight:preflight()
+
+
+def _guard_spec_approval(state: dict, event: dict) -> None:
+    if event["kind"] == "spec.approved" and state["data"].get("spec_pair"):
+        from .repo_specs import assert_repo_spec_approval
+        from .specs import require_mermaid_diagram
+        pair = state["data"]["spec_pair"]
+        registered = state["data"].get("repositories", {}).get(pair["repo_id"])
+        if not registered:
+            raise WorkflowError("REPO_NOT_FOUND", "specification repository is no longer registered")
+        current_spec = assert_repo_spec_approval(Path(registered["location"]), pair)["spec"]
+        prior = state["data"].get("approval") or {}
+        if prior.get("content_hash") != pair["content_hash"]:
+            require_mermaid_diagram(current_spec)
+        approval = event["payload"]["approval"]
+        if any(approval.get(key) != value for key, value in pair.items()) or approval.get("confirmed") is not True:
+            raise WorkflowError("SPEC_APPROVAL_STALE", "approval must bind the repository specification receipt")

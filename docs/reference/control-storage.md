@@ -1,7 +1,7 @@
 # Control-storage contracts
 
 The archive-backed design is being implemented in stages. Current public roots
-and journal commands retain v1 behavior at this stage; there is no v2 initializer,
+and journal commands retain v1 behavior at this stage; there is no public v2 initializer,
 compaction, migration or GC command yet. See the
 [design](../superpowers/specs/2026-10-26-control-state-compaction-design.md) for
 planned behavior, not installation instructions.
@@ -31,8 +31,33 @@ a supported versioned manifest or an incomplete maintenance intent. It does not
 initialize missing roots or repair incomplete layouts. Physical paths are derived
 from validated identities and confined to the selected root; symlink/junction
 escapes are rejected. A format manifest alone does not prove database integrity;
-that validation belongs to the upcoming database reader.
+the indexed database reader verifies schema, root/layout identity and matching
+event/projection heads on each transaction.
 
 Public setup, skill roles and context-readiness diagrams are unchanged. Plugin
 users continue through the [primary setup guide](../setup-and-usage.md); internal
 storage APIs are not onboarding requirements.
+
+## Implemented indexed authority (internal)
+
+Owned fixtures can explicitly initialize format 2 with `sqlite_store.initialize_store`.
+Public initialization remains legacy until migration and host integration are ready.
+The standard-library SQLite module is loaded only when v2 is selected; missing
+support fails with `SQLITE_UNAVAILABLE`. Each connection uses foreign keys, a
+one-second busy timeout, WAL with FULL durability, and transactional snapshots.
+
+Events, exact operation IDs and projection entities have indexed catalogs.
+`read_working_state(root, ReadScope(...))` loads declared globals, named entities,
+selected runs and indexed queries; it includes explicit storage identity metadata.
+`lookup_operation` and `read_head_event` select exact receipts. Full `read_state`
+remains an explicit audit/materialization API, including all logical events.
+Large cells use verified immutable objects, with inline cells limited to 64 KiB.
+
+V2 transactions hold the existing control lock and commit event, head and changed
+projection cells together. CAS, exact retry receipts, host/release guards and
+precommit failures retain legacy ordering. Generic root patches replace their
+named namespaces completely; scoped run updates retain unloaded records.
+The legacy event directory receives an unsupported-schema sentinel before v2
+activation so older clients cannot mistake the root for empty history.
+Incomplete initialization requires explicit recovery; no automatic repair or
+legacy migration is exposed at this stage.
