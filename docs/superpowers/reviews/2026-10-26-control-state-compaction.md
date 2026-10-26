@@ -1,7 +1,10 @@
 # Archive-backed control-state candidate review
 
 Candidate: `feat/archive-backed-control-state`, based on `36e10f4`.
-Status: final local/platform/review gates in progress; no merge or release.
+Status: final local gate passed; native CI and final review in progress.
+Runtime commit: `f39b4b02b6f77c935d448d0cb5c55ed4c2242d18`.
+[Exact candidate CI](https://github.com/wgentil/devflow/actions/runs/40404192037).
+No merge or release.
 Source: [approved design](../specs/2026-10-26-control-state-compaction-design.md),
 [plan](../plans/2026-10-26-control-state-compaction.md),
 [read-only investigation](../specs/2026-10-26-control-state-compaction-discovery.md).
@@ -140,3 +143,17 @@ be retained here before this plan's scratch is removed.
 - Add an independent indexed entity catalog with checksum/header witnesses, discover selected records from that catalog, and verify decoded header parity — a single deleted entity or changed query header must fail closed without scanning history; exact task lookup also preserves cross-run remap rules — cost if wrong: every projection write maintains another small indexed row and every selected read adds point checks; old unreleased prototype databases fail exact schema validation. Checksums detect inconsistent edits, not a coordinated forgery of both authority and witnesses.
 
 - Treat the retained monolithic context index as a cold cache on format2 and publish exact scope shards; only explicit invalidation enumerates usable shards — routine current context cannot scale with old retrieval selections, and source revalidation remains mandatory — cost if wrong: first use after conversion rebuilds selected context, and legacy retrieval locators remain stored indefinitely under the conservative GC policy.
+
+
+### Native CI correction in progress
+
+The first exact-source installed-host job passed both actual package installations
+but failed its v2 helper probe with `Errno 9`. The initializer and SQLite backup
+flushed files through read-only handles; [Windows flushing requires write access](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-flushfilebuffers).
+Two real-file/SQLite regression tests reproduced that access failure before the
+non-truncating `r+b` correction. The focused compatibility/recovery/installed-helper
+set passes 30 tests with one native-only skip locally. All native gates and the
+complete local suite must pass again on the correction commit. The first failed
+[installed-host report](evidence/2026-10-26-control-state-compaction/ci-first-installed-report.json)
+is retained; it does not establish corrected-runtime compatibility.
+Primary setup was reviewed; this internal handle-access fix adds no setup step.

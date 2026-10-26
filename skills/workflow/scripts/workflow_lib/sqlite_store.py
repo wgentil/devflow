@@ -132,7 +132,7 @@ def initialize_store(root: Path,*,operation_id=None):
             conn.commit()
         finally:
             conn.close()
-        with database.open('rb') as handle: os.fsync(handle.fileno())
+        with database.open('r+b') as handle: os.fsync(handle.fileno())
         sync_directory(database.parent)
         _atomic_json(intent, {'kind': 'initialize', 'format': identity, 'phase': 'ready', 'source_head': 0,'initiating_operation_hash':initiating_hash})
         guard = confined_path(root, 'events/00000001.json', create_parents=True)

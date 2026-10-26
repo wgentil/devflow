@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "git_sha": "f39b4b02b6f77c935d448d0cb5c55ed4c2242d18",
+  "descriptor": {
+    "plugin": "devflow",
+    "plugin_version": "0.3.15",
+    "state_schema_version": 1,
+    "supported_schemas": [
+      1
+    ],
+    "storage_format_version": 2,
+    "supported_storage_formats": [
+      1,
+      2
+    ],
+    "host_protocol_version": 1,
+    "release_id": "bd0dc08128a6e4d2ada75a1b0fb46599de886951ac7b291233e367a2177110be",
+    "fingerprint": "bd0dc08128a6e4d2ada75a1b0fb46599de886951ac7b291233e367a2177110be"
+  },
+  "gates": {
+    "codex_install": {
+      "status": "PASS",
+      "skill_count": 11,
+      "descriptor": {
+        "plugin": "devflow",
+        "plugin_version": "0.3.15",
+        "state_schema_version": 1,
+        "supported_schemas": [
+          1
+        ],
+        "storage_format_version": 2,
+        "supported_storage_formats": [
+          1,
+          2
+        ],
+        "host_protocol_version": 1,
+        "release_id": "bd0dc08128a6e4d2ada75a1b0fb46599de886951ac7b291233e367a2177110be",
+        "fingerprint": "bd0dc08128a6e4d2ada75a1b0fb46599de886951ac7b291233e367a2177110be"
+      }
+    },
+    "claude_install": {
+      "status": "PASS",
+      "skill_count": 11,
+      "descriptor": {
+        "plugin": "devflow",
+        "plugin_version": "0.3.15",
+        "state_schema_version": 1,
+        "supported_schemas": [
+          1
+        ],
+        "storage_format_version": 2,
+        "supported_storage_formats": [
+          1,
+          2
+        ],
+        "host_protocol_version": 1,
+        "release_id": "bd0dc08128a6e4d2ada75a1b0fb46599de886951ac7b291233e367a2177110be",
+        "fingerprint": "bd0dc08128a6e4d2ada75a1b0fb46599de886951ac7b291233e367a2177110be"
+      }
+    },
+    "failure": {
+      "status": "FAIL",
+      "reason": "Installed format probe failed: {\"error\":\"INVALID_INPUT\",\"message\":\"[Errno 9] Bad file descriptor\"}\n"
+    }
+  },
+  "authenticated_workflow": {
+    "status": "NOT_RUN",
+    "reason": "Startup checks do not execute signed-in model tasks or live session events."
+  },
+  "success": false
+}

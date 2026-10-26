@@ -124,3 +124,9 @@ transactions, archived runs and typed records in addition to encoding fixtures.
 The platform report measures SQLite version/build options and WAL/FULL,
 foreign-key and busy-timeout settings on an owned database. These checks retain
 the signed-in acceptance limitation described above.
+
+SQLite initialization and backup reopen the owned database with non-truncating
+write access before durability flush. Windows requires a write-capable handle
+for [FlushFileBuffers](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-flushfilebuffers).
+The storage durability regressions preserve complete database content while
+exercising that access rule; native installed-helper CI confirms the OS behavior.

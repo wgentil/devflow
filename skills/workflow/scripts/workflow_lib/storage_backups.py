@@ -59,7 +59,7 @@ def sqlite_backup(source, target):
         if target_conn.execute('PRAGMA integrity_check').fetchone()[0] != 'ok':
             raise WorkflowError('BACKUP_INVALID', 'SQLite backup failed integrity verification.')
     finally: target_conn.close(); source_conn.close()
-    with Path(target).open('rb') as handle: os.fsync(handle.fileno())
+    with Path(target).open('r+b') as handle: os.fsync(handle.fileno())
     sync_directory(Path(target).parent)
 
 

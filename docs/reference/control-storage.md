@@ -287,3 +287,7 @@ The retained legacy monolithic index is a cold cache, with no routine fallback
 scan. First use rebuilds only the requested context; sources and content identity
 are rechecked on hits. Explicit invalidation may enumerate shards and removes
 retrieval locators while retaining immutable content and legacy caches.
+
+Database initialization and backup flush through non-truncating write-capable
+handles, as required on native Windows; the file bytes and SQLite content are
+unchanged by reopening the handle.
