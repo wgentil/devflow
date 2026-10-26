@@ -1,10 +1,12 @@
 # Control-state compaction: issue review and approach decision
 
-Status: investigation complete; scope/approach decision pending before design.
+Status: investigation complete; the user selected the full archive approach.
+The [architectural design](2026-10-26-control-state-compaction-design.md) awaits approval.
 Source: [issue #5](https://github.com/wgentil/devflow/issues/5).
 Baseline: DevFlow v0.3.15, `bd1842b`.
 This records findings and proposed choices, not implemented behavior or an
-approved implementation specification.
+approved implementation specification. The approach below is now selected;
+detailed engineering decisions are proposed in the linked design.
 
 ## Confirmed findings
 
@@ -79,7 +81,8 @@ summaries can make original evidence or exact retry receipts irrecoverable.
 
 ## Next autowork step
 
-Choose scope/approach, then write the architectural design and obtain approval.
+The full archive approach is selected and its architectural design has passed
+a builder check. Obtain approval of that design before planning implementation.
 The full design must specify archive retrieval, typed reference/hash contracts,
 legacy migration, operation replay, cross-run reachability, crash/concurrency and
 native Windows behavior, safety of host projections, and measurable growth limits.
