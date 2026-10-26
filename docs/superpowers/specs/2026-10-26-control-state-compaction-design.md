@@ -1,6 +1,7 @@
 # Archive-backed control-state storage
 
-Status: proposed architectural design; builder check complete, user approval pending.
+Status: user directed continuation after design commit `7806af8`; implementation
+plan is prepared and awaits review before implementation.
 Source: [issue #5](https://github.com/wgentil/devflow/issues/5).
 Baseline: DevFlow v0.3.15, `bd1842b`.
 [Read-only investigation](2026-10-26-control-state-compaction-discovery.md).
@@ -326,3 +327,11 @@ A fresh read-only storage/workflow builder reviewed this document to identify
 questions that would force a material planning guess. Result: "nothing important
 left". No product code, dependency, implementation branch or production-root
 change was made during this design stage.
+
+## Planning refinements for review
+
+The implementation plan keeps logical event/state schema 1 separate from storage
+format 2, activates new-root defaults only after integration, and adds explicit
+actor/operation IDs to maintenance application for durable audit/retry receipts.
+It also makes the post-terminal policy-setting interface explicit. These are
+engineering refinements for plan review, with no production execution implied.
