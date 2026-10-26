@@ -7,6 +7,8 @@ import json
 from .storage_objects import put_object, read_object
 from .store import WorkflowError
 
+MAX_RECORD_BYTES = 256 * 1024 * 1024
+
 SOURCE_FIELDS = frozenset(('content_base64', 'before_content_base64', 'after_content_base64',
                            'text', 'diff', 'patch'))
 SUMMARY_FIELDS = ('package_hash', 'schema_version', 'run_id', 'role', 'item_id', 'plan_hash',
@@ -27,6 +29,8 @@ def _valid_package(value):
 
 def _reference(root, kind, value, *, summary=None):
     raw = value.encode('utf-8') if kind == 'source-field' else canonical(value)
+    if len(raw) > MAX_RECORD_BYTES:
+        raise WorkflowError('STORAGE_RECORD_LIMIT', 'Required logical record exceeds the 256 MiB materialization budget; preserve legacy authority and inspect/export it explicitly.')
     return {'record_version': 1, 'record_kind': kind, 'reference': put_object(root, kind, raw),
             'logical_sha256': hashlib.sha256(raw).hexdigest(), 'summary': summary or {}}
 
@@ -77,7 +81,7 @@ def _resolve(root, record):
     ref = record['reference']
     if ref.get('kind') != record['record_kind']:
         raise WorkflowError('INVALID_STORED_RECORD', 'Typed record and object kind disagree.')
-    raw = read_object(root, ref, max_bytes=ref['size_bytes'])
+    raw = read_object(root, ref, max_bytes=MAX_RECORD_BYTES)
     if record['record_kind'] == 'source-field':
         if hashlib.sha256(raw).hexdigest() != record['logical_sha256'] or record['summary']:
             raise WorkflowError('INVALID_STORED_RECORD', 'Source content identity differs from its record.')
@@ -127,6 +131,6 @@ def object_references(physical, *, root=None):
                 if ref['object_id'] not in seen:
                     seen.add(ref['object_id']); yield ref
                     if root is not None and ref['kind'] == 'review-package':
-                        pending.append(json.loads(read_object(root, ref, max_bytes=ref['size_bytes'])))
+                        pending.append(json.loads(read_object(root, ref, max_bytes=MAX_RECORD_BYTES)))
             else: pending.extend(node.values())
         elif isinstance(node, list): pending.extend(node)

@@ -8,9 +8,10 @@ import json
 import os
 from pathlib import Path
 import uuid
+from functools import lru_cache
 
 from .storage_format import (DATABASE_FILE, DATABASE_SCHEMA, FORMAT_FILE, INTENT_FILE,
-                             confined_path, detect_layout)
+                             confined_path, detect_layout, LEGACY_GUARD)
 from .storage_objects import put_object, read_object
 from .storage_scopes import ReadScope, EntityQuery, scope_for_event
 from .store import WorkflowError
@@ -41,6 +42,15 @@ CREATE TRIGGER dependency_insert AFTER INSERT ON dependencies BEGIN
     INSERT OR IGNORE INTO dependency_dirty VALUES(NEW.kind,NEW.source); END;
 CREATE TRIGGER dependency_delete AFTER DELETE ON dependencies BEGIN
     INSERT OR IGNORE INTO dependency_dirty VALUES(OLD.kind,OLD.source); END;
+CREATE TABLE raw_events(sequence INTEGER PRIMARY KEY REFERENCES events(sequence), name TEXT NOT NULL,
+    reference TEXT NOT NULL, raw_hash TEXT NOT NULL);
+CREATE TABLE event_segments(segment_id TEXT PRIMARY KEY, first_sequence INTEGER NOT NULL,
+    last_sequence INTEGER NOT NULL, reference TEXT NOT NULL);
+CREATE TABLE checkpoints(checkpoint_id TEXT PRIMARY KEY, head INTEGER NOT NULL, generation INTEGER NOT NULL,
+    reference TEXT NOT NULL);
+CREATE TABLE maintenance_commits(plan_hash TEXT PRIMARY KEY, source_head INTEGER NOT NULL,
+    generation INTEGER NOT NULL, receipt TEXT NOT NULL);
+
 '''
 
 
@@ -63,7 +73,9 @@ def _sqlite():
 def _meta(conn, key):
     row = conn.execute('SELECT value FROM metadata WHERE key=?', (key,)).fetchone()
     if row is None: raise WorkflowError('CORRUPT_STORAGE', 'Required database identity or head metadata is missing.')
-    return json.loads(row[0])
+    try: return json.loads(row[0])
+    except (ValueError, TypeError) as exc:
+        raise WorkflowError('CORRUPT_STORAGE', 'Database identity/head metadata is malformed; preserve and verify this root.') from exc
 
 
 def _set_meta(conn, key, value):
@@ -95,6 +107,7 @@ def initialize_store(root: Path):
         _atomic_json(intent, {'kind': 'initialize', 'format': identity, 'phase': 'preparing', 'source_head': 0})
         sqlite = _sqlite()
         conn = sqlite.connect(database)
+        os.chmod(database, 0o600)
         try:
             conn.execute('PRAGMA foreign_keys=ON')
             if conn.execute('PRAGMA journal_mode=WAL').fetchone()[0] != 'wal':
@@ -111,8 +124,7 @@ def initialize_store(root: Path):
         sync_directory(database.parent)
         _atomic_json(intent, {'kind': 'initialize', 'format': identity, 'phase': 'ready', 'source_head': 0})
         guard = confined_path(root, 'events/00000001.json', create_parents=True)
-        _atomic_json(guard, {'schema_version': 2, 'sequence': 1, 'operation_id': 'storage-v2-guard',
-                             'kind': 'storage.upgrade-required', 'payload': {}})
+        _atomic_json(guard, LEGACY_GUARD)
         _atomic_json(confined_path(root, FORMAT_FILE), identity)
         intent.unlink()
         sync_directory(intent.parent)
@@ -138,6 +150,13 @@ def connection(root: Path, *, write=False):
         if (conn.execute('PRAGMA user_version').fetchone()[0] != DATABASE_SCHEMA
                 or any(_meta(conn, key) != layout[key] for key in ('root_id', 'layout_id', 'storage_format', 'database_schema'))):
             raise WorkflowError('CORRUPT_STORAGE', 'Database identity/schema does not match its selected root.')
+        catalog = conn.execute("SELECT type,name,sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY type,name").fetchall()
+        if catalog != _expected_catalog():
+            raise WorkflowError('UNSUPPORTED_STORAGE_SCHEMA', 'Database tables, indexes or triggers differ from the supported catalog; preserve and verify this root.')
+        for key in ('head', 'generation', 'position', 'dependency_head'):
+            value = _meta(conn, key)
+            if type(value) is not int or value < 0:
+                raise WorkflowError('CORRUPT_STORAGE', 'Database generation/head/position metadata is invalid; preserve and verify this root.')
         head = conn.execute('SELECT sequence,event_hash FROM events ORDER BY sequence DESC LIMIT 1').fetchone()
         if (head[0] if head else 0) != _meta(conn, 'head') or (head[1] if head else None) != _meta(conn, 'head_hash'):
             raise WorkflowError('CORRUPT_STORAGE', 'Database event head and projection head disagree.')
@@ -161,7 +180,9 @@ def connection(root: Path, *, write=False):
 
 def _encode(root, value, kind):
     raw = _json(value).encode('utf-8')
-    from .stored_records import encode_record
+    from .stored_records import encode_record, MAX_RECORD_BYTES
+    if len(raw) > MAX_RECORD_BYTES:
+        raise WorkflowError('STORAGE_RECORD_LIMIT', 'Required logical record exceeds the 256 MiB materialization budget; no event was committed.')
     physical = encode_record(root, value)
     if physical is not None:
         encoded = _json(physical).encode('utf-8')
@@ -175,6 +196,10 @@ def _encode(root, value, kind):
 
 def _decode(root, codec, payload, expected):
     try:
+        from .stored_records import MAX_RECORD_BYTES
+        if codec == 'event-archive':
+            from .storage_journal import hydrate_event
+            return hydrate_event(root, json.loads(payload), expected)
         if codec == 'archive':
             from .run_archives import hydrate_detail
             value = hydrate_detail(root, json.loads(payload))
@@ -184,14 +209,14 @@ def _decode(root, codec, payload, expected):
             from .stored_records import decode_record
             physical = json.loads(payload)
             if codec == 'record-object':
-                physical = json.loads(read_object(root, physical, max_bytes=physical['size_bytes']))
+                physical = json.loads(read_object(root, physical, max_bytes=MAX_RECORD_BYTES))
             value = decode_record(root, physical)
             if _sha(_json(value).encode('utf-8')) != expected:
                 raise ValueError('hydrated logical checksum mismatch')
             return value
         if codec == 'object':
             ref = json.loads(payload)
-            raw = read_object(root, ref, max_bytes=ref['size_bytes'])
+            raw = read_object(root, ref, max_bytes=MAX_RECORD_BYTES)
         elif codec == 'json': raw = payload.encode('utf-8')
         else: raise ValueError('unsupported cell codec')
         if _sha(raw) != expected: raise ValueError('stored logical checksum mismatch')
@@ -418,3 +443,12 @@ def _refresh_dependency_witnesses(conn):
                 (kind,source,_sha(_json(rows).encode('utf-8')),len(rows)))
         else: conn.execute('DELETE FROM dependency_sources WHERE kind=? AND source=?', (kind,source))
     conn.execute('DELETE FROM dependency_dirty')
+
+
+@lru_cache(maxsize=1)
+def _expected_catalog():
+    conn = _sqlite().connect(':memory:')
+    try:
+        conn.executescript(SCHEMA)
+        return conn.execute("SELECT type,name,sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY type,name").fetchall()
+    finally: conn.close()

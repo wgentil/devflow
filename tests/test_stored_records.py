@@ -90,3 +90,22 @@ class StoredRecordTests(unittest.TestCase):
             self.assertFalse(any(binary in value for value in payloads))
             manifests = [json.loads(p.read_text()) for p in (root / 'objects/manifests').rglob('*.json')]
             self.assertEqual(sum(m['kind'] == 'source-field' and m['size_bytes'] == len(binary) for m in manifests), 1)
+
+
+    def test_selected_record_budget_is_independent_of_reference_size(self):
+        from unittest.mock import patch
+        records = self.backend()
+        self.assertTrue(hasattr(records, 'MAX_RECORD_BYTES'))
+        with owned_control() as root:
+            package = self.package('item')
+            ref = records.store_package(root, package)
+            with patch.object(records, 'MAX_RECORD_BYTES', 1024):
+                with self.assertRaises(store.WorkflowError) as caught:
+                    records.resolve_package(root, ref)
+                self.assertEqual(caught.exception.code, 'STORAGE_OBJECT_LIMIT')
+                with self.assertRaises(store.WorkflowError): records.store_package(root, package)
+            sqlite_store.initialize_store(root)
+            with patch.object(records, 'MAX_RECORD_BYTES', 1024):
+                with self.assertRaises(store.WorkflowError):
+                    store.transact(root, 0, 'too-large', {'kind': 'note', 'payload': {'text': 'x' * 2000}})
+            self.assertEqual(store.read_state(root)['version'], 0)

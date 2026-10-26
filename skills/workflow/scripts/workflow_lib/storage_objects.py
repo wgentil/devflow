@@ -197,3 +197,36 @@ def put_object(root: Path, kind: str, value: bytes, *, encoding: str = 'gzip') -
     for _ in stream_object(root, ref):
         pass
     return ref
+
+
+def put_file(root: Path, kind: str, source: Path, *, encoding='gzip') -> dict:
+    """Publish a file with bounded memory; source must be stable for this read."""
+    _require(isinstance(kind, str) and KIND.fullmatch(kind) and encoding in {'gzip', 'identity'},
+             'Object kind and supported encoding are required.', 'STORAGE_OBJECT_INVALID')
+    parts = []; digest = hashlib.sha256(); size = 0
+    with Path(source).open('rb') as handle:
+        while chunk := handle.read(CHUNK_BYTES):
+            digest.update(chunk); size += len(chunk)
+            if encoding == 'gzip':
+                buffer = io.BytesIO()
+                with gzip.GzipFile(filename='', mode='wb', fileobj=buffer, mtime=0) as stream: stream.write(chunk)
+                raw = buffer.getvalue()
+            else: raw = chunk
+            identity = sha(chunk)
+            target = _chunk_path(root, encoding, identity, create=True)
+            _publish(target, raw)
+            existing = _read_file(target, MAX_STORED_CHUNK)
+            _require(_decode(existing, encoding, len(chunk)) == chunk, 'Existing immutable chunk is corrupt.')
+            parts.append({'encoding': encoding, 'sha256': identity, 'size_bytes': len(chunk),
+                          'stored_sha256': sha(existing), 'stored_bytes': len(existing)})
+            _require(len(parts) * 400 <= MAX_MANIFEST_BYTES, 'File exceeds the object manifest budget.', 'STORAGE_OBJECT_LIMIT')
+    descriptor = _descriptor(kind, size, digest.hexdigest())
+    raw = canonical({**descriptor, 'chunks': parts})
+    _require(len(raw) <= MAX_MANIFEST_BYTES, 'Object manifest exceeds its safe size.', 'STORAGE_OBJECT_LIMIT')
+    path = _manifest_path(root, sha(canonical(descriptor)), create=True)
+    _publish(path, raw)
+    published = _read_file(path, MAX_MANIFEST_BYTES)
+    ref = _reference(json.loads(published), published)
+    _require(ref['object_id'] == sha(canonical(descriptor)), 'Published file identity changed.')
+    for _ in stream_object(root, ref): pass
+    return ref

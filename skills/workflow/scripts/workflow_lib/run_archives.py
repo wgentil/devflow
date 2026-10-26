@@ -34,7 +34,11 @@ def store_detail(root, run):
     envelope = {'archive_version': 1, 'codec': 'record' if record is not None else 'json',
                 'body': record if record is not None else run}
     summary = summarize_run(run)
-    return {'archive_version': 1, 'reference': put_object(root, 'terminal-run', canonical(envelope)),
+    raw = canonical(envelope)
+    from .stored_records import MAX_RECORD_BYTES
+    if len(raw) > MAX_RECORD_BYTES:
+        raise WorkflowError('STORAGE_RECORD_LIMIT', 'Archive detail exceeds its materialization budget; the original record was retained.')
+    return {'archive_version': 1, 'reference': put_object(root, 'terminal-run', raw),
             'logical_sha256': digest(run), 'summary': summary, 'summary_sha256': digest(summary)}
 
 
@@ -50,8 +54,9 @@ def summary_from_record(record):
 def hydrate_detail(root, record):
     summary = summary_from_record(record)
     ref = record['reference']
+    from .stored_records import MAX_RECORD_BYTES
     try:
-        envelope = json.loads(read_object(root, ref, max_bytes=ref['size_bytes']))
+        envelope = json.loads(read_object(root, ref, max_bytes=MAX_RECORD_BYTES))
         if set(envelope) != {'archive_version', 'codec', 'body'} or envelope['archive_version'] != 1:
             raise ValueError('unsupported archive envelope')
         if envelope['codec'] == 'record': run = decode_record(root, envelope['body'])

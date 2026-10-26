@@ -102,3 +102,53 @@ source links rather than silently skipping a dependent. Full maintenance audit
 must also compare catalogs against authoritative logical runs; these checks do
 not turn SQLite into an authentication boundary against an administrator rewriting
 both data and checksums. No public archive/compaction command is exposed yet.
+
+## Verified migration and checkpoints (internal)
+
+`storage_maintenance.compaction_plan` inspects without creating authority or
+running live governing-input preflight. Its hash binds the selected root and
+filesystem identity, logical head, generation, policy, pins, source file hashes
+and terminal candidates. `apply_compaction(root, plan_hash)` revalidates under the
+existing control lock, refuses in-flight work/pins or insufficient staging and
+backup space, and verifies complete history before creating an intent. Legacy
+roots remain legacy unless this explicit internal API is called; the public
+maintenance commands are not exposed yet.
+
+Migration first creates a verified complete backup, then builds a separate v2
+catalog/projection, preserving every original legacy event filename and raw byte.
+It independently checks replay/projection/receipt parity. Older events move to
+immutable segments with indexed exact-event locators; sequence and operation IDs
+never reset. Checkpoints include a coordinated SQLite snapshot, identity/head
+binding, immutable segment references and projection digest. File publication is
+streamed in bounded chunks. Checkpoints are verified recovery evidence; ordinary
+reads never restore one while omitting a newer committed tail.
+
+Durable phases cover database commit, object publication, ready checkpoint,
+legacy guard, atomic format selection and cleanup. The schema-2 sentinel is
+installed before activation, and every selected v2 layout requires it. Actual
+v0.3.15 journal readers/writers reject the sentinel with `UNSUPPORTED_SCHEMA`.
+Mixed concurrent old clients are unsupported: quiesce them before conversion.
+`resume_compaction` validates the existing intent and source prefix. It refuses
+changed legacy tails, corrupt checkpoints/catalogs and newer generations; after
+activation it preserves newer committed v2 events. Locked retirement files keep
+an explicit cleanup-pending intent for retry. Exact completed maintenance retries
+return their original receipt without repeating conversion.
+
+`verify_store(..., full=True)` checks SQLite integrity, schema/index/trigger
+identity, continuity and unique operations, immutable segments/raw originals,
+complete replay/projection parity, dependency links and recovery checkpoints.
+Verification reports errors without repair. `read_raw_event` returns original
+legacy bytes, or canonical logical bytes for events created in v2.
+
+`backup_control` uses SQLite's coordinated backup API plus all retained object,
+archive and evidence files. A final content-bound manifest marks completion;
+interrupted output remains incomplete and can be resumed explicitly. Backups can
+be relocated and read independently. Copying a live database file alone is not a
+complete backup. SQLite authority/backup files use private permissions, matching
+the existing journal files.
+
+Selected logical/physical records have a 256 MiB materialization budget independent
+of reference-declared lengths; new oversized records are refused before commit.
+Oversized legacy records block conversion while preserving legacy authority.
+Database checkpoint files use streaming publication/verification rather than
+whole-file materialization. Manifest and decompression chunk limits still apply.

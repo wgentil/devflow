@@ -11,6 +11,8 @@ SUPPORTED_STORAGE_FORMATS = (1, 2)
 FORMAT_FILE = 'format.json'
 INTENT_FILE = 'maintenance/intent.json'
 DATABASE_FILE = 'store-v2/control.sqlite3'
+LEGACY_GUARD = {'schema_version': 2, 'sequence': 1, 'operation_id': 'storage-v2-guard',
+                'kind': 'storage.upgrade-required', 'payload': {}}
 
 
 def confined_path(root: Path, relative: str, *, create_parents: bool = False) -> Path:
@@ -51,17 +53,21 @@ def detect_layout(root: Path) -> dict:
         value = json.loads(raw)
         if not isinstance(value, dict):
             raise ValueError('format manifest must be an object')
-        if value.get('storage_format') not in SUPPORTED_STORAGE_FORMATS:
+        if type(value.get('storage_format')) is not int or value.get('storage_format') not in SUPPORTED_STORAGE_FORMATS:
             raise WorkflowError('UNSUPPORTED_STORAGE_FORMAT', 'Upgrade the helper before opening this control layout.')
         if value['storage_format'] != STORAGE_FORMAT:
             raise ValueError('legacy roots do not use a v2 format manifest')
-        if (value.get('database_schema') != DATABASE_SCHEMA or value.get('database') != DATABASE_FILE
+        if (type(value.get('database_schema')) is not int or value.get('database_schema') != DATABASE_SCHEMA or value.get('database') != DATABASE_FILE
                 or not all(isinstance(value.get(k), str) and re.fullmatch('[0-9a-f]{32}', value[k])
                            for k in ('root_id', 'layout_id'))):
             raise ValueError('unsupported or incomplete database identity')
         database = confined_path(root, value['database'])
         if not database.is_file():
             raise ValueError('selected database is missing')
+        guard = confined_path(root, 'events/00000001.json')
+        with guard.open('rb') as stream: guard_raw = stream.read(65537)
+        if len(guard_raw) > 65536 or json.loads(guard_raw) != LEGACY_GUARD:
+            raise ValueError('legacy-client compatibility guard is missing or invalid; preserve the root and resume/verify explicitly')
         return {**value, 'layout': 'v2', 'root': str(root)}
     except WorkflowError:
         raise
