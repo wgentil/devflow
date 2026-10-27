@@ -1,5 +1,8 @@
 # Windows validation status
 
+Current release: v0.3.16. See its [release validation](releases/v0.3.16-validation.md)
+for exact-package results. The v0.3.13 matrix below is historical.
+
 DevFlow v0.3.13 contains the native Windows compatibility fixes. Automated core
 runtime, actual plugin installation/startup and signed-in host acceptance are
 separate gates. All five automated jobs pass for

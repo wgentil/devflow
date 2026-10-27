@@ -6,7 +6,9 @@ no regular user installation was changed by this validation.
 
 ## Current evidence limits
 
-The current package is v0.3.13 with eleven skills. Successful isolated native Codex
+The current package is v0.3.16 with eleven skills. Current release checks are
+tracked in [release validation](releases/v0.3.16-validation.md); older evidence
+below retains its original version and scope. Successful isolated native Codex
 and Claude installs are recorded below for earlier releases, including v0.3.1;
 they supersede the initial failed Codex discovery probe as installation evidence.
 They do not establish a current-release installed workflow or repair run. Native
