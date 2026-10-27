@@ -1,0 +1,122 @@
+{
+  "source_sha": "7ce6e03eae83625c79068579e365a6a09610ae89",
+  "fingerprint": "0f251be9a86f1747b801a4e8ec207c195599b20dc9972475adb3b7aabd3e4374",
+  "workflow_url": "https://github.com/wgentil/devflow/actions/runs/40515633384",
+  "files": [
+    {
+      "file": "local-platform.json",
+      "origin": "merged exact-version local suite",
+      "original_sha256": "10734f4acafd6208d60dab9825ce3e648bd40365640d7a1454cb45bf05e6da5e",
+      "retained_sha256": "10734f4acafd6208d60dab9825ce3e648bd40365640d7a1454cb45bf05e6da5e",
+      "normalization": "none"
+    },
+    {
+      "file": "local-installed.json",
+      "origin": "isolated local install",
+      "original_sha256": "d8a15dbe865b5f09b091a2002749fb01e513a57df42457da36c2d7251038c14c",
+      "retained_sha256": "d8a15dbe865b5f09b091a2002749fb01e513a57df42457da36c2d7251038c14c",
+      "normalization": "none"
+    },
+    {
+      "file": "local-installed.hooks.log",
+      "origin": "isolated local install",
+      "original_sha256": "1c0f1cab356c1f0913db531a5a7b8f3f7e6e9dda8f3328389bdac8a103228292",
+      "retained_sha256": "1c0f1cab356c1f0913db531a5a7b8f3f7e6e9dda8f3328389bdac8a103228292",
+      "normalization": "none"
+    },
+    {
+      "file": "github-installed.json",
+      "origin": "isolated github install",
+      "original_sha256": "d8a15dbe865b5f09b091a2002749fb01e513a57df42457da36c2d7251038c14c",
+      "retained_sha256": "d8a15dbe865b5f09b091a2002749fb01e513a57df42457da36c2d7251038c14c",
+      "normalization": "none"
+    },
+    {
+      "file": "github-installed.hooks.log",
+      "origin": "isolated github install",
+      "original_sha256": "6b1a439595b6f919ede5b015bf74277fcceafe207144be07ec9e825e1bf1d2b5",
+      "retained_sha256": "6b1a439595b6f919ede5b015bf74277fcceafe207144be07ec9e825e1bf1d2b5",
+      "normalization": "none"
+    },
+    {
+      "file": "legacy-windows-3.11.json",
+      "origin": "Actions40515633384 legacy-windows-3.11",
+      "original_sha256": "fea8ce81cb2f465a5887a92d705118d9c2133062f80ec4420859be27fa539db9",
+      "retained_sha256": "fea8ce81cb2f465a5887a92d705118d9c2133062f80ec4420859be27fa539db9",
+      "normalization": "none"
+    },
+    {
+      "file": "legacy-windows-3.x.json",
+      "origin": "Actions40515633384 legacy-windows-3.x",
+      "original_sha256": "e2887ef74dd5b5481e009f382d9858aa85dda5ca13e41d1b745afaaa49ca45fa",
+      "retained_sha256": "e2887ef74dd5b5481e009f382d9858aa85dda5ca13e41d1b745afaaa49ca45fa",
+      "normalization": "none"
+    },
+    {
+      "file": "platform-macos-latest-3.11.json",
+      "origin": "Actions40515633384 platform-macos-latest-3.11",
+      "original_sha256": "2389e87d58e1172ef70616a3a95a649641ff235dbdc2db200a44a4d2ebd01fda",
+      "retained_sha256": "2389e87d58e1172ef70616a3a95a649641ff235dbdc2db200a44a4d2ebd01fda",
+      "normalization": "none"
+    },
+    {
+      "file": "platform-macos-latest-3.x.json",
+      "origin": "Actions40515633384 platform-macos-latest-3.x",
+      "original_sha256": "88d1bebf6c20ba8656af67414e8d9407262d31e9955483c3db8f0de24946fbc0",
+      "retained_sha256": "88d1bebf6c20ba8656af67414e8d9407262d31e9955483c3db8f0de24946fbc0",
+      "normalization": "none"
+    },
+    {
+      "file": "platform-ubuntu-latest-3.11.json",
+      "origin": "Actions40515633384 platform-ubuntu-latest-3.11",
+      "original_sha256": "31209ec20a7ec16c9263c543f598ff156bbf5dda7528da69e825b34d284b8543",
+      "retained_sha256": "31209ec20a7ec16c9263c543f598ff156bbf5dda7528da69e825b34d284b8543",
+      "normalization": "none"
+    },
+    {
+      "file": "platform-ubuntu-latest-3.x.json",
+      "origin": "Actions40515633384 platform-ubuntu-latest-3.x",
+      "original_sha256": "da790039cbce3370c3c2c6d98d187309cda7ed942cac93b26a4201209016a038",
+      "retained_sha256": "da790039cbce3370c3c2c6d98d187309cda7ed942cac93b26a4201209016a038",
+      "normalization": "none"
+    },
+    {
+      "file": "platform-windows-latest-3.11.json",
+      "origin": "Actions40515633384 platform-windows-latest-3.11",
+      "original_sha256": "063fc17fb925d5f0dd46b9a29954cd2898e581a1709abfebb61fe355bb282700",
+      "retained_sha256": "063fc17fb925d5f0dd46b9a29954cd2898e581a1709abfebb61fe355bb282700",
+      "normalization": "none"
+    },
+    {
+      "file": "platform-windows-latest-3.x.json",
+      "origin": "Actions40515633384 platform-windows-latest-3.x",
+      "original_sha256": "466785d5e0af372492fa72ed2d1a386e60b96afe70862460a8d00fd8ef1c6516",
+      "retained_sha256": "466785d5e0af372492fa72ed2d1a386e60b96afe70862460a8d00fd8ef1c6516",
+      "normalization": "none"
+    },
+    {
+      "file": "windows-installed.json",
+      "origin": "Actions40515633384 installed hosts",
+      "original_sha256": "d21bd5889b703f191fdb5f0140c40a67beec0bf6c951547cfde00e40249a5e3e",
+      "retained_sha256": "d21bd5889b703f191fdb5f0140c40a67beec0bf6c951547cfde00e40249a5e3e",
+      "normalization": "none"
+    },
+    {
+      "file": "windows-installed-hooks.log",
+      "origin": "actual installed Windows v1/v2 hook scripts",
+      "original_sha256": "4a0a755c503535a8dfc7dd8c6af20af7034fe79e3c06a24f80cdd6199822a2e7",
+      "retained_sha256": "4a0a755c503535a8dfc7dd8c6af20af7034fe79e3c06a24f80cdd6199822a2e7",
+      "normalization": "none"
+    },
+    {
+      "file": "ci-run.json",
+      "origin": "GitHub completed nine-job release run",
+      "original_sha256": "6d4d3f6e07c1def5ed0ff5498c8ab03de15e1642b3319fc4d31addefca776a6d",
+      "retained_sha256": "6d4d3f6e07c1def5ed0ff5498c8ab03de15e1642b3319fc4d31addefca776a6d",
+      "normalization": "none"
+    }
+  ],
+  "regular_user_configuration": "unchanged",
+  "authenticated_model_tasks": "NOT_RUN",
+  "production_maintenance": "NOT_RUN"
+}
