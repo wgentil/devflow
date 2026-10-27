@@ -1,0 +1,7 @@
+test_interactive_final_commit_cannot_dispatch_a_stale_preparation (test_storage_dispatch_freshness.DispatchFreshnessTests.test_interactive_final_commit_cannot_dispatch_a_stale_preparation) ... ok
+test_native_discovery_cannot_dispatch_after_approval_revocation (test_storage_dispatch_freshness.DispatchFreshnessTests.test_native_discovery_cannot_dispatch_after_approval_revocation) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 5.528s
+
+OK

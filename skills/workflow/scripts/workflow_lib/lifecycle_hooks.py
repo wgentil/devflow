@@ -169,7 +169,7 @@ def run_lifecycle_hook(name: str, request: dict, *, deadline_seconds: float=5,ma
 
 
 def prepared_context(root: Path, run: dict, envelope: dict, item_ids: list[str], *, stage: str,
-                      max_bytes: int=20000,representation: str='markdown',output_mode: str='full',state: dict|None=None,prepared=None)->dict:
+                      max_bytes: int=20000,representation: str='markdown',output_mode: str='full',state: dict|None=None,prepared=None,on_prepared=None)->dict:
     from .context_preparation import prepare_context,_require,normalize_stage,_accept_run,PreparedContext
     _require(not (prepared is not None and state is not None),'Supply state or prepared context, not both.')
     owns_preparation=prepared is None
@@ -182,15 +182,19 @@ def prepared_context(root: Path, run: dict, envelope: dict, item_ids: list[str],
             and prepared.scope['run_id']==run['id'] and prepared.scope['item_ids']==item_ids
             and prepared.scope['context_max_bytes']==max_bytes and prepared.scope['representation']==representation and prepared.scope['output_mode']==output_mode,
             'Prepared scope differs from this context request.')
-    try:response=_prepared_response(root,prepared)
+    try:
+        response=_prepared_response(root,prepared)
+        if response['status']!='allow':raise WorkflowError(response['reason_code'],'Required context preparation failed.',{'phase':'composition','hook':response,**response.get('details',{})})
+        result=response['result']
+        if result.get('full_result_artifact_id'):result=inspect_context_artifact(root,result['full_result_artifact_id'])
+        from .context_preparation import assert_preparation_current
+        assert_preparation_current(root,prepared,prepared._state)
+        if on_prepared is not None:
+            on_prepared(prepared)
+            owns_preparation=False # The internal dispatcher now owns its lease.
+        return result
     finally:
         if owns_preparation:prepared.release()
-    if response['status']!='allow':raise WorkflowError(response['reason_code'],'Required context preparation failed.',{'phase':'composition','hook':response,**response.get('details',{})})
-    result=response['result']
-    if result.get('full_result_artifact_id'):result=inspect_context_artifact(root,result['full_result_artifact_id'])
-    from .context_preparation import assert_preparation_current
-    assert_preparation_current(root,prepared,prepared._state)
-    return result
 
 
 def verification_projection(root: Path, result: dict, *, report_format: str = 'json') -> dict:

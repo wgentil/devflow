@@ -1,0 +1,15 @@
+test_frozen_report_discovery_cannot_hide_changed_identity (test_storage_review_regressions.StorageReviewRegressionTests.test_frozen_report_discovery_cannot_hide_changed_identity) ... FAIL
+
+======================================================================
+FAIL: test_frozen_report_discovery_cannot_hide_changed_identity (test_storage_review_regressions.StorageReviewRegressionTests.test_frozen_report_discovery_cannot_hide_changed_identity)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/4349/devflow/tests/test_storage_review_regressions.py", line 141, in test_frozen_report_discovery_cannot_hide_changed_identity
+    self.assertEqual(find_entity_id(root,'reports','frozen'),{'id':'frozen','content':'retained'})
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: [{'content': 'retained', 'id': 'frozen'}] != {'id': 'frozen', 'content': 'retained'}
+
+----------------------------------------------------------------------
+Ran 1 test in 0.045s
+
+FAILED (failures=1)

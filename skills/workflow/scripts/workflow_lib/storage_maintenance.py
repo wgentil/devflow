@@ -42,6 +42,7 @@ def _snapshot(root):
         raise WorkflowError('MAINTENANCE_RECOVERY_REQUIRED', 'Resume the durable maintenance intent before planning work.')
     if layout['layout'] == 'v2':
         with sql.connection(root) as conn:
+            sql.storage_catalog.verify(conn)
             data = {row[0]: sql._load_space(conn, root, (row[0],)) for row in conn.execute('SELECT name FROM spaces WHERE parent IS NULL ORDER BY position')}
             return layout, {'version': sql._meta(conn,'head'), 'data': data}, {
                 key: sql._meta(conn,key) for key in ('generation','head_hash','root_id','layout_id')}
@@ -127,14 +128,14 @@ def _disk_check(root, required):
         raise WorkflowError('INSUFFICIENT_STORAGE','Maintenance needs verified staging and backup headroom; originals were retained.')
 
 
-def backup_control(root, output, *, resume=False):
+def backup_control(root, output, *, resume=False, owner=None):
     root = Path(root).resolve()
     with _exclusive(root):
         _,state,_=_snapshot(root)
         blockers=_blockers(state['data'],_pins(root))
         if blockers:raise WorkflowError('MAINTENANCE_BLOCKED','; '.join(blockers))
         _disk_check(root,max(16*1024*1024,sum(path.stat().st_size for _,path in source_files(root))*2))
-        return backup_locked(root,output,resume=resume)
+        return backup_locked(root,output,resume=resume,owner=owner)
 
 
 def _archive_runs(conn, root):
@@ -175,8 +176,9 @@ def _stage_legacy(root, intent):
             for key,value in source['data'].items(): sql._sync_space(conn,stage,(key,),value,complete=True)
             for event in source['operations'].values():
                 codec,payload,event_hash = sql._encode(stage,event,'event-json')
-                conn.execute('INSERT INTO events VALUES(?,?,?,?,?,?)',
-                    (event['sequence'],event['operation_id'],event['kind'],codec,payload,event_hash))
+                fields=(event['sequence'],event['operation_id'],event['kind'],codec,payload,event_hash)
+                conn.execute('INSERT INTO events VALUES(?,?,?,?,?,?)',fields)
+                sql.storage_catalog.record_operation(conn,fields)
                 name = f"{event['sequence']:08d}.json"
                 raw = confined_path(backup,'events/'+name).read_bytes()
                 ref = put_object(stage,'legacy-event-bytes',raw)
@@ -365,6 +367,12 @@ def resume_compaction(root):
         if (plan.get('maintenance_version') != 1 or plan.get('layout') not in {'legacy','v2'}
                 or digest(body) != plan.get('plan_hash') or plan.get('root') != str(root)):
             raise WorkflowError('MAINTENANCE_METADATA_INVALID','Intent plan identity differs; preserve the root.')
+        pins=_pins(root)
+        if pins:raise WorkflowError('MAINTENANCE_BLOCKED','Prepared context or reader pins are present; resume after in-flight work stops.')
+        if detect_layout(root)['layout']=='v2':
+            _,current,_=_snapshot(root)
+            blockers=_blockers(current['data'],pins)
+            if blockers:raise WorkflowError('MAINTENANCE_BLOCKED','; '.join(blockers))
         if intent.get('checkpoint'):
             verify_checkpoint(root,intent['checkpoint'])
         return _run_intent_locked(root,intent)
@@ -499,7 +507,7 @@ def apply_authorized_compaction(root,plan_hash,*,operation_id,actor_id):
             if plan['plan_hash']!=plan_hash:raise WorkflowError('STALE_MAINTENANCE_PLAN','Root/head/policy/pins or source files changed.')
             audit['plan']=plan;write_record(paths(root,operation_id)[1],audit)
         return apply_compaction(root,plan_hash)
-    return perform(root,'compact',{'plan_hash':plan_hash},operation_id,actor_id,apply)
+    return perform(root,'compact',{'plan_hash':plan_hash},operation_id,actor_id,apply,compacting=plan_hash)
 
 
 def post_terminal(root,event,*,committed_data=None):
@@ -542,3 +550,25 @@ def resume_initialization_audited(root,identity,*,operation_id,actor_id):
         with sql.connection(root):pass
         return {'completed':True,'kind':'initialize','storage_format':2,'root_id':identity['root_id'],'layout_id':identity['layout_id']}
     return perform(root,'initialize-resume',{'format':identity},operation_id,actor_id,resume,initializing=identity)
+
+
+def validate_compaction_recovery(root,plan_hash,audit,operation_id):
+    """Prove the original reserved request against immutable pre-guard history."""
+    intent=_read_json(confined_path(root,INTENT_FILE));plan=intent.get('plan',{})
+    body={key:value for key,value in plan.items() if key!='plan_hash'}
+    if (intent.get('intent_version')!=1 or intent.get('kind')!='compact'
+            or plan.get('layout')!='legacy' or plan.get('plan_hash')!=plan_hash
+            or digest(body)!=plan_hash or plan.get('root')!=str(Path(root).resolve())
+            or intent.get('backup')!='backups/'+plan_hash or not audit
+            or audit.get('kind')!='compact' or audit.get('plan')!=plan
+            or audit.get('operation_id')!=operation_id or audit.get('request')!={'plan_hash':plan_hash}):
+        raise WorkflowError('MAINTENANCE_RECOVERY_REQUIRED','Recovery requires the original bound compaction intent and pending request; preserve the root.')
+    _assert_legacy_source(root,intent)
+    backup=confined_path(root,intent['backup']);report=verify_backup(backup)
+    if not report['valid']:raise WorkflowError('BACKUP_INVALID','Verified original history is unavailable; preserve the root.')
+    source,_=_read_journal(backup)
+    tail=next(reversed(source['operations'].values()),None)
+    if source['version']!=plan['head'] or (digest(tail) if tail else None)!=plan['head_hash']:
+        raise WorkflowError('MAINTENANCE_RECOVERY_REQUIRED','Original history differs from the reserved compaction source.')
+    if operation_id in source['operations']:
+        raise WorkflowError('OPERATION_CONFLICT','Compaction operation ID already belongs to original workflow history.')

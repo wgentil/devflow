@@ -265,8 +265,10 @@ partial databases fail closed; recovery never invents an empty authority.
 
 ## Catalog witnesses and current retrieval
 
-Format 2 keeps a second small indexed entity catalog containing query headers,
-positions and physical checksums. Query discovery uses the union of matching indexed authority/catalog keys, so
+Format 2 keeps independent namespace, operation, document-file and entity
+catalogs. Entity witnesses contain query headers,
+positions and physical checksums. Query discovery uses the union of matching
+indexed authority/catalog keys, so
 loss on either side is detectable. Witnesses do not cascade from a damaged
 namespace; intended deletion updates both copies atomically. Explicit full reads
 also compare complete catalog parity. Selected lookups compare it with the stored row
@@ -275,6 +277,15 @@ fails closed rather than making mapped work appear inactive. Full verification
 compares every witness with complete authoritative history. Normal deletion and
 archive checksum changes update both rows atomically. This detects inconsistent
 corruption; checksums are not authentication against coordinated manual edits.
+
+Namespace presence and shape have independent witnesses, including empty maps.
+Missing global namespaces cannot downgrade repository approval to legacy approval.
+Historical views, attributed usage, streamed metrics hashes, frozen-report IDs and
+approved document-file lookups use witness-backed discovery. Missing either side
+fails closed; genuinely absent records remain absent. Operation witnesses bind
+operation ID, sequence, kind and logical event hash independently of physical
+segment locators. Losing a retained locator cannot make its operation ID reusable.
+Full audit compares complete parity; normal lookup uses indexed point checks.
 
 Completion and remapping look up the exact host/session/task key even when its
 record points outside the selected run. Missing advisory locators cannot hide a
@@ -309,3 +320,28 @@ fallback spellings while cooperative publishers create directories. Symlinks,
 name-surrogate reparse points (including junctions), outside resolutions and
 unavailable reparse points without a confinement proof remain refused; parents
 are rechecked after creation. Backup resume reads its owned marker as UTF-8.
+
+## Public recovery and dispatch boundaries
+
+An interrupted legacy conversion resumes only with its original pending audited
+request/actor, matching intent/plan and verified original backup. Recovery replays
+that backup to prove planned head/hash and workflow-operation uniqueness before
+allowing the unselected layout through the audit wrapper. This is an explicit
+recovery path, not a normal operational history scan or generic bypass. Resumed
+compaction rechecks live pins and selected in-flight work before mutation/cleanup.
+
+Public backup markers and final manifests bind source root and exact audited
+operation, actor and request. The same command/identity resumes its owned incomplete
+output; a new operation cannot claim another completed/incomplete output or an
+older snapshot. Historical manifests remain independently verifiable, but an
+unbound old output is not reusable as a new backup. Manifests record source head,
+head hash and storage identity. Exact completed operation retries return the
+original receipt/snapshot, even when the source subsequently advances.
+
+Native and interactive coordinators retain the internal prepared context and its
+lease through dispatch authorization. The native-start transaction checks the
+rendered context's storage/head, run, approval, governing and file identities
+under root coordination after discovery/configuration observation. Changed input
+blocks dispatch and requires fresh preparation; reading a newer state alone does
+not authorize the older rendered payload. Public JSON cannot supply this internal
+prepared object. Completed invocation retries keep their original receipt behavior.

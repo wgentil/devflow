@@ -1,151 +1,149 @@
 # Archive-backed control-state candidate review
 
-Candidate: `feat/archive-backed-control-state`, based on `36e10f4`.
-Status: final corrected-runtime local suite and all nine native CI jobs passed; independent branch review pending.
-Runtime and validation commit: `3e683d16fe9642e04f6e4217a4049b3e770afd44`.
-[Current independent validation CI](https://github.com/wgentil/devflow/actions/runs/40418033016).
-No merge or release.
-Source: [approved design](../specs/2026-10-26-control-state-compaction-design.md),
+Candidate: `feat/archive-backed-control-state`, based on `36e10f4b2cb4be434cd921dac40539c91c7cf77a`.
+Status: independent review complete; the one required correction pass has targeted
+GREEN evidence. Full corrected-runtime and native platform validation are pending.
+Corrected runtime SHA will be captured after this source commit; its descriptor
+is retained in [candidate identity](evidence/2026-10-26-control-state-compaction/candidate-identity.json).
+No merge, release, PR or production maintenance has occurred.
+
+Sources: [approved design](../specs/2026-10-26-control-state-compaction-design.md),
 [plan](../plans/2026-10-26-control-state-compaction.md),
 [read-only investigation](../specs/2026-10-26-control-state-compaction-discovery.md).
 
 ## Implemented behavior
 
-New roots use storage format 2 and logical schema 1. Existing v1 roots remain
-usable until explicit verified conversion. Indexed SQLite authority, immutable
-chunked objects, verified selected package handles, terminal archives, exact
-operation locators, checkpoints, backups, durable preparation pins and audited
-maintenance replace full replay for routine current work. Full materialization
-and replay remain explicit audit/export APIs. Manual dry-run is the default;
-optional post-terminal compaction is opt-in. No automatic GC or history purge.
+New roots use storage format 2 and logical schema 1. Existing v1 roots require
+explicit verified conversion. Indexed SQLite authority, immutable chunked objects,
+selected verified package handles, full terminal archives, operation locators,
+checkpoints, complete backups, durable preparation pins and audited maintenance
+replace full replay for routine current work. Manual dry-run remains the default;
+post-terminal compaction is opt-in. There is no automatic GC or history purge.
 
 All [163 baseline access points across 33 files](evidence/2026-10-26-control-state-compaction/consumer-dispositions.json)
-are individually dispositioned. The [event scope corpus](evidence/2026-10-26-control-state-compaction/event-scope-coverage.json)
+are dispositioned; the [event corpus](evidence/2026-10-26-control-state-compaction/event-scope-coverage.json)
 covers 299 events across 74 streams and every registered core/domain branch.
-Its parity tests compare complete logical data and receipts after each event,
-including eligible archive transitions and malformed variants. The [inventory](../plans/2026-10-26-control-state-compaction-consumers.md)
-also identifies new adapters and the remaining explicit full/legacy APIs.
+Parity compares complete logical data and receipts after each event, including
+eligible archive transitions and malformed variants. The [consumer inventory](../plans/2026-10-26-control-state-compaction-consumers.md)
+also identifies new adapters and explicit full/legacy APIs.
+
+Independent namespace, entity, operation and document-file witnesses now cover
+selected discovery and absence checks. Backup outputs bind source and exact
+audited ownership. Public conversion resume proves the original source history;
+backup retries resume only their own output. Resumed compaction rechecks blockers.
+Native/interactive start commits retain and validate the context actually rendered
+for dispatch. These are corrections to the existing safety/recovery contracts.
 
 ## Requirement assessment
 
-- R1: MET — complete history, raw events and logical identities retained.
-  Evidence: `skills/workflow/scripts/workflow_lib/stored_records.py:94`,
-  `skills/workflow/scripts/workflow_lib/storage_maintenance.py:416`,
-  `tests/test_storage_migration.py:19`, `tests/test_storage_scale.py:33`.
-- R2: MET — selected operational reads avoid unrelated terminal/package/segment
-  bodies and current retrieval uses exact scope shards.
-  Evidence: `skills/workflow/scripts/workflow_lib/storage_access.py:10`,
+All assessments are reopened until the corrected source passes final gates.
+
+- R1: CANNOT VERIFY — complete retained history and exact retry IDs, including
+  missing-locator refusal. Evidence: `skills/workflow/scripts/workflow_lib/stored_records.py:94`,
+  `skills/workflow/scripts/workflow_lib/storage_catalog.py:99`,
+  `tests/test_storage_review_regressions.py:174`, `tests/test_storage_migration.py:19`.
+- R2: CANNOT VERIFY — selected operational reads and current shards independent
+  of unrelated closed bodies. Evidence: `skills/workflow/scripts/workflow_lib/storage_access.py:10`,
   `skills/workflow/scripts/workflow_lib/host_projection.py:14`,
-  `skills/workflow/scripts/workflow_lib/context_artifacts.py:78`,
-  `tests/test_storage_scale.py:15`, `tests/test_storage_safety_audit.py:62`.
-- R3: MET — CAS/retry/rollback, initialization/compaction crash recovery,
-  corruption refusal and native durability/recovery checks pass on all declared
-  platform profiles; no checkpoint silently replaces a newer committed tail.
-  Evidence: `skills/workflow/scripts/workflow_lib/sqlite_store.py:460`,
-  `skills/workflow/scripts/workflow_lib/storage_catalog.py:37`,
-  `tests/test_storage_recovery.py:19`, `tests/test_storage_safety_audit.py:48`.
-- R4: MET — in-flight work/pins block maintenance, shared dependencies remain
-  indexed and every archive/checkpoint remains a reachability root.
-  Evidence: `skills/workflow/scripts/workflow_lib/storage_pins.py:39`,
-  `skills/workflow/scripts/workflow_lib/storage_maintenance.py:63`,
-  `skills/workflow/scripts/workflow_lib/storage_gc.py:65`,
-  `tests/test_run_archives.py:73`, `tests/test_storage_host_views.py:38`.
-- R5: MET — explicit bound maintenance with durable audit/recovery, measured
-  physical/logical categories and no purge-by-age behavior.
-  Evidence: `skills/workflow/scripts/commands/state.py:46`,
+  `skills/workflow/scripts/workflow_lib/context_artifacts.py:78`, `tests/test_storage_scale.py:15`.
+- R3: CANNOT VERIFY — atomic CAS/retries, fail-closed witnesses and public crash
+  recovery. Evidence: `skills/workflow/scripts/workflow_lib/sqlite_store.py:474`,
+  `skills/workflow/scripts/workflow_lib/storage_maintenance.py:352`,
+  `tests/test_storage_recovery.py:19`, `tests/test_storage_review_regressions.py:61`.
+- R4: CANNOT VERIFY — pins/blockers, shared dependencies and final dispatch
+  identity. Evidence: `skills/workflow/scripts/workflow_lib/storage_pins.py:39`,
+  `skills/workflow/scripts/workflow_lib/storage_maintenance.py:352`,
+  `tests/test_run_archives.py:73`, `tests/test_storage_dispatch_freshness.py:29`.
+- R5: CANNOT VERIFY — explicit, audited, recoverable maintenance with honest
+  measurements and backup ownership. Evidence: `skills/workflow/scripts/commands/state.py:46`,
   `skills/workflow/scripts/workflow_lib/storage_audit.py:43`,
-  `skills/workflow/scripts/workflow_lib/storage_gc.py:192`,
-  `scripts/benchmark_control_storage.py:123`.
+  `skills/workflow/scripts/workflow_lib/storage_backups.py:83`, `scripts/benchmark_control_storage.py:123`.
 
-## Measured scale and retained storage
+## Independent review and correction evidence
 
-The [reproducible benchmark](evidence/2026-10-26-control-state-compaction/storage-benchmark.json)
-uses owned generated Git projects, complete terminal runs and hash-bound review
-packages. It does not substitute fabricated summaries for full input bodies.
-Cold samples reopen a Python process; warm samples repeat the complete dispatcher
-in that process. Warm `run next` is its exact operation retry. Object counters
-measure actual file reads/physical bytes and decoded logical bytes. SQLite
-statement/VM-step counts measure actual selected work, independently of timing;
-SQLite-scope/object timing stages overlap and must not be added together.
+The [one fresh read-only review](2026-10-26-control-state-compaction-independent.md)
+of `36e10f4..0857fe5` found six Important and two Minor issues, no Critical.
+The executor regraded resumed-compaction blocker bypass as Important: it can
+invalidate expensive in-flight preparation despite the maintenance busy guarantee.
+All seven required findings enter the one correction pass. No re-review is used.
 
-With 10 and 1,000 unrelated terminal runs, status, context resolution, host brief,
-next/retry and mapped completion read zero terminal bodies, historical packages
-or old segments. Their query and SQLite VM-step counts are identical between
-these profiles. The fixed unarchived tail is retained in both cases. Full audit
-is a separate intentional traversal.
+Observed RED preceded implementation: 13 storage tests reproduced 17 failing
+subcases/two backup retry errors; two dispatch tests reproduced both paths on
+both formats. Empty-namespace loss also failed before its witness was added.
+Targeted GREEN includes 15 storage cases, two dispatch cases, an overlapping
+47-test witness/dispatch/indexed/scoped-command check and 66 native/recovery tests.
+These counts overlap and are not an aggregate full-suite total. One finish-commit
+mock signature error in a broader check was corrected by omitting an unused
+keyword; its existing test remained unchanged. Full suite collection is 920.
 
-The closed review corpus contains at least 100 MiB of complete logical packages.
-The hot logical payload is approximately 3.8 KiB versus 100 MiB in the legacy
-snapshot, below 0.01%. The benchmark reports database, catalog B-tree pages,
-archive logical bytes, physical objects, caches, backups and total file bytes
-separately. Catalog pages overlap database size; they are not an extra additive
-category. Diff text is generated repeated ASCII and compresses strongly; these
-physical figures do not predict compression of an arbitrary project.
+The real CLI backup example was exercised on owned Unicode paths through an
+interrupted copy, identical retry and completed exact retry. Wrong recovery
+actor/operation and a forged maintenance ID colliding with verified original
+workflow history were refused; the original request then resumed successfully.
+Raw [RED storage evidence](evidence/2026-10-26-control-state-compaction/review-storage-red.log),
+[RED dispatch evidence](evidence/2026-10-26-control-state-compaction/review-dispatch-red.log),
+[empty-namespace RED](evidence/2026-10-26-control-state-compaction/review-empty-namespace-red.log)
+and focused GREEN logs are retained. Final full-suite/native results remain pending.
 
-Verified backups remain inside the owned root. Net reclaimed file bytes are
-measured before/after and may be zero while total storage grows. This transition
-optimizes routine working data and retains evidence; it does not promise total
-disk reduction. GC's successful-unlink byte counters have separate tests. No
-production Bandpick root was converted, repaired, discarded or garbage collected.
-The existing 529,344,695-byte read-only inventory remains the production baseline.
+## Scale and storage measurement boundary
+
+The owned synthetic benchmark uses real Git projects, complete terminal runs and
+hash-bound review bodies. Cold samples reopen a process; warm samples repeat the
+complete dispatcher. Warm next is the exact operation retry. Object counters
+measure actual physical/decoded bytes and body reads. SQL trace/progress counters
+measure **transaction-body work**, excluding connection BEGIN/schema/head checks
+and COMMIT. They do not establish complete-command SQL totals. Timing stages
+can overlap and must not be added together; complete dispatcher/child timings are
+reported separately.
+
+The [historical pre-review benchmark](evidence/2026-10-26-control-state-compaction/storage-benchmark-before-final-review.json)
+at runtime `3e683d1` reported identical body-scope SQL counts with 10/1,000 terminal
+runs and zero unrelated terminal/package/old-segment bodies. Its complete
+104,859,810-byte closed-review corpus retained logical/audit parity with 3,782
+hot payload bytes (0.003607%). Corrected-source measurements are pending.
+
+Catalog B-tree bytes overlap total database bytes. Repeated ASCII diff text
+compresses strongly and does not predict arbitrary-project compression. Backups
+remain retained; net file bytes can grow and net reclamation can be zero. GC
+successful-unlink counters are separate. This transition optimizes working data,
+not total disk usage. The 529,344,695-byte Bandpick inventory remains read-only;
+no production conversion, repair, discard or GC was performed.
 
 ## Verification and limits
 
-Task 9: 885 local tests passed, five native Windows-only skips, 431.919 seconds.
-Task 10 safety audit: seven tests passed after observed RED failures, including
-authority-row, witness-row, header and namespace loss. The exhaustive indexed
-corpus passed 12 tests; related host/cache/context/archive integration passed 54.
-Final corrected-runtime focused checks passed 89 tests with three native-only
-skips. The final complete local suite ran **903 tests successfully**, with six
-native Windows-only skips, in **527.987 seconds**. Source fingerprint is bound in
-the [candidate identity](evidence/2026-10-26-control-state-compaction/candidate-identity.json);
-[local metadata/results](evidence/2026-10-26-control-state-compaction/local-platform.json)
-include SQLite build/durability evidence. All nine final native CI jobs passed;
-independent review is pending. Historical reports below are not substituted for
-final gates.
+The [pre-review author report](2026-10-26-control-state-compaction-pre-review-validation.md)
+retains the earlier local 903-test and all-nine-job pass at `3e683d1`. Those
+[historical CI reports](evidence/2026-10-26-control-state-compaction/ci-before-review-fixes/index.json)
+are source-bound and remain useful but do not replace validation of these fixes.
+The corrected full 920-test suite, refreshed benchmark and all nine native gates
+will be recorded before completion.
 
-Final exact-source CI gates ([verified report index](evidence/2026-10-26-control-state-compaction/ci-final/index.json)):
+Native profiles are Ubuntu/macOS/Windows × Python 3.11/latest, two independent
+Windows CP1252 suites and actual installed Windows Codex/Claude helpers/scripts
+in disposable configurations. Reports retain SQLite build options and effective
+WAL/FULL/FK/one-second busy settings. Signed-in/live authenticated worker/event
+acceptance: NOT_RUN. No paid model task or installed user-plugin change is used.
 
-| Gate | Tests run | Skips | Runner seconds | Result |
-| --- | ---: | ---: | ---: | --- |
-| Ubuntu Python 3.11 | 903 | 6 native Windows | 257.662 | PASS |
-| Ubuntu latest Python | 903 | 6 native Windows | 341.291 | PASS |
-| macOS Python 3.11 | 903 | 6 native Windows | 630.521 | PASS |
-| macOS latest Python | 903 | 6 native Windows | 489.356 | PASS |
-| Windows Python 3.11 | 903 | 4 POSIX/path | 2381.375 | PASS |
-| Windows latest Python | 903 | 4 POSIX/path | 2120.130 | PASS |
-| Windows CP1252 Python 3.11 | 167 | 3 POSIX | 1083.031 | PASS |
-| Windows CP1252 latest Python | 167 | 3 POSIX | 725.970 | PASS |
-| Installed Windows Codex + Claude | 8 host/package gates | — | — | PASS |
+Network-share durability is not claimed. Missing SQLite prevents new/v2 work,
+while legacy reads remain available. Corrupt/ambiguous authority is refused;
+no stale checkpoint replaces a newer tail. Published/legacy context caches and
+unknown provenance remain conservatively protected. Short reads serialize under
+root coordination; crashed pins require ownership reconciliation. Checksums detect
+inconsistent corruption, not coordinated malicious rewriting of both copies.
 
-Every final CI report in the [verified index](evidence/2026-10-26-control-state-compaction/ci-final/index.json)
-identifies runtime commit `3e683d16fe9642e04f6e4217a4049b3e770afd44`.
-Installed helper descriptors match the candidate fingerprint. The eight gates
-cover both actual plugin installations (11 skills each), both helpers on v1/v2,
-both CLI startups, the Codex protocol and actual Claude hook scripts.
+Authored source/docs whitespace checks exclude retained raw evidence. Full-range
+`git diff --check` reports CRLF/trailing whitespace in original CI JSON/log bytes;
+these are retained for reproducibility, rather than normalized or counted as a
+clean whole-range result.
 
-The candidate workflow covers Ubuntu/macOS/Windows with Python 3.11/latest,
-Windows CP1252 storage tests, the actual v0.3.15 helper and actual installed host
-packages/scripts in disposable host configurations. Platform reports retain
-SQLite version/build options and effective WAL/FULL/FK/busy-timeout settings.
-Signed-in model dispatch and live authenticated worker/event acceptance: NOT_RUN.
-No paid model turn, installed user-plugin change, main push, merge, release or
-GitHub issue message is part of this candidate validation.
+## Deferred minors
 
-Network-share durability is not claimed. Missing SQLite support leaves legacy
-access available but prevents v2 operation. Corrupt/ambiguous authority is refused;
-no stale snapshot is silently restored. Unknown context files, retained legacy
-caches and published context artifacts remain conservatively protected. Root
-coordination serializes short reads with mutations, and crashed pins need explicit
-ownership reconciliation. Catalog checksums detect inconsistent corruption,
-not a malicious editor coordinating both copies.
+- Complete-lifecycle SQL instrumentation: transaction-body counts omit connection
+  entry/validation/COMMIT. This measurement boundary is disclosed above; extending
+  instrumentation is deferred. Object-read evidence and full command timings
+  retain their actual measured scope.
 
-## Decisions and final review
-
-Pending final review. The complete chronological rulings and deferred minors will
-be retained here before this plan's scratch is removed.
-
-### Chronological implementation rulings
+## Chronological rulings
 
 1. Hydrate typed payloads at the selected storage-record boundary rather than adding root/resolver parameters to each pure validator — all existing gates, reviewers, attachments, reducers and CLI consumers receive complete verified logical records, preserving signatures and replay semantics — cost if wrong: a selected record may hydrate more of its own package history than a future finer-grained projection needs; unrelated unselected records remain unloaded.
 
@@ -175,85 +173,18 @@ be retained here before this plan's scratch is removed.
 
 14. Authorize managed paths lexically and by strict existing-ancestor resolution, then recheck after creation; reject symlinks/name-surrogate or unprovable reparse points — non-strict missing-path spellings can race cooperative publishers and are not evidence of an existing redirect — cost if wrong: additional filesystem checks and explicit refusal for unavailable reparse points whose confinement cannot be established; no permissive outside-path fallback is added.
 
-### Native Windows flush correction
+15. Keep coordinated malicious rewriting outside the storage corruption-detection guarantee — reasonable users get checks against inconsistent missing/changed authority and witnesses, not cryptographic authentication against an administrator rewriting both — cost if wrong: a malicious coordinated editor can forge metadata/history; stronger authenticated storage would need a separate design.
 
-The first exact-source installed-host job passed both actual package installations
-but failed its v2 helper probe with `Errno 9`. The initializer and SQLite backup
-flushed files through read-only handles; [Windows flushing requires write access](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-flushfilebuffers).
-Two real-file/SQLite regression tests reproduced that access failure before the
-non-truncating `r+b` correction. The focused compatibility/recovery/installed-helper
-set passed 30 tests with one native-only skip locally. The final corrected-runtime
-local suite and all nine native gates subsequently passed as recorded above. The first failed
-[installed-host report](evidence/2026-10-26-control-state-compaction/ci-first-installed-report.json)
-is retained; it does not establish corrected-runtime compatibility.
-Primary setup was reviewed; this internal handle-access fix adds no setup step.
+16. Keep network-share durability outside the supported filesystem claim — tested local SQLite/filesystem locking and flush semantics do not establish remote-share durability — cost if wrong: users on unvalidated network filesystems may experience unsupported locking or durability behavior; no such compatibility is claimed.
 
+17. Do not run paid/signed-in host tasks or production Bandpick migration during candidate validation — authorization expressly limits validation to disposable roots/installed scripts and read-only production inventory — cost if wrong: live authenticated event/worker acceptance and real production migration performance remain NOT_RUN rather than inferred from mocks or synthetic profiles.
 
-### Controlled Git fixture correction
+18. Preserve retained raw CI JSON/log whitespace and scope authored-source/document whitespace checks explicitly — raw bytes and checksum-bound evidence must remain reproducible rather than normalized for a cosmetic gate — cost if wrong: whole-range git diff --check reports raw CRLF/trailing whitespace; authored source/docs are checked separately and this exception is disclosed.
 
-Corrected-runtime local validation passes 896 tests (five native-only skips),
-522.051 seconds. Actual installed-host Windows, Ubuntu 3.11/latest and macOS
-latest gates passed. macOS 3.11's only failure was a strict repository snapshot:
-Git's own `objects/maintenance.lock` existed before the read and disappeared
-during detached maintenance. All Devflow authority/state assertions passed.
-The [trace](evidence/2026-10-26-control-state-compaction/ci-before-fixture-macos311-failure.txt)
-and [report](evidence/2026-10-26-control-state-compaction/ci-before-fixture-macos311-report.json)
-are retained. The owned fixture now disables automatic Git maintenance before its
-first commit using [documented Git controls](https://git-scm.com/docs/git-maintenance).
-All repository-byte assertions remain unchanged. Nine focused strict-inspection
-and benchmark tests passed; the final CI subsequently passed both macOS jobs.
-That fixture-only correction did not change the product runtime/fingerprint.
+19. Extend independent point-verifiable witnesses to operation/namespace locators and document-file discovery, and use authority/witness union selection on every operational absence path — missing historical IDs or gating namespaces must fail closed without scanning unrelated history — cost if wrong: additional small indexed rows and point checks on reads/writes, and exact schema validation refuses earlier unreleased v2 prototypes; coordinated changes to both copies remain outside authentication guarantees.
 
+20. Bind backup marker/completion identity to source root and exact audited operation/actor/request, allowing the same public command to resume its owned output — a fresh request must never claim another root or an older request's snapshot — cost if wrong: unrelated or older unbound completed outputs require a new path rather than reuse; original bytes and verification remain available, and exact completed operation receipts still represent their original snapshot.
 
-### Independent native gates and retained diagnostics
+21. Permit unselected legacy-compaction recovery only from a matching pending audit/intent and verified original backup with the planned head/hash and no workflow-ID collision — public resume cannot consult selected v2 authority before activation, but a generic incomplete-history bypass would authorize ambiguous history — cost if wrong: recovery must replay verified original source history and remains blocked if that evidence is missing or inconsistent; normal operational reads gain no history scan.
 
-The preceding Windows ordinary suites failed after 35–36 minutes. Their combined
-legacy steps continued under `always()`; after the superseded run was stopped,
-GitHub omitted both cancelled Windows job logs and artifacts. Their exact failure
-IDs/causes are unavailable and are not attributed to the fixed Git-fixture race.
-No final native compatibility claim relies on that run.
-
-The final passing workflow runs six ordinary suites, two independent Windows CP1252
-suites and the installed-host suite. Every existing test remains enabled. Separate
-jobs retain their own 45-minute budgets and artifacts, so ordinary results are
-published without waiting for another full storage suite. JSON reports retain
-all failure/error IDs and bounded head/tail traceback excerpts with truncation
-flags. Reporter tests observed RED before those fields were implemented, then
-passed; workflow YAML parsed successfully. These reporting/workflow changes did
-not change the product runtime/fingerprint.
-
-
-### Deterministic telemetry semantics tests
-
-The new retained [Ubuntu 3.11 trace](evidence/2026-10-26-control-state-compaction/ci-before-clock-ubuntu311-report.json)
-identifies a telemetry unit-test scheduling race: the intended best-effort 50 ms
-deduplication scan returns a gap, while the semantic test unconditionally reads
-`duplicate`. A controlled delayed clock reproduced the exact error before the
-fixture correction. Semantic/privacy tests now use a fixed module-local clock;
-a separate progressing-clock test proves budget exhaustion returns a gap and
-leaves the metadata file unchanged. The original delayed-clock reproduction and
-all six context-metrics tests pass. No production budget or behavior changed.
-
-
-### Native reservation, confinement and recovery corrections
-
-The independent [Windows latest legacy report](evidence/2026-10-26-control-state-compaction/ci-before-readable-pins-windows-latest.json)
-and [3.11 report](evidence/2026-10-26-control-state-compaction/ci-before-readable-pins-windows-3.11.json)
-identify mandatory pin-byte locks denying metadata reads, concurrent fresh-root
-confinement rejection, and implicit CP1252 decoding of UTF-8 backup markers and
-recovery fixtures. A CP1252-default real backup test reproduced the recovery
-error before its fix; the missing-component resolver boundary reproduced the
-confinement rejection before strict existing-ancestor validation. Pin version-2
-metadata/readability/ownership tests observed RED before the new protocol version.
-The real native reports remain the platform-specific RED evidence.
-
-The corrected focused set passes 89 tests locally (three native-only skips),
-including live metadata hashing, legacy ownership proof, empty-byte preservation,
-backup restart, real process pins/GC, confinement and both hook layouts. Final
-native validation passed on both ordinary Windows and both CP1252 profiles. One
-older 3.11 hook case lacked output without a useful stderr assertion; it now
-retains both return code and stderr while keeping the original required context
-assertion. That case passed in both final CP1252 profiles; its earlier missing
-output was not waived or reclassified as success.
-Primary setup/skill navigation/guides/diagrams were reviewed; these internal
-compatibility fixes add no setup command or skill step.
+22. Retain the internal PreparedContext and its pin through final dispatch authorization, with identity validation inside the native-start transaction — a fresh version read after model discovery cannot replace the inputs actually rendered for the worker — cost if wrong: native/interactive preparation lives longer, interactive comparison retains two bounded contexts, and concurrent authority/input changes require rebuilding rather than dispatching stale work.

@@ -65,6 +65,13 @@ The helper uses coordinated SQLite backup plus verified files, never a bare copy
 of a live database. A backup is complete only when its final checksum-bound
 `backup.json` verifies. Physical maintenance receipts and interrupted identities
 are included. The snapshot precedes completion of that backup operation itself.
+Retry an interrupted backup with the **same output, operation ID and actor**;
+the helper resumes only that request's owned incomplete output. No new resume flag
+is needed. A fresh operation needs a new output path: it cannot claim another
+root's backup or an earlier snapshot of the same root. A completed exact retry
+returns its original receipt and snapshot, not a newly captured head. See the
+[developer retry example](../examples/control-backup-recovery.md).
+
 Keep adequate headroom for a complete pre-compaction backup and verified staging.
 Quiesce all older clients before conversion: a schema guard makes old readers/
 writers fail instead of appending divergent history. Resume the exact durable
@@ -73,14 +80,18 @@ newer committed tail. Preserve corrupt/unsupported roots for explicit diagnosis.
 
 For interrupted first-root initialization, resume with a **new recovery operation
 ID** and explicit actor, then retry the original first-work request with its
-original ID. Compaction recovery instead uses the original compaction ID/actor.
+original ID. Compaction recovery instead uses the original compaction ID/actor. Before
+activation it verifies the original backup and pending request, including the
+planned history head and operation-ID uniqueness. Missing or changed recovery
+evidence is refused; it is never replaced with empty history.
 Initialization recovery proves a supported empty unselected database and rejects
 a late legacy journal; a valid already selected newer tail remains intact. Missing
 SQLite is checked before creating an initialization intent. Unverifiable partial
 databases remain preserved for diagnosis.
 
 Live preparations, context publishers, native/interactive dispatch, transfers,
-attempts, repair leases and uncertain work block maintenance application. A dead
+attempts, repair leases and uncertain work block maintenance application, including
+resumed compaction before generation changes or cleanup. A dead
 process leaves a conservative pin. Reconciliation requires exclusive OS ownership
 and matching root identity; age and PID guesses do not prove a worker stopped.
 A native or repair reservation also needs its normal stopped-worker reconciliation.

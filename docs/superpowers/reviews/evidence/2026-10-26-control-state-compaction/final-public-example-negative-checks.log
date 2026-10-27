@@ -1,0 +1,5 @@
+Documented identical CLI backup retry and completed receipt: PASS, Unicode owned paths
+Refused recovery identity: compact intruder OPERATION_CONFLICT
+Refused recovery identity: unrelated owner MAINTENANCE_RECOVERY_REQUIRED
+Verified original workflow-ID collision: PASS
+Original public recovery after refusals: PASS

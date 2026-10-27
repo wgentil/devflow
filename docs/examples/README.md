@@ -108,3 +108,5 @@ component totals describe that fixture, not a performance claim.
 The optional [developer benchmark](../developer-cli.md#context-preparation-diagnostics)
 measures a disposable synthetic journal separately from the overflow example. It
 never accepts an existing project root or removes existing run history.
+
+- [Interrupted backup retry](control-backup-recovery.md): optional developer commands preserving the original operation/actor/output identity.

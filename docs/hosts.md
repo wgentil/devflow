@@ -283,3 +283,12 @@ flowchart TD
     Result -->|Explicit block| Block[Prompt blocked; SessionStart diagnostic]
     Result -->|Helper timeout| Warn[Warn and continue; required context still needed before work]
 ```
+
+## Final dispatch freshness
+
+Native and interactive worker launch validates the actual prepared context inside
+the native-start commit after model/host discovery. A concurrent approval,
+governing input, source-file or storage-identity change refuses dispatch and
+requires fresh preparation. Pins protect the prepared payload through this
+boundary; rereading a newer journal version does not authorize stale text. Exact
+completed invocation retries return their original receipt without another launch.

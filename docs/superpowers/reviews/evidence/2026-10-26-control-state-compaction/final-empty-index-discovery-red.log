@@ -1,0 +1,46 @@
+test_empty_indexed_namespace_loss_fails_selected_discovery (test_storage_review_regressions.StorageReviewRegressionTests.test_empty_indexed_namespace_loss_fails_selected_discovery) ... 
+  test_empty_indexed_namespace_loss_fails_selected_discovery (test_storage_review_regressions.StorageReviewRegressionTests.test_empty_indexed_namespace_loss_fails_selected_discovery) (mode='history') ... FAIL
+  test_empty_indexed_namespace_loss_fails_selected_discovery (test_storage_review_regressions.StorageReviewRegressionTests.test_empty_indexed_namespace_loss_fails_selected_discovery) (mode='report') ... FAIL
+  test_empty_indexed_namespace_loss_fails_selected_discovery (test_storage_review_regressions.StorageReviewRegressionTests.test_empty_indexed_namespace_loss_fails_selected_discovery) (mode='entity') ... FAIL
+  test_empty_indexed_namespace_loss_fails_selected_discovery (test_storage_review_regressions.StorageReviewRegressionTests.test_empty_indexed_namespace_loss_fails_selected_discovery) (mode='document') ... FAIL
+
+======================================================================
+FAIL: test_empty_indexed_namespace_loss_fails_selected_discovery (test_storage_review_regressions.StorageReviewRegressionTests.test_empty_indexed_namespace_loss_fails_selected_discovery) (mode='history')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/4349/devflow/tests/test_storage_review_regressions.py", line 135, in test_empty_indexed_namespace_loss_fails_selected_discovery
+    with self.assertRaises(store.WorkflowError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+AssertionError: WorkflowError not raised
+
+======================================================================
+FAIL: test_empty_indexed_namespace_loss_fails_selected_discovery (test_storage_review_regressions.StorageReviewRegressionTests.test_empty_indexed_namespace_loss_fails_selected_discovery) (mode='report')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/4349/devflow/tests/test_storage_review_regressions.py", line 135, in test_empty_indexed_namespace_loss_fails_selected_discovery
+    with self.assertRaises(store.WorkflowError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+AssertionError: WorkflowError not raised
+
+======================================================================
+FAIL: test_empty_indexed_namespace_loss_fails_selected_discovery (test_storage_review_regressions.StorageReviewRegressionTests.test_empty_indexed_namespace_loss_fails_selected_discovery) (mode='entity')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/4349/devflow/tests/test_storage_review_regressions.py", line 135, in test_empty_indexed_namespace_loss_fails_selected_discovery
+    with self.assertRaises(store.WorkflowError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+AssertionError: WorkflowError not raised
+
+======================================================================
+FAIL: test_empty_indexed_namespace_loss_fails_selected_discovery (test_storage_review_regressions.StorageReviewRegressionTests.test_empty_indexed_namespace_loss_fails_selected_discovery) (mode='document')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/4349/devflow/tests/test_storage_review_regressions.py", line 135, in test_empty_indexed_namespace_loss_fails_selected_discovery
+    with self.assertRaises(store.WorkflowError):
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+AssertionError: WorkflowError not raised
+
+----------------------------------------------------------------------
+Ran 1 test in 0.110s
+
+FAILED (failures=4)

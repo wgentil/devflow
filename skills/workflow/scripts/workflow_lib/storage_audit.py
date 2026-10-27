@@ -40,14 +40,18 @@ def write_record(path,body):
     if len(json.dumps(encoded).encode('utf-8'))>LIMIT:raise WorkflowError('MAINTENANCE_AUDIT_LIMIT','Maintenance audit exceeds its bounded record limit.')
     _atomic_json(path,encoded)
 
-def perform(root,kind,request,operation_id,actor_id,action,*,initializing=None):
+def perform(root,kind,request,operation_id,actor_id,action,*,initializing=None,compacting=None):
     if not all(isinstance(value,str) and value.strip() for value in (operation_id,actor_id)):
         raise WorkflowError('MAINTENANCE_IDENTITY_REQUIRED','An explicit operation ID and actor ID are required.')
     root=Path(root).resolve()
     with _exclusive(root):
         from .storage_access import read_current,operation_lookup
         from .storage_format import detect_layout,INTENT_FILE
+        fingerprint=digest({'kind':kind,'request':request,'actor_id':actor_id})
+        prior=operation_reserved(root,operation_id)
         unavailable_history=detect_layout(root)['layout']=='incomplete'
+        guard=HOST_CONTEXT.get()
+        if guard and unavailable_history:raise WorkflowError('STALE_BINDING','Unselected maintenance cannot authorize a host binding.')
         if unavailable_history and initializing is not None:
             path=confined_path(root,INTENT_FILE)
             with path.open('rb') as stream:raw=stream.read(65537)
@@ -55,18 +59,19 @@ def perform(root,kind,request,operation_id,actor_id,action,*,initializing=None):
             except ValueError as exc:raise WorkflowError('MAINTENANCE_METADATA_INVALID','Initialization intent is invalid; preserve it.') from exc
             if len(raw)>65536 or intent.get('kind')!='initialize' or intent.get('format')!=initializing or intent.get('source_head')!=0:
                 raise WorkflowError('MAINTENANCE_RECOVERY_REQUIRED','Only the exact empty-root initialization can bypass unavailable history lookup.')
+        elif unavailable_history and kind=='compact' and compacting is not None:
+            if prior and prior.get('request_hash')!=fingerprint:
+                raise WorkflowError('OPERATION_CONFLICT','Maintenance operation belongs to another actor or request.')
+            from .storage_maintenance import validate_compaction_recovery
+            validate_compaction_recovery(root,compacting,prior,operation_id)
         elif unavailable_history:
             raise WorkflowError('MAINTENANCE_RECOVERY_REQUIRED','Resume the existing maintenance intent first.')
-        guard=HOST_CONTEXT.get()
-        if guard and unavailable_history:raise WorkflowError('STALE_BINDING','An unselected initialization cannot authorize a host binding.')
         if guard:
             state=read_current(root,global_keys=(),binding_id=guard['binding_id'])
             _guard_transaction(state,{'kind':'maintenance.physical','payload':{}})
         if not unavailable_history and operation_lookup(root,operation_id) is not None:
             raise WorkflowError('OPERATION_CONFLICT','Operation ID already belongs to workflow history.')
         receipt,pending=paths(root,operation_id)
-        fingerprint=digest({'kind':kind,'request':request,'actor_id':actor_id})
-        prior=operation_reserved(root,operation_id)
         if prior:
             if prior.get('request_hash')!=fingerprint:raise WorkflowError('OPERATION_CONFLICT','Maintenance operation belongs to another actor or request.')
             if 'result' in prior:

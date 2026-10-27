@@ -7,7 +7,7 @@ from pathlib import Path
 import time
 from .platform_lock import exclusive_file
 from .process_liveness import process_alive
-from contextlib import contextmanager
+from contextlib import contextmanager,ExitStack
 from .host_projection import read_host
 from .storage_pins import reservation
 from .store import WorkflowError, transact, HOST_CONTEXT, _atomic_json
@@ -136,14 +136,18 @@ def probe(root,binding,stage,refresh=False):
     finally:backend.close()
 
 
-def _commit(root,identifier,kind,request,binding):
+def _commit(root,identifier,kind,request,binding,*,prepared=None):
+    if kind=='native-start' and prepared is None:
+        raise WorkflowError('CONTEXT_PREPARATION_STALE','Dispatch requires its internal prepared context; rebuild before retrying.')
     token=HOST_CONTEXT.set({'binding_id':binding['binding_id'],'revision':binding['revision'],'release':binding['release']})
     try:
         event={'kind':'domain.host.'+kind,'payload':{'request':request}}
         for attempt in range(8):
             state=read_host(root,binding_id=binding['binding_id'],operation_id=identifier);previous=state['operations'].get(identifier)
             if previous and (previous['kind']!=event['kind'] or previous['payload']!=event['payload']):raise WorkflowError('OPERATION_CONFLICT','Native operation ID belongs to another request.')
-            try:receipt=transact(Path(root),state['version'],identifier,event)
+            from .context_preparation import assert_preparation_current
+            guard=(lambda current:assert_preparation_current(Path(root),prepared,current,phase='dispatch')) if prepared is not None else None
+            try:receipt=transact(Path(root),state['version'],identifier,event,**({'precommit':guard} if prepared is not None else {}))
             except WorkflowError as exc:
                 if exc.code!='STALE_STATE' or attempt==7:raise
                 continue
@@ -179,7 +183,10 @@ def invoke(root,request,operation_id):
     if type(timeout) not in (int,float) or not 1<=timeout<=3600:raise WorkflowError('NATIVE_TIMEOUT_INVALID','Native timeout must be between 1 and 3600 seconds.')
     backend=None;context=None;started=False;result=None
     lease=root/'native-invocations'/hashlib.sha256((binding['run_id']+':'+identifier).encode()).hexdigest();lease.parent.mkdir(parents=True,exist_ok=True)
-    with _native_lease(lease) as lock:
+    with _native_lease(lease) as lock,ExitStack() as preparation_pins:
+        preparations=[]
+        def retain(prepared):
+            preparations.append(prepared);preparation_pins.callback(prepared.release)
         # Another launcher may have completed between the initial read and lease acquisition.
         from .context_preparation import read_context_state
         authoritative=read_context_state(root,binding_id=binding['binding_id']);data=authoritative['data'];run=data['runs'][binding['run_id']]
@@ -192,7 +199,7 @@ def invoke(root,request,operation_id):
         try:
             from .context_checkpoints import checkpoint_read
             context_limit = request.get('context_max_bytes', 20000)
-            full_view = host_brief(data, binding, control_root=root, max_bytes=context_limit, stage_override=stage,authoritative_state=authoritative)
+            full_view = host_brief(data, binding, control_root=root, max_bytes=context_limit, stage_override=stage,authoritative_state=authoritative,preparation_consumer=retain)
             full_view = checkpoint_read(root, full_view, {'consumer_id': identifier, 'run_id': binding['run_id'],
                 'binding_id': binding['binding_id'], 'session_id': binding['session_id'], 'revision': binding['revision'],
                 'stage': stage, 'role': binding['role'], 'task_ids': [item['id'] for item in full_view['work_items']]},
@@ -277,7 +284,7 @@ def invoke(root,request,operation_id):
                 start['replacement_of'] = predecessor
                 auth = request['escalation_authorization']
                 start['replacement_authorization'] = {'approved':auth['approved'],'actor_id':auth['actor_id']}
-            _commit(root,operation_id+':native-start','native-start',start,binding);started=True
+            _commit(root,operation_id+':native-start','native-start',start,binding,prepared=preparations[-1] if preparations else None);started=True
             if request.get('task_id'):
                 scope=invocation_scope(binding,run,stage,{})
                 task={'binding_id':binding['binding_id'],'revision':binding['revision'],'task_id':request['task_id'],'invocation_id':identifier,'scope':'item' if stage=='implementation' else 'review',**{k:scope[k] for k in ('item_id','token','package_hash') if k in scope}}

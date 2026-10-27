@@ -1,0 +1,25 @@
+{
+  "baseline": "36e10f4b2cb4be434cd921dac40539c91c7cf77a",
+  "descriptor": {
+    "plugin": "devflow",
+    "plugin_version": "0.3.15",
+    "state_schema_version": 1,
+    "supported_schemas": [
+      1
+    ],
+    "storage_format_version": 2,
+    "supported_storage_formats": [
+      1,
+      2
+    ],
+    "host_protocol_version": 1,
+    "release_id": "5b339d3d70e37eead3e74e890931c3ff228f8584fe48617627817dba15e4873a",
+    "fingerprint": "5b339d3d70e37eead3e74e890931c3ff228f8584fe48617627817dba15e4873a"
+  },
+  "status": "local903 PASS/6 native-only skips; benchmark PASS; all nine native gates PASS; independent review pending",
+  "runtime_source_commit": "3e683d16fe9642e04f6e4217a4049b3e770afd44",
+  "ci_run": "https://github.com/wgentil/devflow/actions/runs/40418033016",
+  "first_ci_run": "https://github.com/wgentil/devflow/actions/runs/40404192037",
+  "validation_commit": "3e683d16fe9642e04f6e4217a4049b3e770afd44",
+  "previous_validation_ci_run": "https://github.com/wgentil/devflow/actions/runs/40405162340"
+}

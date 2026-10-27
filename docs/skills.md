@@ -108,7 +108,8 @@ Recovery details load only when needed: [recorded RED](../skills/build-work/REFE
 Optional developer reference: [control-storage contracts](reference/control-storage.md).
 
 Control maintenance is guided by the workflow harness. See the optional
-[maintenance reference](reference/control-maintenance.md); onboarding does not
+[maintenance reference](reference/control-maintenance.md) and optional
+[backup retry example](examples/control-backup-recovery.md); onboarding does not
 require storage commands, shell variables or skill names.
 
 New project control roots use format 2 with Python's SQLite support. Existing

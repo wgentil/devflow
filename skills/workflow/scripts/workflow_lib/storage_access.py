@@ -114,9 +114,10 @@ def document_diff_approved(root, data, repo_id, path, record):
         return any(matches(proposal,data.get('document_approvals',{})) for proposal in data.get('document_proposals',{}).values())
     from . import sqlite_store as sql
     with sql.connection(root) as conn:
-        rows = conn.execute('SELECT f.proposal_id FROM document_files f JOIN entities a ON a.space=? AND a.key=f.proposal_id WHERE f.repo_id=? AND f.path=? AND f.record_hash=?',
-            (sql._space(('document_approvals',)),repo_id,path,sql._sha(sql._json(record).encode('utf-8')))).fetchall()
-        for (key,) in rows:
+        sql.storage_catalog.require_space(conn,sql._space(('document_proposals',)))
+        sql.storage_catalog.require_space(conn,sql._space(('document_approvals',)))
+        keys=sql.storage_catalog.document_rows(conn,repo_id,path,sql._sha(sql._json(record).encode('utf-8')))
+        for key in keys:
             proposal=sql._lookup_entity(conn,Path(root),'document_proposals',key)
             approval=sql._lookup_entity(conn,Path(root),'document_approvals',key)
             if proposal and approval and matches(proposal,{key:approval}):return True
@@ -133,9 +134,11 @@ def metrics_source_hash(root, conn, data):
         checksum.update((b',' if i else b'')+canonical(name)+b':')
         if name!='runs':checksum.update(canonical(data.get(name)));continue
         if not conn.execute('SELECT 1 FROM spaces WHERE path=?',(sql._space(('runs',)),)).fetchone():
+            sql._load_space(conn,root,('runs',))
             checksum.update(b'null');continue
         checksum.update(b'{')
-        for j,(key,codec,payload,expected) in enumerate(conn.execute('SELECT key,codec,payload,value_hash FROM entities WHERE space=? ORDER BY key', (sql._space(('runs',)),))):
+        for j,(key,codec,payload,expected) in enumerate(sql.storage_catalog.rows(conn,sql._space(('runs',)),by_key=True,stream=True)):
+            sql.storage_catalog.check(conn,sql._space(('runs',)),key)
             checksum.update((b',' if j else b'')+canonical(key)+b':')
             for chunk in stream_cell_json(root,codec,payload,expected):checksum.update(chunk)
         checksum.update(b'}')
@@ -148,6 +151,15 @@ def find_entity_id(root, namespace, identity):
         return next((row for row in values if row.get('id')==identity),None)
     from . import sqlite_store as sql
     with sql.connection(root) as conn:
-        row=conn.execute('SELECT codec,payload,value_hash FROM entities WHERE space=? AND record_id=? ORDER BY position LIMIT 1',
-            (sql._space((namespace,)),identity)).fetchone()
-        return sql._decode(root,*row) if row else None
+        rows=sql.storage_catalog.rows(conn,sql._space((namespace,)),(('record_id',identity),))
+        result=None
+        for key,codec,payload,expected in rows:
+            name=sql._space((namespace,))
+            if sql.storage_catalog.check_space(conn,name) is None:
+                from .store import WorkflowError
+                raise WorkflowError('CORRUPT_STORAGE','Required report namespace is missing; preserve and verify the root.')
+            sql.storage_catalog.check(conn,name,key)
+            value=sql._decode(root,codec,payload,expected)
+            sql.storage_catalog.check(conn,name,key,path=(namespace,),value=value)
+            if result is None:result=value
+        return result

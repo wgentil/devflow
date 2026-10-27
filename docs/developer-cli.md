@@ -769,7 +769,11 @@ New roots use storage format 2; legacy event layouts remain format 1 until expli
 conversion. `version` advertises storage formats separately from logical schema.
 For interrupted first-root initialization, `state compact --resume` takes a fresh
 recovery operation ID and actor; then retry the original first-work ID. Compaction
-resume keeps its original maintenance ID/actor. See [recovery](reference/control-maintenance.md).
+resume keeps its original maintenance ID/actor and verifies the pre-guard source
+backup. Retry `state backup` using the same output, operation ID and actor to
+resume its owned incomplete output; a fresh operation requires a new destination.
+See [recovery](reference/control-maintenance.md) and the
+[backup retry example](examples/control-backup-recovery.md).
 
 
 ## Disposable storage benchmark

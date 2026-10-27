@@ -383,7 +383,9 @@ default; it never automatically migrates a legacy root or runs GC.
 Back up authoritative control storage through the helper. Legacy event journals
 and v2 database/object/archive content must be retained together; `state.json`,
 locators and brief caches are not substitutes for authority. Use coordinated
-backup and full verification, not a bare live SQLite file copy. Crashed pins need
+backup and full verification, not a bare live SQLite file copy. The harness retries
+an interrupted backup with its original request identity and output; a new backup
+uses a new destination so an older snapshot cannot be mistaken for current work. Crashed pins need
 stopped-owner reconciliation, never age deletion. See [maintenance and recovery](reference/control-maintenance.md)
 for authorization, resume, disk requirements and limitations. Corrupt/future-schema
 records require diagnosis, not history edits.

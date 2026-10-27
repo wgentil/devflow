@@ -1,0 +1,47 @@
+test_interactive_final_commit_cannot_dispatch_a_stale_preparation (test_storage_dispatch_freshness.DispatchFreshnessTests.test_interactive_final_commit_cannot_dispatch_a_stale_preparation) ... 
+  test_interactive_final_commit_cannot_dispatch_a_stale_preparation (test_storage_dispatch_freshness.DispatchFreshnessTests.test_interactive_final_commit_cannot_dispatch_a_stale_preparation) (legacy=False) ... FAIL
+  test_interactive_final_commit_cannot_dispatch_a_stale_preparation (test_storage_dispatch_freshness.DispatchFreshnessTests.test_interactive_final_commit_cannot_dispatch_a_stale_preparation) (legacy=True) ... FAIL
+test_native_discovery_cannot_dispatch_after_approval_revocation (test_storage_dispatch_freshness.DispatchFreshnessTests.test_native_discovery_cannot_dispatch_after_approval_revocation) ... 
+  test_native_discovery_cannot_dispatch_after_approval_revocation (test_storage_dispatch_freshness.DispatchFreshnessTests.test_native_discovery_cannot_dispatch_after_approval_revocation) (legacy=False) ... FAIL
+  test_native_discovery_cannot_dispatch_after_approval_revocation (test_storage_dispatch_freshness.DispatchFreshnessTests.test_native_discovery_cannot_dispatch_after_approval_revocation) (legacy=True) ... FAIL
+
+======================================================================
+FAIL: test_interactive_final_commit_cannot_dispatch_a_stale_preparation (test_storage_dispatch_freshness.DispatchFreshnessTests.test_interactive_final_commit_cannot_dispatch_a_stale_preparation) (legacy=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/4349/devflow/tests/test_storage_dispatch_freshness.py", line 49, in test_interactive_final_commit_cannot_dispatch_a_stale_preparation
+    with self.assertRaises(store.WorkflowError) as caught:routing.dispatch_delegation(case.root,case.request,'interactive-op',bridge)
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+AssertionError: WorkflowError not raised
+
+======================================================================
+FAIL: test_interactive_final_commit_cannot_dispatch_a_stale_preparation (test_storage_dispatch_freshness.DispatchFreshnessTests.test_interactive_final_commit_cannot_dispatch_a_stale_preparation) (legacy=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/4349/devflow/tests/test_storage_dispatch_freshness.py", line 49, in test_interactive_final_commit_cannot_dispatch_a_stale_preparation
+    with self.assertRaises(store.WorkflowError) as caught:routing.dispatch_delegation(case.root,case.request,'interactive-op',bridge)
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+AssertionError: WorkflowError not raised
+
+======================================================================
+FAIL: test_native_discovery_cannot_dispatch_after_approval_revocation (test_storage_dispatch_freshness.DispatchFreshnessTests.test_native_discovery_cannot_dispatch_after_approval_revocation) (legacy=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/4349/devflow/tests/test_storage_dispatch_freshness.py", line 35, in test_native_discovery_cannot_dispatch_after_approval_revocation
+    with self.assertRaises(store.WorkflowError) as caught:case.call()
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+AssertionError: WorkflowError not raised
+
+======================================================================
+FAIL: test_native_discovery_cannot_dispatch_after_approval_revocation (test_storage_dispatch_freshness.DispatchFreshnessTests.test_native_discovery_cannot_dispatch_after_approval_revocation) (legacy=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/4349/devflow/tests/test_storage_dispatch_freshness.py", line 35, in test_native_discovery_cannot_dispatch_after_approval_revocation
+    with self.assertRaises(store.WorkflowError) as caught:case.call()
+         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+AssertionError: WorkflowError not raised
+
+----------------------------------------------------------------------
+Ran 2 tests in 6.883s
+
+FAILED (failures=4)

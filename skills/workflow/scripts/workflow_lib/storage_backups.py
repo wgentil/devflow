@@ -80,18 +80,22 @@ def verify_backup(output):
         return {'valid': False, 'errors': [str(exc)]}
 
 
-def backup_locked(root, output, *, resume=False):
+def backup_locked(root, output, *, resume=False, owner=None):
     root, output = Path(root).resolve(), Path(output).resolve()
     if output == root or root.is_relative_to(output):
         raise WorkflowError('BACKUP_PATH_INVALID', 'Backup output must not contain or replace its source.')
     if output.is_relative_to(root) and not output.is_relative_to(root / 'backups'):
         raise WorkflowError('BACKUP_PATH_INVALID', 'Internal backups belong beneath the selected backups directory.')
+    identity={'backup_version':1,'source_root':str(root)}
+    if owner is not None:identity['owner']=owner
     if (output / 'backup.json').exists():
-        report = verify_backup(output)
-        if not report['valid']: raise WorkflowError('BACKUP_INVALID', '; '.join(report['errors']))
+        report=verify_backup(output)
+        if not report['valid']:raise WorkflowError('BACKUP_INVALID','; '.join(report['errors']))
+        body=json.loads((output/'backup.json').read_text(encoding='utf-8'))['body']
+        if not resume or body.get('source_identity')!=identity:
+            raise WorkflowError('BACKUP_OUTPUT_EXISTS','Completed output belongs to another backup request; use a new path and preserve it.')
         return {'completed': True, 'output': str(output), **report}
     marker = output / '.backup-incomplete.json'
-    identity = {'backup_version': 1, 'source_root': str(root)}
     if output.exists():
         if not resume or not marker.is_file() or json.loads(marker.read_text(encoding="utf-8")) != identity:
             raise WorkflowError('BACKUP_OUTPUT_EXISTS', 'Use a new output path or explicitly resume this owned incomplete backup.')
@@ -101,9 +105,14 @@ def backup_locked(root, output, *, resume=False):
     from . import store
     state = store._read_journal(root)[0] if layout['layout'] in {'legacy', 'incomplete'} else None
     head = state['version'] if state is not None else None
+    from .stored_records import digest
+    source_hash=digest(next(reversed(state['operations'].values()))) if state and state['operations'] else None
+    storage_identity={key:layout.get(key) for key in ('storage_format','root_id','layout_id')}
     if layout['layout'] == 'v2':
         from .sqlite_store import connection, _meta
-        with connection(root) as conn: head = _meta(conn, 'head')
+        with connection(root) as conn:
+            head=_meta(conn,'head');source_hash=_meta(conn,'head_hash')
+            storage_identity['generation']=_meta(conn,'generation')
     entries = []
     for relative, source in source_files(root):
         target = confined_path(output, relative, create_parents=True)
@@ -113,7 +122,8 @@ def backup_locked(root, output, *, resume=False):
         else: _copy_file(source, target)
         entries.append({'path': relative, 'size_bytes': target.stat().st_size, 'sha256': file_hash(target)})
     from .stored_records import digest
-    body = {'backup_version': 1, 'source_head': head, 'files': entries}
+    body={'backup_version':1,'source_head':head,'source_head_hash':source_hash,
+        'source_identity':identity,'source_storage':storage_identity,'files':entries}
     _atomic_json(output / 'backup.json', {'body': body, 'sha256': digest(body)})
     report = verify_backup(output)
     if not report['valid']: raise WorkflowError('BACKUP_INVALID', '; '.join(report['errors']))

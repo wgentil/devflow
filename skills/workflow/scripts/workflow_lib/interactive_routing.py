@@ -3,6 +3,7 @@
 The CLI has no bridge. JSON input cannot create one or supply trusted host facts.
 """
 from copy import deepcopy
+from contextlib import ExitStack
 import hashlib
 import os
 from pathlib import Path
@@ -24,7 +25,7 @@ from .evidence import _blob
 
 
 @reservation('interactive-dispatch')
-def prepare_delegation(root: Path, request: dict, host_context: dict | None = None) -> dict:
+def prepare_delegation(root: Path, request: dict, host_context: dict | None = None,*,preparation_consumer=None) -> dict:
     root = Path(root)
     data = read_host(root,request=request)['data']
     binding = validate_binding(data, request.get('binding_id'), request.get('revision'))
@@ -44,7 +45,7 @@ def prepare_delegation(root: Path, request: dict, host_context: dict | None = No
     path = request.get('execution_path', 'interactive-nonfork')
     if path not in {'interactive-nonfork', 'interactive-fork'}:
         raise WorkflowError('INTERACTIVE_PATH_INVALID', 'Interactive execution path required.')
-    full_view = host_brief(data, binding, control_root=root, max_bytes=request.get('context_max_bytes', 20000), stage_override=stage)
+    full_view = host_brief(data, binding, control_root=root, max_bytes=request.get('context_max_bytes', 20000), stage_override=stage,preparation_consumer=preparation_consumer)
     worker_input = invocation_context(binding, stage, full_view, worker_task_prompt(prompt, facts, scope), request.get('context_max_bytes', 20000))
     context = deepcopy(host_context or {})
     pref = preferences(data, binding, stage)
@@ -123,7 +124,10 @@ def dispatch_delegation(root: Path, request: dict, operation_id: str, bridge=Non
     request_hash = digest(request)
     lease = root / 'native-invocations' / hashlib.sha256((binding['run_id'] + ':' + str(identifier)).encode()).hexdigest()
     lease.parent.mkdir(parents=True, exist_ok=True)
-    with _native_lease(lease):
+    with _native_lease(lease),ExitStack() as preparation_pins:
+        preparations=[]
+        def retain(prepared):
+            preparations.append(prepared);preparation_pins.callback(prepared.release)
         data = read_host(root,request=request)['data']
         prior = data['runs'][binding['run_id']].get('native_invocations', {}).get(identifier)
         if prior:
@@ -134,9 +138,9 @@ def dispatch_delegation(root: Path, request: dict, operation_id: str, bridge=Non
             return {**data['runs'][binding['run_id']]['model_receipts'][identifier], 'replayed': True}
         # Only an in-process embedding adapter can supply these facts. The
         # portable CLI never imports bridge names or trusts serialized context.
-        prepared = prepare_delegation(root, request, bridge.capabilities())
+        prepared = prepare_delegation(root, request, bridge.capabilities(),preparation_consumer=retain)
         if prepared['reason_code'] != 'READY': return prepared
-        fresh = prepare_delegation(root, request, bridge.capabilities())
+        fresh = prepare_delegation(root, request, bridge.capabilities(),preparation_consumer=retain)
         if (fresh['reason_code'] != 'READY' or fresh['decision']['routing']['controls']['evidence_hash'] != prepared['decision']['routing']['controls']['evidence_hash']
                 or fresh['snapshot_hash'] != prepared['snapshot_hash'] or fresh['scope'] != prepared['scope'] or fresh['decision']['routing']['task_hash'] != prepared['decision']['routing']['task_hash']
                 or fresh['policy_revision'] != prepared['policy_revision']):
@@ -152,7 +156,7 @@ def dispatch_delegation(root: Path, request: dict, operation_id: str, bridge=Non
                 return {**fresh,'reason_code':'ESCALATION_PREDECESSOR_MISMATCH'}
             auth=request['escalation_authorization']
             start.update(replacement_of=predecessor,replacement_authorization={'approved':auth['approved'],'actor_id':auth['actor_id']})
-        _commit(root, operation_id + ':native-start', 'native-start', start, binding)
+        _commit(root, operation_id + ':native-start', 'native-start', start, binding,prepared=preparations[-1] if preparations else None)
         try:
             handle = bridge.spawn(fresh)
             result = bridge.collect(handle)

@@ -6,7 +6,7 @@
   "reports": [
     {
       "gate": "legacy-windows-3.11",
-      "report": "ci-final/legacy-windows-3.11/legacy-report.json",
+      "report": "ci-before-review-fixes/legacy-windows-3.11/legacy-report.json",
       "sha256": "255b54dff3c14636a9c5ae2d6ef9b65a3fba65a385ab1f3f0bb49e30090063fe",
       "success": true,
       "tests_run": 167,
@@ -29,7 +29,7 @@
     },
     {
       "gate": "legacy-windows-3.x",
-      "report": "ci-final/legacy-windows-3.x/legacy-report.json",
+      "report": "ci-before-review-fixes/legacy-windows-3.x/legacy-report.json",
       "sha256": "2358eb99747280a10c0ae49313c3db6acabe192c0de101d4aec6753c69f584ae",
       "success": true,
       "tests_run": 167,
@@ -52,7 +52,7 @@
     },
     {
       "gate": "platform-macos-latest-3.11",
-      "report": "ci-final/platform-macos-latest-3.11/platform-report.json",
+      "report": "ci-before-review-fixes/platform-macos-latest-3.11/platform-report.json",
       "sha256": "e75c0296f18fd5b1067f044ac4e7aaba85823e030b1be5504d734d71d3468320",
       "success": true,
       "tests_run": 903,
@@ -87,7 +87,7 @@
     },
     {
       "gate": "platform-macos-latest-3.x",
-      "report": "ci-final/platform-macos-latest-3.x/platform-report.json",
+      "report": "ci-before-review-fixes/platform-macos-latest-3.x/platform-report.json",
       "sha256": "0ca3a2a22cd797166a8cbc0389f087827db2d94f5575160d449834967c00f3a9",
       "success": true,
       "tests_run": 903,
@@ -122,7 +122,7 @@
     },
     {
       "gate": "platform-ubuntu-latest-3.11",
-      "report": "ci-final/platform-ubuntu-latest-3.11/platform-report.json",
+      "report": "ci-before-review-fixes/platform-ubuntu-latest-3.11/platform-report.json",
       "sha256": "a602dc2ea635a270c0e3a87ad163342533b811a6be5eff8a7083df2dde9c2f00",
       "success": true,
       "tests_run": 903,
@@ -157,7 +157,7 @@
     },
     {
       "gate": "platform-ubuntu-latest-3.x",
-      "report": "ci-final/platform-ubuntu-latest-3.x/platform-report.json",
+      "report": "ci-before-review-fixes/platform-ubuntu-latest-3.x/platform-report.json",
       "sha256": "3140c05f116d67f07d59b4262c304f8cb88dd677db2f321fa9d70158406a222a",
       "success": true,
       "tests_run": 903,
@@ -192,7 +192,7 @@
     },
     {
       "gate": "platform-windows-latest-3.11",
-      "report": "ci-final/platform-windows-latest-3.11/platform-report.json",
+      "report": "ci-before-review-fixes/platform-windows-latest-3.11/platform-report.json",
       "sha256": "995de8dcf1bf6b96d8fd33e43658c8bc78f75ae70aa78d843a8af1fe677e4a5f",
       "success": true,
       "tests_run": 903,
@@ -219,7 +219,7 @@
     },
     {
       "gate": "platform-windows-latest-3.x",
-      "report": "ci-final/platform-windows-latest-3.x/platform-report.json",
+      "report": "ci-before-review-fixes/platform-windows-latest-3.x/platform-report.json",
       "sha256": "8bbab0c73f355bcaa20afe4853eeb72d79847ad575f9e22b336c7a929f792f26",
       "success": true,
       "tests_run": 903,
@@ -246,7 +246,7 @@
     },
     {
       "gate": "windows-installed-hosts",
-      "report": "ci-final/windows-installed-hosts/installed-report.json",
+      "report": "ci-before-review-fixes/windows-installed-hosts/installed-report.json",
       "sha256": "a611dbf58830716975b7dc76ece63250bea095e6273c60f68565bc19867bd9ae",
       "success": true,
       "tests_run": null,

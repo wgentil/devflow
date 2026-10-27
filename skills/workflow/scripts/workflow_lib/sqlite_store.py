@@ -154,7 +154,8 @@ def validate_connection(conn,layout):
         value = _meta(conn, key)
         if type(value) is not int or value < 0:
             raise WorkflowError('CORRUPT_STORAGE', 'Database generation/head/position metadata is invalid; preserve and verify this root.')
-    head = conn.execute('SELECT sequence,event_hash FROM events ORDER BY sequence DESC LIMIT 1').fetchone()
+    head = conn.execute('SELECT sequence,event_hash,operation_id FROM events ORDER BY sequence DESC LIMIT 1').fetchone()
+    if head:storage_catalog.check_operation(conn,head[2])
     if (head[0] if head else 0) != _meta(conn, 'head') or (head[1] if head else None) != _meta(conn, 'head_hash'):
         raise WorkflowError('CORRUPT_STORAGE', 'Database event head and projection head disagree.')
     if (_meta(conn, 'dependency_schema') != 1 or _meta(conn, 'dependency_head') != _meta(conn, 'head')
@@ -279,9 +280,10 @@ def _decode(root, codec, payload, expected, *, working=False):
 
 def _load_space(conn, root, path, rows=None, *, working=False):
     name = _space(path)
-    shape = conn.execute('SELECT shape FROM spaces WHERE path=?', (name,)).fetchone()
+    namespace=storage_catalog.check_space(conn,name)
+    shape=(namespace[3],) if namespace else None
     if shape is None:
-        if rows or storage_catalog.rows(conn,name):
+        if rows or storage_catalog.has_rows(conn,name):
             raise WorkflowError('CORRUPT_STORAGE','Required entity namespace is missing; preserve and verify the root.')
         return None
     if rows is None: rows = storage_catalog.rows(conn,name)
@@ -298,6 +300,7 @@ def _load_space(conn, root, path, rows=None, *, working=False):
 
 
 def _lookup_entity(conn, root, namespace, key, *, working=True):
+    if storage_catalog.require_space(conn,_space((namespace,))) is None:return None
     storage_catalog.check(conn,_space((namespace,)),key)
     rows = conn.execute('SELECT key,codec,payload,value_hash FROM entities WHERE space=? AND key=?', (_space((namespace,)), key)).fetchall()
     if not rows: return None
@@ -308,13 +311,15 @@ def _lookup_entity(conn, root, namespace, key, *, working=True):
 def _sync_space(conn, root, path, value, *, before=None, complete=True):
     name = _space(path)
     shape = 'map' if isinstance(value, dict) else 'list' if isinstance(value, list) else 'value'
-    prior = conn.execute('SELECT shape FROM spaces WHERE path=?', (name,)).fetchone()
+    namespace=storage_catalog.check_space(conn,name)
+    prior=(namespace[3],) if namespace else None
     if prior is not None and prior[0] != shape:
         if not complete: raise WorkflowError('UNDECLARED_STORAGE_SCOPE', 'A partial scope cannot replace a namespace shape.')
         storage_catalog.delete_space(conn,name);prior = None
     if prior is None:
-        conn.execute('INSERT INTO spaces VALUES(?,?,?,?,?)', (name, _space(path[:-1]) if len(path) > 1 else None,
-                     path[-1], shape, _next_position(conn)))
+        fields=(name,_space(path[:-1]) if len(path)>1 else None,path[-1],shape,_next_position(conn))
+        conn.execute('INSERT INTO spaces VALUES(?,?,?,?,?)',fields)
+        conn.execute('INSERT INTO space_catalog VALUES(?,?,?,?,?)',fields)
     entries = dict(value) if shape == 'map' else {str(i): item for i, item in enumerate(value)} if shape == 'list' else {'': value}
     old = dict(before) if isinstance(before, dict) else {str(i): item for i, item in enumerate(before)} if isinstance(before, list) else {}
     if complete:
@@ -329,6 +334,7 @@ def _sync_space(conn, root, path, value, *, before=None, complete=True):
         if child: storage_catalog.delete_space(conn,child[0])
         conn.execute('DELETE FROM entities WHERE space=? AND key=?', (name,key))
         conn.execute('DELETE FROM entity_catalog WHERE space=? AND key=?', (name,key))
+        conn.execute('DELETE FROM document_file_catalog WHERE space=? AND proposal_id=?',(name,key))
     position_base = _meta(conn,'position') if complete else None
     for index,(key, item) in enumerate(entries.items(),1):
         if key in old and item == old[key]:
@@ -373,8 +379,11 @@ def _sync_space(conn, root, path, value, *, before=None, complete=True):
                     (name,key,view,view_codec,view_payload,view_hash))
         if path == ('document_proposals',):
             conn.execute('DELETE FROM document_files WHERE proposal_id=?', (key,))
+            conn.execute('DELETE FROM document_file_catalog WHERE proposal_id=?',(key,))
             for file,record in meta.get('files',{}).items():
                 conn.execute('INSERT INTO document_files VALUES(?,?,?,?,?)',
+                    (name,key,meta.get('repo_id'),file,_sha(_json(record).encode('utf-8'))))
+                conn.execute('INSERT INTO document_file_catalog VALUES(?,?,?,?,?)',
                     (name,key,meta.get('repo_id'),file,_sha(_json(record).encode('utf-8'))))
 
     if complete: _set_meta(conn,'position',max(_meta(conn,'position'),position_base+len(entries)))
@@ -387,12 +396,16 @@ def _read_view(conn, root, scope):
     if scope.full:
         complete = {row[0] for row in conn.execute('SELECT name FROM spaces WHERE parent IS NULL ORDER BY position')}
     for name in complete:
-        if conn.execute('SELECT 1 FROM spaces WHERE path=?', (_space((name,)),)).fetchone():
-            data[name] = _load_space(conn, root, (name,),working=not scope.full and not scope.full_packages)
+        value=_load_space(conn,root,(name,),working=not scope.full and not scope.full_packages)
+        if value is not None or conn.execute('SELECT 1 FROM spaces WHERE path=?',(_space((name,)),)).fetchone():
+            data[name]=value
     if scope.run_view:
         if scope.run_view not in {'metrics','routing','trace'}:
             raise WorkflowError('UNDECLARED_STORAGE_SCOPE', 'Unknown historical projection.')
-        all_ids = [row[0] for row in conn.execute('SELECT key FROM entities WHERE space=? ORDER BY position', (_space(('runs',)),))]
+        run_rows=storage_catalog.rows(conn,_space(('runs',)),keys=None if scope.history_all else scope.run_ids)
+        all_ids=[]
+        for key,*_ in run_rows:
+            storage_catalog.check(conn,_space(('runs',)),key);all_ids.append(key)
         selected_ids = all_ids if scope.history_all else [key for key in all_ids if key in scope.run_ids]
         runs = {key:{'id':key} for key in all_ids} if scope.history_all else {}
         for key in selected_ids:
@@ -420,14 +433,14 @@ def _read_view(conn, root, scope):
     if scope.usage_run_ids:
         events = []
         for run_id in scope.usage_run_ids:
-            rows = conn.execute('SELECT key,codec,payload,value_hash FROM entities WHERE space=? AND run_id=? ORDER BY position',
-                (_space(('usage','events')),run_id)).fetchall()
+            rows=storage_catalog.rows(conn,_space(('usage','events')),(('run_id',run_id),))
             events.extend(_load_space(conn,root,('usage','events'),rows) or [])
         data['usage'] = {'events':events}
     operations = {}
     if scope.full:
         rows = conn.execute('SELECT operation_id,codec,payload,event_hash FROM events ORDER BY sequence')
     else:
+        for op in scope.operation_ids:storage_catalog.check_operation(conn,op)
         rows = [row for op in scope.operation_ids for row in conn.execute(
             'SELECT operation_id,codec,payload,event_hash FROM events WHERE operation_id=?',(op,))]
     for op,codec,payload,digest in rows: operations[op] = _decode(root,codec,payload,digest)
@@ -447,6 +460,7 @@ def read_state(root: Path): return read_working_state(root,ReadScope(full=True))
 
 def lookup_operation(root: Path, operation_id: str):
     with connection(root) as conn:
+        storage_catalog.check_operation(conn,operation_id)
         row=conn.execute('SELECT codec,payload,event_hash FROM events WHERE operation_id=?',(operation_id,)).fetchone()
         return _decode(root,*row) if row else None
 
@@ -552,7 +566,9 @@ def _transact_locked(root, expected_version, operation_id, event, *, precommit=N
                 _sync_space(conn,root,(key,),after[key],before=before.get(key),complete=key in complete or key in replacements)
         _refresh_dependency_witnesses(conn)
         codec,payload,digest=_encode(root,committed,'event-json')
-        conn.execute('INSERT INTO events VALUES(?,?,?,?,?,?)',(committed['sequence'],operation_id,event['kind'],codec,payload,digest))
+        fields=(committed['sequence'],operation_id,event['kind'],codec,payload,digest)
+        conn.execute('INSERT INTO events VALUES(?,?,?,?,?,?)',fields)
+        storage_catalog.record_operation(conn,fields)
         _set_meta(conn,'head',committed['sequence']);_set_meta(conn,'head_hash',digest)
         _set_meta(conn,'dependency_head',committed['sequence'])
         projected['version']=committed['sequence'];projected['operations'][operation_id]=committed

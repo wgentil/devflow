@@ -78,7 +78,8 @@ def dispatch(parsed):
     if action=='backup':
         from workflow_lib.storage_audit import perform
         return perform(root,'backup',{'output':str(Path(parsed.output).resolve())},parsed.operation_id,parsed.actor_id,
-            lambda audit:backup_control(root,Path(parsed.output)))
+            lambda audit:backup_control(root,Path(parsed.output),resume=True,owner={
+                'operation_id':parsed.operation_id,'actor_id':parsed.actor_id,'request_hash':audit['request_hash']}))
     from workflow_lib.storage_access import read_current,operation_lookup
     from workflow_lib.store import transact
     policy=json.loads(Path(parsed.file).read_text(encoding='utf-8'))

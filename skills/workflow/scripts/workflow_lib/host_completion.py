@@ -112,7 +112,7 @@ def check_completion(state: dict, binding: dict, task_id: str, live: bool = True
 
 def host_brief(state: dict, binding: dict, *, control_root: Path | None = None,
                max_bytes: int = 20000, representation: str = 'markdown', output_mode: str = 'full',
-               stage_override: str | None = None,authoritative_state:dict|None=None) -> dict:
+               stage_override: str | None = None,authoritative_state:dict|None=None,preparation_consumer=None) -> dict:
     run=state.get('runs',{}).get(binding['run_id'],{})
     tasks=[t for t in state.get('host_tasks',{}).values() if t['binding_id']==binding['binding_id']]
     selected={t.get('item_id') for t in tasks if t.get('revision')==binding['revision']}
@@ -144,7 +144,7 @@ def host_brief(state: dict, binding: dict, *, control_root: Path | None = None,
     from .document_units import digest as content_digest
     view = prepared_context(control_root, run, envelope, [item['id'] for item in work_items],
                              stage=stage_override or envelope['stage'], max_bytes=max_bytes,
-                             representation=representation, output_mode=output_mode,state=authoritative_state)
+                             representation=representation, output_mode=output_mode,state=authoritative_state,on_prepared=preparation_consumer)
     task_view = view['task_view']
     view['fingerprint'] = content_digest({'envelope': digest, 'context': {
         key: task_view.get(key) for key in ('units', 'dependencies', 'source_hashes', 'source_provenance', 'required_ids', 'governing')}})
