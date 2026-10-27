@@ -785,7 +785,9 @@ It reports queries, SQLite work, actual object bytes, complete-command/stage
 timings, hot logical payload and separate physical storage categories. It cleans
 only its own temporary roots. This maintainer check does not migrate Bandpick or
 any existing project and does not submit model work. Timings describe the measured
-machine and generated corpus; they are not universal latency promises.
+machine and generated corpus; they are not universal latency promises. SQL trace/VM
+counters cover transaction bodies, excluding connection BEGIN/schema/head
+validation and COMMIT; they are not complete-command SQL totals.
 
 Owned benchmark Git fixtures disable automatic/detached maintenance so Git lock
 creation/removal does not race strict read-only repository snapshots. Existing

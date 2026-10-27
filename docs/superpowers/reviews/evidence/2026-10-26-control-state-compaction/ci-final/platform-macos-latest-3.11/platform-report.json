@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "success": true,
+  "tests_run": 920,
+  "failures": [],
+  "errors": [],
+  "failure_traces": [],
+  "error_traces": [],
+  "skips": [
+    {
+      "id": "test_platform_lock.PlatformLockTests.test_blocking_lock_waits_longer_than_msvcrt_default_retry_window",
+      "reason": "Windows byte-range lock retry behavior"
+    },
+    {
+      "id": "test_process_transport.WindowsJobCompletionTests.test_exited_leader_descendant_is_signaled_before_close_returns",
+      "reason": "requires native Windows Job and process handles"
+    },
+    {
+      "id": "test_storage_objects.StorageObjectTests.test_junction_escape_never_publishes_outside_root",
+      "reason": "native NTFS junction containment"
+    },
+    {
+      "id": "test_storage_objects.StorageObjectTests.test_repeated_concurrent_fresh_windows_roots_preserve_confinement",
+      "reason": "native Windows fresh-root canonicalization race"
+    },
+    {
+      "id": "test_storage_recovery.StorageRecoveryTests.test_windows_open_snapshot_cleanup_resumes",
+      "reason": "native Windows file-handle semantics"
+    },
+    {
+      "id": "test_windows_workflow.WindowsWorkflowTests.test_junction_escape_is_rejected",
+      "reason": "native NTFS junction containment"
+    }
+  ],
+  "expected_failures": [],
+  "unexpected_successes": [],
+  "elapsed_seconds": 409.134,
+  "metadata": {
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "python": "3.11.9 (v3.11.9:de54cf5be3, Apr  2 2024, 07:12:50) [Clang 13.0.0 (clang-1300.0.29.30)]",
+    "executable": "/Library/Frameworks/Python.framework/Versions/3.11/bin/python",
+    "git": "git version 2.56.0",
+    "preferred_encoding": "UTF-8",
+    "filesystem_encoding": "utf-8",
+    "stdout_encoding": "utf-8",
+    "stderr_encoding": "utf-8",
+    "utf8_mode": 0,
+    "PYTHONUTF8": null,
+    "PYTHONIOENCODING": null,
+    "git_sha": "eb79c6368d7ed21db3ff7f8ebfb80d7b0550a689",
+    "patterns": [
+      "test_*.py"
+    ],
+    "sqlite": {
+      "version": "3.45.1",
+      "compile_options": [
+        "ATOMIC_INTRINSICS=1",
+        "COMPILER=clang-13.0.0",
+        "DEFAULT_AUTOVACUUM",
+        "DEFAULT_CACHE_SIZE=-2000",
+        "DEFAULT_FILE_FORMAT=4",
+        "DEFAULT_JOURNAL_SIZE_LIMIT=-1",
+        "DEFAULT_MMAP_SIZE=0",
+        "DEFAULT_PAGE_SIZE=4096",
+        "DEFAULT_PCACHE_INITSZ=20",
+        "DEFAULT_RECURSIVE_TRIGGERS",
+        "DEFAULT_SECTOR_SIZE=4096",
+        "DEFAULT_SYNCHRONOUS=2",
+        "DEFAULT_WAL_AUTOCHECKPOINT=1000",
+        "DEFAULT_WAL_SYNCHRONOUS=2",
+        "DEFAULT_WORKER_THREADS=0",
+        "DIRECT_OVERFLOW_READ",
+        "ENABLE_FTS3",
+        "ENABLE_FTS3_PARENTHESIS",
+        "ENABLE_FTS4",
+        "ENABLE_FTS5",
+        "ENABLE_GEOPOLY",
+        "ENABLE_MATH_FUNCTIONS",
+        "ENABLE_RTREE",
+        "MALLOC_SOFT_LIMIT=1024",
+        "MAX_ATTACHED=10",
+        "MAX_COLUMN=2000",
+        "MAX_COMPOUND_SELECT=500",
+        "MAX_DEFAULT_PAGE_SIZE=8192",
+        "MAX_EXPR_DEPTH=1000",
+        "MAX_FUNCTION_ARG=127",
+        "MAX_LENGTH=1000000000",
+        "MAX_LIKE_PATTERN_LENGTH=50000",
+        "MAX_MMAP_SIZE=0x7fff0000",
+        "MAX_PAGE_COUNT=0xfffffffe",
+        "MAX_PAGE_SIZE=65536",
+        "MAX_SQL_LENGTH=1000000000",
+        "MAX_TRIGGER_DEPTH=1000",
+        "MAX_VARIABLE_NUMBER=32766",
+        "MAX_VDBE_OP=250000000",
+        "MAX_WORKER_THREADS=8",
+        "MUTEX_PTHREADS",
+        "OMIT_AUTOINIT",
+        "SYSTEM_MALLOC",
+        "TCL",
+        "TEMP_STORE=1",
+        "THREADSAFE=1"
+      ],
+      "durability": {
+        "journal_mode": "wal",
+        "synchronous": 2,
+        "foreign_keys": 1,
+        "busy_timeout": 1000
+      }
+    }
+  }
+}

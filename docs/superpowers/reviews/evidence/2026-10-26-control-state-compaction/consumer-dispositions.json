@@ -2325,10 +2325,10 @@
       "disposition": "targeted",
       "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
       "current_evidence_lines": [
-        20,
-        29,
-        120,
-        127
+        21,
+        30,
+        121,
+        131
       ]
     },
     {
@@ -2337,10 +2337,10 @@
       "disposition": "targeted",
       "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
       "current_evidence_lines": [
-        20,
-        29,
-        120,
-        127
+        21,
+        30,
+        121,
+        131
       ]
     },
     {
@@ -2349,10 +2349,10 @@
       "disposition": "targeted",
       "explanation": "Explicit selected command/run/entity/operation view; legacy-only fallback remains.",
       "current_evidence_lines": [
-        20,
-        29,
-        120,
-        127
+        21,
+        30,
+        121,
+        131
       ]
     },
     {
@@ -2397,12 +2397,12 @@
       "current_evidence_lines": [
         11,
         116,
-        144,
-        156,
-        184,
-        185,
-        288,
-        342
+        146,
+        160,
+        191,
+        192,
+        295,
+        349
       ]
     },
     {
@@ -2413,12 +2413,12 @@
       "current_evidence_lines": [
         11,
         116,
-        144,
-        156,
-        184,
-        185,
-        288,
-        342
+        146,
+        160,
+        191,
+        192,
+        295,
+        349
       ]
     },
     {
@@ -2429,12 +2429,12 @@
       "current_evidence_lines": [
         11,
         116,
-        144,
-        156,
-        184,
-        185,
-        288,
-        342
+        146,
+        160,
+        191,
+        192,
+        295,
+        349
       ]
     },
     {
@@ -2445,12 +2445,12 @@
       "current_evidence_lines": [
         11,
         116,
-        144,
-        156,
-        184,
-        185,
-        288,
-        342
+        146,
+        160,
+        191,
+        192,
+        295,
+        349
       ]
     },
     {
@@ -2461,12 +2461,12 @@
       "current_evidence_lines": [
         11,
         116,
-        144,
-        156,
-        184,
-        185,
-        288,
-        342
+        146,
+        160,
+        191,
+        192,
+        295,
+        349
       ]
     },
     {
@@ -2477,12 +2477,12 @@
       "current_evidence_lines": [
         11,
         116,
-        144,
-        156,
-        184,
-        185,
-        288,
-        342
+        146,
+        160,
+        191,
+        192,
+        295,
+        349
       ]
     },
     {
@@ -2493,12 +2493,12 @@
       "current_evidence_lines": [
         11,
         116,
-        144,
-        156,
-        184,
-        185,
-        288,
-        342
+        146,
+        160,
+        191,
+        192,
+        295,
+        349
       ]
     },
     {
@@ -2509,12 +2509,12 @@
       "current_evidence_lines": [
         11,
         116,
-        144,
-        156,
-        184,
-        185,
-        288,
-        342
+        146,
+        160,
+        191,
+        192,
+        295,
+        349
       ]
     },
     {
@@ -2959,5 +2959,6 @@
         130
       ]
     }
-  ]
+  ],
+  "current_source_commit": "eb79c6368d7ed21db3ff7f8ebfb80d7b0550a689"
 }

@@ -17,9 +17,19 @@
     "release_id": "9a2296e176d80c019b5990cb87c6fae6a4ff1b8acaeb532285af14ceab7e76ab",
     "fingerprint": "9a2296e176d80c019b5990cb87c6fae6a4ff1b8acaeb532285af14ceab7e76ab"
   },
-  "status": "one review correction pass: focused47 PASS; full920/native validation pending",
-  "runtime_source_commit": null,
-  "validation_commit": null,
-  "ci_run": null,
-  "before_review_ci_run": "https://github.com/wgentil/devflow/actions/runs/40418033016"
+  "status": "review-ready: all10 tasks and seven required review fixes verified; local920, benchmark, native9 PASS",
+  "runtime_source_commit": "eb79c6368d7ed21db3ff7f8ebfb80d7b0550a689",
+  "validation_commit": "eb79c6368d7ed21db3ff7f8ebfb80d7b0550a689",
+  "ci_run": "https://github.com/wgentil/devflow/actions/runs/40428145245",
+  "before_review_ci_run": "https://github.com/wgentil/devflow/actions/runs/40418033016",
+  "requirements": {
+    "R1": "MET",
+    "R2": "MET",
+    "R3": "MET",
+    "R4": "MET",
+    "R5": "MET"
+  },
+  "deferred_minors": [
+    "Complete-lifecycle SQL instrumentation; existing counts cover transaction bodies and are labeled accordingly."
+  ]
 }

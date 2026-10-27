@@ -1,11 +1,13 @@
 # Archive-backed control-state candidate review
 
 Candidate: `feat/archive-backed-control-state`, based on `36e10f4b2cb4be434cd921dac40539c91c7cf77a`.
-Status: independent review complete; the one required correction pass has targeted
-GREEN evidence. Full corrected-runtime and native platform validation are pending.
-Corrected runtime SHA will be captured after this source commit; its descriptor
+Status: **review-ready**. All ten tasks and the one review correction pass are
+complete. Full local920, refreshed benchmark and all nine native CI jobs passed.
+Corrected runtime: `eb79c6368d7ed21db3ff7f8ebfb80d7b0550a689`; its descriptor
 is retained in [candidate identity](evidence/2026-10-26-control-state-compaction/candidate-identity.json).
-No merge, release, PR or production maintenance has occurred.
+[Corrected-source native CI](https://github.com/wgentil/devflow/actions/runs/40428145245)
+passed on the exact corrected runtime. No merge, release, PR or production
+maintenance has occurred.
 
 Sources: [approved design](../specs/2026-10-26-control-state-compaction-design.md),
 [plan](../plans/2026-10-26-control-state-compaction.md),
@@ -36,25 +38,26 @@ for dispatch. These are corrections to the existing safety/recovery contracts.
 
 ## Requirement assessment
 
-All assessments are reopened until the corrected source passes final gates.
+All local and declared native profiles passed. The five assessments below apply
+to the corrected runtime, including the seven required review fixes.
 
-- R1: CANNOT VERIFY — complete retained history and exact retry IDs, including
+- R1: MET — complete retained history and exact retry IDs, including
   missing-locator refusal. Evidence: `skills/workflow/scripts/workflow_lib/stored_records.py:94`,
   `skills/workflow/scripts/workflow_lib/storage_catalog.py:99`,
   `tests/test_storage_review_regressions.py:174`, `tests/test_storage_migration.py:19`.
-- R2: CANNOT VERIFY — selected operational reads and current shards independent
+- R2: MET — selected operational reads and current shards independent
   of unrelated closed bodies. Evidence: `skills/workflow/scripts/workflow_lib/storage_access.py:10`,
   `skills/workflow/scripts/workflow_lib/host_projection.py:14`,
   `skills/workflow/scripts/workflow_lib/context_artifacts.py:78`, `tests/test_storage_scale.py:15`.
-- R3: CANNOT VERIFY — atomic CAS/retries, fail-closed witnesses and public crash
+- R3: MET — atomic CAS/retries, fail-closed witnesses and public crash
   recovery. Evidence: `skills/workflow/scripts/workflow_lib/sqlite_store.py:474`,
   `skills/workflow/scripts/workflow_lib/storage_maintenance.py:352`,
   `tests/test_storage_recovery.py:19`, `tests/test_storage_review_regressions.py:61`.
-- R4: CANNOT VERIFY — pins/blockers, shared dependencies and final dispatch
+- R4: MET — pins/blockers, shared dependencies and final dispatch
   identity. Evidence: `skills/workflow/scripts/workflow_lib/storage_pins.py:39`,
   `skills/workflow/scripts/workflow_lib/storage_maintenance.py:352`,
   `tests/test_run_archives.py:73`, `tests/test_storage_dispatch_freshness.py:29`.
-- R5: CANNOT VERIFY — explicit, audited, recoverable maintenance with honest
+- R5: MET — explicit, audited, recoverable maintenance with honest
   measurements and backup ownership. Evidence: `skills/workflow/scripts/commands/state.py:46`,
   `skills/workflow/scripts/workflow_lib/storage_audit.py:43`,
   `skills/workflow/scripts/workflow_lib/storage_backups.py:83`, `scripts/benchmark_control_storage.py:123`.
@@ -74,16 +77,37 @@ Targeted GREEN includes 15 storage cases, two dispatch cases, an overlapping
 47-test witness/dispatch/indexed/scoped-command check and 66 native/recovery tests.
 These counts overlap and are not an aggregate full-suite total. One finish-commit
 mock signature error in a broader check was corrected by omitting an unused
-keyword; its existing test remained unchanged. Full suite collection is 920.
+keyword; its existing test remained unchanged. The complete corrected local suite passes: **920 run, six native-only skips**,
+no failures/errors, 485.439 unittest seconds (485.611 runner seconds).
 
 The real CLI backup example was exercised on owned Unicode paths through an
 interrupted copy, identical retry and completed exact retry. Wrong recovery
 actor/operation and a forged maintenance ID colliding with verified original
 workflow history were refused; the original request then resumed successfully.
-Raw [RED storage evidence](evidence/2026-10-26-control-state-compaction/review-storage-red.log),
+Every required finding now has RED-to-GREEN coverage and a green complete local
+suite. The resumed-pin finding is included in those fixes. No second reviewer
+was dispatched. Raw [RED storage evidence](evidence/2026-10-26-control-state-compaction/review-storage-red.log),
 [RED dispatch evidence](evidence/2026-10-26-control-state-compaction/review-dispatch-red.log),
 [empty-namespace RED](evidence/2026-10-26-control-state-compaction/review-empty-namespace-red.log)
-and focused GREEN logs are retained. Final full-suite/native results remain pending.
+and focused GREEN logs are retained. The [corrected full local report](evidence/2026-10-26-control-state-compaction/local-platform.json)
+binds runtime `eb79c63`; all native reports match that same SHA and fingerprint.
+
+## Required review fix disposition
+
+All seven required findings are fixed in the single correction pass. Each had
+observed RED-to-GREEN regressions, followed by the complete local920 and native
+matrix. The original independent verdict remains recorded at reviewed `0857fe5`;
+there was no second review of the corrected commit under the Native workflow.
+
+| Finding | Regression coverage | Disposition |
+| --- | --- | --- |
+| 1. Public legacy resume | Four preactivation phases; original request/actor; verified workflow-ID collision refusal | Fixed |
+| 2. Public backup resume | Interrupted copy; identical dispatcher and real CLI retry; original completed receipt | Fixed |
+| 3. Backup ownership | Different root, stale snapshot and another incomplete request refused without output changes | Fixed |
+| 4. Witness-backed discovery | Globals, empty namespaces, ancestors, historical views, usage, report identity and document lookup | Fixed |
+| 5. Archived operation reuse | Missing locator lookup/mutation and missing witness fail closed | Fixed |
+| 6. Stale dispatch | Native and interactive final start commit, both storage formats, no worker effects after revocation | Fixed |
+| 7. Resumed compaction blockers | Live pin blocks generation change; original resume succeeds after release | Fixed |
 
 ## Scale and storage measurement boundary
 
@@ -96,11 +120,13 @@ and COMMIT. They do not establish complete-command SQL totals. Timing stages
 can overlap and must not be added together; complete dispatcher/child timings are
 reported separately.
 
-The [historical pre-review benchmark](evidence/2026-10-26-control-state-compaction/storage-benchmark-before-final-review.json)
-at runtime `3e683d1` reported identical body-scope SQL counts with 10/1,000 terminal
-runs and zero unrelated terminal/package/old-segment bodies. Its complete
-104,859,810-byte closed-review corpus retained logical/audit parity with 3,782
-hot payload bytes (0.003607%). Corrected-source measurements are pending.
+The [corrected-runtime benchmark](evidence/2026-10-26-control-state-compaction/storage-benchmark.json)
+at `eb79c63` reports identical transaction-body SQL counts with 10/1,000 terminal
+runs and zero unrelated terminal/package/old-segment bodies. Complete
+104,859,810-byte closed-review content retains logical/audit parity with 3,782
+hot payload bytes (0.003607%). Both profiles retain their fixed current run/tail.
+The artifact binds the exact runtime fingerprint and discloses instrumentation
+scope; complete local/platform verification passed.
 
 Catalog B-tree bytes overlap total database bytes. Repeated ASCII diff text
 compresses strongly and does not predict arbitrary-project compression. Backups
@@ -115,14 +141,40 @@ The [pre-review author report](2026-10-26-control-state-compaction-pre-review-va
 retains the earlier local 903-test and all-nine-job pass at `3e683d1`. Those
 [historical CI reports](evidence/2026-10-26-control-state-compaction/ci-before-review-fixes/index.json)
 are source-bound and remain useful but do not replace validation of these fixes.
-The corrected full 920-test suite, refreshed benchmark and all nine native gates
-will be recorded before completion.
+The corrected benchmark, full local920 and all nine native jobs passed. The
+[verified native index](evidence/2026-10-26-control-state-compaction/ci-final/index.json)
+retains exact-source report hashes and the successful GitHub run record. Full
+Unix profiles each ran920 with six native-only skips; Windows each ran920 with
+four POSIX/path skips; CP1252 profiles each ran184 with three POSIX skips. Actual
+installed Codex/Claude packages passed eight gates with 11 skills per installation.
 
 Native profiles are Ubuntu/macOS/Windows × Python 3.11/latest, two independent
 Windows CP1252 suites and actual installed Windows Codex/Claude helpers/scripts
 in disposable configurations. Reports retain SQLite build options and effective
 WAL/FULL/FK/one-second busy settings. Signed-in/live authenticated worker/event
-acceptance: NOT_RUN. No paid model task or installed user-plugin change is used.
+acceptance: NOT_RUN. No paid model task or installed user-plugin change is used. Source/runtime
+validation binds `eb79c63`; final documentation/evidence commits are separate and
+the package fingerprint is rechecked unchanged before delivery.
+
+<!-- platform-results:start -->
+
+| Native gate | Tests/gates | Skips | Runner seconds | Result |
+| --- | ---: | ---: | ---: | --- |
+| Ubuntu Python 3.11 | 920 | 6 | 268.405 | [PASS](evidence/2026-10-26-control-state-compaction/ci-final/platform-ubuntu-latest-3.11/platform-report.json) |
+| Ubuntu latest Python | 920 | 6 | 228.806 | [PASS](evidence/2026-10-26-control-state-compaction/ci-final/platform-ubuntu-latest-3.x/platform-report.json) |
+| macOS Python 3.11 | 920 | 6 | 409.134 | [PASS](evidence/2026-10-26-control-state-compaction/ci-final/platform-macos-latest-3.11/platform-report.json) |
+| macOS latest Python | 920 | 6 | 425.237 | [PASS](evidence/2026-10-26-control-state-compaction/ci-final/platform-macos-latest-3.x/platform-report.json) |
+| Windows Python 3.11 | 920 | 4 | 2388.937 | [PASS](evidence/2026-10-26-control-state-compaction/ci-final/platform-windows-latest-3.11/platform-report.json) |
+| Windows latest Python | 920 | 4 | 2159.898 | [PASS](evidence/2026-10-26-control-state-compaction/ci-final/platform-windows-latest-3.x/platform-report.json) |
+| Windows CP1252 Python 3.11 | 184 | 3 | 1019.719 | [PASS](evidence/2026-10-26-control-state-compaction/ci-final/legacy-windows-3.11/legacy-report.json) |
+| Windows CP1252 latest Python | 184 | 3 | 961.779 | [PASS](evidence/2026-10-26-control-state-compaction/ci-final/legacy-windows-3.x/legacy-report.json) |
+| Installed Windows Codex + Claude | 8 gates | — | — | [PASS](evidence/2026-10-26-control-state-compaction/ci-final/windows-installed-hosts/installed-report.json) |
+
+All completed reports bind runtime `eb79c6368d7ed21db3ff7f8ebfb80d7b0550a689`.
+Unix skips are native Windows cases; Windows skips are POSIX/fork or invalid
+filename semantics. Signed-in model/event acceptance remains NOT_RUN.
+
+<!-- platform-results:end -->
 
 Network-share durability is not claimed. Missing SQLite prevents new/v2 work,
 while legacy reads remain available. Corrupt/ambiguous authority is refused;
