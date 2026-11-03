@@ -76,12 +76,15 @@ was attempted. See the [machine report](evidence/2026-11-03-batch-2/prompt-bench
 | Real helper CLI subprocess | 186.732 ms | exit 0, matching inactive decision |
 | Real Claude adapter subprocess | 174.877 ms | exit 0, empty stdout, attachment advisory |
 
-All 12,639 `.devflow` files had matching SHA-256 content, size and mtime inventories
-before and after the three observations (804,321,900 bytes). The aggregate
-inventory digests match, no metadata path changed, and session hints remained
-absent. Access-time changes are not part of this comparison. Read/write guards
-and storage-call counters instrument the direct call only; subprocess outcomes
-and the whole-directory before/after inventory are separate evidence.
+The 12,639 inventoried entries beneath `.devflow` matched before and after the
+three observations (804,321,900 regular-file bytes). The inventory records
+regular-file SHA-256 content, size and mtime, plus file-symlink targets. The
+aggregate digests match and session hints remained absent. Directory metadata,
+access times and directory symlinks are excluded; symlinked directories are not
+followed. The machine report's general metadata wording is limited to this
+inventory, not every possible filesystem entry. Read/write guards and storage-call
+counters instrument the direct call only; subprocess outcomes and the
+before/after inventory are separate evidence.
 
 The observation does not claim signed-in Claude event dispatch, attached-session
 production latency, a production forced-timeout experiment or performance under
@@ -104,12 +107,12 @@ records 105 tests, zero failures/errors/skips, in 73.287 seconds.
 | #2 R4: freshness and token safety | MET — focused journal/filesystem drift, host revision, relocation, new governing manifest, retry-key safety and exact retry cases pass. Existing tests: `test_prepared_attempt_guard.py`, `test_context_input_continuity.py`. Evidence: `docs/superpowers/reviews/evidence/2026-11-03-batch-2/focused.log:33`. |
 | #2 R5: bounded recovery diagnostics | MET — focused worker-phase deadline, UTF-8 component-budget and mandatory-overflow cases pass. Existing tests: `test_context_budget_diagnostics.py`, `test_context_preparation.py`. Evidence: `docs/superpowers/reviews/evidence/2026-11-03-batch-2/focused.log:16`. |
 | #2 R6: regression and scale evidence | MET for this validation scope — the retained 4,370-event benchmark issues one token with exact retry; focused tests cover worker/freshness failures. Original RED-to-GREEN and platform evidence remains in the prior implementation review; no new RED phase is claimed. Evidence: `docs/superpowers/reviews/evidence/2026-11-03-batch-2/context-benchmark.json:1`. |
-| #2 R7: documentation and compatibility | MET for this validation scope — current setup, skills and developer context guidance reviewed; existing budgets and public behavior unchanged. This report documents remaining legacy cost and observation limits. No onboarding or skill metadata update was needed. Evidence: `docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md:127`. |
+| #2 R7: documentation and compatibility | MET for this validation scope — current setup, skills and developer context guidance reviewed; existing budgets and public behavior unchanged. This report documents remaining legacy cost and observation limits. No onboarding or skill metadata update was needed. Evidence: `docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md:147`. |
 | #3 R1: skip undiscoverable optional refresh | MET — production direct call makes zero storage reads with unchanged metadata; focused SessionStart/UserPromptSubmit absent/malformed/external-hint cases pass. Existing test: `test_prompt_hook_latency.py`. Evidence: `docs/superpowers/reviews/evidence/2026-11-03-batch-2/prompt-benchmark.json:15`. |
 | #3 R2: attached state reuse | MET on owned legacy fixtures — focused attached refresh has one authoritative replay and complete context, retaining existing token/version checks. Existing test: `test_prompt_hook_latency.py`; no attached production observation. Evidence: `docs/superpowers/reviews/evidence/2026-11-03-batch-2/focused.log:61`. |
 | #3 R3: advisory helper timeout | MET — focused timeout exit policy is 0 for prompt/session start and 2 for completion; partial output is discarded, explicit blocks and non-timeout failures still block. Existing test: `test_claude_hooks.py`. Evidence: `docs/superpowers/reviews/evidence/2026-11-03-batch-2/focused.log:72`. |
 | #3 R4: performance and enforcement | MET for local validation — production fresh-session inventory is unchanged; focused owned real stalling-helper, missing-cache mapped completion, stale bindings and required-context cases pass. Current full-suite result is recorded below; native and signed-in validation are separate. Evidence: `docs/superpowers/reviews/evidence/2026-11-03-batch-2/focused.log:75`. |
-| #3 R5: documentation and delivery | MET for this validation scope — autowork produced an isolated evidence branch and this requirement assessment. No installed plugin, user setup, timeout, interface or delivery policy changed. Evidence: `docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md:127`. |
+| #3 R5: documentation and delivery | MET for this validation scope — autowork produced an isolated evidence branch and this requirement assessment. No installed plugin, user setup, timeout, interface or delivery policy changed. Evidence: `docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md:147`. |
 
 The original implementation reviews remain available for their historical
 acceptance decisions: [issue #2](2026-10-21-large-control-root-context.md) and
@@ -119,8 +122,25 @@ not this rerun's status.
 
 ## Full verification and review
 
-Full local suite: **RUNNING**. Final review and documentation checks: **PENDING**.
-This draft is not yet a completed delivery package.
+Full local suite: **PASS** — 920 tests, zero failures/errors, six expected native
+Windows skips; the structured runner took 466.833 seconds. The unittest console
+reports 466.419 seconds for its slightly narrower interval. See the
+[full structured report](evidence/2026-11-03-batch-2/full-report.json) and
+[raw log](evidence/2026-11-03-batch-2/full.log).
+
+The six skips cover Windows byte-range locking, Job/process handles, NTFS
+junction containment (two cases), fresh-root canonicalization races, and open
+snapshot cleanup. Their exact test IDs and reasons are retained in the report;
+this run does not establish native Windows behavior.
+
+Routed documentation/metadata/budget checks pass with no problems. New local
+links and requirement evidence line references resolve; runtime, test and package
+paths have no diff against the source baseline. [Provenance](evidence/2026-11-03-batch-2/provenance.json)
+records commands, source identity and artifact hashes.
+
+Independent whole-branch review: **PENDING FINAL VERDICT**, with no substantive
+finding so far. The accepted minor inventory coverage limitation is documented
+above and below; no runtime fix or production rerun was needed.
 
 ## Documentation and delivery boundary
 
@@ -144,3 +164,7 @@ migration/compaction work remains separate.
 - Treated the repeated run instruction as permission to isolate work while
   preserving the main checkout's AGENTS.md edit. If in-place execution was
   intended, the evidence would need to be rerun there; no existing edit was lost.
+
+Deferred minor: the observation script does not inventory directory-symlink
+entries. Recording those targets would improve future read-only observations;
+this report limits its unchanged-metadata claim to the actual inventory.

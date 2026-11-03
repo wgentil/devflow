@@ -1,0 +1,180 @@
+{
+  "success": true,
+  "runtime_diff_against_baseline": false,
+  "new_local_links": [
+    {
+      "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
+      "target": "../specs/2026-10-21-large-control-root-context-design.md",
+      "exists_or_declared_provenance_destination": true
+    },
+    {
+      "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
+      "target": "../specs/2026-10-23-bandpick-prompt-hook-latency-design.md",
+      "exists_or_declared_provenance_destination": true
+    },
+    {
+      "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
+      "target": "../plans/2026-11-03-batch-2-large-root-validation.md",
+      "exists_or_declared_provenance_destination": true
+    },
+    {
+      "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
+      "target": "../../../scripts/benchmark_context_preparation.py",
+      "exists_or_declared_provenance_destination": true
+    },
+    {
+      "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
+      "target": "evidence/2026-11-03-batch-2/context-benchmark.json",
+      "exists_or_declared_provenance_destination": true
+    },
+    {
+      "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
+      "target": "evidence/2026-11-03-batch-2/observe_prompt.py",
+      "exists_or_declared_provenance_destination": true
+    },
+    {
+      "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
+      "target": "evidence/2026-11-03-batch-2/prompt-benchmark.json",
+      "exists_or_declared_provenance_destination": true
+    },
+    {
+      "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
+      "target": "evidence/2026-11-03-batch-2/focused.log",
+      "exists_or_declared_provenance_destination": true
+    },
+    {
+      "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
+      "target": "evidence/2026-11-03-batch-2/focused-report.json",
+      "exists_or_declared_provenance_destination": true
+    },
+    {
+      "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
+      "target": "2026-10-21-large-control-root-context.md",
+      "exists_or_declared_provenance_destination": true
+    },
+    {
+      "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
+      "target": "2026-10-23-bandpick-prompt-hook-latency.md",
+      "exists_or_declared_provenance_destination": true
+    },
+    {
+      "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
+      "target": "evidence/2026-11-03-batch-2/full-report.json",
+      "exists_or_declared_provenance_destination": true
+    },
+    {
+      "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
+      "target": "evidence/2026-11-03-batch-2/full.log",
+      "exists_or_declared_provenance_destination": true
+    },
+    {
+      "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
+      "target": "evidence/2026-11-03-batch-2/provenance.json",
+      "exists_or_declared_provenance_destination": true
+    },
+    {
+      "source": "docs/superpowers/plans/2026-11-03-batch-2-large-root-validation.md",
+      "target": "../specs/2026-10-21-large-control-root-context-design.md",
+      "exists_or_declared_provenance_destination": true
+    },
+    {
+      "source": "docs/superpowers/plans/2026-11-03-batch-2-large-root-validation.md",
+      "target": "../specs/2026-10-23-bandpick-prompt-hook-latency-design.md",
+      "exists_or_declared_provenance_destination": true
+    }
+  ],
+  "requirement_evidence_references": [
+    {
+      "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
+      "target": "docs/superpowers/reviews/evidence/2026-11-03-batch-2/focused.log:23",
+      "resolves": true
+    },
+    {
+      "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
+      "target": "docs/superpowers/reviews/evidence/2026-11-03-batch-2/focused.log:25",
+      "resolves": true
+    },
+    {
+      "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
+      "target": "docs/superpowers/reviews/evidence/2026-11-03-batch-2/focused.log:1",
+      "resolves": true
+    },
+    {
+      "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
+      "target": "docs/superpowers/reviews/evidence/2026-11-03-batch-2/focused.log:33",
+      "resolves": true
+    },
+    {
+      "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
+      "target": "docs/superpowers/reviews/evidence/2026-11-03-batch-2/focused.log:16",
+      "resolves": true
+    },
+    {
+      "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
+      "target": "docs/superpowers/reviews/evidence/2026-11-03-batch-2/context-benchmark.json:1",
+      "resolves": true
+    },
+    {
+      "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
+      "target": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md:147",
+      "resolves": true
+    },
+    {
+      "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
+      "target": "docs/superpowers/reviews/evidence/2026-11-03-batch-2/prompt-benchmark.json:15",
+      "resolves": true
+    },
+    {
+      "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
+      "target": "docs/superpowers/reviews/evidence/2026-11-03-batch-2/focused.log:61",
+      "resolves": true
+    },
+    {
+      "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
+      "target": "docs/superpowers/reviews/evidence/2026-11-03-batch-2/focused.log:72",
+      "resolves": true
+    },
+    {
+      "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
+      "target": "docs/superpowers/reviews/evidence/2026-11-03-batch-2/focused.log:75",
+      "resolves": true
+    },
+    {
+      "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
+      "target": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md:147",
+      "resolves": true
+    }
+  ],
+  "documentation_problem_count": 0,
+  "diff_check": "passed",
+  "focused_tests": 105,
+  "full_tests": 920,
+  "full_skips": [
+    {
+      "id": "test_platform_lock.PlatformLockTests.test_blocking_lock_waits_longer_than_msvcrt_default_retry_window",
+      "reason": "Windows byte-range lock retry behavior"
+    },
+    {
+      "id": "test_process_transport.WindowsJobCompletionTests.test_exited_leader_descendant_is_signaled_before_close_returns",
+      "reason": "requires native Windows Job and process handles"
+    },
+    {
+      "id": "test_storage_objects.StorageObjectTests.test_junction_escape_never_publishes_outside_root",
+      "reason": "native NTFS junction containment"
+    },
+    {
+      "id": "test_storage_objects.StorageObjectTests.test_repeated_concurrent_fresh_windows_roots_preserve_confinement",
+      "reason": "native Windows fresh-root canonicalization race"
+    },
+    {
+      "id": "test_storage_recovery.StorageRecoveryTests.test_windows_open_snapshot_cleanup_resumes",
+      "reason": "native Windows file-handle semantics"
+    },
+    {
+      "id": "test_windows_workflow.WindowsWorkflowTests.test_junction_escape_is_rejected",
+      "reason": "native NTFS junction containment"
+    }
+  ],
+  "benchmark_assertions": "passed",
+  "production_observation_assertions": "passed"
+}

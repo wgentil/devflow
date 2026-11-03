@@ -1,0 +1,120 @@
+{
+  "artifact_sha256": {
+    "docs/superpowers/reviews/evidence/2026-11-03-batch-2/context-benchmark.json": "3fa3d72fced21158daa90091ff3b0b983470dc8eb963dfbf523687d7e14e611c",
+    "docs/superpowers/reviews/evidence/2026-11-03-batch-2/context-benchmark.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "docs/superpowers/reviews/evidence/2026-11-03-batch-2/documentation-check.json": "2eeb76e0e22a23258898800ec957b55c1ba316275b033528f78291bf6eb3fcb2",
+    "docs/superpowers/reviews/evidence/2026-11-03-batch-2/focused-report.json": "d1f119b503b64c1d615faf85b10b9f8f1450470d7096961ded9816817860e7af",
+    "docs/superpowers/reviews/evidence/2026-11-03-batch-2/focused.log": "a1087ea614d11308852a90fb947356893ffc4a1c83c882404f2b4d56cd5cf161",
+    "docs/superpowers/reviews/evidence/2026-11-03-batch-2/full-report.json": "0dc9445848f9135db0652df2f7f67b67af3ed602ea0cc142b6b3e262541b3b2b",
+    "docs/superpowers/reviews/evidence/2026-11-03-batch-2/full.log": "26571e97eb4600593803bbabb58857ffa9bc73d697d642edad47972ea81c42f4",
+    "docs/superpowers/reviews/evidence/2026-11-03-batch-2/observe_prompt.py": "7ce35c2c57d67b7bdc3eb6d2c96b50d980e70df9cacfea2ca3a38544af191f9b",
+    "docs/superpowers/reviews/evidence/2026-11-03-batch-2/prompt-benchmark.json": "23b3330617a6498c0a5ef5be9e5ae219a2c98be9fa794ad7046ba8034d281010",
+    "docs/superpowers/reviews/evidence/2026-11-03-batch-2/prompt-benchmark.log": "aef4e61d79d563a7e6855ea3e9dac2284c2d0e8cd59f65d3ff37afcd30fa523c",
+    "docs/superpowers/reviews/evidence/2026-11-03-batch-2/verification.json": "c3f6e250eff0facd0d73dece2ad2214989fb69bcb31bfe530dabee98d712a304"
+  },
+  "commands": [
+    [
+      "python3",
+      "-B",
+      "scripts/run_platform_tests.py",
+      "--output",
+      "docs/superpowers/reviews/evidence/2026-11-03-batch-2/focused-report.json",
+      "--pattern",
+      "test_large_context_preparation.py",
+      "--pattern",
+      "test_context_benchmark.py",
+      "--pattern",
+      "test_context_preparation.py",
+      "--pattern",
+      "test_context_preflight.py",
+      "--pattern",
+      "test_context_transport.py",
+      "--pattern",
+      "test_prepared_attempt_guard.py",
+      "--pattern",
+      "test_context_budget_diagnostics.py",
+      "--pattern",
+      "test_optional_context_budget.py",
+      "--pattern",
+      "test_context_input_continuity.py",
+      "--pattern",
+      "test_lifecycle_hooks.py",
+      "--pattern",
+      "test_prompt_hook_latency.py",
+      "--pattern",
+      "test_claude_hooks.py",
+      "--pattern",
+      "test_host_review_regressions.py"
+    ],
+    [
+      "python3",
+      "-B",
+      "scripts/benchmark_context_preparation.py",
+      "--output",
+      "docs/superpowers/reviews/evidence/2026-11-03-batch-2/context-benchmark.json"
+    ],
+    [
+      "python3",
+      "-B",
+      "docs/superpowers/reviews/evidence/2026-11-03-batch-2/observe_prompt.py",
+      "--project",
+      "/Users/wayne/src/bandpick/repos/bandpick",
+      "--output",
+      "docs/superpowers/reviews/evidence/2026-11-03-batch-2/prompt-benchmark.json"
+    ],
+    [
+      "python3",
+      "-B",
+      "scripts/run_platform_tests.py",
+      "--output",
+      "docs/superpowers/reviews/evidence/2026-11-03-batch-2/full-report.json"
+    ],
+    [
+      "python3",
+      "-B",
+      "scripts/check_documentation.py",
+      "--check"
+    ],
+    [
+      "git",
+      "diff",
+      "--check"
+    ]
+  ],
+  "fixture_defaults": {
+    "delivered_runs": 40,
+    "events": 4370,
+    "history_bytes": 79691776
+  },
+  "local_evidence_branch": "validation/batch-2-large-root",
+  "notes": [
+    "Local report metadata.git_sha is unset because this is not GitHub Actions; source binding is the explicit unchanged runtime paths and baseline tree objects here.",
+    "Evidence-only commits occurred during the full suite; runtime/tests/package paths were unchanged throughout.",
+    "The independent review verdict and final report are separately retained in the branch; this manifest hashes the machine evidence files.",
+    "No new CI/native Windows/signed-in host validation, merge, release or GitHub issue write."
+  ],
+  "recorded_at": "2026-11-03T18:26:21.155026+00:00",
+  "runtime_source_sha": "438e4e972a892f624dd51cce809e78179755b7c8",
+  "runtime_tree_objects": {
+    ".claude-plugin": "6631a4375260e2d319c0a66d8d84fad0044028e9",
+    ".codex-plugin": "268c1c9f5e0e4eb077bbc9d81d2cf8dd45d613c0",
+    "adapters": "e63965b9b64c6657c55abc9c8642244b65d5453e",
+    "definitions": "1229a5afc5ed1abc69f8c3906f9b2fb4028d3c60",
+    "plugin.json": "df7cb31e37f42dbf10bea6cf8d88e301354c90c3",
+    "scripts": "f5ad444f7e4785d0d4ca70fe40dae3ca83f38416",
+    "skills": "7c58a7d5ee87aae9b12436c671079cffb0b1653a",
+    "tests": "ce40f54569ade05da66d2d542c2940994b27d8ab"
+  },
+  "runtime_unchanged_from_source": true,
+  "runtime_unchanged_paths": [
+    "skills",
+    "scripts",
+    "tests",
+    "adapters",
+    "definitions",
+    "plugin.json",
+    ".claude-plugin",
+    ".codex-plugin"
+  ],
+  "schema_version": 1
+}
