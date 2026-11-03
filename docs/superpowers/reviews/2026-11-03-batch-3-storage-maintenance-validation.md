@@ -177,7 +177,12 @@ workspace on a separate branch while preserving main's edit (an in-place
 preference would need a rerun there); reused the just-passed unchanged-source
 full-suite baseline (any runtime/test/package change requires a full rerun).
 
-Independent review and final artifact/link checks: **PENDING**. The final package
-will record the actual verdict, findings, source identities and all evidence hashes.
+Independent review: **PASS**, ready to merge, with zero Critical, Important or
+Minor findings. The [review record](evidence/2026-11-03-batch-3/independent-review.md)
+retains the actual verdict and all explicit scope exclusions.
+[Provenance](evidence/2026-11-03-batch-3/provenance.json) and
+[final checks](evidence/2026-11-03-batch-3/verification.json) bind the source,
+commands, resolving local links/line references and every machine evidence hash.
+Documentation, metadata, budget and diff checks pass. No fix pass was needed.
 No merge, push, release, issue comment/closure or production maintenance is authorized
 by the previous batch's local merge choice. Those remain separate delivery actions.

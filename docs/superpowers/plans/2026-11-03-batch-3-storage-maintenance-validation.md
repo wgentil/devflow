@@ -1,6 +1,6 @@
 # Batch 3 storage maintenance validation implementation plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Revalidate the shipped issue #5 storage design and prepare an evidence-backed closure decision without touching production control storage.
 
@@ -56,7 +56,7 @@
 
 **Interfaces:** Consume fresh storage/CLI/benchmark outputs plus explicitly reused baseline full-suite evidence. Produce changed-file/line evidence for R1–R5, scope limits, closure recommendation and one independent whole-branch review.
 
-- [ ] Review primary setup, skills index, storage/maintenance references and runnable maintenance examples. Update behavior docs only if affected; record why no update is needed otherwise.
-- [ ] Write requirement assessment, measurement boundaries, every skip and unverified production/platform scope. Check new local links, commands, skill metadata, artifact hashes and diff syntax.
-- [ ] Obtain one fresh-context independent review and disposition findings. Correct in-scope substantive defects with reproducing tests before product code; reverify affected checks and the full suite if runtime changes.
-- [ ] Commit complete reviewable local work and present the delivery decision. Do not infer merge authorization for this new branch from the previous batch's local merge choice.
+- [x] Review primary setup, skills index, storage/maintenance references and runnable maintenance examples. Update behavior docs only if affected; record why no update is needed otherwise.
+- [x] Write requirement assessment, measurement boundaries, every skip and unverified production/platform scope. Check new local links, commands, skill metadata, artifact hashes and diff syntax.
+- [x] Obtain one fresh-context independent review and disposition findings. Correct in-scope substantive defects with reproducing tests before product code; reverify affected checks and the full suite if runtime changes.
+- [x] Commit complete reviewable local work and present the delivery decision. Do not infer merge authorization for this new branch from the previous batch's local merge choice.
