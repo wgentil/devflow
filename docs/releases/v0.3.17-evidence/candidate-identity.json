@@ -1,0 +1,20 @@
+{
+  "source_sha": "2e13573d94f1301cee5b6d45ee4c30cc34f666cf",
+  "descriptor": {
+    "plugin": "devflow",
+    "plugin_version": "0.3.17",
+    "state_schema_version": 1,
+    "supported_schemas": [
+      1
+    ],
+    "storage_format_version": 2,
+    "supported_storage_formats": [
+      1,
+      2
+    ],
+    "host_protocol_version": 1,
+    "release_id": "47eeb1691724cce290965531972c641cbf3fa182c42fb66ec8622c59b5bcd2be",
+    "fingerprint": "47eeb1691724cce290965531972c641cbf3fa182c42fb66ec8622c59b5bcd2be"
+  },
+  "baseline_sha": "7daecd49f82183e3276ed076d5b94d0ade9e6af6"
+}

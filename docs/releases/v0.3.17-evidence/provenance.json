@@ -1,0 +1,389 @@
+{
+  "acceptance_reports": [
+    "local-platform.json",
+    "focused-platform.json",
+    "local-installed.json",
+    "github-installed.json",
+    "windows-installed.json",
+    "platform-ubuntu-latest-3.11.json",
+    "platform-ubuntu-latest-3.x.json",
+    "platform-macos-latest-3.11.json",
+    "platform-macos-latest-3.x.json",
+    "platform-windows-latest-3.11.json",
+    "platform-windows-latest-3.x.json",
+    "legacy-windows-3.11.json",
+    "legacy-windows-3.x.json",
+    "final-focused-platform.json"
+  ],
+  "candidate_source_identity": "docs/releases/v0.3.17-evidence/candidate-identity.json",
+  "ci_matrix": "eight first-attempt successful jobs and one same-source successful Windows3.11 retry",
+  "ci_run_attempt": 2,
+  "ci_run_id": 41712415088,
+  "controlled_negative_experiment": {
+    "expected": "same1failure1error from5.5s owned worker startup vs unchanged5s guard; other3casespass",
+    "file": "controlled-startup-reproduction.json",
+    "not_acceptance_pass_evidence": true,
+    "status": "intentional-negative-diagnostic"
+  },
+  "descriptor": {
+    "fingerprint": "47eeb1691724cce290965531972c641cbf3fa182c42fb66ec8622c59b5bcd2be",
+    "host_protocol_version": 1,
+    "plugin": "devflow",
+    "plugin_version": "0.3.17",
+    "release_id": "47eeb1691724cce290965531972c641cbf3fa182c42fb66ec8622c59b5bcd2be",
+    "state_schema_version": 1,
+    "storage_format_version": 2,
+    "supported_schemas": [
+      1
+    ],
+    "supported_storage_formats": [
+      1,
+      2
+    ]
+  },
+  "files": [
+    {
+      "bytes": 574,
+      "file": "candidate-identity.json",
+      "sha256": "06aa36abb405db65bf8b2a05f383e7357c7616b9489c34c255291d30dcb54577"
+    },
+    {
+      "bytes": 37720,
+      "file": "ci-index.json",
+      "sha256": "2c9fad052924b29e3c20e017c6cfd37d6b319284c82f6e7a997639b5a8463fb3"
+    },
+    {
+      "bytes": 12952,
+      "file": "ci-run-api.json",
+      "sha256": "2d5eba13c9783805e58de294e34b351bde1e3547dab99143aa832c35bdbe34f0"
+    },
+    {
+      "bytes": 24817,
+      "file": "ci-run.json",
+      "sha256": "1fdbbb75f0c37e2d815414a897f04c7a52750785713672feb948967e729e0d32"
+    },
+    {
+      "bytes": 5226,
+      "file": "controlled-startup-reproduction.json",
+      "sha256": "d5ef590e938fde75b4b51125c7890e5b00e7d290f102bb84a06f6188a11ce0e6"
+    },
+    {
+      "bytes": 3926,
+      "file": "controlled-startup-reproduction.log",
+      "sha256": "190348687f30eeca9dbe8bd24eacb3eb339e588be916e8d3c566373749ac98cc"
+    },
+    {
+      "bytes": 6593,
+      "file": "documentation-check.json",
+      "sha256": "2eeb76e0e22a23258898800ec957b55c1ba316275b033528f78291bf6eb3fcb2"
+    },
+    {
+      "bytes": 6593,
+      "file": "final-documentation-check.json",
+      "sha256": "2eeb76e0e22a23258898800ec957b55c1ba316275b033528f78291bf6eb3fcb2"
+    },
+    {
+      "bytes": 2761,
+      "file": "final-focused-platform.json",
+      "sha256": "ff40e230ca99c5b8f28b56172296f3b2f13b05b50bea7b3cbd985709391279f8"
+    },
+    {
+      "bytes": 3015,
+      "file": "final-focused-platform.log",
+      "sha256": "368c6b0700faffaaf16ff10c9486d718a594cf74777b36e1a36cd31017b92ff0"
+    },
+    {
+      "bytes": 2762,
+      "file": "focused-platform.json",
+      "sha256": "c75907142ba99cdb8bf0f3bd06e8fa74f9b23b9be4fe81d54cfc9ffdd9d26a14"
+    },
+    {
+      "bytes": 3015,
+      "file": "focused-platform.log",
+      "sha256": "6c7cce24082d278cf5d4143793e5bd67943c78098d4d0512e8ab2e8b6e0d9782"
+    },
+    {
+      "bytes": 165,
+      "file": "github-install.log",
+      "sha256": "e294b13c6b8c166cdefd5bf67fc1f66bf93d1edeaaa836cdd10aaf2234f5eff9"
+    },
+    {
+      "bytes": 7617,
+      "file": "github-installed.commands.json",
+      "sha256": "45978a0b00b3c843ee2f94044dbf333a81f37ff227e92d5ed037982e04abac0d"
+    },
+    {
+      "bytes": 5193,
+      "file": "github-installed.hooks.log",
+      "sha256": "9cab4f9389d01eea7cd0437a47461e6ab81e4070e7c8069ceed64bc078c569b2"
+    },
+    {
+      "bytes": 2644,
+      "file": "github-installed.json",
+      "sha256": "f6421d6e4c0311a99c4d8ed003ea9e89ecf4ffa19d3398ac2612e169cde8722b"
+    },
+    {
+      "bytes": 2832,
+      "file": "independent-review.md",
+      "sha256": "ec1739f8a36d63eddf72fa7a5d2fd50fc077c1329db84aabe1f6da1b02fce71a"
+    },
+    {
+      "bytes": 16504,
+      "file": "initial-ci-run.json",
+      "sha256": "43da6d800b1c48c7e371f2d5dbc83ab2e0696b4245598370d1ac1ea7b9c3a43f"
+    },
+    {
+      "bytes": 5604,
+      "file": "initial-windows-3.11-failed.json",
+      "sha256": "9e95aa683943e3ae655372d1871429e4d330cb3f7721a0373f4cccd886423f84"
+    },
+    {
+      "bytes": 233406,
+      "file": "initial-windows-3.11-failed.log",
+      "sha256": "12c3ae4362e7c066f0c2d52125ac185bfb14f511226f41dc78b82b0f7e71806d"
+    },
+    {
+      "bytes": 3237,
+      "file": "legacy-windows-3.11.json",
+      "sha256": "36da8278a2f9cf5a2a551ec5f37e3ac62a7edc3ff82115cf5d44289dde11d84c"
+    },
+    {
+      "bytes": 3278,
+      "file": "legacy-windows-3.x.json",
+      "sha256": "69fb4c2c0daf306ade3ec946709ac9ed2e3267326fe6831f8a9ed4e202f70333"
+    },
+    {
+      "bytes": 164,
+      "file": "local-install.log",
+      "sha256": "553053addfc4489a8d7643f1e52b18e61ec5ab12575ddb4437c4c934f3739281"
+    },
+    {
+      "bytes": 7310,
+      "file": "local-installed.commands.json",
+      "sha256": "ba4e2f7a19a9b2eaf43e8e90f7283263a43202b16388a2b3b1d7ef5ffbf01dfa"
+    },
+    {
+      "bytes": 5193,
+      "file": "local-installed.hooks.log",
+      "sha256": "20dc43423147dc45b03d6153a5bf36e7d110eaa8d5ffd75234bc94f5c513c645"
+    },
+    {
+      "bytes": 2644,
+      "file": "local-installed.json",
+      "sha256": "f6421d6e4c0311a99c4d8ed003ea9e89ecf4ffa19d3398ac2612e169cde8722b"
+    },
+    {
+      "bytes": 3790,
+      "file": "local-platform.json",
+      "sha256": "d8f33ea6356d71eeac1d3d0db20e91bbc300db290fc2a7a66f6aa6557f65b7aa"
+    },
+    {
+      "bytes": 140838,
+      "file": "local-platform.log",
+      "sha256": "7bf797f3a39d80322c2e169f91028324d01ca593d6fec2e6b5541aad2165c585"
+    },
+    {
+      "bytes": 1390,
+      "file": "main-preservation-context.json",
+      "sha256": "fe62118a99eaa07a4218ed5c00d845f82ff930b0e706828e8cb6b56d62c828c4"
+    },
+    {
+      "bytes": 1926,
+      "file": "package-version-red.log",
+      "sha256": "9b0f0438ee735d32f4b6d71df9445fe143ab85ea53ed947cbd3e402790dc9906"
+    },
+    {
+      "bytes": 3623,
+      "file": "platform-macos-latest-3.11.json",
+      "sha256": "f58a7891f08ed9c52de3fb456750661c724514ffad5dee48f3ef6a29c98337eb"
+    },
+    {
+      "bytes": 3609,
+      "file": "platform-macos-latest-3.x.json",
+      "sha256": "fb1061c790144902259bc8e9a6bb40633c9444468868635564966dffc88a3c68"
+    },
+    {
+      "bytes": 3962,
+      "file": "platform-ubuntu-latest-3.11.json",
+      "sha256": "929c4dcb80fc125f138f0bb4a1f02f3f6440118d28e595c4bfd814bd45aa56cd"
+    },
+    {
+      "bytes": 3961,
+      "file": "platform-ubuntu-latest-3.x.json",
+      "sha256": "0738f68c9812d708700882f88656121666f09f01191fe2469517a5db368155e8"
+    },
+    {
+      "bytes": 3225,
+      "file": "platform-windows-latest-3.11.json",
+      "sha256": "be7a70262f9b58c479d49713443c333ea5e07c1e108017c39a1382d2d20611f3"
+    },
+    {
+      "bytes": 3260,
+      "file": "platform-windows-latest-3.x.json",
+      "sha256": "3df45ad30754dc30afd40f95dcc080f54e4cb6122b9fc2094b9b7fe46755f31d"
+    },
+    {
+      "bytes": 6684,
+      "file": "preseal-documentation-check.json",
+      "sha256": "448087c40289954dc7148abb17387067ed3684c2c02d6e04999de5afd962a271"
+    },
+    {
+      "bytes": 4654,
+      "file": "preseal-focused-platform.json",
+      "sha256": "88f03919a74cb51e59aa9b42a2d0c53affccc2bc77e4f2b07a92c0b0a31efdb0"
+    },
+    {
+      "bytes": 5157,
+      "file": "preseal-focused-platform.log",
+      "sha256": "15f4f7fb5e66c603f73f04b307254ebeb345ef1e292093b03e62f650d0803bf0"
+    },
+    {
+      "bytes": 1923,
+      "file": "reproduce_startup.py",
+      "sha256": "e3fee5d95d44e497eea4fdd340ab84605bfc3b618a63f5670f05ab966a44864b"
+    },
+    {
+      "bytes": 3230,
+      "file": "smoke_driver.py",
+      "sha256": "bb72ed77d6c2a12102a389ccbe32872cb032f280ec596c354a81ec4e922de7bf"
+    },
+    {
+      "bytes": 5239,
+      "file": "windows-installed-hooks.log",
+      "sha256": "c36e6ca6ed6e842dd5ee7a050be0722a3cad4e9b206e9a272638588a18fe68e6"
+    },
+    {
+      "bytes": 2786,
+      "file": "windows-installed.json",
+      "sha256": "a7fdb1ab1e9a79fd194169ae3fbd41d7c3b4f9848147a91bfa452153555480f6"
+    },
+    {
+      "bytes": 1073,
+      "file": "windows311-retry-receipt.json",
+      "sha256": "68b5bbf1ac399e989c83cf8e1b2dc46e5e93534c69c40b06f7a04876505ad4c9"
+    }
+  ],
+  "fingerprint": "47eeb1691724cce290965531972c641cbf3fa182c42fb66ec8622c59b5bcd2be",
+  "independent_review": {
+    "file": "independent-review.md",
+    "findings": 0,
+    "scope": "metadata delta and candidate eligibility; final real gates verified by executor"
+  },
+  "initial_native_failure": {
+    "errors": [
+      "test_context_transport.ContextTransportTests.test_input_artifact_removed_on_success_timeout_and_overflow"
+    ],
+    "failures": [
+      "test_context_regressions.ContextRegressionTests.test_offline_hook_shares_fixture_checks"
+    ],
+    "file": "initial-windows-3.11-failed.json",
+    "known_reason": "Offline fixture explicitly exceeded5s worker deadline; native transport error nested detail was not captured.",
+    "status": "failed-acceptance-attempt-retained"
+  },
+  "limits": [
+    "No runtime/test/deadline/assertion changes after candidate commit.",
+    "Signed-in model/live-event/handoff acceptance remains NOT_RUN.",
+    "Initial CI failure and diagnostic failures are retained, not relabeled passing.",
+    "Fixture-success checks remain sensitive to worker wall-clock latency; no universal speed guarantee.",
+    "No production maintenance, regular-host upgrade or GitHub issue reconciliation."
+  ],
+  "local_git_sha_null_binding": "Local full/focused/install reports ran against the observed committed candidate source and this exact package fingerprint; local reports are not GitHub Actions jobs.",
+  "main_agents_preserved": true,
+  "main_agents_sha256": "7840788b4c297cc446dcaf6a89e82d8ca575e16be7922d410264a446b03eb0f2",
+  "preseal_documentation_check": {
+    "files": [
+      "preseal-focused-platform.json",
+      "preseal-documentation-check.json"
+    ],
+    "not_runtime_failure": true,
+    "status": "assembly-order failure retained; generated missing provenance file before final rerun"
+  },
+  "protected_source_paths_unchanged_from_tested_candidate": [
+    "plugin.json",
+    "skills",
+    "adapters",
+    "definitions",
+    ".claude-plugin",
+    ".codex-plugin",
+    "tests",
+    "scripts",
+    ".github"
+  ],
+  "raw_native_reports": [
+    {
+      "file": "platform-ubuntu-latest-3.11.json",
+      "normalization": "none",
+      "origin": "platform-ubuntu-latest-3.11",
+      "original_sha256": "929c4dcb80fc125f138f0bb4a1f02f3f6440118d28e595c4bfd814bd45aa56cd",
+      "retained_sha256": "929c4dcb80fc125f138f0bb4a1f02f3f6440118d28e595c4bfd814bd45aa56cd"
+    },
+    {
+      "file": "platform-ubuntu-latest-3.x.json",
+      "normalization": "none",
+      "origin": "platform-ubuntu-latest-3.x",
+      "original_sha256": "0738f68c9812d708700882f88656121666f09f01191fe2469517a5db368155e8",
+      "retained_sha256": "0738f68c9812d708700882f88656121666f09f01191fe2469517a5db368155e8"
+    },
+    {
+      "file": "platform-macos-latest-3.11.json",
+      "normalization": "none",
+      "origin": "platform-macos-latest-3.11",
+      "original_sha256": "f58a7891f08ed9c52de3fb456750661c724514ffad5dee48f3ef6a29c98337eb",
+      "retained_sha256": "f58a7891f08ed9c52de3fb456750661c724514ffad5dee48f3ef6a29c98337eb"
+    },
+    {
+      "file": "platform-macos-latest-3.x.json",
+      "normalization": "none",
+      "origin": "platform-macos-latest-3.x",
+      "original_sha256": "fb1061c790144902259bc8e9a6bb40633c9444468868635564966dffc88a3c68",
+      "retained_sha256": "fb1061c790144902259bc8e9a6bb40633c9444468868635564966dffc88a3c68"
+    },
+    {
+      "file": "platform-windows-latest-3.11.json",
+      "normalization": "none",
+      "origin": "platform-windows-latest-3.11",
+      "original_sha256": "be7a70262f9b58c479d49713443c333ea5e07c1e108017c39a1382d2d20611f3",
+      "retained_sha256": "be7a70262f9b58c479d49713443c333ea5e07c1e108017c39a1382d2d20611f3"
+    },
+    {
+      "file": "platform-windows-latest-3.x.json",
+      "normalization": "none",
+      "origin": "platform-windows-latest-3.x",
+      "original_sha256": "3df45ad30754dc30afd40f95dcc080f54e4cb6122b9fc2094b9b7fe46755f31d",
+      "retained_sha256": "3df45ad30754dc30afd40f95dcc080f54e4cb6122b9fc2094b9b7fe46755f31d"
+    },
+    {
+      "file": "legacy-windows-3.11.json",
+      "normalization": "none",
+      "origin": "legacy-windows-3.11",
+      "original_sha256": "36da8278a2f9cf5a2a551ec5f37e3ac62a7edc3ff82115cf5d44289dde11d84c",
+      "retained_sha256": "36da8278a2f9cf5a2a551ec5f37e3ac62a7edc3ff82115cf5d44289dde11d84c"
+    },
+    {
+      "file": "legacy-windows-3.x.json",
+      "normalization": "none",
+      "origin": "legacy-windows-3.x",
+      "original_sha256": "69fb4c2c0daf306ade3ec946709ac9ed2e3267326fe6831f8a9ed4e202f70333",
+      "retained_sha256": "69fb4c2c0daf306ade3ec946709ac9ed2e3267326fe6831f8a9ed4e202f70333"
+    },
+    {
+      "file": "windows-installed.json",
+      "normalization": "none",
+      "origin": "windows-installed-hosts",
+      "original_sha256": "a7fdb1ab1e9a79fd194169ae3fbd41d7c3b4f9848147a91bfa452153555480f6",
+      "retained_sha256": "a7fdb1ab1e9a79fd194169ae3fbd41d7c3b4f9848147a91bfa452153555480f6"
+    },
+    {
+      "file": "windows-installed-hooks.log",
+      "normalization": "none",
+      "origin": "windows-installed-hosts",
+      "original_sha256": "c36e6ca6ed6e842dd5ee7a050be0722a3cad4e9b206e9a272638588a18fe68e6",
+      "retained_sha256": "c36e6ca6ed6e842dd5ee7a050be0722a3cad4e9b206e9a272638588a18fe68e6"
+    }
+  ],
+  "recorded_at": "2026-11-03T22:02:22.195385+00:00",
+  "schema_version": 1,
+  "source_sha": "2e13573d94f1301cee5b6d45ee4c30cc34f666cf",
+  "status": "verified-publication-readiness",
+  "workflow_url": "https://github.com/wgentil/devflow/actions/runs/41712415088"
+}

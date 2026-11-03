@@ -1,0 +1,29 @@
+{
+  "source_sha": "2e13573d94f1301cee5b6d45ee4c30cc34f666cf",
+  "run_id": 41712415088,
+  "selected_artifact_id": 13275730435,
+  "selected_artifact_created_at": "2026-11-03T21:55:20Z",
+  "initial_failed_artifact_id": 13271420290,
+  "same_named_artifact_count": 2,
+  "selection": "latest created_at/id, then validate success/source/tests",
+  "tests_run": 920,
+  "skips": [
+    {
+      "id": "test_git_paths.GitPathsTests.test_diff_paths_preserve_newline",
+      "reason": "newline is not a valid Windows filename"
+    },
+    {
+      "id": "test_storage_migration.StorageMigrationTests.test_sqlite_authority_and_backup_keep_private_file_permissions",
+      "reason": "POSIX private-file permission semantics"
+    },
+    {
+      "id": "test_storage_pins.StoragePinTests.test_fork_child_cannot_release_parent_pin",
+      "reason": "POSIX inherited lease ownership probe"
+    },
+    {
+      "id": "test_storage_pins.StoragePinTests.test_reentrant_coordination_does_not_cross_process_owner",
+      "reason": "POSIX fork ownership probe"
+    }
+  ],
+  "elapsed_seconds": 2366.516
+}

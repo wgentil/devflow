@@ -1,0 +1,35 @@
+test_each_missing_fact_or_growth_defect_fails_even_if_payload_shrinks (test_context_regressions.ContextRegressionTests.test_each_missing_fact_or_growth_defect_fails_even_if_payload_shrinks) ... ok
+test_offline_cold_warm_drift_compaction_handoff_and_equivalent_facts (test_context_regressions.ContextRegressionTests.test_offline_cold_warm_drift_compaction_handoff_and_equivalent_facts) ... ok
+test_offline_hook_shares_fixture_checks (test_context_regressions.ContextRegressionTests.test_offline_hook_shares_fixture_checks) ... FAIL
+test_input_artifact_removed_on_success_timeout_and_overflow (test_context_transport.ContextTransportTests.test_input_artifact_removed_on_success_timeout_and_overflow) ... ERROR
+test_wrong_root_run_hash_symlink_and_oversize_artifacts_rejected (test_context_transport.ContextTransportTests.test_wrong_root_run_hash_symlink_and_oversize_artifacts_rejected) ... ok
+
+======================================================================
+ERROR: test_input_artifact_removed_on_success_timeout_and_overflow (test_context_transport.ContextTransportTests.test_input_artifact_removed_on_success_timeout_and_overflow)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/19ac/devflow/tests/test_context_transport.py", line 35, in test_input_artifact_removed_on_success_timeout_and_overflow
+    p=self.prepare();prepared_context(self.f['root'],self.f['run'],{'run_id':'current'},['W1'],stage='implementation',prepared=p)
+                     ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/19ac/devflow/skills/workflow/scripts/workflow_lib/lifecycle_hooks.py", line 187, in prepared_context
+    if response['status']!='allow':raise WorkflowError(response['reason_code'],'Required context preparation failed.',{'phase':'composition','hook':response,**response.get('details',{})})
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+workflow_lib.store.WorkflowError: Required context preparation failed.
+
+======================================================================
+FAIL: test_offline_hook_shares_fixture_checks (test_context_regressions.ContextRegressionTests.test_offline_hook_shares_fixture_checks)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/19ac/devflow/tests/test_context_regressions.py", line 44, in test_offline_hook_shares_fixture_checks
+    self.assertEqual(response['status'], 'allow', response)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'advisory-error' != 'allow'
+- advisory-error
++ allow
+ : {'status': 'advisory-error', 'reason_code': 'HOOK_DEADLINE_EXCEEDED', 'details': {'phase': 'worker', 'action': 'Retry from current inputs; retain diagnostics if bounded composition still times out.'}, 'hook': 'check-context-regressions', 'elapsed_ms': 5002, 'limits': {'deadline_seconds': 5, 'max_bytes': 8192}, 'request_hash': '2b02ebdd119ee7f5823cdce955a9872fe2830effb26cd952278021d5f1d5f54b', 'output_bytes': 459, 'source_hashes': {}, 'configuration_hash': None, 'artifact_refs': []}
+
+----------------------------------------------------------------------
+Ran 5 tests in 12.544s
+
+FAILED (failures=1, errors=1)
+{"expected_negative_reproduction": true, "cause": "Owned worker startup delayed 5.5s against unchanged production 5s deadline", "matching_failing_cases": ["test_context_regressions.ContextRegressionTests.test_offline_hook_shares_fixture_checks", "test_context_transport.ContextTransportTests.test_input_artifact_removed_on_success_timeout_and_overflow"], "temporary_worker_removed": true, "runtime_files_changed": false}

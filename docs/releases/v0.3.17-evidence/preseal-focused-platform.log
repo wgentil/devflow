@@ -1,0 +1,61 @@
+test_release_identity_survives_git_checkout_with_autocrlf (test_package.CrossPlatformPackageIdentityTests.test_release_identity_survives_git_checkout_with_autocrlf) ... ok
+test_routed_reference_bytes_survive_git_checkout_with_autocrlf (test_package.CrossPlatformPackageIdentityTests.test_routed_reference_bytes_survive_git_checkout_with_autocrlf) ... ok
+test_host_examples_cover_attachment_mapping_and_handoff (test_package.HostResourceTests.test_host_examples_cover_attachment_mapping_and_handoff) ... ok
+test_shared_guides_and_host_resources_resolve (test_package.HostResourceTests.test_shared_guides_and_host_resources_resolve) ... ok
+test_claude_marketplace_packages_shared_root (test_package.PackageTests.test_claude_marketplace_packages_shared_root) ... ok
+test_manifest_skills_resolve (test_package.PackageTests.test_manifest_skills_resolve) ... ok
+test_package_relocation_and_existing_journal (test_package.PackageTests.test_package_relocation_and_existing_journal) ... ok
+test_version_from_unrelated_cwd (test_package.PackageTests.test_version_from_unrelated_cwd) ... ok
+test_claude_hooks_use_shell_free_python_launcher (test_package.PortableHookTests.test_claude_hooks_use_shell_free_python_launcher) ... ok
+test_distributions_resolve_shared_resources (test_releases.ReleaseTests.test_distributions_resolve_shared_resources) ... ok
+test_relocation_preserves_fingerprint (test_releases.ReleaseTests.test_relocation_preserves_fingerprint) ... ok
+test_same_version_content_change_blocks (test_releases.ReleaseTests.test_same_version_content_change_blocks) ... ok
+test_unknown_loaded_release_blocks (test_releases.ReleaseTests.test_unknown_loaded_release_blocks) ... ok
+test_unsupported_schema_blocks (test_releases.ReleaseTests.test_unsupported_schema_blocks) ... ok
+test_checker_rejects_broken_links_routes_and_unicode_overflow (test_documentation.DocumentationTests.test_checker_rejects_broken_links_routes_and_unicode_overflow) ... ok
+test_discovery_history_and_required_dependency_exceptions (test_documentation.DocumentationTests.test_discovery_history_and_required_dependency_exceptions) ... ok
+test_duplicate_json_ids_rejected (test_documentation.DocumentationTests.test_duplicate_json_ids_rejected) ... ok
+test_invalid_version_dependencies_routes_and_budgets (test_documentation.DocumentationTests.test_invalid_version_dependencies_routes_and_budgets) ... ok
+test_policy_validation_and_stable_navigation (test_documentation.DocumentationTests.test_policy_validation_and_stable_navigation) ... ok
+test_routing_sections_are_mandatory_and_independently_loadable (test_documentation.DocumentationTests.test_routing_sections_are_mandatory_and_independently_loadable) ... FAIL
+test_shipped_entry_budgets_and_complete_initial_read_routes (test_documentation.DocumentationTests.test_shipped_entry_budgets_and_complete_initial_read_routes) ... FAIL
+
+======================================================================
+FAIL: test_routing_sections_are_mandatory_and_independently_loadable (test_documentation.DocumentationTests.test_routing_sections_are_mandatory_and_independently_loadable)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/19ac/devflow/tests/test_documentation.py", line 86, in test_routing_sections_are_mandatory_and_independently_loadable
+    self.assertEqual(check_documentation(package)['problems'], [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['docs/releases/v0.3.17-validation.md brok[38 chars]son'] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+'docs/releases/v0.3.17-validation.md broken link: v0.3.17-evidence/provenance.json'
+
++ []
+- ['docs/releases/v0.3.17-validation.md broken link: '
+-  'v0.3.17-evidence/provenance.json']
+
+======================================================================
+FAIL: test_shipped_entry_budgets_and_complete_initial_read_routes (test_documentation.DocumentationTests.test_shipped_entry_budgets_and_complete_initial_read_routes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/19ac/devflow/tests/test_documentation.py", line 72, in test_shipped_entry_budgets_and_complete_initial_read_routes
+    self.assertEqual(report['problems'], [])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['docs/releases/v0.3.17-validation.md brok[38 chars]son'] != []
+
+First list contains 1 additional elements.
+First extra element 0:
+'docs/releases/v0.3.17-validation.md broken link: v0.3.17-evidence/provenance.json'
+
++ []
+- ['docs/releases/v0.3.17-validation.md broken link: '
+-  'v0.3.17-evidence/provenance.json']
+
+----------------------------------------------------------------------
+Ran 21 tests in 7.743s
+
+FAILED (failures=2)
+{"success": false, "tests_run": 21, "failures": ["test_documentation.DocumentationTests.test_routing_sections_are_mandatory_and_independently_loadable", "test_documentation.DocumentationTests.test_shipped_entry_budgets_and_complete_initial_read_routes"], "errors": []}

@@ -1,0 +1,114 @@
+[
+  {
+    "argv": [
+      "claude",
+      "plugin",
+      "validate",
+      "/Users/wayne/.codex/worktrees/19ac/devflow"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.457619666995015,
+    "stdout": "Validating marketplace manifest: /Users/wayne/.codex/worktrees/19ac/devflow/.claude-plugin/marketplace.json\n\nValidating plugin: /Users/wayne/.codex/worktrees/19ac/devflow/CLAUDE.md\n\n\u26a0 Found 1 warning:\n\n  \u276f root: CLAUDE.md at the plugin root is not loaded as project context. To ship context with your plugin, use a skill (skills/<name>/SKILL.md) instead.\n\n\u2139 Advice (does not change the verdict):\n\n  \u276f /Users/wayne/.codex/worktrees/19ac/devflow/README.md: This README has no line that installs \"devflow\" from a marketplace. Add the install line, which works in one step on Claude Code 2.1.275 or later. In it, replace <owner>/<repo> with the repository that holds the marketplace.\n      /plugin install devflow --marketplace <owner>/<repo>\n\n\u2714 Validation passed with warnings\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "codex",
+      "plugin",
+      "marketplace",
+      "add",
+      "wgentil/devflow"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 17.52091799999471,
+    "stdout": "Added marketplace `devflow-marketplace` from https://github.com/wgentil/devflow.git.\nInstalled marketplace root: /private/var/folders/8p/jfk_drpj5q909tgqwwgbbks80000gn/T/devflow-0317-github-hosts-pyo40v8r/codex/.tmp/marketplaces/devflow-marketplace\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "codex",
+      "plugin",
+      "add",
+      "devflow@devflow-marketplace"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 1.5139306249911897,
+    "stdout": "Added plugin `devflow` from marketplace `devflow-marketplace`.\nInstalled plugin root: /private/var/folders/8p/jfk_drpj5q909tgqwwgbbks80000gn/T/devflow-0317-github-hosts-pyo40v8r/codex/plugins/cache/devflow-marketplace/devflow/0.3.17\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "claude",
+      "plugin",
+      "marketplace",
+      "add",
+      "wgentil/devflow",
+      "--scope",
+      "user"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 19.490490374999354,
+    "stdout": "Adding marketplace\u2026SSH not configured, cloning via HTTPS: https://github.com/wgentil/devflow.git\nRefreshing marketplace cache (timeout: 120s)\u2026\nCloning repository (timeout: 120s): https://github.com/wgentil/devflow.git\nClone complete, validating marketplace\u2026\nCleaning up old marketplace cache\u2026\n\u2714 Successfully added marketplace: devflow-marketplace (declared in user settings)\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "claude",
+      "plugin",
+      "install",
+      "devflow@devflow-marketplace",
+      "--scope",
+      "user",
+      "-y"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 1.4206273749878164,
+    "stdout": "Installing plugin \"devflow@devflow-marketplace\"...\u2714 Successfully installed plugin: devflow@devflow-marketplace (scope: user)\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "codex",
+      "plugin",
+      "list",
+      "--json"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.02170245800516568,
+    "stdout": "{\n  \"installed\": [\n    {\n      \"pluginId\": \"devflow@devflow-marketplace\",\n      \"name\": \"devflow\",\n      \"marketplaceName\": \"devflow-marketplace\",\n      \"version\": \"0.3.17\",\n      \"installed\": true,\n      \"enabled\": true,\n      \"source\": {\n        \"source\": \"local\",\n        \"path\": \"/private/var/folders/8p/jfk_drpj5q909tgqwwgbbks80000gn/T/devflow-0317-github-hosts-pyo40v8r/codex/.tmp/marketplaces/devflow-marketplace\"\n      },\n      \"marketplaceSource\": {\n        \"sourceType\": \"git\",\n        \"source\": \"https://github.com/wgentil/devflow.git\"\n      },\n      \"installPolicy\": \"AVAILABLE\",\n      \"authPolicy\": \"ON_INSTALL\"\n    }\n  ],\n  \"available\": []\n}\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "claude",
+      "plugin",
+      "list",
+      "--json"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.1988459579879418,
+    "stdout": "[\n  {\n    \"id\": \"devflow@devflow-marketplace\",\n    \"version\": \"0.3.17\",\n    \"scope\": \"user\",\n    \"enabled\": true,\n    \"installPath\": \"/private/var/folders/8p/jfk_drpj5q909tgqwwgbbks80000gn/T/devflow-0317-github-hosts-pyo40v8r/claude/plugins/cache/devflow-marketplace/devflow/0.3.17\",\n    \"installedAt\": \"2026-11-03T20:26:34.469Z\",\n    \"lastUpdated\": \"2026-11-03T20:26:34.469Z\",\n    \"projectEnabled\": false\n  }\n]\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "-B",
+      "/Users/wayne/.codex/worktrees/19ac/devflow/scripts/verify_windows_install.py",
+      "--source-root",
+      "/Users/wayne/.codex/worktrees/19ac/devflow",
+      "--codex-list",
+      "/private/var/folders/8p/jfk_drpj5q909tgqwwgbbks80000gn/T/devflow-0317-github-hosts-pyo40v8r/codex-installed.json",
+      "--codex-cache",
+      "/private/var/folders/8p/jfk_drpj5q909tgqwwgbbks80000gn/T/devflow-0317-github-hosts-pyo40v8r/codex/plugins/cache",
+      "--claude-list",
+      "/private/var/folders/8p/jfk_drpj5q909tgqwwgbbks80000gn/T/devflow-0317-github-hosts-pyo40v8r/claude-installed.json",
+      "--output",
+      "/Users/wayne/.codex/worktrees/19ac/devflow/docs/releases/v0.3.17-evidence/github-installed.json"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 12.388417875015875,
+    "stdout": "{\"schema_version\": 1, \"git_sha\": null, \"descriptor\": {\"plugin\": \"devflow\", \"plugin_version\": \"0.3.17\", \"state_schema_version\": 1, \"supported_schemas\": [1], \"storage_format_version\": 2, \"supported_storage_formats\": [1, 2], \"host_protocol_version\": 1, \"release_id\": \"47eeb1691724cce290965531972c641cbf3fa182c42fb66ec8622c59b5bcd2be\", \"fingerprint\": \"47eeb1691724cce290965531972c641cbf3fa182c42fb66ec8622c59b5bcd2be\"}, \"gates\": {\"codex_install\": {\"status\": \"PASS\", \"skill_count\": 11, \"descriptor\": {\"plugin\": \"devflow\", \"plugin_version\": \"0.3.17\", \"state_schema_version\": 1, \"supported_schemas\": [1], \"storage_format_version\": 2, \"supported_storage_formats\": [1, 2], \"host_protocol_version\": 1, \"release_id\": \"47eeb1691724cce290965531972c641cbf3fa182c42fb66ec8622c59b5bcd2be\", \"fingerprint\": \"47eeb1691724cce290965531972c641cbf3fa182c42fb66ec8622c59b5bcd2be\"}}, \"claude_install\": {\"status\": \"PASS\", \"skill_count\": 11, \"descriptor\": {\"plugin\": \"devflow\", \"plugin_version\": \"0.3.17\", \"state_schema_version\": 1, \"supported_schemas\": [1], \"storage_format_version\": 2, \"supported_storage_formats\": [1, 2], \"host_protocol_version\": 1, \"release_id\": \"47eeb1691724cce290965531972c641cbf3fa182c42fb66ec8622c59b5bcd2be\", \"fingerprint\": \"47eeb1691724cce290965531972c641cbf3fa182c42fb66ec8622c59b5bcd2be\"}}, \"codex_control_formats\": {\"status\": \"PASS\", \"storage_formats\": [1, 2], \"logical_schema\": 1}, \"claude_control_formats\": {\"status\": \"PASS\", \"storage_formats\": [1, 2], \"logical_schema\": 1}, \"codex_startup\": {\"status\": \"PASS\", \"version\": \"0.164.0\"}, \"claude_startup\": {\"status\": \"PASS\", \"version\": \"2.1.299\"}, \"codex_protocol\": {\"status\": \"PASS\", \"detail\": \"initialize/account-status completed; no model turn submitted\"}, \"claude_hook_scripts\": {\"status\": \"PASS\", \"python_command\": \"python3\", \"storage_formats\": [1, 2], \"live_event_dispatch\": \"NOT_RUN\"}}, \"authenticated_workflow\": {\"status\": \"NOT_RUN\", \"reason\": \"Startup checks do not execute signed-in model tasks or live session events.\"}, \"success\": true}\n",
+    "stderr": ""
+  }
+]
