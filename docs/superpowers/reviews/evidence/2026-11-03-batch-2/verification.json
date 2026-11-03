@@ -5,82 +5,87 @@
     {
       "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
       "target": "../specs/2026-10-21-large-control-root-context-design.md",
-      "exists_or_declared_provenance_destination": true
+      "exists": true
     },
     {
       "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
       "target": "../specs/2026-10-23-bandpick-prompt-hook-latency-design.md",
-      "exists_or_declared_provenance_destination": true
+      "exists": true
     },
     {
       "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
       "target": "../plans/2026-11-03-batch-2-large-root-validation.md",
-      "exists_or_declared_provenance_destination": true
+      "exists": true
     },
     {
       "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
       "target": "../../../scripts/benchmark_context_preparation.py",
-      "exists_or_declared_provenance_destination": true
+      "exists": true
     },
     {
       "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
       "target": "evidence/2026-11-03-batch-2/context-benchmark.json",
-      "exists_or_declared_provenance_destination": true
+      "exists": true
     },
     {
       "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
       "target": "evidence/2026-11-03-batch-2/observe_prompt.py",
-      "exists_or_declared_provenance_destination": true
+      "exists": true
     },
     {
       "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
       "target": "evidence/2026-11-03-batch-2/prompt-benchmark.json",
-      "exists_or_declared_provenance_destination": true
+      "exists": true
     },
     {
       "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
       "target": "evidence/2026-11-03-batch-2/focused.log",
-      "exists_or_declared_provenance_destination": true
+      "exists": true
     },
     {
       "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
       "target": "evidence/2026-11-03-batch-2/focused-report.json",
-      "exists_or_declared_provenance_destination": true
+      "exists": true
     },
     {
       "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
       "target": "2026-10-21-large-control-root-context.md",
-      "exists_or_declared_provenance_destination": true
+      "exists": true
     },
     {
       "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
       "target": "2026-10-23-bandpick-prompt-hook-latency.md",
-      "exists_or_declared_provenance_destination": true
+      "exists": true
     },
     {
       "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
       "target": "evidence/2026-11-03-batch-2/full-report.json",
-      "exists_or_declared_provenance_destination": true
+      "exists": true
     },
     {
       "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
       "target": "evidence/2026-11-03-batch-2/full.log",
-      "exists_or_declared_provenance_destination": true
+      "exists": true
     },
     {
       "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
       "target": "evidence/2026-11-03-batch-2/provenance.json",
-      "exists_or_declared_provenance_destination": true
+      "exists": true
+    },
+    {
+      "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
+      "target": "evidence/2026-11-03-batch-2/independent-review.md",
+      "exists": true
     },
     {
       "source": "docs/superpowers/plans/2026-11-03-batch-2-large-root-validation.md",
       "target": "../specs/2026-10-21-large-control-root-context-design.md",
-      "exists_or_declared_provenance_destination": true
+      "exists": true
     },
     {
       "source": "docs/superpowers/plans/2026-11-03-batch-2-large-root-validation.md",
       "target": "../specs/2026-10-23-bandpick-prompt-hook-latency-design.md",
-      "exists_or_declared_provenance_destination": true
+      "exists": true
     }
   ],
   "requirement_evidence_references": [
@@ -116,7 +121,7 @@
     },
     {
       "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
-      "target": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md:147",
+      "target": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md:151",
       "resolves": true
     },
     {
@@ -141,7 +146,7 @@
     },
     {
       "source": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md",
-      "target": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md:147",
+      "target": "docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md:151",
       "resolves": true
     }
   ],
@@ -176,5 +181,7 @@
     }
   ],
   "benchmark_assertions": "passed",
-  "production_observation_assertions": "passed"
+  "production_observation_assertions": "passed",
+  "independent_review": "passed; no Critical/Important findings; one deferred inventory minor",
+  "final_report_status": "completed; no pending checkboxes or verdicts"
 }

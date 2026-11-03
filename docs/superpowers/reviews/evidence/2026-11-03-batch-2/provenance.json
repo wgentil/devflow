@@ -7,10 +7,11 @@
     "docs/superpowers/reviews/evidence/2026-11-03-batch-2/focused.log": "a1087ea614d11308852a90fb947356893ffc4a1c83c882404f2b4d56cd5cf161",
     "docs/superpowers/reviews/evidence/2026-11-03-batch-2/full-report.json": "0dc9445848f9135db0652df2f7f67b67af3ed602ea0cc142b6b3e262541b3b2b",
     "docs/superpowers/reviews/evidence/2026-11-03-batch-2/full.log": "26571e97eb4600593803bbabb58857ffa9bc73d697d642edad47972ea81c42f4",
+    "docs/superpowers/reviews/evidence/2026-11-03-batch-2/independent-review.md": "bc4a6e4132cb8e0672f28d1b4d0ecbf7b644e0bf07879ecc1a4fdd092a0f3ce8",
     "docs/superpowers/reviews/evidence/2026-11-03-batch-2/observe_prompt.py": "7ce35c2c57d67b7bdc3eb6d2c96b50d980e70df9cacfea2ca3a38544af191f9b",
     "docs/superpowers/reviews/evidence/2026-11-03-batch-2/prompt-benchmark.json": "23b3330617a6498c0a5ef5be9e5ae219a2c98be9fa794ad7046ba8034d281010",
     "docs/superpowers/reviews/evidence/2026-11-03-batch-2/prompt-benchmark.log": "aef4e61d79d563a7e6855ea3e9dac2284c2d0e8cd59f65d3ff37afcd30fa523c",
-    "docs/superpowers/reviews/evidence/2026-11-03-batch-2/verification.json": "c3f6e250eff0facd0d73dece2ad2214989fb69bcb31bfe530dabee98d712a304"
+    "docs/superpowers/reviews/evidence/2026-11-03-batch-2/verification.json": "24f15d6b33988bc50b9fa5db774c69a42655de3eacc6ee3ec3f4fdbea3bd7ef3"
   },
   "commands": [
     [
@@ -81,11 +82,13 @@
       "--check"
     ]
   ],
+  "completion_amendment": "Records actual independent verdict, completes plan, clarifies orchestration/inventory scope, and refreshes local link/evidence hashes. No runtime, test or package changes; no repeated production observation.",
   "fixture_defaults": {
     "delivered_runs": 40,
     "events": 4370,
     "history_bytes": 79691776
   },
+  "independent_reviewed_head": "bf7a204be88376da4456f98eb2e58d01517b476f",
   "local_evidence_branch": "validation/batch-2-large-root",
   "notes": [
     "Local report metadata.git_sha is unset because this is not GitHub Actions; source binding is the explicit unchanged runtime paths and baseline tree objects here.",

@@ -1,6 +1,6 @@
 # Batch 2 large-root validation implementation plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Revalidate the shipped fixes for GitHub issues #2 and #3 and produce reviewable evidence for an issue-closure decision.
 
@@ -52,7 +52,7 @@
 
 **Interfaces:** Consume focused and benchmark reports; produce a requirement-by-requirement assessment bound to the runtime source commit, a full local-suite report and documentation/diff checks.
 
-- [ ] Run the full existing local suite once, retaining full output, structured results, failures and skips. Run documentation and diff checks after writing the report.
-- [ ] Document measured outcomes, coverage, limitations, remaining work and whether each issue is a closure candidate. Do not claim production `run next`, signed-in dispatch or new platform validation.
-- [ ] Review the whole branch independently against both source contracts; fix in-scope findings with reproducing evidence where necessary. Keep pre-existing implementation evidence distinct from this revalidation.
-- [ ] Commit the reviewable local branch and present the delivery choice without pushing, commenting on or closing issues.
+- [x] Run the full existing local suite once, retaining full output, structured results, failures and skips. Run documentation and diff checks after writing the report.
+- [x] Document measured outcomes, coverage, limitations, remaining work and whether each issue is a closure candidate. Do not claim production `run next`, signed-in dispatch or new platform validation.
+- [x] Review the whole branch independently against both source contracts; fix in-scope findings with reproducing evidence where necessary. Keep pre-existing implementation evidence distinct from this revalidation.
+- [x] Commit the reviewable local branch and present the delivery choice without pushing, commenting on or closing issues.

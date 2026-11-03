@@ -8,7 +8,9 @@ tests, package metadata and installed plugins are unchanged.
 ## Scope and disposition
 
 The user selected batch 2 from the open-issue review and requested autowork,
-explicitly replacing DevFlow execution. No DevFlow run was initialized.
+explicitly replacing DevFlow orchestration. No durable project validation or
+delivery run was initialized; helpers ran only as tests, disposable fixtures and
+read-only observations.
 The existing approved [issue #2 design](../specs/2026-10-21-large-control-root-context-design.md)
 and [issue #3 design](../specs/2026-10-23-bandpick-prompt-hook-latency-design.md)
 remain the source contracts. The [validation plan](../plans/2026-11-03-batch-2-large-root-validation.md)
@@ -107,12 +109,12 @@ records 105 tests, zero failures/errors/skips, in 73.287 seconds.
 | #2 R4: freshness and token safety | MET — focused journal/filesystem drift, host revision, relocation, new governing manifest, retry-key safety and exact retry cases pass. Existing tests: `test_prepared_attempt_guard.py`, `test_context_input_continuity.py`. Evidence: `docs/superpowers/reviews/evidence/2026-11-03-batch-2/focused.log:33`. |
 | #2 R5: bounded recovery diagnostics | MET — focused worker-phase deadline, UTF-8 component-budget and mandatory-overflow cases pass. Existing tests: `test_context_budget_diagnostics.py`, `test_context_preparation.py`. Evidence: `docs/superpowers/reviews/evidence/2026-11-03-batch-2/focused.log:16`. |
 | #2 R6: regression and scale evidence | MET for this validation scope — the retained 4,370-event benchmark issues one token with exact retry; focused tests cover worker/freshness failures. Original RED-to-GREEN and platform evidence remains in the prior implementation review; no new RED phase is claimed. Evidence: `docs/superpowers/reviews/evidence/2026-11-03-batch-2/context-benchmark.json:1`. |
-| #2 R7: documentation and compatibility | MET for this validation scope — current setup, skills and developer context guidance reviewed; existing budgets and public behavior unchanged. This report documents remaining legacy cost and observation limits. No onboarding or skill metadata update was needed. Evidence: `docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md:147`. |
+| #2 R7: documentation and compatibility | MET for this validation scope — current setup, skills and developer context guidance reviewed; existing budgets and public behavior unchanged. This report documents remaining legacy cost and observation limits. No onboarding or skill metadata update was needed. Evidence: `docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md:151`. |
 | #3 R1: skip undiscoverable optional refresh | MET — production direct call makes zero storage reads with unchanged metadata; focused SessionStart/UserPromptSubmit absent/malformed/external-hint cases pass. Existing test: `test_prompt_hook_latency.py`. Evidence: `docs/superpowers/reviews/evidence/2026-11-03-batch-2/prompt-benchmark.json:15`. |
 | #3 R2: attached state reuse | MET on owned legacy fixtures — focused attached refresh has one authoritative replay and complete context, retaining existing token/version checks. Existing test: `test_prompt_hook_latency.py`; no attached production observation. Evidence: `docs/superpowers/reviews/evidence/2026-11-03-batch-2/focused.log:61`. |
 | #3 R3: advisory helper timeout | MET — focused timeout exit policy is 0 for prompt/session start and 2 for completion; partial output is discarded, explicit blocks and non-timeout failures still block. Existing test: `test_claude_hooks.py`. Evidence: `docs/superpowers/reviews/evidence/2026-11-03-batch-2/focused.log:72`. |
 | #3 R4: performance and enforcement | MET for local validation — production fresh-session inventory is unchanged; focused owned real stalling-helper, missing-cache mapped completion, stale bindings and required-context cases pass. Current full-suite result is recorded below; native and signed-in validation are separate. Evidence: `docs/superpowers/reviews/evidence/2026-11-03-batch-2/focused.log:75`. |
-| #3 R5: documentation and delivery | MET for this validation scope — autowork produced an isolated evidence branch and this requirement assessment. No installed plugin, user setup, timeout, interface or delivery policy changed. Evidence: `docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md:147`. |
+| #3 R5: documentation and delivery | MET for this validation scope — autowork produced an isolated evidence branch and this requirement assessment. No installed plugin, user setup, timeout, interface or delivery policy changed. Evidence: `docs/superpowers/reviews/2026-11-03-batch-2-large-root-validation.md:151`. |
 
 The original implementation reviews remain available for their historical
 acceptance decisions: [issue #2](2026-10-21-large-control-root-context.md) and
@@ -138,9 +140,11 @@ links and requirement evidence line references resolve; runtime, test and packag
 paths have no diff against the source baseline. [Provenance](evidence/2026-11-03-batch-2/provenance.json)
 records commands, source identity and artifact hashes.
 
-Independent whole-branch review: **PENDING FINAL VERDICT**, with no substantive
-finding so far. The accepted minor inventory coverage limitation is documented
-above and below; no runtime fix or production rerun was needed.
+Independent whole-branch review: **PASS**, ready to merge; zero Critical or
+Important findings. The [review record](evidence/2026-11-03-batch-2/independent-review.md)
+retains the verdict, independently checked evidence and every explicit scope
+limit. The accepted minor inventory coverage limitation is documented above and
+below; no runtime fix or production rerun was needed.
 
 ## Documentation and delivery boundary
 
