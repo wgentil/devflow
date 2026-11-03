@@ -1,0 +1,46 @@
+{
+  "attempt_count": 1,
+  "commit_ms": 805.0812500005122,
+  "component_bytes": {
+    "artifact_references": 311,
+    "control_envelope": 852,
+    "governing": 0,
+    "optional": 0,
+    "requirements": 115,
+    "serialization_overhead": 2302,
+    "serialized_bytes": 16194,
+    "shared_spec": 466,
+    "stage_documents": 12148
+  },
+  "environment": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "python": "3.14.7"
+  },
+  "exact_retry_ms": 2298.4177909966093,
+  "exact_retry_same_token": true,
+  "fixture": {
+    "delivered_runs": 40,
+    "events": 4370,
+    "journal_bytes": 80249749,
+    "state_bytes": 79706957
+  },
+  "initial_replay_ms": 792.9557500174269,
+  "limitations": [
+    "Synthetic delivered metadata and long review strings, not the reporter project or live verifier deliveries.",
+    "total_ms measures actual CLI next including locked commit; preparation.total_ms covers fewer phases.",
+    "Ordinary authoritative journal replay remains proportional to history; no paid host or native Windows validation."
+  ],
+  "preflight_ms": 1967,
+  "replay_counts": {
+    "exact_retry": 1,
+    "initial": 1,
+    "next": 2,
+    "worker": 0
+  },
+  "selected_context_bytes": 14620,
+  "selected_units_match_small": true,
+  "small_selected_context_bytes": 14620,
+  "token_issued": true,
+  "total_ms": 3098.5317500017118,
+  "worker_ms": 218
+}

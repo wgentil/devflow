@@ -1,0 +1,51 @@
+{
+  "adapter": {
+    "elapsed_seconds": 0.17487675001029857,
+    "exit": 0,
+    "stderr": "DevFlow: No usable attachment discovery hints; retry explicit attachment before workflow work.\n",
+    "stdout": ""
+  },
+  "changed_metadata_paths": [],
+  "cli": {
+    "elapsed_seconds": 0.1867324170016218,
+    "exit": 0,
+    "stderr": "",
+    "stdout": "{\"status\":\"inactive\",\"reason_code\":\"ATTACHMENT_NOT_DISCOVERED\",\"message\":\"No usable attachment discovery hints; retry explicit attachment before workflow work.\"}\n"
+  },
+  "direct": {
+    "elapsed_seconds": 0.008008500008145347,
+    "result": {
+      "message": "No usable attachment discovery hints; retry explicit attachment before workflow work.",
+      "reason_code": "ATTACHMENT_NOT_DISCOVERED",
+      "status": "inactive"
+    },
+    "storage_read_calls": {
+      "journal": 0,
+      "state": 0
+    }
+  },
+  "environment": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "python": "3.14.7"
+  },
+  "events": 6157,
+  "limitations": [
+    "Fresh undiscoverable session only; no attached production refresh or run next.",
+    "Storage-read instrumentation and write guards apply to the direct Python call only.",
+    "CLI and adapter are real subprocesses; before/after content and mtime inventories cover all project .devflow metadata.",
+    "An active external workflow can change inventories; such a change makes this observation unsuccessful and requires investigation.",
+    "No signed-in host dispatch, load guarantee, model turn or native Windows observation."
+  ],
+  "metadata_bytes_before": 804321900,
+  "metadata_files_after": 12639,
+  "metadata_files_before": 12639,
+  "metadata_manifest_sha256_after": "0922a64e1c1973c446cfa0a181e26f08e952a1ff12aa40697a99caeb57d3c538",
+  "metadata_manifest_sha256_before": "0922a64e1c1973c446cfa0a181e26f08e952a1ff12aa40697a99caeb57d3c538",
+  "metadata_unchanged": true,
+  "project": "/Users/wayne/src/bandpick/repos/bandpick",
+  "session_hints_absent_after": true,
+  "session_id": "autowork-batch2-read-only-09d39e736313428a80b512c060f7fb32",
+  "source_sha": "438e4e972a892f624dd51cce809e78179755b7c8",
+  "state_bytes": 170194912,
+  "success": true
+}

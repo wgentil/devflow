@@ -42,9 +42,9 @@
 
 **Interfaces:** Consume the unchanged runtime and test fixture builder. Produce a benchmark for 4,370 events, 40 historical runs and 79,691,776 historical bytes; produce direct/CLI/adapter fresh-session observations on a discovered real Bandpick Git project when available.
 
-- [ ] Run the existing large legacy-root benchmark. Require token issuance, exact retry with one attempt, identical selected units/bytes versus the small fixture, no worker journal replay, and the existing context byte limit.
-- [ ] Locate Bandpick's actual Git/control roots without reading application secrets. Use a random session with no locator or task index; measure direct, CLI and adapter paths and state-read counts.
-- [ ] Compare file-content/stat fingerprints before/after, never attach or mutate Bandpick, and report any environmental unavailability honestly.
+- [x] Run the existing large legacy-root benchmark. Require token issuance, exact retry with one attempt, identical selected units/bytes versus the small fixture, no worker journal replay, and the existing context byte limit.
+- [x] Locate Bandpick's actual Git/control roots without reading application secrets. Use a random session with no locator or task index; measure direct, CLI and adapter paths and state-read counts.
+- [x] Compare file-content/stat fingerprints before/after, never attach or mutate Bandpick, and report any environmental unavailability honestly.
 
 ### Task 3: Complete verification and reviewable delivery
 
