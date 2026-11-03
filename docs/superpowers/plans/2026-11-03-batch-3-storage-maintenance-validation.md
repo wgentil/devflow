@@ -45,10 +45,10 @@
 
 **Interfaces:** Consume existing owned real-Git fixture builder and public `state` CLI. Produce source-bound before/after hashes, backup/verification results, migration/GC exact retries, unknown-file retention, actual reclaimed bytes and scale/corpus measurements.
 
-- [ ] Build an owned legacy fixture with 40 synthetic terminal runs, hash-bound review bodies and an idle active current run; use no existing-root input.
-- [ ] Check dry-run file-content invariance with the documented telemetry files excluded, make/verify a legacy backup, inspect a fresh bound plan, convert explicitly, repeat the exact maintenance request and perform complete verification/logical/raw-event/receipt comparison.
-- [ ] Make/verify a v2 backup; publish an owned unreferenced object and an unknown file; inspect and apply exact GC, verify reclaimed bytes and exact retry, retained unknown content, complete logical parity and full audit. Remove only owned temporary roots at exit.
-- [ ] Run the unchanged benchmark at 10/1,000 terminal runs and 100 MiB review bodies. Assert logical/audit parity, hot payload below 10%, no unrelated terminal/package/old-segment body reads on fixed-work commands and honest physical-byte accounting.
+- [x] Build an owned legacy fixture with 40 synthetic terminal runs, hash-bound review bodies and an idle active current run; use no existing-root input.
+- [x] Check dry-run file-content invariance with the documented telemetry files excluded, make/verify a legacy backup, inspect a fresh bound plan, convert explicitly, repeat the exact maintenance request and perform complete verification/logical/raw-event/receipt comparison.
+- [x] Make/verify a v2 backup; publish an owned unreferenced object and an unknown file; inspect and apply exact GC, verify reclaimed bytes and exact retry, retained unknown content, complete logical parity and full audit. Remove only owned temporary roots at exit.
+- [x] Run the unchanged benchmark at 10/1,000 terminal runs and 100 MiB review bodies. Assert logical/audit parity, hot payload below 10%, no unrelated terminal/package/old-segment body reads on fixed-work commands and honest physical-byte accounting.
 
 ### Task 3: Assessment, independent review and local delivery
 

@@ -1,0 +1,19 @@
+{
+  "success": true,
+  "scale_terminal_run_counts": [
+    10,
+    1000
+  ],
+  "samples_checked": 20,
+  "unrelated_terminal_package_segment_body_reads": 0,
+  "max_transaction_body_query_delta": 0,
+  "max_transaction_body_vm_step_delta": 0,
+  "review_corpus_closed_bytes": 104859810,
+  "hot_logical_payload_bytes": 3782,
+  "hot_payload_ratio": 3.606496243794111e-05,
+  "all_audits_valid": true,
+  "logical_parity": true,
+  "net_reclamation_measurement_matches_file_totals": true,
+  "owned_roots_removed": true,
+  "instrumentation_scope": "Transaction-body counters exclude connection BEGIN/schema/head validation and COMMIT; wall times overlap and are observations, not guarantees."
+}

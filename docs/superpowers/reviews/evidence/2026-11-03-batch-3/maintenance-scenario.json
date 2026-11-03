@@ -1,0 +1,141 @@
+{
+  "command_count": 13,
+  "compaction": {
+    "activated": true,
+    "backup": "backups/c4e209c0731b17e2c03f390279221c902f6a602e893f324e04585adca30b9dd6",
+    "checkpoint": {
+      "kind": "control-checkpoint",
+      "manifest_sha256": "df6314d83889ab863eff578d0e1335ae69a1243b5b37b6fdbc403a6ca9a86e76",
+      "object_id": "14ef7bea70b47771d8900e7870412a24b1183825579dae2001f24754aaeb3268",
+      "schema_version": 1,
+      "size_bytes": 790
+    },
+    "cleanup_pending": [],
+    "completed": true,
+    "final_head": 3,
+    "generation": 1,
+    "layout_id": "53b821f6ec43417794242188bb1c543b",
+    "plan_hash": "c4e209c0731b17e2c03f390279221c902f6a602e893f324e04585adca30b9dd6",
+    "replayed": false,
+    "root_id": "170b73a595da402fa87b0f490d0b845b",
+    "source_head": 3,
+    "storage_format": 2
+  },
+  "compaction_exact_retry": {
+    "activated": true,
+    "backup": "backups/c4e209c0731b17e2c03f390279221c902f6a602e893f324e04585adca30b9dd6",
+    "checkpoint": {
+      "kind": "control-checkpoint",
+      "manifest_sha256": "df6314d83889ab863eff578d0e1335ae69a1243b5b37b6fdbc403a6ca9a86e76",
+      "object_id": "14ef7bea70b47771d8900e7870412a24b1183825579dae2001f24754aaeb3268",
+      "schema_version": 1,
+      "size_bytes": 790
+    },
+    "cleanup_pending": [],
+    "completed": true,
+    "final_head": 3,
+    "generation": 1,
+    "layout_id": "53b821f6ec43417794242188bb1c543b",
+    "plan_hash": "c4e209c0731b17e2c03f390279221c902f6a602e893f324e04585adca30b9dd6",
+    "replayed": true,
+    "root_id": "170b73a595da402fa87b0f490d0b845b",
+    "source_head": 3,
+    "storage_format": 2
+  },
+  "dry_run_content_unchanged": true,
+  "environment": {
+    "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+    "python": "3.14.7"
+  },
+  "exact_workflow_retry_event_sha256": "08239fe4eb1e3a002843f1680d24a9c140485a5227c94fd7f78795349cee00d9",
+  "exact_workflow_retry_preserved": true,
+  "final_full_audit": {
+    "full": true,
+    "head": 3,
+    "storage_format": 2,
+    "valid": true
+  },
+  "final_logical_sha256": "0d8df10ec096382721ac79a21f284958435be8b89c83dd0247b36d496c747a81",
+  "final_physical": {
+    "backup_bytes": 16838871,
+    "cache_bytes": 0,
+    "catalog_btree_bytes": 245760,
+    "catalog_btree_measurement": "SQLite dbstat, includes schema/index/metadata pages; overlaps database_bytes",
+    "database_bytes": 446464,
+    "objects_bytes": 171436,
+    "other_bytes": 57956,
+    "total_bytes": 17514727
+  },
+  "fixture": {
+    "legacy_events": 3,
+    "legacy_file_bytes": 16832329,
+    "legacy_logical_version": 3,
+    "review_body_bytes": 8388608,
+    "synthetic": true,
+    "terminal_runs": 40
+  },
+  "gc": {
+    "absent_after_interruption": 0,
+    "completed": true,
+    "deferred": [],
+    "deleted_files": 2,
+    "plan_hash": "770c90f5402c8955554603ea81e0d61bfa832091e95ba0072f8dc2d346d284e9",
+    "reclaimed_bytes": 572,
+    "replayed": false
+  },
+  "gc_candidate_bytes": 572,
+  "gc_candidate_count": 2,
+  "gc_exact_retry": {
+    "absent_after_interruption": 0,
+    "completed": true,
+    "deferred": [],
+    "deleted_files": 2,
+    "plan_hash": "770c90f5402c8955554603ea81e0d61bfa832091e95ba0072f8dc2d346d284e9",
+    "reclaimed_bytes": 572,
+    "replayed": true
+  },
+  "idle_active_run_preserved": true,
+  "legacy_backup": {
+    "file_count": 9,
+    "source_head": 3,
+    "valid": true
+  },
+  "legacy_backup_logical_parity": true,
+  "limitations": [
+    "Owned synthetic run metadata and hash-bound review bodies, not verifier-backed customer deliveries.",
+    "No existing-root input; all maintenance and backup effects occur under the owned temporary directory.",
+    "Dry-run comparison covers regular-file content in a generated tree, excluding four documented telemetry files; it is not a general filesystem metadata preservation claim.",
+    "GC successful-unlink bytes are distinct from net root disk change and exclude filesystem allocation accounting.",
+    "Physical maintenance receipts are separate from the complete logical state/operation digest.",
+    "No production migration, signed-in dispatch, new native Windows validation or controlled-load guarantee."
+  ],
+  "original_logical_sha256": "0d8df10ec096382721ac79a21f284958435be8b89c83dd0247b36d496c747a81",
+  "owned_roots_removed": true,
+  "post_conversion_full_audit": {
+    "full": true,
+    "head": 3,
+    "storage_format": 2,
+    "valid": true
+  },
+  "raw_event_bytes_preserved": true,
+  "raw_event_sha256": {
+    "00000001.json": "0e70e7dc0136a68ea42b6a21d7bcac70ceda10c532cd3d595771c73ec7180b37",
+    "00000002.json": "a1aed40fe1cb8eb3bd32f359b4ae15de5389558f660b4fcdbcda0a007de97828",
+    "00000003.json": "a505df87cf60eae4b350393cebdb6288573e28f4cc93a9e6f7bd39eea1f080c0"
+  },
+  "source_sha": "0e3eb1627c2b0e42d0b3e357a9a926637c9ca837",
+  "success": true,
+  "telemetry_exclusions": [
+    ".context-metrics.lock",
+    ".offload.lock",
+    "context-metrics.jsonl",
+    "offload.jsonl"
+  ],
+  "unknown_file_retained": true,
+  "v2_backup": {
+    "file_count": 198,
+    "source_head": 3,
+    "valid": true
+  },
+  "v2_backup_logical_parity": true
+}
