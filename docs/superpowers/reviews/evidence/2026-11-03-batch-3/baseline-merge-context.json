@@ -1,0 +1,38 @@
+{
+  "head": "0e3eb1627c2b0e42d0b3e357a9a926637c9ca837",
+  "branch": "main",
+  "agents_sha256": "7840788b4c297cc446dcaf6a89e82d8ca575e16be7922d410264a446b03eb0f2",
+  "agents_preserved": true,
+  "pushed": false,
+  "post_merge_verified": true,
+  "tests_run": 920,
+  "skips": [
+    {
+      "id": "test_platform_lock.PlatformLockTests.test_blocking_lock_waits_longer_than_msvcrt_default_retry_window",
+      "reason": "Windows byte-range lock retry behavior"
+    },
+    {
+      "id": "test_process_transport.WindowsJobCompletionTests.test_exited_leader_descendant_is_signaled_before_close_returns",
+      "reason": "requires native Windows Job and process handles"
+    },
+    {
+      "id": "test_storage_objects.StorageObjectTests.test_junction_escape_never_publishes_outside_root",
+      "reason": "native NTFS junction containment"
+    },
+    {
+      "id": "test_storage_objects.StorageObjectTests.test_repeated_concurrent_fresh_windows_roots_preserve_confinement",
+      "reason": "native Windows fresh-root canonicalization race"
+    },
+    {
+      "id": "test_storage_recovery.StorageRecoveryTests.test_windows_open_snapshot_cleanup_resumes",
+      "reason": "native Windows file-handle semantics"
+    },
+    {
+      "id": "test_windows_workflow.WindowsWorkflowTests.test_junction_escape_is_rejected",
+      "reason": "native NTFS junction containment"
+    }
+  ],
+  "elapsed_seconds": 462.071,
+  "documentation_problems": [],
+  "agents_preserved_after_tests": true
+}
