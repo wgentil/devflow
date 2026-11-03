@@ -238,6 +238,11 @@
       "sha256": "15f4f7fb5e66c603f73f04b307254ebeb345ef1e292093b03e62f650d0803bf0"
     },
     {
+      "bytes": 4786,
+      "file": "publication.json",
+      "sha256": "4a1e080f919960e27a2d780721e6e08c63d60dc1f40516d2cfa3c9768f628dff"
+    },
+    {
       "bytes": 1923,
       "file": "reproduce_startup.py",
       "sha256": "e3fee5d95d44e497eea4fdd340ab84605bfc3b618a63f5670f05ab966a44864b"
@@ -309,6 +314,13 @@
     "scripts",
     ".github"
   ],
+  "publication": {
+    "file": "publication.json",
+    "published_at": "2026-11-03T22:03:03Z",
+    "release_id": 433266047,
+    "tag": "v0.3.17",
+    "url": "https://github.com/wgentil/devflow/releases/tag/v0.3.17"
+  },
   "raw_native_reports": [
     {
       "file": "platform-ubuntu-latest-3.11.json",
@@ -381,7 +393,7 @@
       "retained_sha256": "c36e6ca6ed6e842dd5ee7a050be0722a3cad4e9b206e9a272638588a18fe68e6"
     }
   ],
-  "recorded_at": "2026-11-03T22:02:22.195385+00:00",
+  "recorded_at": "2026-11-03T22:03:32.101239+00:00",
   "schema_version": 1,
   "source_sha": "2e13573d94f1301cee5b6d45ee4c30cc34f666cf",
   "status": "verified-publication-readiness",
