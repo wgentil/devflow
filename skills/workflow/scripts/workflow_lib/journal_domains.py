@@ -53,7 +53,7 @@ def reduce_event(data, kind, payload, version, *, metrics_source_hash=None):
 
 
 def _reduce(data, kind, req, version, *, metrics_source_hash=None):
-    if kind.startswith('domain.enforcement.') and kind != 'domain.enforcement.adopt':
+    if kind.startswith('domain.enforcement.') and kind not in {'domain.enforcement.adopt','domain.enforcement.review-adopt'}:
         from .enforcement_events import apply_enforcement
         run = data.get('runs', {}).get(req.get('run_id'))
         require(run is not None, 'known run required')
@@ -65,6 +65,14 @@ def _reduce(data, kind, req, version, *, metrics_source_hash=None):
             'enforcement_revision': updated.get('enforcement_revision'),
             'source_identity': updated.get('source_identity')}
         return {**receipt, 'transition_hash': digest({'receipt': receipt, 'record': req['record']})}
+    if kind == 'domain.enforcement.review-adopt':
+        from .review_policy import adopt_review_policy
+        run = data.get('runs', {}).get(req.get('run_id'))
+        require(run is not None, 'known run required')
+        updated = adopt_review_policy(run, req.get('authorization', {}))
+        data['runs'][req['run_id']] = updated
+        data['enforcement_guard'] = {'protocol': 'devflow.python-enforcement/v1', 'schema_version': 1}
+        return {'run_id': req['run_id'], 'review_policy': updated['review_policy'], 'state_version': updated['state_version']}
     if kind == 'domain.enforcement.adopt':
         from .action_policy import adopt_enforcement
         run = data.get('runs', {}).get(req.get('run_id'))

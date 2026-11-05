@@ -73,6 +73,10 @@ def supplemental_domain_streams():
         'id':'r','effects':{'e':{'effect_id':'e','status':'uncertain','owner_pid':12345,'worker_ref':'worker',
             'claimed_at_ms':10,'history':[]}},'native_invocations':{}}}},
         {'binding_id':'b','revision':1,'invocation_id':'e','observation_id':'termination','observation':observation})
+    yield pair('domain.enforcement.review-adopt', {'runs': {'r': {'id': 'r', 'state_version': 0,
+        'status': 'active', 'active_attempt': None}}}, {'run_id': 'r', 'authorization': {
+        'approved': True, 'actor_id': 'fixture-user', 'run_id': 'r', 'state_version': 0,
+        'provenance': {'kind': 'user-message', 'ref': 'fixture-review-adoption'}}})
     yield pair('domain.improve.trace-enable', {'runs': {'r': {'id': 'r'}}},
                {'run_id': 'r', 'actor_id': 'owner'})
     yield pair('domain.stats.legacy-import', {}, {'record': {

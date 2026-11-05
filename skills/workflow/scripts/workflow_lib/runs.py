@@ -34,9 +34,12 @@ def start_run(state: dict, run_id: str, plan: dict) -> dict:
     validate_plan({**specification, "approval": approval}, plan)
     if run_id in state.get("runs", {}):
         raise WorkflowError("RUN_ALREADY_EXISTS", f"run {run_id} already exists")
+    from .review_policy import new_review_policy
     return {
         "id": run_id,
         "status": "active",
+        "review_policy": new_review_policy(),
+        "enforcement": {"protocol": "devflow.python-enforcement/v1", "policy_version": 1},
         "plan": deepcopy(plan),
         "governing_digest": governing_digest,
         "repositories": deepcopy(state.get("repositories", {})),

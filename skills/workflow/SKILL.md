@@ -72,4 +72,4 @@ See [governing guidance](../../docs/reference/governing-inputs.md).
 
 See [governing guidance](../../docs/reference/governing-inputs.md).
 
-[Enforcement scope](../../docs/reference/python-enforcement.md).
+[Review policy](../../docs/reference/adversarial-review.md).

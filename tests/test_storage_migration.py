@@ -70,8 +70,8 @@ class StorageMigrationTests(unittest.TestCase):
         maintenance = self.backend()
         with owned_control() as root:
             legacy_root(root)
-            store.transact(root, 0, 'run', {'kind': 'run.started', 'payload': {'run': {
-                'id': 'r', 'status': 'active', 'active_attempt': {'token': 't'}}}})
+            store.transact(root, 0, 'run', {'kind': 'fixture', 'payload': {'runs': {'r': {
+                'id': 'r', 'status': 'active', 'active_attempt': {'token': 't'}}}}})
             plan = maintenance.compaction_plan(root)
             self.assertTrue(plan['blockers'])
             with self.assertRaises(store.WorkflowError): maintenance.apply_compaction(root, plan['plan_hash'])

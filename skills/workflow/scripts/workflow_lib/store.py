@@ -130,6 +130,9 @@ def _apply_event(state: dict, event: dict, *, metrics_source_hash=None) -> None:
         if not isinstance(run, dict) or not run.get("id") or run["id"] in data.setdefault("runs", {}):
             raise WorkflowError("INVALID_EVENT", "invalid or duplicate run.started event")
         data["runs"][run["id"]] = run
+        from .review_policy import review_version
+        if review_version(run) == 1:
+            data['enforcement_guard'] = {'protocol': 'devflow.python-enforcement/v1', 'schema_version': 1}
     elif kind == 'run.reverification.started':
         from .reverification import validate_reverification, invalidate_item_reviews
         run = data.get('runs',{}).get(payload.get('run_id'))
@@ -863,7 +866,6 @@ def _transact_once(root: Path, expected_version: int, operation_id: str, event: 
             raise WorkflowError('MAINTENANCE_RECOVERY_REQUIRED', 'Resume the incomplete storage intent before work.')
         state, _ = _read_journal(root)
         _guard_transaction(state, event)
-        _guard_enforcement_transaction(state, event)
         from .storage_audit import operation_reserved
         if operation_reserved(root,operation_id):raise WorkflowError('OPERATION_CONFLICT','Operation ID belongs to physical maintenance.')
         previous = state["operations"].get(operation_id)
@@ -871,6 +873,7 @@ def _transact_once(root: Path, expected_version: int, operation_id: str, event: 
             return {"state": state, "event": previous, "replayed": True}
         if expected_version != state["version"]:
             raise WorkflowError("STALE_STATE", f"expected state version {expected_version}, current version is {state['version']}")
+        _guard_enforcement_transaction(state, event)
         if precommit is not None:precommit(state)
         _guard_spec_approval(state, event)
         committed = {
@@ -899,6 +902,12 @@ def _transact_once(root: Path, expected_version: int, operation_id: str, event: 
 
 
 def _guard_enforcement_transaction(state: dict, event: dict) -> None:
+    if event['kind']=='run.started':
+        from .review_policy import require_review_policy
+        require_review_policy(event['payload'].get('run',{}))
+        from .action_policy import enforcement_version
+        if enforcement_version(event['payload'].get('run',{})) != 1:
+            raise WorkflowError('REVIEW_POLICY_BLOCKED','New review policy requires shared enforcement.')
     request=event['payload'].get('request',event['payload'])
     if not isinstance(request,dict):request={}
     from .action_policy import enforcement_version

@@ -39,10 +39,10 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(tree_bytes(self.root), before)
 
     def test_run_result_event_cannot_claim_verification_without_registered_proof(self):
-        started = transact(self.root, 0, "start", {"kind": "run.started", "payload": {"run": {
+        started = transact(self.root, 0, "start", {"kind": "fixture", "payload": {"runs": {"r": {
             "id": "r", "items": {"w": {"status": "pending", "attempts": []}},
             "state_version": 0, "active_attempt": None, "verifier_proofs": {},
-        }}})
+        }}}})
         issued = transact(self.root, started["state"]["version"], "issue", {"kind": "run.attempt.issued",
             "payload": {"run_id": "r", "attempt": {"token": "t", "item_id": "w",
             "state_version": 1, "status": "active", "result": None}}})

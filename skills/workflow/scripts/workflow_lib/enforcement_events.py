@@ -13,6 +13,9 @@ def apply_enforcement(subject: dict, action: str, record: dict) -> dict:
         raise WorkflowError('ENFORCEMENT_REQUIRED', 'Adopt the current enforcement contract first.')
     if subject.get('status') in {'complete', 'delivered', 'discarded'}:
         raise WorkflowError('SCOPE_TERMINAL', 'Terminal scopes cannot authorize new mutations.')
+    if action == 'review-risk':
+        from .review_policy import record_risk
+        return record_risk(subject,record['scope'],record['risk'])
     if action in {'tool-claim','tool-finish','tool-reconcile'}:
         from .tool_execution import reduce_tool
         return reduce_tool(subject,action,record)

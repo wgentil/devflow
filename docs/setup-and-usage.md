@@ -627,3 +627,13 @@ standalone execution/review/completion primitives. Standalone specialist
 orchestration and bounded automatic repair remain companion work. See the [foundation status and developer contracts](reference/python-enforcement.md)
 for implemented boundaries and limitations. Normal plugin onboarding
 and the existing workflow remain the supported path.
+
+
+## Adversarial review development status
+
+New runs on this development branch select the versioned review policy and shared
+enforcement. Existing runs retain their stored contract unless explicitly adopted
+with current user authorization and stopped/reconciled workers. The harness must
+obtain actual governing protection scope and verification inputs; policy selection
+does not invent approvals. Specialist coverage/dispatch and bounded repair are
+still being implemented. See [current review scope](reference/adversarial-review.md).

@@ -469,3 +469,22 @@ flowchart LR
     Reserve --> Launch[Recheck current source and questions immediately before effect]
     Launch --> Existing[Existing verification and review gates]
 ```
+
+
+## Versioned review policy (development)
+
+New runs select the risk-based review contract; historical runs need explicit
+quiescent adoption. Unknown risk requires all substantive perspectives and cited
+exemptions cannot be inferred from filenames. Recording risk does not dispatch a
+reviewer or prove coverage; [current implementation scope](../../docs/reference/adversarial-review.md)
+distinguishes available records from remaining orchestration.
+
+```mermaid
+flowchart LR
+    Scope[Current selected scope] --> Policy[Versioned policy and risk facts]
+    Policy --> Unknown{Complete current evidence?}
+    Unknown -->|No| All[Conservatively require all perspectives]
+    Unknown -->|Yes| Required[Code and test plus triggered architecture/security]
+    Required --> Confirm[Independent branch confirmation remains required]
+    All --> Confirm
+```

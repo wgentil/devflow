@@ -804,3 +804,9 @@ Model-validation probes take separate attempt allowance but share work cost/time
 limits; `host model-probe` requires `--estimated-cost` and `--operation-id` under
 the selected profile. The foundation reference documents standalone verification,
 review, completion and explicit native/tool/session recovery commands.
+
+
+Development review policy adds `review adopt` and `review assess-risk`; see the
+[versioned input contracts and limits](reference/adversarial-review.md). Historical
+run replay retains its original policy, while new live starts must declare the
+current contract. Pure replay does not authorize another effect.

@@ -95,6 +95,19 @@ def enforcement_version(subject: dict):
 
 def subject_decision(subject: dict, action: str, scope: dict) -> dict:
     selected = enforcement_version(subject)
+    from .review_policy import review_version, require_review_policy
+    review_selected = review_version(subject)
+    review_context = {}
+    if review_selected is not None:
+        try:
+            require_review_policy(subject)
+            if selected != 1:
+                raise WorkflowError('REVIEW_POLICY_BLOCKED', 'Shared enforcement required for selected review policy.')
+        except WorkflowError:
+            return evaluate_action(action, scope, {'policy_version':'unsupported-review-policy'})
+        review_context = {'review_policy_hash':digest(subject['review_policy']),
+                          'risk_hash':digest(subject.get('risk_assessments', {})),
+                          'implementation_contract_hash':digest(subject.get('implementation_contracts', {}))}
     if selected is None:
         return evaluate_action(action, scope, {'policy_version': None})
     from .clarifications import clarification_blockers, clarification_binding
@@ -110,6 +123,7 @@ def subject_decision(subject: dict, action: str, scope: dict) -> dict:
                 blockers.extend(affected)
 
     return evaluate_action(action, scope, {
+        **review_context,
         'policy_version': selected,
         'state_version': subject.get('state_version'),
         'policy_hash': digest(subject.get('enforcement', {})),

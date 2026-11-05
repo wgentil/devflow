@@ -121,3 +121,8 @@ The [Python enforcement foundation](reference/python-enforcement.md) is an
 opt-in helper extension covering workflow and standalone enforcement primitives.
 It is not a separate skill; specialist orchestration and automatic repair remain
 companion work.
+
+
+The development [adversarial review policy](reference/adversarial-review.md) extends
+workflow/review-work. Policy selection and risk records are implemented first;
+complete specialist orchestration and bounded repair remain in progress.

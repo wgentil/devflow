@@ -147,8 +147,9 @@ class SQLiteStoreTests(unittest.TestCase):
                     old['operations'][event['operation_id']] = deepcopy(event)
                     token = store.HOST_CONTEXT.set(event.get('host_binding'))
                     try:
-                        if event['kind']=='domain.host.native-reconcile':
-                            # Pure replay parity: live adapter observation is tested separately.
+                        if event['kind'] in {'domain.host.native-reconcile','run.started'}:
+                            # Frozen historical streams exercise pure replay, not new live starts/OS observations.
+
                             with patch.object(store,'_guard_enforcement_transaction'):
                                 new=store.transact(target,position-1,event['operation_id'],{'kind':event['kind'],'payload':event['payload']})
                         else:
