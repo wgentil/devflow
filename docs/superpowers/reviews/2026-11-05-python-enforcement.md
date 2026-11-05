@@ -95,6 +95,13 @@ The [fresh independent review and correction record](2026-11-05-python-enforceme
 records all nine Important findings and their regressions. Every finding was
 accepted for the single correction pass; no Critical or deferred Minor findings
 remain. The correction pass also repaired full selected-state guard ordering and
-retained normalized probe usage. Final full-suite verification is pending.
+retained normalized probe usage. The corrected full suite passed **1045 tests with zero failures and
+zero errors**, with 6 native Windows-only skips, in 497.283 seconds.
+The runtime/test source was `d152c78`, unchanged during execution. See the
+[retained runner evidence](evidence/2026-11-05-python-enforcement/README.md).
+Documentation/metadata/link and whitespace checks passed. R1–R9 are MET for the
+implemented foundation contract; actual Windows, paid-provider, infrastructure
+and authenticated live-host acceptance remain unverified. The branch is review
+ready; merge, push and publication still require a delivery decision.
 No live paid provider probe, infrastructure apply, version bump, push, merge or release
 was performed for this implementation.

@@ -35,11 +35,11 @@ reported usage is now retained in the exact cached probe result without inferrin
 currency or generating another model call.
 
 Focused correction runs passed 52 tests (25.924s), 24 public/documentation tests
-(14.657s), and 63 boundary/storage/native tests (40.763s). Final full-suite results
-will be recorded in the [requirement assessment](2026-11-05-python-enforcement.md).
+(14.657s), and 63 boundary/storage/native tests (40.763s). The corrected full suite passed 1,045 tests with zero failures/errors and six
+Windows-only skips (497.283s); retained evidence is linked from the
+[requirement assessment](2026-11-05-python-enforcement.md).
 Final focused correction checks passed 43 tests in 39.252 seconds, including the
-recovery example and reviewer probe. The final correction requires a green full
-suite before delivery, with no
+recovery example and reviewer probe. The corrected full suite is green, with no
 second reviewer invocation, following the approved execution workflow.
 
 The reviewer explicitly declined specialist orchestration (companion scope),
