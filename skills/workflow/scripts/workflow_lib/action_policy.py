@@ -112,6 +112,17 @@ def subject_decision(subject: dict, action: str, scope: dict) -> dict:
         return evaluate_action(action, scope, {'policy_version': None})
     from .clarifications import clarification_blockers, clarification_binding
     blockers = clarification_blockers(subject, scope) if action != 'review-report' else []
+    implementation = None
+    if review_selected is not None and action == 'dispatch':
+        from .implementation_contracts import implementation_prerequisites, rationale_current
+        implementation = implementation_prerequisites(subject,scope)
+        if scope.get('purpose')=='repair':
+            missing=[f for f in scope.get('finding_ids',[]) if not rationale_current(subject,f)]
+            if not scope.get('finding_ids') or missing:
+                implementation={**implementation,'status':'block',
+                    'reason_codes':implementation['reason_codes']+['FIX_RATIONALE_REQUIRED']}
+        blockers.extend({'id':'contract:'+code,'version':1,'reason_code':code}
+                        for code in implementation['reason_codes'])
     if action in {'completion', 'delivery','finding'}:
         active = {**subject.get('effects',{}),**{'tool:'+k:v for k,v in subject.get('active_executions',{}).items()}, **{'execution:'+k:v for k,v in subject.get('executions',{}).items()}}
         for identifier, effect in active.items():
@@ -122,7 +133,7 @@ def subject_decision(subject: dict, action: str, scope: dict) -> dict:
                 affected = clarification_blockers({**subject, 'clarifications': {synthetic['id']: synthetic}}, scope)
                 blockers.extend(affected)
 
-    return evaluate_action(action, scope, {
+    decision = evaluate_action(action, scope, {
         **review_context,
         'policy_version': selected,
         'state_version': subject.get('state_version'),
@@ -132,6 +143,8 @@ def subject_decision(subject: dict, action: str, scope: dict) -> dict:
         'spec_hash': subject.get('plan', {}).get('spec_hash'),
         **({'review_contract_hash': subject['review_contract_hash']} if subject.get('review_contract_hash') else {}),
         'required_evidence': [row['id'] for row in blockers], 'evidence': {}})
+    if implementation and implementation['status']=='block':decision['implementation_prerequisites']=implementation
+    return decision
 
 
 def validate_authority_patch(data: dict, kind: str, payload: dict) -> None:

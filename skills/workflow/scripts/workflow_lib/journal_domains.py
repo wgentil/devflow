@@ -670,6 +670,12 @@ def _reduce(data, kind, req, version, *, metrics_source_hash=None):
             require(req.get('contract_hash') == digest(normalize_contract(config)), 'gate contract is stale')
         else:
             require(req.get('contract_hash') in {None, digest({'kind': 'exit-status'})}, 'legacy gate contract mismatch')
+        from .review_policy import review_version
+        if review_version(run)==1:
+            # Pure replay checks the durable execution; live producer identity is checked in store.
+            claim=run.get('active_executions',{}).get('gate:'+req['gate_id'],{})
+            require(claim and claim.get('kind')=='hardening' and claim.get('config_hash')==req['config_hash'], 'Configured check needs its durable tool reservation.')
+            req={**req,'execution_id':claim['id']}
         run.setdefault('hardening_attempts', {})[req['token']] = deepcopy(req)
         return {'token': req['token'], 'status': 'running'}
     if kind == 'domain.harden.record':
@@ -690,6 +696,19 @@ def _reduce(data, kind, req, version, *, metrics_source_hash=None):
         proof = {**deepcopy(proof), 'config_hash': req['config_hash'], 'repo_id': config['repo_id'],
                  'repository_fingerprint': attempt['repository_fingerprint']}
         attempt['status'] = 'passed' if proof['passed'] else 'failed'
+        from .review_policy import review_version
+        if review_version(run)==1:
+            from .action_policy import require_action,subject_decision
+            from .protection_receipts import validate_receipts
+            from .implementation_contracts import contract_binding
+            claim=run.get('active_executions',{}).get('gate:'+req['gate_id'],{})
+            require(proof.get('execution_id')==attempt.get('execution_id')==claim.get('id') and claim.get('kind')=='hardening'
+                    and proof.get('source_observation')==claim.get('source_observation')
+                    and proof.get('protection_receipts')==claim.get('protection_receipts')
+                    and proof.get('contract_binding')==contract_binding(run,{'role':'branch'}),
+                    'Gate proof must bind actual execution, source, protection and implementation contract.')
+            require_action(subject_decision(run,'proof',{}));validate_receipts(run,proof.get('protection_receipts'))
+            run['source_identity']=proof['source_identity'];run['source_observation']=proof['source_observation']
         run.setdefault('hardening_proofs', {})[req['gate_id']] = proof
         return {'proof': proof}
     if kind == 'domain.stats.usage-import':

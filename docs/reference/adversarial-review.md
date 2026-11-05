@@ -2,7 +2,7 @@
 
 The approved [implementation plan](../superpowers/plans/2026-11-05-adversarial-review-repair.md)
 extends the merged [Python enforcement foundation](python-enforcement.md).
-This branch is in implementation: policy selection/risk recording is available;
+This branch is in implementation: policy/risk and implementation-contract prerequisites are available;
 complete specialist dispatch, coverage gates and bounded repair are not yet claimed.
 
 New workflow runs declare `devflow.adversarial-review/v1` with shared enforcement.
@@ -39,3 +39,37 @@ request. User/reviewer references remain local coordination metadata.
 
 Plugin users continue through conversational workflow setup; these developer
 records do not require shell variables, manual plugin paths or direct Python setup.
+
+## Derived implementation contracts and configured checks
+
+For current-policy work, derive a scoped contract from approved specification
+requirements or actual user decisions before worker dispatch. Record observable
+behaviors, invariants, non-goals, interfaces and cited neighboring behavior at risk.
+A contract is derived metadata; it grants no new business authority. Missing or
+conflicting authority creates a pending question with its actual text. Changing
+intended behavior under the same authority requires a recorded user decision or
+approved amendment. Source, contract and answer changes stale dependent rationale.
+
+`review contract` and `review rationale` use the mutation flags above. Contract
+input includes `scope` (`role: item`, `item_id`), `source_identity`, `behaviors`
+with `id`, `text`, `authority_refs`, and explicit `invariants`, `non_goals`,
+`interfaces` lists. Cite requirements as `spec:<approved-hash>#<requirement-id>`.
+Record `neighboring` cases with reason, evidence and targets, or an explicit
+`neighboring_disposition` with reason and evidence. `checks` can reference existing
+configured gate IDs; contracts cannot introduce commands. Rationale records name
+the finding, current scope/source/contract, observed failure, evidence, cause
+(`confirmed` or `hypothesis`), correction and causal explanation.
+
+`review prerequisites --root … --run-id … --input scope.json` reads current facts.
+Missing/stale contracts, unresolved questions, neighboring-case rationale, current
+GREEN and configured `pre_review: true` gate proofs block accepted review.
+Unconfigured syntax/type/lint checks are reported as unconfigured. A diagnostic
+scope may inspect missing prerequisites without claiming an accepted pass. Full
+specialist report enforcement remains pending the later integration tasks.
+
+Configured checks execute only their recorded argv, with a durable tool claim,
+live source/protection/question checks immediately before launch, and retained
+raw byte reports. They do not create synthetic work items or model invocations.
+A replayed or uncertain tool claim never authorizes another process. Reconcile
+stopped workers before retrying under a fresh identity; do not refund spent work.
+Selected contracts and causal rationales are mandatory bounded worker context.

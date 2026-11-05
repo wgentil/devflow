@@ -810,3 +810,6 @@ Development review policy adds `review adopt` and `review assess-risk`; see the
 [versioned input contracts and limits](reference/adversarial-review.md). Historical
 run replay retains its original policy, while new live starts must declare the
 current contract. Pure replay does not authorize another effect.
+
+Current-policy contract commands: `review contract`, `review rationale` and the
+read-only `review prerequisites`; see [record fields and live check behavior](reference/adversarial-review.md#derived-implementation-contracts-and-configured-checks).

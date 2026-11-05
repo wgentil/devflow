@@ -61,11 +61,12 @@ def require_review_policy(subject: dict):
 def review_bindings(subject: dict, scope: dict) -> dict:
     bounded(scope)
     _require(isinstance(scope, dict), 'Review scope must be an object.')
+    from .implementation_contracts import contract_binding
     return {'source_identity': subject.get('source_identity'), 'scope_hash': digest(scope),
             'policy_hash': digest(subject.get('review_policy', {})),
             'authority_hash': subject.get('review_contract_hash') or subject.get('plan', {}).get('spec_hash'),
             'plan_hash': digest(subject.get('plan', {})),
-            'contract_hash': digest(subject.get('implementation_contracts', {})),
+            'contract_hash': contract_binding(subject,scope),
             'questions_hash': clarification_binding(subject, {'item_id': scope['item_id']} if scope.get('item_id') else {})}
 
 

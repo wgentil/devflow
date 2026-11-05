@@ -245,3 +245,18 @@ flowchart LR
     Required --> Confirm[Independent branch confirmation remains required]
     All --> Confirm
 ```
+
+## Current-policy contract prerequisites
+
+Derive the scoped [implementation contract](../../docs/reference/adversarial-review.md#derived-implementation-contracts-and-configured-checks)
+from approved rules. Preserve pending question text, source bindings and labeled
+cause hypotheses. Run only configured checks; missing tools or failed checks
+remain blockers. Diagnostic inspection does not grant an accepted review pass.
+
+```mermaid
+flowchart LR
+    Rules[Approved rules and actual decisions] --> Contract[Derived observable behavior]
+    Contract --> Checks[Configured checks with live guards]
+    Checks --> Facts[Raw proof and neighboring behavior evidence]
+    Rules --> Question[Ask about missing business authority]
+```

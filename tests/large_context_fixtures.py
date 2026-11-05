@@ -10,7 +10,7 @@ from workflow_lib.repo_specs import write_spec_pair
 from workflow_lib.runs import start_run
 
 
-def make_context_project(base: Path, *, delivered_runs: int=0,event_count: int=0,history_bytes: int=0,requirement_count: int=12) -> dict:
+def make_context_project(base: Path, *, delivered_runs: int=0,event_count: int=0,history_bytes: int=0,requirement_count: int=12,current_review_policy: bool=False,setup_run=None) -> dict:
     base=Path(base).resolve();repo=base/'repo';root=base/'control';repo.mkdir(parents=True);(root/'events').mkdir(parents=True)
     def git(*argv):return subprocess.run(['git',*argv],cwd=repo,check=True,capture_output=True,text=True,encoding='utf-8').stdout.strip()
     git('init','-q');git('config','user.name','Offline Fixture');git('config','user.email','offline@example.test')
@@ -37,7 +37,12 @@ def make_context_project(base: Path, *, delivered_runs: int=0,event_count: int=0
         (root/'events'/f"{event['sequence']:08d}.json").write_text(json.dumps(event,ensure_ascii=False,separators=(',',':')),encoding='utf-8')
     append('fixture',seed)
     for i in range(max(2,event_count)-2):append('fixture',{'synthetic_history_tick':i})
-    run=start_run(state['data'],'current',plan);append('run.started',{'run':run})
+    run=start_run(state['data'],'current',plan)
+    # Historical context fixtures exercise parity, not the current live producer.
+    if not current_review_policy:
+        run.pop('review_policy',None);run.pop('enforcement',None)
+    if setup_run is not None:run=setup_run(run)
+    append('run.started',{'run':run})
     _atomic_json(root/'state.json',{k:v for k,v in state.items() if k!='operations'})
     verified=read_state(root)
     return {'root':root,'repo':repo,'run_id':'current','item_id':'W1','state':verified,'run':verified['data']['runs']['current'],

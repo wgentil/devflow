@@ -933,6 +933,14 @@ def _guard_enforcement_transaction(state: dict, event: dict) -> None:
                 raise WorkflowError('EXECUTION_OWNER_MISMATCH','Coordinator must be absent before recovery.')
         if kind=='domain.enforcement.tool-claim' and record.get('owner_pid')!=os.getpid():
             raise WorkflowError('EXECUTION_OWNER_MISMATCH','Live tool claim must identify its actual coordinator.')
+        if kind in {'domain.harden.started','domain.harden.record'}:
+            from .review_policy import review_version
+            if review_version(run)==1:
+                owner=run.get('active_executions',{}).get('gate:'+str(request.get('gate_id')),{})
+                from .tool_execution import CURRENT_TOOL
+                context=CURRENT_TOOL.get()
+                if owner.get('owner_pid')!=os.getpid() or not context or context['id']!=owner.get('id'):
+                    raise WorkflowError('EXECUTION_OWNER_MISMATCH','Only the live configured-check producer can record execution/proof.')
         if kind in {'domain.enforcement.tool-finish','verification.recorded','verification.typed.recorded'}:
             item_id=record.get('item_id') if kind.startswith('domain.') else request.get('proof',{}).get('item_id')
             owner=run.get('active_executions',{}).get(item_id,{})

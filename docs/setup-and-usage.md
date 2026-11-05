@@ -635,5 +635,7 @@ New runs on this development branch select the versioned review policy and share
 enforcement. Existing runs retain their stored contract unless explicitly adopted
 with current user authorization and stopped/reconciled workers. The harness must
 obtain actual governing protection scope and verification inputs; policy selection
-does not invent approvals. Specialist coverage/dispatch and bounded repair are
+does not invent approvals. Current-policy worker dispatch also requires a derived
+implementation contract; configured prerequisite checks retain actual command
+evidence and stop on unresolved questions. Specialist coverage/dispatch and bounded repair are
 still being implemented. See [current review scope](reference/adversarial-review.md).

@@ -43,6 +43,14 @@ def _dispatch(parsed):
         if previous['kind'] != 'domain.harden.record' or stored.get('execution') != request:
             raise WorkflowError('OPERATION_CONFLICT', 'gate operation ID belongs to another request')
         return {**state['data']['domain_receipts'][parsed.operation_id], 'replayed': True, 'state_version': state['version']}
+    from workflow_lib.review_policy import review_version
+    from workflow_lib.tool_execution import CURRENT_TOOL,execution
+    subject=state['data'].get('runs',{}).get(request.get('run_id'),{})
+    if review_version(subject)==1 and CURRENT_TOOL.get() is None:
+        with execution(Path(parsed.root),request['run_id'],None,parsed.operation_id,gate_id=request['gate_id'],expected_version=parsed.expected_version) as tool:
+            parsed.expected_version=tool['claim_version']
+            result=_dispatch(parsed);tool['result']=result.get('proof',result)
+            return result
     start_id = parsed.operation_id + ':start'
     if start_id in state['operations']:
         raise WorkflowError('EXECUTION_INTERRUPTED', 'gate execution was interrupted; use a new operation ID for fresh evidence')
@@ -66,6 +74,12 @@ def _dispatch(parsed):
     proof = verify_gate(repo, request['run_id'], request['gate_id'], config['command'], contract, artifacts_root=Path(parsed.root))
     proof['argv'] = config['command']
     proof['contract_hash'] = contract_hash
+    if review_version(run)==1:
+        from workflow_lib.tool_execution import proof_context
+        current=read_current(Path(parsed.root),run_id=request['run_id'])['data']['runs'][request['run_id']]
+        proof.update(proof_context(current))
+        from workflow_lib.implementation_contracts import contract_binding
+        proof['contract_binding']=contract_binding(current,{'role':'branch'})
     if proof['passed'] and repository_fingerprint(repo) != fingerprint:
         proof.update(passed=False, failure='STALE_CONFIGURATION')
     parsed.operation_id = original_id

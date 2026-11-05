@@ -210,6 +210,19 @@ def _prepare_context(root:Path,run:dict,envelope:dict,item_ids:list[str],*,stage
         if records:
             scoped_envelope['clarifications'] = {'required': True, 'binding': digest(records),
                 'records': [records[key] for key in sorted(records)]}
+    from .review_policy import review_version
+    if review_version(actual) == 1:
+        from .implementation_contracts import selected_contracts, contract_binding
+        selected = {}
+        for selected_id in item_ids or [None]:
+            selected_scope={'role':'item','item_id':selected_id} if selected_id else {'role':'branch'}
+            for contract in selected_contracts(actual,selected_scope):
+                if contract:selected[contract['contract_hash']]=deepcopy(contract)
+        scoped_envelope['implementation_contracts']={'required':True,'records':list(selected.values()),
+            'binding':contract_binding(actual,{'item_id':item_ids[0]} if len(item_ids)==1 else {})}
+        rationales=[deepcopy(r) for r in actual.get('fix_rationales',{}).values()
+                    if not item_ids or r.get('scope',{}).get('item_id') in item_ids]
+        if rationales:scoped_envelope['fix_rationales']={'required':True,'records':rationales}
     # Reserve diagnostic shape before optional content spends the byte budget.
     scoped_envelope['preparation']={'preflight_ms':9999999999999,'worker_ms':9999999999999,'total_ms':9999999999999,'journal_version':state['version'],'binding_hash':'0'*64}
     payload={'root':str(root),'scope':scope,'run':projected,'envelope':scoped_envelope,'selection':selection,'sources':sources,'policy':policy}

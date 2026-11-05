@@ -1,11 +1,11 @@
 {
-  "aggregate_entry_bytes": 26475,
+  "aggregate_entry_bytes": 26796,
   "baseline": {
     "aggregate_entry_bytes": 65937
   },
-  "duplicate_prose_bytes": 12226,
+  "duplicate_prose_bytes": 12892,
   "entry_bytes": {
-    "skills/build-work/SKILL.md": 3140,
+    "skills/build-work/SKILL.md": 3461,
     "skills/ingest/SKILL.md": 2093,
     "skills/issues/SKILL.md": 1682,
     "skills/migrate/SKILL.md": 1707,
@@ -20,9 +20,9 @@
   "schema_version": 1,
   "stage_load_bytes": {
     "acceptance": 10802,
-    "build-work": 10501,
+    "build-work": 10822,
     "context": 6348,
-    "implementation": 10501,
+    "implementation": 10822,
     "ingest": 9352,
     "issues": 5622,
     "migrate": 5680,
@@ -145,7 +145,7 @@
     "routing.outcomes#9e7b29b98e841dd6": 1628,
     "routing.task-decisions#c888a6b16adcb56f": 2291,
     "setup.approval#c627a7acf47a5d98": 1149,
-    "skill.build-work#1e6f0adae858d8e7": 3140,
+    "skill.build-work#1e6f0adae858d8e7": 3461,
     "skill.ingest#1e6f0adae858d8e7": 2093,
     "skill.issues#1e6f0adae858d8e7": 1682,
     "skill.migrate#1e6f0adae858d8e7": 1707,

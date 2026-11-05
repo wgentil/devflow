@@ -96,3 +96,34 @@ class ContextPreparationTests(unittest.TestCase):
             response=run_lifecycle_hook('prepare-context',{'root':str(self.f['root']),'run_id':'current','item_ids':['W1']},required=True)
         self.assertEqual(response['status'],'allow',response)
         self.assertGreaterEqual(response['result']['preparation']['preflight_ms'],6000)
+
+    def test_current_contract_is_mandatory_selected_context(self):
+        from workflow_lib.implementation_contracts import record_implementation_contract
+        scope={'role':'item','item_id':'W1'}
+        def setup(run):
+            run['source_identity']='owned-fixture-source'
+            return record_implementation_contract(run,{'scope':scope,'source_identity':run['source_identity'],
+                'behaviors':[{'id':'value','text':'Return scoped value 1.',
+                    'authority_refs':['spec:'+run['plan']['spec_hash']+'#R1']}],
+                'invariants':[],'non_goals':[],'interfaces':[],
+                'neighboring_disposition':{'applicability':'not-applicable','reason':'Isolated fixture.',
+                    'evidence_refs':['fixture:owned-scope']}})
+        self.f=make_context_project(Path(self.temp.name)/'current',current_review_policy=True,setup_run=setup)
+        p=self.prepare()
+        selected=p.payload['envelope']['implementation_contracts']
+        self.assertTrue(selected['required'])
+        self.assertEqual([c['scope'] for c in selected['records']],[scope])
+        self.assertEqual(selected['records'][0]['behaviors'][0]['text'],'Return scoped value 1.')
+
+    def test_pending_question_text_survives_diagnostic_review_context(self):
+        from workflow_lib.clarifications import record_question
+        from workflow_lib.context_preparation import prepare_context
+        def setup(run):
+            run['source_identity']='owned-question-source'
+            return record_question(run,{'id':'retention','text':'Which retention rule applies?',
+                'scope':['W1'],'source_identity':run['source_identity'],'spec_hash':run['plan']['spec_hash']})
+        self.f=make_context_project(Path(self.temp.name)/'question',current_review_policy=True,setup_run=setup)
+        p=prepare_context(self.f['root'],self.f['run'],{'run_id':'current'},['W1'],stage='review')
+        records=p.payload['envelope']['clarifications']['records']
+        self.assertEqual(records[0]['text'],'Which retention rule applies?')
+        self.assertEqual(records[0]['status'],'pending')

@@ -18,12 +18,12 @@ from workflow_lib.store import WorkflowError, transact
 def register_commands(parser: argparse.ArgumentParser) -> None:
     review = parser.add_parser("review")
     actions = review.add_subparsers(dest="review_command", required=True)
-    for name in ('adopt','assess-risk'):
+    for name in ('adopt','assess-risk','contract','rationale','prerequisites'):
         action=actions.add_parser(name)
         action.add_argument('--root',required=True)
         action.add_argument('--run-id',required=True)
         action.add_argument('--input',required=True)
-        action.add_argument('--operation-id',required=True)
+        action.add_argument('--operation-id',required=name!='prerequisites')
         action.add_argument('--expected-version',type=int)
     package = actions.add_parser("package")
     package.add_argument("--root", required=True)
@@ -65,12 +65,16 @@ def register_commands(parser: argparse.ArgumentParser) -> None:
 
 def dispatch(parsed: argparse.Namespace) -> dict:
     root = Path(parsed.root).expanduser().resolve()
-    if parsed.review_command in {'adopt','assess-risk'}:
+    if parsed.review_command in {'adopt','assess-risk','contract','rationale','prerequisites'}:
         from .journal import commit
         record=json.loads(Path(parsed.input).read_text(encoding='utf-8'))
+        if parsed.review_command=='prerequisites':
+            from workflow_lib.implementation_contracts import review_prerequisites
+            state=read_current(root,run_id=parsed.run_id)
+            return review_prerequisites(state['data']['runs'][parsed.run_id],record)
         request={'run_id':parsed.run_id}
         request['authorization' if parsed.review_command=='adopt' else 'record']=record
-        action='review-adopt' if parsed.review_command=='adopt' else 'review-risk'
+        action={'adopt':'review-adopt','assess-risk':'review-risk','contract':'implementation-contract','rationale':'fix-rationale'}[parsed.review_command]
         return commit(parsed,'domain.enforcement.'+action,request)
     state = read_command(root, parsed, family='review')
     run = state["data"].get("runs", {}).get(parsed.run_id)
