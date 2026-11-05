@@ -30,6 +30,37 @@ def apply_enforcement(subject: dict, action: str, record: dict) -> dict:
                 raise WorkflowError('TRANSPORT_RECEIPT_REQUIRED', 'Bound worker completion is recorded by its transport adapter; generic transitions cannot assert it.')
     if action in reducers: return reducers[action](subject, record)
     updated = deepcopy(subject)
+    if action == 'amend-review-contract':
+        from .document_units import digest
+        contract = subject.get('review_contract')
+        authorization = record.get('authorization', {})
+        if not isinstance(contract, dict) or not subject.get('review_contract_hash'):
+            raise WorkflowError('SESSION_CONTRACT_REQUIRED', 'Standalone review contract required; workflow specifications use their amendment rules.')
+        request = record.get('review_contract')
+        if not isinstance(request, dict):
+            raise WorkflowError('SESSION_CONTRACT_BLOCKED', 'Explicit replacement review request required.')
+        replacement = {'scope': deepcopy(contract['scope']), 'request': deepcopy(request)}
+        replacement_hash = digest(replacement)
+        if (record.get('previous_contract_hash') != subject['review_contract_hash']
+                or replacement_hash == subject['review_contract_hash']
+                or authorization.get('approved') is not True or not authorization.get('actor_id')
+                or authorization.get('contract_hash') != replacement_hash or not authorization.get('reason')
+                or authorization.get('provenance', {}).get('kind') != 'user-message'
+                or not authorization.get('provenance', {}).get('ref')):
+            raise WorkflowError('SESSION_CONTRACT_BLOCKED', 'Actual user approval must bind the exact replacement contract and current predecessor.')
+        updated.setdefault('review_contract_history', []).append({'contract': deepcopy(contract),
+            'contract_hash': subject['review_contract_hash'], 'authorization': deepcopy(authorization)})
+        updated['review_contract'] = replacement
+        updated['review_contract_hash'] = replacement_hash
+        updated['contract_approval'] = {'content_hash': replacement_hash, 'authorization': deepcopy(authorization)}
+        for proof in updated.get('verification_proofs', {}).values(): proof['fresh'] = False
+        for collection in ('verifier_proofs', 'hardening_proofs'):
+            for proof in updated.get(collection, {}).values(): proof.update(fresh=False, passed=False)
+        for rows in updated.get('reviews', {}).values():
+            for review in rows: review['fresh'] = False
+        for acceptance in updated.get('acceptances', []): acceptance['fresh'] = False
+        updated['enforcement_revision'] = subject.get('enforcement_revision', 0) + 1
+        return updated
     if action == 'protect-inventory':
         from .document_units import digest
         repo_id = record.get('repo_id')

@@ -26,8 +26,9 @@ class EnforcementIntegrationTests(unittest.TestCase):
                 store.transact(root,0,'seed',{'kind':'fixture','payload':{'runs':{'r':run}}})
                 self.cli(base,'adopt','--root',root,'--operation-id','adopt',request={'run_id':'r','authorization':{
                     'approved':True,'actor_id':'fixture-user','run_id':'r','state_version':0}})
-                self.cli(base,'question','--root',root,'--operation-id','question',request={'run_id':'r','record':{
+                question_receipt=self.cli(base,'question','--root',root,'--operation-id','question',request={'run_id':'r','record':{
                     'id':'q','text':'Retention rule?','scope':['a'],'source_identity':'fixture-source','spec_hash':'spec'}})
+                self.assertEqual(question_receipt['journal_version'],question_receipt['event_sequence'])
                 decision=self.cli(base,'decide','--root',root,request={'run_id':'r','action':'dispatch','scope':{'item_id':'a'}})
                 self.assertEqual(decision['status'],'block')
                 self.cli(base,'answer','--root',root,'--operation-id','answer',request={'run_id':'r','record':{
@@ -93,3 +94,22 @@ class EnforcementIntegrationTests(unittest.TestCase):
                 from workflow_lib.enforcement_live import assert_protection_current
                 with self.assertRaises(store.WorkflowError):assert_protection_current(current)
                 self.assertEqual(target.read_text(),'different unapproved bytes')
+
+    def test_standalone_public_question_answer_uses_contract_hash(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base=Path(tmp);repo=base/'repo';repo.mkdir();session=base/'review.db'
+            initial=self.cli(base,'session-init','--session',session,request={
+                'id':'s','repositories':[str(repo)],'source_identity':'fixture-source'})
+            contract_hash=initial['subject']['review_contract_hash']
+            self.cli(base,'session-event','--session',session,'--operation-id','q','--expected-version','0',
+                request={'action':'question','record':{'id':'q','text':'Which retention?',
+                    'scope':None,'source_identity':'fixture-source','contract_hash':contract_hash}})
+            answer={'id':'q','question_version':1,'answer':'Thirty days.','actor_id':'fixture-user',
+                'contract_hash':contract_hash,'material':False,
+                'provenance':{'kind':'user-message','ref':'fixture-message'}}
+            self.cli(base,'session-event','--session',session,'--operation-id','a','--expected-version','1',
+                request={'action':'answer','record':answer})
+            state=self.cli(base,'session-status','--session',session)
+            self.assertEqual(state['subject']['clarifications']['q']['answer'],answer)
+            self.assertNotIn('plan',state['subject']);self.assertNotIn('spec',state['subject'])
+            self.assertFalse((base/'events').exists());self.assertFalse((repo/'.devflow').exists())

@@ -79,5 +79,7 @@ def validate_protected_changes(observation: dict, authorizations: list[dict], re
                    and r.get('actor_id') and r.get('implementer_actor') and r['actor_id'] != r['implementer_actor']
                    and r.get('invocation_ref')]
     if not approvals or not independent:
-        raise WorkflowError('PROTECTED_CHANGE_BLOCKED', 'Exact protected-change approval and independent review required.')
+        raise WorkflowError('PROTECTED_CHANGE_BLOCKED', 'Exact protected-change approval and independent review required.',
+            {'observation_hash': expected, 'changed_paths': observation.get('changed_paths', [])[:100],
+             'omitted_path_count': max(0, len(observation.get('changed_paths', []))-100)})
     return {'passed': True, 'observation_hash': expected}

@@ -453,6 +453,11 @@ boundaries. Preserve actual user-answer provenance and renew stale preparation;
 read-only assessments remain possible. The complete enforcement and review/repair
 design is still in progress; see [current scope and developer contracts](../../docs/reference/python-enforcement.md).
 
+Final authorization honors current blockers even when the historical stage label
+is delivery. Native reservations bind the exact attachment and budget; diagnostic
+review remains distinct from implementation acceptance. Standalone clarification
+records use their own review contract without a fake workflow specification.
+
 ```mermaid
 flowchart LR
     Adopt[Explicitly adopted run] --> Check[Current action and question checks]

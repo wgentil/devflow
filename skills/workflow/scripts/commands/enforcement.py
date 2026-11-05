@@ -33,6 +33,37 @@ def dispatch(parsed):
         return transact_session(path, parsed.expected_version, parsed.operation_id, request)
 
     request = json.loads(Path(parsed.input).read_text(encoding='utf-8'))
+    if parsed.enforcement_command == 'close-finding':
+        if not parsed.root:
+            raise WorkflowError('CONTROL_ROOT_REQUIRED', 'mutations require --root')
+        if not getattr(parsed, 'operation_id_explicit', False):
+            raise WorkflowError('OPERATION_ID_REQUIRED', 'mutations require --operation-id for safe retry')
+        from workflow_lib.storage_access import operation_lookup
+        if operation_lookup(Path(parsed.root), parsed.operation_id):
+            return commit(parsed, 'domain.enforcement.close-finding', request)
+        state = read_current(Path(parsed.root), run_id=request['run_id'])
+        if parsed.expected_version is not None and parsed.expected_version != state['version']:
+            raise WorkflowError('STATE_VERSION_CONFLICT', 'Re-read current closure inputs before retrying.')
+        subject = state['data'].get('runs', {}).get(request['run_id'])
+        if not subject: raise WorkflowError('RUN_UNAVAILABLE', 'Known run required.')
+        from workflow_lib.finding_closure import validate_closure
+        from workflow_lib.enforcement_live import assert_source_current, assert_protection_current
+        from workflow_lib.host_completion import package_current
+        validate_closure(subject, request['record'])
+        assert_source_current(subject)
+        protection_receipts = assert_protection_current(subject)
+        candidate = subject.get('corrections', {}).get(request['record']['finding_id'], {})
+        for proof_id in candidate.get('proof_ids', []):
+            verifier = subject.get('verifier_proofs', {}).get(proof_id, {})
+            evidence = subject.get('verification_proofs', {}).get(verifier.get('evidence_id'), {})
+            if evidence.get('kind') == 'code' and evidence.get('protection_receipts') != protection_receipts:
+                raise WorkflowError('FINDING_CLOSURE_BLOCKED', 'Renew code proof after a protected verification-context change.')
+        review = next(r for rows in subject.get('reviews', {}).values() for r in rows
+                      if r.get('review_id') == request['record']['review_id'])
+        package = subject.get('review_packages', {}).get(review.get('package_hash'))
+        if not package or not package_current(subject, package):
+            raise WorkflowError('FINDING_CLOSURE_BLOCKED', 'Current actual review inputs required before closing the finding.')
+        parsed.expected_version = state['version']
     if parsed.enforcement_command == 'protect-inventory':
         from workflow_lib.protected_changes import snapshot_protected
         from workflow_lib.storage_access import operation_lookup

@@ -31,7 +31,13 @@ class LiveChecks(unittest.TestCase):
         inventory={'paths':['acceptance.py']}
         subject={'enforcement':{'protocol':'devflow.python-enforcement/v1', 'policy_version':1},'repositories':{'r':{'location':str(repo)}},
             'protected_inventories':{'r':{'inventory':inventory,'baseline':snapshot_protected(repo,inventory)}}}
-        assert_protection_current(subject)
+        from unittest.mock import patch
+        subject['reviews']={'branch':[{'actor_id':'fixture-reviewer','invocation_ref':'fixture-call',
+            'verdict':'pass','package_hash':'irrelevant'} for _ in range(100)]}
+        subject['review_packages']={'irrelevant':{'package_hash':'irrelevant'}}
+        with patch('workflow_lib.host_completion.package_current', side_effect=AssertionError('Unrelated review history must not be loaded.')) as check:
+            assert_protection_current(subject)
+            check.assert_not_called()
         target.write_text('after')
         with self.assertRaises(WorkflowError):assert_protection_current(subject)
         self.assertEqual(target.read_text(),'after')
@@ -53,6 +59,11 @@ class LiveChecks(unittest.TestCase):
         run={'enforcement':{'protocol':'devflow.python-enforcement/v1', 'policy_version':1},'repositories':{'r':{'location':str(repo)}},
              'items':{'W1':{'attempts':[{'token':'t'}]}},'verification_proofs':{'p':evidence},
              'verifier_proofs':{'p':{'passed':True,'item_id':'W1','token':'t','evidence_id':'p'}}}
+        from workflow_lib.protected_changes import snapshot_protected
+        from workflow_lib.enforcement_live import assert_protection_current
+        inventory={'paths':[]}
+        run['protected_inventories']={'r':{'inventory':inventory,'baseline':snapshot_protected(repo,inventory)}}
+        evidence['protection_receipts']=assert_protection_current(run)
         item={'id':'W1','kind':'code'}
         self.assertIsNotNone(_required_proof(run,item))
         target.write_text('after')

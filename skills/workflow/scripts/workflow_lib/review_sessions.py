@@ -11,7 +11,10 @@ MAX_MANIFEST_BYTES = 4 * 1024 * 1024
 
 
 def _encode(value):
-    raw = json.dumps(value, sort_keys=True, ensure_ascii=False, allow_nan=False)
+    try:
+        raw = json.dumps(value, sort_keys=True, ensure_ascii=False, allow_nan=False)
+    except (TypeError, ValueError) as exc:
+        raise WorkflowError('SESSION_JSON_INVALID', 'Session records require finite JSON values.') from exc
     if len(raw.encode('utf-8')) > MAX_MANIFEST_BYTES:
         raise WorkflowError('SESSION_SIZE_LIMIT', 'Session manifest exceeds its bounded storage contract.')
     return raw
@@ -38,12 +41,21 @@ def _connection(path):
 
 def initialize_session(path: Path, manifest: dict) -> dict:
     path = Path(path).absolute()
+    if (not isinstance(manifest, dict)
+            or set(manifest) - {'id', 'repositories', 'source_identity', 'review_contract'}):
+        raise WorkflowError('INVALID_SESSION', 'Initialize scope and contract only; evidence, claims and approvals require recorded events.')
     repos = manifest.get('repositories')
-    if not isinstance(repos, list) or not repos or not manifest.get('source_identity') or not manifest.get('id'):
+    if (not isinstance(repos, list) or not repos or any(not isinstance(repo, str) or not repo for repo in repos)
+            or not isinstance(manifest.get('source_identity'), str) or not manifest['source_identity']
+            or not isinstance(manifest.get('id'), str) or not manifest['id']):
         raise WorkflowError('INVALID_SESSION', 'Explicit repositories, source identity and session ID required.')
     if any(path.resolve().is_relative_to(Path(repo).resolve()) for repo in repos):
         raise WorkflowError('SESSION_INSIDE_SCOPE', 'Keep session output outside reviewed repositories.')
-    subject = {**manifest, 'enforcement': {'protocol':'devflow.python-enforcement/v1', 'policy_version': 1}, 'state_version': 0}
+    contract = manifest.get('review_contract', {})
+    if not isinstance(contract, dict):
+        raise WorkflowError('INVALID_SESSION', 'Review contract must be an object.')
+    contract = {'scope': {'repositories': repos, 'source_identity': manifest['source_identity']}, 'request': contract}
+    subject = {**manifest, 'review_contract': contract, 'review_contract_hash': digest(contract), 'enforcement': {'protocol':'devflow.python-enforcement/v1', 'policy_version': 1}, 'state_version': 0}
     raw = _encode({'schema_version': 1, 'version': 0, 'subject': subject})
     path.parent.mkdir(parents=True, exist_ok=True)
     try:
@@ -64,8 +76,11 @@ def _read(conn):
     try:
         value = json.loads(conn.execute('SELECT body FROM manifest WHERE id=1').fetchone()[0])
         if value['schema_version'] != 1 or type(value['version']) is not int or not isinstance(value['subject'], dict): raise ValueError()
+        subject = value['subject']
+        if subject.get('review_contract_hash') and digest(subject.get('review_contract')) != subject['review_contract_hash']: raise ValueError()
+        _encode(value)
         return value
-    except (ValueError, KeyError, TypeError) as exc:
+    except (ValueError, KeyError, TypeError, WorkflowError) as exc:
         raise WorkflowError('SESSION_CORRUPT', 'Invalid session manifest; preserve for recovery.') from exc
 
 

@@ -42,7 +42,7 @@ def validate_test_pair(red: dict, green: dict, contract: dict, *, require_review
     return {'passed': True, 'baseline_source': red['source_identity'], 'source_identity': green['source_identity']}
 
 
-def verification_integrity_contract(subject: dict, item: dict, input_hashes: dict, targets: list[str], argv: list[str], report_format: str, input_bindings: dict | None = None) -> dict:
+def verification_integrity_contract(subject: dict, item: dict, input_hashes: dict, targets: list[str], argv: list[str], report_format: str, input_bindings: dict | None = None, protection_receipts: dict | None = None) -> dict:
     declared = item.get('verification_inputs')
     if not isinstance(declared, list) or not declared or set(declared) != set(input_hashes):
         raise WorkflowError('TEST_INTEGRITY_BLOCKED', 'Approved item must declare all verification inputs.')
@@ -60,4 +60,5 @@ def verification_integrity_contract(subject: dict, item: dict, input_hashes: dic
             'tool': list(argv), 'report_format': report_format, 'input_bindings': input_bindings,
             'oracle_authority': [{'spec_hash': subject['plan']['spec_hash'], 'requirement_id': rid} for rid in authority],
             'clarification_binding': clarification_binding(subject, {'item_id': item['id']}),
-            'spec_hash': subject['plan']['spec_hash'], 'item_id': item['id'], 'item_contract_hash': digest(item)}
+            'spec_hash': subject['plan']['spec_hash'], 'item_id': item['id'], 'item_contract_hash': digest(item),
+            **({'protection_context_hash': digest(protection_receipts)} if protection_receipts is not None else {})}

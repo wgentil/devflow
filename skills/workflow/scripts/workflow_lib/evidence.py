@@ -162,7 +162,9 @@ def capture_evidence(root: Path, run_id: str, token: str, phase: str, command: l
         from .test_integrity import verification_integrity_contract
         from .test_inputs import capture_input_bindings
         input_bindings = capture_input_bindings(repo, test_paths)
-        integrity_contract = verification_integrity_contract(run, work_item, before_tests, target_ids, command, report_format, input_bindings)
+        from .enforcement_live import assert_protection_current
+        protection_before = assert_protection_current(run)
+        integrity_contract = verification_integrity_contract(run, work_item, before_tests, target_ids, command, report_format, input_bindings, protection_before)
     from .red_reuse import verification_contract, select_red_source
     from .document_units import digest
     contract = verification_contract(run,work_item,repo_id,before_tests,target_ids,command,report_format)
@@ -244,6 +246,10 @@ def capture_evidence(root: Path, run_id: str, token: str, phase: str, command: l
         if observation != before_observation:
             return {'passed': False, 'failure': 'REPOSITORY_CHANGED_DURING_VERIFICATION', 'exit_code': exit_code,
                     'stdout_ref': proof['stdout_ref'], 'stderr_ref': proof['stderr_ref']}
+        protection_after = assert_protection_current(run)
+        if protection_before != protection_after:
+            raise WorkflowError('PROTECTION_CHANGED_DURING_VERIFICATION', 'Protected verification context changed during execution; renew its proof contract.')
+        proof['protection_receipts'] = protection_after
         integrity = {**parse_test_evidence(stdout, stderr, report_format), 'phase': phase,
             'contract': integrity_contract, 'semantic_status': 'pending-review', 'source_identity': observation['source_identity'],
             'passed': True, 'exit_code': exit_code, 'stdout_ref': proof['stdout_ref'], 'stderr_ref': proof['stderr_ref']}

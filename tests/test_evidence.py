@@ -82,21 +82,33 @@ raise SystemExit(0 if outcome=='passed' else 1)
 """
         (self.repo/'test_target.py').write_text(script)
         (self.repo/'value.txt').write_text('60')
+        (self.repo/'.git/info/exclude').write_text('scanner.conf\n')
+        (self.repo/'scanner.conf').write_text('strict scanner')
+        subprocess.run(['git','add','.'],cwd=self.repo,check=True)
+        subprocess.run(['git','commit','-qm','approved fixture oracle'],cwd=self.repo,check=True)
         state=read_state(self.root);run=state['data']['runs']['run-1']
-        run['enforcement']={'protocol':'devflow.python-enforcement/v1', 'policy_version':1};run['actors']={'implementer':'fixture-author'}
+        run['enforcement']={'protocol':'devflow.python-enforcement/v1', 'policy_version':1};run['actors']={'implementer':'fixture-author'};run['status']='active'
         run['repositories']=state['data']['repositories']
+        from workflow_lib.protected_changes import snapshot_protected
+        inventory={'paths':['test_target.py','scanner.conf'],'governing_digest':'fixture-governing'}
+        run['governing_digest']='fixture-governing'
+        run['protected_inventories']={'repo-1':{'inventory':inventory,'baseline':snapshot_protected(self.repo,inventory)}}
         run['items']['W1']['attempts']=[dict(run['active_attempt'])]
+        run['unresolved_findings']=[{'id':'retention-defect','item_id':'W1','mandatory':True,
+            'status':'open','obligations':['retention-rule']}]
         run['plan']['spec_hash']='fixture-approved-spec'
         run['plan']['work_items'][0].update(verification_inputs=['test_target.py'],verification_target_ids=['test_target'],requirement_ids=['R1'])
         transact(self.root,state['version'],'enforce',{'kind':'fixture','payload':{'runs':{'run-1':run}}})
         argv=[sys.executable,'test_target.py']
         red=self.capture(self.root,'run-1','attempt-1','RED',argv,['test_target.py'],['test_target'],10)
         (self.repo/'value.txt').write_text('30')
+        subprocess.run(['git','commit','-qam','fix retention\n\nWork-Item: W1'],cwd=self.repo,check=True)
         green=self.capture(self.root,'run-1','attempt-1','GREEN',argv,['test_target.py'],['test_target'],10)
         self.assertNotEqual(red['source_identity'],green['source_identity'])
         self.assertEqual(green['integrity']['baseline_source'],red['source_identity'])
         self.assertTrue((self.root/green['stdout_ref']).is_file())
         self.assertEqual(green['integrity']['semantic_status'],'pending-review')
+        self.assertEqual(set(green['protection_receipts']),{'repo-1'})
         from workflow_lib.gates import _required_proof
         current_run=read_state(self.root)['data']['runs']['run-1']
         self.assertIsNotNone(_required_proof(current_run,current_run['plan']['work_items'][0]))
@@ -109,7 +121,7 @@ raise SystemExit(0 if outcome=='passed' else 1)
         transact(self.root,state['version'],'runtime-result',{'kind':'run.result.recorded','payload':{
             'run_id':'run-1','token':'attempt-1','result':result,'verified':True,'verifier_proof_id':green['id']}})
         state=read_state(self.root);run=state['data']['runs']['run-1']
-        package=prepare_review(run,'item',{'repo-1':{'location':str(self.repo),'base':green['repository_head'],'head':green['repository_head']}},item_id='W1')
+        package=prepare_review(run,'item',{'repo-1':{'location':str(self.repo),'base':red['repository_head'],'head':green['repository_head']}},item_id='W1')
         transact(self.root,state['version'],'oracle-package',{'kind':'review.package.prepared','payload':{'run_id':'run-1','package':package}})
         state=read_state(self.root);run=state['data']['runs']['run-1']
         reviewer={'role':'item','actor_id':'fixture-independent-reviewer','invocation_ref':'fixture-real-review-call','tool_available':True}
@@ -133,6 +145,88 @@ raise SystemExit(0 if outcome=='passed' else 1)
         unbound=copy.deepcopy(accepted_run)
         unbound['reviews']['item'][0]['semantic_approvals']={}
         self.assertEqual(gate_status(unbound)['stage'],'item-review')
+        # Actual execution and distinct recorded fixture reviewers reach final gates.
+        repo_inputs={'repo-1':{'location':str(self.repo),'base':red['repository_head'],'head':green['repository_head']}}
+        state=read_state(self.root)
+        transact(self.root,state['version'],'candidate-fix',{'kind':'domain.enforcement.propose-fix',
+            'payload':{'request':{'run_id':'run-1','record':{'finding_id':'retention-defect',
+                'source_identity':green['source_identity'],'proof_ids':[green['id']],
+                'rationale':'The actual sixty-day failure now passes with the thirty-day correction.'}}}})
+
+        for role in ('branch','acceptance'):
+            state=read_state(self.root);run=state['data']['runs']['run-1']
+            package=prepare_review(run,role,repo_inputs)
+            transact(self.root,state['version'],role+'-package',{'kind':'review.package.prepared',
+                'payload':{'run_id':'run-1','package':package}})
+            state=read_state(self.root);run=state['data']['runs']['run-1']
+            assessment={'package_hash':package['package_hash'],'verdict':'pass','findings':[]}
+            if role=='branch':
+                assessment['test_oracles']=report['test_oracles']
+                assessment['closure_dispositions']=[{'finding_id':'retention-defect',
+                    'source_identity':green['source_identity'],'obligations':['retention-rule'],
+                    'disposition':'resolved','proof_ids':[green['id']],
+                    'proof_applicability':{green['id']:['retention-rule']}}]
+            reviewer={'role':role,'actor_id':'fixture-'+role+'-reviewer',
+                'invocation_ref':'fixture-'+role+'-invocation','tool_available':True}
+            review=record_review(run,package['package_hash'],reviewer,assessment)
+            transact(self.root,state['version'],role+'-review',{'kind':'review.recorded',
+                'payload':{'run_id':'run-1','review':review}})
+            if role=='branch':
+                request_path=self.root.parent/'closure-request.json'
+                request_path.write_text(json.dumps({'run_id':'run-1','record':{
+                    'finding_id':'retention-defect','review_id':review['review_id']}}))
+                command=[sys.executable,str(ENTRY),'enforcement','close-finding','--root',str(self.root),
+                    '--input',str(request_path),'--operation-id','independent-closure']
+                (self.repo/'scanner.conf').write_text('unapproved scanner weakening')
+                blocked=subprocess.run(command,capture_output=True,text=True)
+                self.assertNotEqual(blocked.returncode,0,blocked.stdout)
+                self.assertIn('PROTECTED_CHANGE_BLOCKED',blocked.stdout+blocked.stderr)
+                (self.repo/'scanner.conf').write_text('strict scanner')
+                allowed=subprocess.run(command,capture_output=True,text=True)
+                self.assertEqual(allowed.returncode,0,allowed.stdout+allowed.stderr)
+                self.assertEqual(read_state(self.root)['data']['runs']['run-1']['unresolved_findings'][0]['status'],'resolved')
+        from workflow_lib.gates import accept_requirements
+        state=read_state(self.root);run=state['data']['runs']['run-1']
+        (self.repo/'scanner.conf').write_text('unapproved acceptance scanner')
+        with self.assertRaises((ValueError,WorkflowError)):
+            accept_requirements(run,{'package_hash':package['package_hash'],
+                'requirements':[{'id':'R1','verdict':'MET','citations':[{
+                    'repo_id':'repo-1','path':'value.txt','line':1}]}]},
+                {'repo-1':{'location':str(self.repo),'head':green['repository_head']}})
+        (self.repo/'scanner.conf').write_text('strict scanner')
+        acceptance=accept_requirements(run,{'package_hash':package['package_hash'],
+            'requirements':[{'id':'R1','verdict':'MET','citations':[{
+                'repo_id':'repo-1','path':'value.txt','line':1}]}]},
+            {'repo-1':{'location':str(self.repo),'head':green['repository_head']}})
+        self.assertEqual(acceptance['schema_version'],2)
+        self.assertEqual(acceptance['protection_receipts'],green['protection_receipts'])
+        transact(self.root,state['version'],'final-acceptance',{'kind':'acceptance.recorded',
+            'payload':{'run_id':'run-1','acceptance':acceptance}})
+        ready=read_state(self.root)['data']['runs']['run-1']
+        self.assertTrue(gate_status(ready)['can_advance'])
+        from workflow_lib.delivery import prepare_delivery,verify_delivery,record_delivery
+        manifest=prepare_delivery(ready,repo_inputs,'retained-branch')
+        checked=verify_delivery(ready,manifest,manifest['manifest_hash'],repo_inputs)
+
+        ready['effects']={'late':{'status':'uncertain','action_scope':{'item_id':'W1'}}}
+        self.assertFalse(gate_status(ready)['can_advance'])
+        with self.assertRaises((ValueError,WorkflowError)):
+            verify_delivery(ready,manifest,manifest['manifest_hash'],repo_inputs)
+        with self.assertRaises((ValueError,WorkflowError)):
+            record_delivery(ready,checked,{'outcome':'retained-branch','repository_heads':{'repo-1':green['repository_head']},
+                'authorization':{'approved':True,'actor_id':'fixture-user','manifest_hash':manifest['manifest_hash'],
+                    'action':'delivery.retained-branch'}})
+        ready['effects']={}
+        from workflow_lib.evidence import repository_fingerprint
+        before=repository_fingerprint(self.repo)
+        (self.repo/'scanner.conf').write_text('weakened ignored scanner')
+        self.assertEqual(repository_fingerprint(self.repo),before)
+        self.assertFalse(gate_status(ready)['can_advance'])
+        with self.assertRaises((ValueError,WorkflowError)):
+            verify_delivery(ready,manifest,manifest['manifest_hash'],repo_inputs)
+
+
+
 
 
 

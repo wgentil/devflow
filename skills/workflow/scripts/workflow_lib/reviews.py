@@ -213,6 +213,12 @@ def record_review(run: dict, package_hash: str, reviewer: dict, report: dict) ->
                   _canonical({"package": package_hash, "actor": actor, "invocation": invocation,
                               "report": report}).encode()).hexdigest()}
     if enforcement_version(run) == 1:
+        if report.get('perspective') is not None:
+            perspective = report['perspective']
+            if (perspective not in {'code', 'test', 'architecture', 'security'}
+                    or reviewer.get('perspective', perspective) != perspective):
+                raise ValueError('Review perspective must be supported and match its actual reviewer request.')
+            review['perspective'] = perspective
         for field in ('closure_dispositions', 'test_oracles', 'protected_dispositions'):
             values = report.get(field, [])
             if not isinstance(values, list) or any(not isinstance(v, dict) for v in values):

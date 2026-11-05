@@ -53,6 +53,12 @@ class GateTests(unittest.TestCase):
         self.assertEqual(result["stage"], "implementation")
         self.assertFalse(result["can_advance"])
 
+    def test_adopted_resolved_finding_is_not_still_a_mandatory_blocker(self):
+        self.run['enforcement']={'protocol':'devflow.python-enforcement/v1','policy_version':1}
+        self.run['unresolved_findings']=[{'id':'fixed','mandatory':True,'status':'resolved'}]
+        status,_,_,_=self.module()
+        self.assertEqual(status(self.run)['blocking_findings'],[])
+
     def test_mandatory_waiver_requires_run_scoped_authorization(self):
         from workflow_lib.gates import park_finding, resolve_finding, waive_finding
         self.run["unresolved_findings"] = [{"id": "F1", "mandatory": True, "status": "open"}]

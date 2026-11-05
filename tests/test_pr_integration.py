@@ -73,7 +73,7 @@ class PrFlowTests(unittest.TestCase):
                        'repository_head': 'h2', 'worktree_digest': 'clean',
                        'status': '', 'changed_paths': ['a.txt']}
         with patch('workflow_lib.delivery._repo_fingerprint', return_value=fingerprint), \
-             patch('workflow_lib.delivery.gate_status', side_effect=lambda run: {
+             patch('workflow_lib.delivery.gate_status', side_effect=lambda run, live=True: {
                  'stage': 'delivery' if 'pending_pr' not in run else 'pr-rework'}):
             manifest = prepare_delivery(self.run, repositories, 'pull-request')
             verified = verify_delivery(self.run, manifest, manifest['manifest_hash'], repositories)

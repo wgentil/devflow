@@ -38,11 +38,19 @@ def _required_proof(run: dict, item: dict, live: bool = True) -> dict | None:
         actual = (phase if kind == "code" else kind + ("-post" if kind == "agent-evaluation" and phase == "post" else ""))
         if (proof.get("passed") is True and proof.get("item_id") == item["id"]
                 and proof.get("token") == token and actual in expected and evidence.get("fresh", True)):
-            if not live:
-                return proof
             if enforcement_version(run) is not None and kind == 'code':
                 from .test_inputs import proof_inputs_current
-                if not proof_inputs_current(run, evidence): continue
+                from .protection_receipts import validate_receipts
+                from .store import WorkflowError
+                try:
+                    validate_receipts(run, evidence.get('protection_receipts'))
+                    if live:
+                        from .enforcement_live import assert_protection_current
+                        if (not proof_inputs_current(run, evidence)
+                                or assert_protection_current(run) != evidence['protection_receipts']): continue
+                except WorkflowError: continue
+            if not live:
+                return proof
             try:
                 from .evidence import repository_fingerprint
                 repo = run.get("repositories", {}).get(evidence.get("repo_id"), {})
@@ -139,13 +147,28 @@ def gate_status(run: dict, live: bool = True) -> dict:
                and item.get('kind') == 'code' and run.get('items',{}).get(item['id'],{}).get('status') == 'complete']
     recovery = {'reverification_actions':actions} if actions else {}
     mandatory_blockers = [finding.get("id") for finding in run.get("unresolved_findings", [])
-                          if finding.get("mandatory") is True and finding.get("status") != "waived"]
+                          if finding.get("mandatory") is True and finding.get("status") not in (
+                              {"waived", "resolved"} if enforcement_version(run) is not None else {"waived"})]
     if mandatory_blockers:
         return {"stage": stage, "can_advance": False, "blocking_findings": mandatory_blockers,
                 "unverified_items": unverified, **recovery}
     can_advance = stage in {"delivery"}
-    return {"stage": stage, "can_advance": can_advance, "blocking_findings": [],
-            "unverified_items": unverified, **recovery}
+    from .action_policy import subject_decision
+    final_decision = subject_decision(run, 'delivery', {})
+    policy_block = final_decision['status'] == 'block'
+    protection_block = None
+    if can_advance and live and enforcement_version(run) is not None:
+        from .enforcement_live import assert_protection_current
+        from .store import WorkflowError
+        try:
+            assert_protection_current(run)
+        except WorkflowError as exc:
+            protection_block = {'reason_code': exc.code, 'message': exc.message, **exc.details}
+
+    return {"stage": stage, "can_advance": can_advance and not policy_block and protection_block is None, "blocking_findings": [],
+            "unverified_items": unverified, **recovery,
+            **({'action_decision': final_decision} if policy_block else {}),
+            **({'protection_blocker': protection_block} if protection_block else {})}
 
 
 def amend_item(run: dict, item_id: str, replacement: dict, ruling: dict) -> dict:
@@ -240,7 +263,25 @@ def _citation_valid(citation: dict, snapshots: dict) -> bool:
     return line <= len(lines)
 
 
+def acceptance_identity(acceptance: dict) -> str:
+    body = {key: acceptance.get(key) for key in ('run_id', 'requirements')}
+    if acceptance.get('schema_version') == 2:
+        body.update({key: acceptance.get(key) for key in ('package_hash', 'source_identity', 'protection_receipts')})
+    return hashlib.sha256(_canonical(body).encode()).hexdigest()
+
+
 def accept_requirements(run: dict, report: dict, repository_snapshots: dict) -> dict:
+    protection_receipts = None
+    if enforcement_version(run) is not None:
+        from .action_policy import require_action, subject_decision
+        from .enforcement_live import assert_source_current, assert_protection_current
+        require_action(subject_decision(run, 'completion', {}))
+        assert_source_current(run)
+        protection_receipts = assert_protection_current(run)
+        gates = gate_status(run)
+        if (gates.get('underlying_stage', gates.get('stage')) not in {'acceptance', 'hardening', 'delivery'}
+                or gates.get('blocking_findings') or gates.get('unverified_items')):
+            raise ValueError('Acceptance requires current proofs, independent reviews and resolved mandatory findings.')
     package_hash = report.get("package_hash") if isinstance(report, dict) else None
     acceptance_reviews = run.get("reviews", {}).get("acceptance", [])
     if not package_hash or not any(review.get("package_hash") == package_hash and
@@ -294,11 +335,13 @@ def accept_requirements(run: dict, report: dict, repository_snapshots: dict) -> 
     regressed = sorted(rid for rid in prior_met if current.get(rid) != "MET")
     if regressed:
         raise ValueError(f"previously accepted requirements cannot regress silently: {regressed}")
-    return {"schema_version": 1, "run_id": run.get("id"), "requirements": normalized,
-            "package_hash": package_hash,
-            "complete": all(entry["verdict"] == "MET" for entry in normalized),
-            "acceptance_hash": hashlib.sha256(_canonical({"run_id": run.get("id"),
-                "requirements": normalized}).encode()).hexdigest()}
+    acceptance = {"schema_version": 2 if protection_receipts is not None else 1,
+        "run_id": run.get("id"), "requirements": normalized, "package_hash": package_hash,
+        "complete": all(entry["verdict"] == "MET" for entry in normalized),
+        **({'source_identity': run.get('source_identity'), 'protection_receipts': protection_receipts}
+           if protection_receipts is not None else {})}
+    acceptance['acceptance_hash'] = acceptance_identity(acceptance)
+    return acceptance
 
 
 def discard_run(run: dict, reason: str, actor_id: str) -> dict:

@@ -206,6 +206,11 @@ def _apply_event(state: dict, event: dict, *, metrics_source_hash=None) -> None:
                      and evidence.get("phase") == "post")))
             if not eligible:
                 raise WorkflowError("INVALID_EVENT", "registered proof kind cannot complete this work item")
+            if enforcement_version(run) is not None and evidence.get('kind') == 'code':
+                from .protection_receipts import validate_receipts
+                validate_receipts(run, evidence.get('protection_receipts'))
+                if evidence.get('fresh') is False:
+                    raise WorkflowError('INVALID_EVENT', 'Current protected code execution evidence required.')
         status = "verified" if verified else "result_recorded"
         active["status"] = status
         active["result"] = payload["result"]
@@ -242,7 +247,9 @@ def _apply_event(state: dict, event: dict, *, metrics_source_hash=None) -> None:
             integrity = proof.get('integrity', {})
             contract = integrity.get('contract', {})
             expected = verification_integrity_contract(run, item, proof.get('test_hashes', {}),
-                contract.get('targets', []), proof.get('argv', []), contract.get('report_format'), contract.get('input_bindings'))
+                contract.get('targets', []), proof.get('argv', []), contract.get('report_format'), contract.get('input_bindings'), proof.get('protection_receipts'))
+            from .protection_receipts import validate_receipts
+            validate_receipts(run, proof.get('protection_receipts'))
             observation = proof.get('source_observation', {})
             if (contract != expected or not observation.get('snapshots')
                     or observation.get('source_identity') != digest(observation['snapshots'])
@@ -533,9 +540,25 @@ def _apply_event(state: dict, event: dict, *, metrics_source_hash=None) -> None:
         if (not isinstance(values, list) or {value.get("id") for value in values if isinstance(value, dict)} != required
                 or len(values) != len(required) or acceptance.get("complete") is not all(value.get("verdict") == "MET" for value in values)):
             raise WorkflowError("INVALID_EVENT", "acceptance does not cover every requirement consistently")
-        digest = hashlib.sha256(json.dumps({"run_id": run["id"], "requirements": values}, sort_keys=True,
-            ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()
-        if acceptance.get("acceptance_hash") != digest:
+        from .gates import acceptance_identity
+        if enforcement_version(run) is not None:
+            from .protection_receipts import validate_receipts
+            from .gates import gate_status
+            if acceptance.get('schema_version') != 2 or acceptance.get('source_identity') != run.get('source_identity'):
+                raise WorkflowError('INVALID_EVENT', 'Versioned current-source protected acceptance required.')
+            validate_receipts(run, acceptance.get('protection_receipts'))
+            gates = gate_status(run, live=False)
+            if (gates.get('underlying_stage', gates.get('stage')) not in {'acceptance', 'hardening', 'delivery'}
+                    or gates.get('blocking_findings') or gates.get('unverified_items')):
+                raise WorkflowError('INVALID_EVENT', 'Current durable proof and independent review prerequisites required.')
+            for item in run.get('plan', {}).get('work_items', []):
+                if item.get('kind') != 'code': continue
+                from .gates import _required_proof
+                verifier = _required_proof(run, item, live=False)
+                evidence = run.get('verification_proofs', {}).get(verifier.get('evidence_id'), {}) if verifier else {}
+                if evidence.get('protection_receipts') != acceptance['protection_receipts']:
+                    raise WorkflowError('INVALID_EVENT', 'Acceptance must bind the executed protected context for every code proof.')
+        if acceptance.get("acceptance_hash") != acceptance_identity(acceptance):
             raise WorkflowError("INVALID_EVENT", "acceptance hash is invalid")
         prior_met = {entry["id"] for value in run.get("acceptances", []) for entry in value.get("requirements", [])
                      if entry.get("verdict") == "MET"}
@@ -619,7 +642,8 @@ def _apply_event(state: dict, event: dict, *, metrics_source_hash=None) -> None:
         if not acceptance or acceptance.get("acceptance_hash") != delivery.get("verification", {}).get("acceptance_hash"):
             raise WorkflowError("INVALID_EVENT", "delivery does not bind current requirement acceptance")
         from .gates import gate_status
-        if gate_status(run, live=False).get("stage") != "delivery":
+        from .delivery import _delivery_gate_open
+        if not _delivery_gate_open(run, live=False):
             raise WorkflowError("INVALID_EVENT", "delivery gate is not open")
         from .journal_domains import migration_delivery_guard
         migration_delivery_guard(data, run['id'], delivery['manifest']['repositories'])

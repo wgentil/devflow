@@ -111,6 +111,7 @@ def subject_decision(subject: dict, action: str, scope: dict) -> dict:
         'questions_hash': clarification_binding(subject, scope),
         'source_identity': subject.get('source_identity'),
         'spec_hash': subject.get('plan', {}).get('spec_hash'),
+        **({'review_contract_hash': subject['review_contract_hash']} if subject.get('review_contract_hash') else {}),
         'required_evidence': [row['id'] for row in blockers], 'evidence': {}})
 
 

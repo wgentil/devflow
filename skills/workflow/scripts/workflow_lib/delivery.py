@@ -65,12 +65,18 @@ def _gate_run(run: dict, outcome: str) -> dict:
     return run
 
 
+def _delivery_gate_open(run: dict, *, live: bool = True) -> bool:
+    from .action_policy import enforcement_version
+    gates = gate_status(run, live=live)
+    return gates.get('stage') == 'delivery' and (enforcement_version(run) is None or gates.get('can_advance') is True)
+
+
 def prepare_delivery(run: dict, repositories: dict, outcome: str) -> dict:
     from .action_policy import subject_decision, require_action
     require_action(subject_decision(run, 'delivery', {}))
     if outcome not in OUTCOMES or not isinstance(repositories, dict) or not repositories:
         raise ValueError("delivery outcome and repository manifest are required")
-    if run.get("status") != "active" or gate_status(_gate_run(run, outcome)).get("stage") != "delivery":
+    if run.get("status") != "active" or not _delivery_gate_open(_gate_run(run, outcome)):
         raise ValueError("run has not passed implementation, review, and acceptance gates")
     acceptance = _current_acceptance(run)
     registered = sorted(repositories)
@@ -110,12 +116,12 @@ def verify_delivery(run: dict, manifest: dict, confirmed_hash: str, repositories
     if run.get("id") != manifest.get("run_id") or hashlib.sha256(
             _canonical(run.get("plan", {})).encode()).hexdigest() != manifest.get("plan_hash"):
         raise ValueError("delivery manifest run or plan is stale")
-    if gate_status(_gate_run(run, manifest.get('outcome'))).get("stage") != "delivery":
+    if not _delivery_gate_open(_gate_run(run, manifest.get('outcome'))):
         raise ValueError("delivery gate is no longer open")
     acceptance = _current_acceptance(run)
     if acceptance.get("acceptance_hash") != manifest.get("acceptance_hash"):
         raise ValueError("delivery manifest acceptance is stale")
-    if gate_status(_gate_run(run, manifest.get('outcome'))).get("stage") != "delivery" or run.get("status") != "active":
+    if not _delivery_gate_open(_gate_run(run, manifest.get('outcome'))) or run.get("status") != "active":
         raise ValueError("delivery gate is no longer open")
     if set(repositories) != set(manifest.get("repositories", {})):
         raise ValueError("delivery requires every repository in the manifest")
@@ -139,7 +145,7 @@ def record_delivery(run: dict, manifest: dict, actual_result: dict) -> dict:
         raise ValueError("delivery must pass exact-head verification immediately before recording")
     if run.get("status") != "active" or run.get("id") != manifest.get("run_id"):
         raise ValueError("delivery run is no longer active or does not match the manifest")
-    if gate_status(run).get("stage") != "delivery":
+    if not _delivery_gate_open(run):
         raise ValueError("delivery gate is no longer open")
     acceptance = _current_acceptance(run)
     if acceptance.get("acceptance_hash") != manifest.get("acceptance_hash"):

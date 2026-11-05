@@ -125,6 +125,8 @@ class ReviewTests(unittest.TestCase):
         dispositions=[{'finding_id':'f','source_identity':package['source_identity'],'obligations':['f'],
                        'disposition':'resolved','proof_ids':['p']}]
         report={'package_hash':package['package_hash'],'verdict':'block','findings':[],'closure_dispositions':dispositions,'protected_dispositions':[{'observation_hash':'exact','verdict':'pass'}]}
+        report['perspective']='security'
         result=record(self.run,package['package_hash'],{'role':'branch','actor_id':'reviewer','tool_available':True,'invocation_ref':'fixture-call'},report)
+        self.assertEqual(result.get('perspective'),'security')
         self.assertEqual(result.get('closure_dispositions'),dispositions)
         self.assertEqual(result.get('protected_dispositions'),[{'observation_hash':'exact','verdict':'pass'}])

@@ -1,77 +1,155 @@
 # Python enforcement foundation (development branch)
 
-This branch contains an opt-in foundation, not the complete proposed enforcement
-contract. Existing runs retain their historical behavior unless explicitly adopted with
-`protocol: devflow.python-enforcement/v1`. Older opaque extension metadata does
-not select this contract; unknown versions in this namespace block actions.
-Do not deploy this foundation as a substitute for the existing workflow gates.
+This is an opt-in development foundation, not the complete proposed enforcement
+contract. Do not deploy it as a replacement for the supported workflow gates.
 The [implementation plan](../superpowers/plans/2026-11-04-python-enforcement.md)
-tracks remaining integration and verification.
+tracks remaining integration and verification. Specialist orchestration, standalone
+review/fix completion and bounded automatic repair remain unfinished.
 
-Implemented boundaries include clarification checks at attempt issuance, recorded
-proof/result acceptance, host completion, delivery preparation and native write
-launch. Journal reducers repeat durable checks, including ordinary-attempt dependency
-eligibility, completed-item exclusion and fresh-token requirements. Request-changes assessments remain
-recordable while affected implementation is blocked. Question scope propagates
-through declared item dependencies; unknown scope blocks shared work.
+## Action boundaries and compatibility
 
-Adoption requires recorded authorization against the exact run state version and
-no active attempt, repair claim or running/uncertain native invocation. It invalidates
-existing verification, review and acceptance evidence. It does not authenticate
-actor strings as human identities, or retroactively undo effects already performed.
+Explicit adoption selects `protocol: devflow.python-enforcement/v1`. Older opaque
+extension metadata does not select this contract; unknown versions in this namespace
+cannot authorize new work. Adoption requires authorization against the exact run version and
+no active attempt, repair claim or active/uncertain effect. An existing selected
+contract cannot be reset or downgraded through adoption. Existing evidence is
+invalidated. Generic patches cannot replace adopted authority or spending history.
 
-Questions and answers are versioned. Answers require a recorded user-message
-reference and exact question version. An answer with unclassified specification
-impact is retained but does not unblock dependent work; an explicit boolean
-`material` classification is required. Material changes remain blocked until the
-subject's approved specification binding is renewed. No agent should invent an
-answer to resolve business ambiguity. A separate enforcement revision preserves
-unaffected attempt tokens; journal preparation freshness still requires renewal
-when the journal changes.
+Shared checks cover affected attempts, code proof/result acceptance, host completion,
+finding closure and delivery. Reducers repeat durable prerequisites, including
+ordinary-attempt dependencies, completed-item exclusion and fresh-token requirements.
+Live adapters inspect current files; historical replay validates bound records and
+does not inspect today's repositories or contact providers. A replay receipt is
+not authorization for a new effect. Final gates honor current blockers even when
+the stage label is already `delivery`.
 
-Additional library foundations exist for independent finding closure, conservative
-test-proof validation, declared protected-file observations and effect claims.
-Proof capture binds declared input hashes and file identities, targets, approved
-requirement authority, scoped question/answer versions, actual source snapshots
-and retained raw reports. Runtime RED/GREEN records remain `pending-review`.
-The existing independent review round must assess the actual linked proofs,
-unchanged test inputs, authority and failure relevance before derived evidence
-becomes semantically reviewed. No extra pre-test model review is required.
-Oracle approval also binds the current item contract and specification. Eligible
-cross-run RED reuse retains the original evidence with its validated lineage.
-Review packages include relevant recorded questions and answers, bind current
-source and retain closure/oracle/protection dispositions. Full integration of live
-protection, repair/native effect claims and delivery remains unfinished. Generic failure reports are
-classified as unknown assertion phase; versioned JSON reports may explicitly report
-`schema: devflow-test-report-v2` and per-test `failure_phase: test-assertion`, with
-independent failure relevance still required; an exit code alone proves no relevant defect.
-Protected observations compare commit, index and worktree, retaining regular-file
-preimages, file types and symlink values, and bind approval to exact observations.
-Inventories name individual files or symlinks; directory and special-file entries
-are rejected rather than implying recursive protection. Git path names are literal. They do not prevent
-arbitrary shell writes. Cost reservations are estimates, not provider billing caps. Native and interactive
-dispatch reserve effects before launch; exact retries cannot launch replacements.
-Reservations bind the launching attachment's actor, revision and work/package
-scope; reviewer bindings cannot reserve implementation work. Diagnostic reviewer
-reservations remain possible with pending questions, while their bound context
-must remain current. Native backend timeouts are capped by the remaining elapsed allowance. A completed
-transport with a partial worker report remains blocked for work acceptance but
-does not leave a fictitious uncertain worker. Genuine transport uncertainty
-retains its reservation and requires reconciliation. Generic transitions cannot
-assert completion of a bound native worker. Transition times and observed spend
-cannot move backward. A caller-provided assertion that an OS worker stopped is
-insufficient: a recorded adapter termination observation is required. The producer
-and recovery integration for that new observation remain unfinished; selected
-uncertain claims fail closed rather than accepting a fabricated stop receipt.
+Actor strings and local provenance references are coordination metadata, not
+cryptographic authentication of users, reviewers or native hosts. Tests use
+explicitly synthetic authorization/reviewer identities and owned processes.
 
-Standalone session plumbing uses a separate SQLite file with a versioned JSON
-manifest, durable transaction receipts and compare-and-swap versions. It requires
-output outside the declared repository scope, creates no fake workflow/root and
-launches no workers. It is not yet standalone review orchestration. Manifest bodies
-are limited to 4 MiB; operation receipts are retrieved individually. A failed or
-corrupt initialization is preserved for explicit recovery rather than treated as
-an empty session. Concurrent cooperating helpers use SQLite transactions, not
-in-memory locks. A launching or uncertain claim does not expire by age.
+## Questions and user decisions
+
+Questions and answers are versioned. An actual user-message reference and exact
+question version are required. Unclassified specification impact is retained but
+does not unblock work: `material` must be an explicit boolean. Material changes
+remain blocked until the corresponding approved specification or standalone
+contract binding is renewed. Worker prose, elapsed time and passing tests cannot
+resolve business ambiguity.
+
+Question scope propagates through declared dependencies; unknown scope blocks
+shared work. Unaffected item tokens are preserved, while affected proof/review and
+acceptance freshness is invalidated. A separate enforcement revision binds these
+changes without renumbering independent attempts. Preparation must be renewed
+when its journal/context binding changes. Diagnostic read-only assessments remain
+recordable, and review packages include relevant questions and recorded answers.
+
+## Runtime test evidence
+
+Adopted code capture requires declared verification inputs/targets and a governing
+protection inventory for every repository. Capture binds input bytes and file/link
+identity, approved requirement authority, item contract, tool/report format,
+question versions, actual source snapshots, protected-context receipts and raw logs.
+Protected content is checked before and after execution. Changed protected context
+requires a renewed linked contract rather than silent RED normalization.
+
+Runtime RED/GREEN records remain `pending-review`. The existing independent review
+round assesses actual linked proof IDs, unchanged inputs, authority and failure
+relevance before derived evidence becomes semantically reviewed. No extra pre-test
+model review is required. Eligible cross-run RED reuse retains the original evidence
+and validated lineage. A changed approved item/specification cannot reuse an old
+oracle approval. Result and gate checks revalidate declared inputs, including
+ignored files that ordinary Git fingerprints omit.
+
+Generic failure reports have unknown assertion phase. Supported versioned JSON
+reports use `schema: devflow-test-report-v2` with per-test
+`failure_phase: test-assertion`; independent failure relevance remains necessary.
+Import, discovery, setup, teardown, timeout, skip and missing-target outcomes do
+not establish a relevant assertion failure. Exit status alone is insufficient.
+
+## Protection, closure and acceptance
+
+Inventories explicitly name individual files or symlinks from governing context.
+Directory/special-file entries are rejected rather than implying recursive coverage.
+Git path names are literal. Observations compare commit, index and worktree,
+retaining preimages, types and link values. A baseline cannot be reset to remove
+its protection. Exact-change proposals, actual user approval and independent
+review are separate records; another edit needs another applicable authorization.
+
+Compact receipts bind inventory, retained baseline and exact observed content.
+Normal proof/acceptance receipts contain hashes rather than embedded preimages.
+Pure receipt validation can replay original evidence after files change; current
+live authorization still rechecks actual bytes. Relevant protection dispositions
+are loaded without hydrating unrelated review packages. Detection does not revert
+user edits or prevent arbitrary shell writes.
+
+An implementer's correction is a candidate, not resolution. Closure requires current
+review bindings and an independent disposition covering all consolidated obligations.
+Proof applicability must explicitly map the supplied proof IDs to those obligations.
+Proofs must belong to the applicable current item attempt and sufficient proof kind;
+code proof additionally needs independent oracle acceptance. Execution-inapplicable
+closure requires explicit independent evidence. Unresolved disagreements and missing
+required perspectives block closure. One invocation cannot impersonate several
+required reviewers. Multi-perspective closure aggregation remains unfinished.
+
+A completed request-changes assessment may resolve one finding while others remain
+open. Waived work is not verified repair. Public closure rechecks current source,
+protected context and actual review inputs; an old proof cannot close work after
+its protected verification context changes. Perspective labels may be retained on
+reports; this does not supply specialist dispatch.
+
+Adopted requirement acceptance uses schema version 2 and binds the package, source
+and executed protection receipts into its identity. Durable reducers check current
+proof/review prerequisites. Delivery preparation, verification, recording and its
+reducer honor the final gate rather than the stage label alone. Live final gates
+also detect protected ignored-file edits. Typed non-code evidence, additional
+completion adapters and broader failure-window coverage still need integration.
+
+## Dispatch, budgets and recovery
+
+Native and interactive work dispatch reserve finite known cost/attempt allowances
+before preparation, bind the exact attachment/actor/revision and work/package scope,
+and recheck source, question context, policy and elapsed time immediately before
+launch. Reviewers cannot reserve implementation work. Diagnostic reviewer claims
+remain possible with pending questions. Exact retries do not launch replacements.
+Native invocation timeout is capped by the remaining elapsed allowance.
+
+A completed transport with partial work remains blocked for work acceptance without
+leaving a fictitious uncertain worker. Genuine transport uncertainty retains its
+reservation. Generic transitions cannot fabricate bound native completion; lifecycle
+times and observed spending cannot move backward. Claims do not expire by age.
+An operation rename or failed launch does not refund allowance.
+
+Policy extension requires exact predecessor policy, nondecreasing finite limits,
+actual user authorization/reason/message provenance and reconciled/terminal workers.
+It retains the original elapsed-time start and all spending/attempt history. Cost
+reservations are estimates, not provider billing caps. Work-dispatch budgeting is
+implemented; accounting for existing paid model-validation probes remains unresolved.
+
+A caller-supplied assertion that an OS worker stopped is insufficient for
+reconciliation. A recorded adapter termination observation is required. Its producer
+and recovery integration remain unfinished; selected uncertain claims fail closed
+rather than accepting a fabricated stop receipt. No distributed exactly-once or
+provider cancellation guarantee is claimed.
+
+## Standalone persistence
+
+A standalone session uses a separate SQLite file outside the declared repositories,
+with versioned finite JSON, a content-bound review contract, compare-and-swap versions
+and individual operation receipts. Initialization accepts scope and contract only;
+it cannot preload reviews, claims or termination evidence. No fake workflow, plan or
+specification is created. Questions/answers bind `contract_hash`; workflow records
+continue to use `spec_hash`.
+
+`amend-review-contract` preserves the original reviewed repository scope and requires
+actual user approval of the exact replacement request and predecessor hash. It
+invalidates dependent evidence while retaining raw execution facts. Material answers
+remain blocked until that approval matches. Contract corruption fails closed.
+
+Manifest bodies are limited to 4 MiB. Failed/corrupt initialization is preserved for
+explicit recovery. Cooperating helpers use real SQLite transactions; two actual
+competing processes cannot spend one allowance twice. Status reads launch no workers.
+This plumbing does not yet capture standalone test execution or finish review/fix
+sessions, and does not provide standalone specialist orchestration.
 
 ## Optional developer interfaces
 
@@ -79,39 +157,38 @@ The helper's `enforcement` group offers `decide`, `adopt`, `question`, `answer`,
 `propose-fix`, `close-finding`, `configure-effects`, `extend-effects`, `claim`,
 `effect-transition`, `observe-source`, `protect-inventory`,
 `propose-protected-change` and `approve-protected-change`.
-Source observation captures current registered repository fingerprints. Protection
-inventory capture requires exact governing-inventory approval and cannot reset an
-existing baseline. Protected-change proposals capture the current exact observation;
-user approval names its `observation_hash`, repository, reason and user-message
-provenance. Further edits require a new proposal and approval. Independent review
-is still required separately. These are explicit developer records, not automatic adoption.
 
-`extend-effects` requires the exact `previous_policy_hash`, a complete `policy`
-with nondecreasing finite limits, and explicit user authorization/reason/message
-provenance. It requires all workers to be reconciled or terminal and preserves
-reservation history, spending and the original elapsed-time start. It cannot reset
-budgets or silently extend them on retry.
+Workflow actions take `--root` and `--input`; mutations require explicit
+`--operation-id` and may use `--expected-version`. `decide` reads persisted state;
+it is diagnostic, not an effect-launch receipt. Mutation output identifies the
+transition and bindings using `transition_hash`, not a hash/hydration of all review
+history. `subject_state_version` identifies the run version; the command envelope's
+`state_version` identifies the current journal version; `journal_version` retains
+the original transition position on replay.
 
-Workflow actions take `--root` and `--input`; mutations additionally require an
-explicit `--operation-id` and may use `--expected-version`. `decide` reads persisted
-subject state and is diagnostic, not an effect-launch authorization receipt.
+Adoption input contains `run_id` and `authorization` with `approved: true`,
+`actor_id`, `run_id` and exact run `state_version`. Other workflow mutations contain
+`run_id` and `record`. Questions need `id`, `text`, `scope` (known item IDs, or null
+for unknown impact), `source_identity` and `spec_hash`. Answers need `id`,
+`question_version`, `answer`, `actor_id`, `spec_hash`, explicit boolean `material`
+to unblock work, and `provenance` with `kind: user-message` and actual message `ref`.
 
-For adoption, input contains `run_id` and `authorization` with `approved: true`,
-`actor_id`, `run_id` and the exact run `state_version`. Other workflow mutations
-contain `run_id` and `record`. Questions need `id`, `text`, `scope` (known item IDs,
-or null for unknown impact), `source_identity` and `spec_hash`. Answers need `id`,
-`question_version`, `answer`, `actor_id`, `spec_hash`, an explicit boolean `material`
-classification to unblock work, and `provenance` containing
-`kind: user-message` and the actual message `ref`. These records are coordination
-receipts, not authenticated host acceptance.
+Protection inventory capture requires exact governing-inventory approval. Proposals
+capture actual current observations; approval names `repo_id`, `observation_hash`,
+reason and user-message provenance. `extend-effects` names `previous_policy_hash`,
+a complete replacement `policy` and actual authorization. These developer records
+are not automatic adoption or authenticated host acceptance.
 
-`session-init --session PATH --input FILE` creates a standalone manifest.
-`session-status --session PATH` reads it. `session-event --session PATH --input FILE
---expected-version N --operation-id ID` records an event with `action` and `record`.
-The initialization manifest requires `id`, explicit `repositories` and
-`source_identity`. Fixture actors/answers in automated tests are explicitly
-synthetic and do not establish live-host authentication.
+`session-init --session PATH --input FILE` accepts `id`, explicit `repositories`,
+`source_identity` and optional object `review_contract`.
+`session-status --session PATH` reads the manifest.
+`session-event --session PATH --input FILE --expected-version N --operation-id ID`
+records an `action` and `record`. Session questions/answers use the returned
+`review_contract_hash` as `contract_hash`. Amendment supplies
+`previous_contract_hash`, replacement `review_contract`, and authorization with
+its exact `contract_hash`, reason, actor and user-message provenance.
 
-Run the public-command fixtures through the ordinary unittest developer runner:
+Exercise public-command fixtures with the ordinary developer runner:
 `python3 -m unittest discover -s tests -p test_enforcement_integration.py -v`.
 No production control roots, paid provider probes, merge or release are needed.
+Plugin onboarding remains conversational; these are optional developer interfaces.

@@ -137,12 +137,18 @@ boundaries. Preserve actual user-answer provenance and renew stale preparation;
 read-only assessments remain possible. The complete enforcement and review/repair
 design is still in progress; see [current scope and developer contracts](../../docs/reference/python-enforcement.md).
 
+Adopted code verification requires declared governing protection inventories.
+Capture binds compact protected-content receipts before and after execution;
+changing that context requires renewed linked evidence. Raw RED/GREEN remains
+pending semantic approval by the existing independent review round.
+
 ```mermaid
 flowchart LR
     Adopt[Explicitly adopted run] --> Check[Current action and question checks]
     Check -->|Affected unresolved question| Ask[Record actual user answer]
     Ask --> Check
-    Check -->|Allowed| Capture[Capture raw RED and GREEN evidence]
+    Check -->|Allowed| Protect[Validate current declared protection context]
+    Protect --> Capture[Capture raw RED and GREEN evidence]
     Capture --> Review[Existing independent review assesses test oracle]
     Review --> Existing[Existing verification and review gates]
 ```

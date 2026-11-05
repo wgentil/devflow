@@ -60,7 +60,11 @@ def _reduce(data, kind, req, version, *, metrics_source_hash=None):
         action = kind.removeprefix('domain.enforcement.')
         updated = apply_enforcement(run, action, req['record'])
         data['runs'][req['run_id']] = updated
-        return {'run_id': req['run_id'], 'subject_hash': digest(updated)}
+        receipt = {'schema_version': 1, 'run_id': req['run_id'], 'action': action, 'journal_version': version + 1,
+            'subject_state_version': updated.get('state_version'),
+            'enforcement_revision': updated.get('enforcement_revision'),
+            'source_identity': updated.get('source_identity')}
+        return {**receipt, 'transition_hash': digest({'receipt': receipt, 'record': req['record']})}
     if kind == 'domain.enforcement.adopt':
         from .action_policy import adopt_enforcement
         run = data.get('runs', {}).get(req.get('run_id'))

@@ -3,10 +3,17 @@ from copy import deepcopy
 from .store import WorkflowError
 
 
+def authority_binding(subject: dict) -> tuple[str, str | None]:
+    if subject.get('review_contract_hash'):
+        return 'contract_hash', subject['review_contract_hash']
+    return 'spec_hash', subject.get('plan', {}).get('spec_hash')
+
+
 def record_question(subject: dict, request: dict) -> dict:
+    authority_key, authority_hash = authority_binding(subject)
     if (not isinstance(request.get('id'), str) or not request['id'].strip()
             or not isinstance(request.get('text'), str) or not request['text'].strip()
-            or not request.get('source_identity') or request.get('spec_hash') != subject.get('plan', {}).get('spec_hash')):
+            or not request.get('source_identity') or not authority_hash or request.get(authority_key) != authority_hash):
         raise WorkflowError('INVALID_QUESTION', 'Question needs identity, text and current source/spec binding.')
     scope = request.get('scope')
     known = {row['id'] for row in subject.get('plan', {}).get('work_items', [])}
@@ -26,6 +33,7 @@ def record_question(subject: dict, request: dict) -> dict:
 
 
 def record_answer(subject: dict, request: dict) -> dict:
+    authority_key, _ = authority_binding(subject)
     question = subject.get('clarifications', {}).get(request.get('id'))
     provenance = request.get('provenance', {})
     if (not question or question['version'] != request.get('question_version')
@@ -33,7 +41,7 @@ def record_answer(subject: dict, request: dict) -> dict:
             or not request['answer'].strip() or not isinstance(request.get('actor_id'), str)
             or not request['actor_id'].strip() or provenance.get('kind') != 'user-message'
             or not provenance.get('ref') or type(request.get('material', False)) is not bool
-            or not request.get('spec_hash')):
+            or not request.get(authority_key)):
         raise WorkflowError('INVALID_USER_ANSWER', 'Record the actual user answer to the exact pending question version.')
     updated = deepcopy(subject)
     row = updated['clarifications'][request['id']]
@@ -66,13 +74,15 @@ def clarification_binding(subject: dict, scope: dict) -> str:
 
 def clarification_blockers(subject: dict, scope: dict) -> list[dict]:
     blockers = []
+    authority_key, authority_hash = authority_binding(subject)
     for row in relevant_questions(subject, scope):
         answer = row.get('answer', {})
         valid = (row.get('status') == 'answered' and answer.get('question_version') == row.get('version')
                  and type(answer.get('material')) is bool
-                 and answer.get('spec_hash') == subject.get('plan', {}).get('spec_hash'))
+                 and answer.get(authority_key) == authority_hash)
         if answer.get('material'):
-            valid = valid and subject.get('spec_approval', {}).get('content_hash') == answer.get('spec_hash')
+            approval_key = 'contract_approval' if authority_key == 'contract_hash' else 'spec_approval'
+            valid = valid and subject.get(approval_key, {}).get('content_hash') == answer.get(authority_key)
         if not valid:
             blockers.append({'id': row['id'], 'version': row['version'], 'reason_code': 'CLARIFICATION_REQUIRED'})
     return blockers
