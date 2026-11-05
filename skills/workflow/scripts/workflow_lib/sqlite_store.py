@@ -544,6 +544,7 @@ def _transact_locked(root, expected_version, operation_id, event, *, precommit=N
             if link is not None:
                 existing = _lookup_entity(conn,root,'runs',link['run_id'])
                 if existing is not None:state['data'].setdefault('runs',{})[link['run_id']] = existing
+        store._guard_enforcement_transaction(state,event)
         if precommit is not None:precommit(state)
         store._guard_spec_approval(state,event)
         committed={'schema_version':1,'sequence':state['version']+1,'operation_id':operation_id,

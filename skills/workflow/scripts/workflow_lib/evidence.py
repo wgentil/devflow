@@ -191,6 +191,8 @@ def capture_evidence(root: Path, run_id: str, token: str, phase: str, command: l
     started = _now()
     try:
         from .tool_execution import started as mark_tool_started,ended as mark_tool_ended
+        from .tool_execution import before_command
+        before_command()
         mark_tool_started()
         completed = subprocess.run(command, cwd=repo, capture_output=True,
                                    timeout=timeout, check=False)

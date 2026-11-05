@@ -1,5 +1,6 @@
 """Standalone enforcement primitives. No workflow plan, run or model orchestration."""
 from copy import deepcopy
+from contextvars import ContextVar
 from pathlib import Path
 import time
 import os
@@ -11,6 +12,8 @@ from .clarifications import clarification_binding,current_questions
 from .test_integrity import parse_test_evidence, validate_test_pair
 from .protection_receipts import validate_receipts
 
+
+SESSION_EXECUTION=ContextVar('devflow_session_execution',default=None)
 
 def need(ok, message):
     if not ok: raise WorkflowError('SESSION_EVIDENCE_BLOCKED', message)
@@ -26,8 +29,12 @@ def context(subject):
 
 
 def package_current(subject, package):
-    return (isinstance(package,dict) and package.get('session_id')==subject['id']
-        and package.get('context')==context(subject)
+    if not isinstance(package,dict) or package.get('session_id')!=subject['id']:
+        return False
+    bound=package.get('context',{});current=context(subject)
+    # New findings are review output; packaged input obligations must remain exact.
+    return ({k:v for k,v in bound.items() if k!='findings'}=={k:v for k,v in current.items() if k!='findings'}
+        and all(current['findings'].get(k)==v for k,v in bound.get('findings',{}).items())
         and package.get('package_hash')==digest({k:v for k,v in package.items() if k!='package_hash'}))
 
 
@@ -58,7 +65,10 @@ def reduce_session(subject, action, record):
         proof=record['proof'];contract=proof['integrity']['contract'];execution=subject.get('executions',{}).get(proof.get('execution_id'))
         need(execution and execution['status']=='launching' and proof.get('session_id')==subject['id']
              and proof.get('contract_hash')==subject['review_contract_hash']
-             and contract.get('clarification_binding')==clarification_binding(subject,{}),'Current session execution and user decisions required.')
+             and contract.get('clarification_binding')==clarification_binding(subject,{})
+             and execution.get('source_observation')==proof.get('source_observation')
+             and execution.get('verification_contract')==contract
+             and execution.get('protection_receipts')==proof.get('protection_receipts'), 'Current exact session execution, source, protection and user decisions required.')
         observation=proof.get('source_observation',{})
         need(observation.get('source_identity')==digest(observation.get('snapshots',{}))==proof.get('source_identity'),'Bound executed source required.')
         verification=subject['review_contract']['request'].get('verification',{})
@@ -81,7 +91,8 @@ def reduce_session(subject, action, record):
     elif action=='session-package':
         package=record['package']
         need(package_current(subject,package),'Current source/contract/proof/question package required.')
-        validate_receipts(subject,package.get('protection_receipts'))
+        from .protection_receipts import validate_diagnostic_observations
+        validate_diagnostic_observations(subject,package.get('protection_observations'))
         updated.setdefault('review_packages',{})[package['package_hash']]=deepcopy(package)
     elif action=='session-review':
         review=record['review'];package=subject.get('review_packages',{}).get(review.get('package_hash'))
@@ -94,6 +105,7 @@ def reduce_session(subject, action, record):
             green=subject.get('verification_proofs',{}).get(oracle.get('green_proof_id'),{})
             red=subject.get('verification_proofs',{}).get(oracle.get('red_proof_id'),{})
             need(green.get('source_identity')==subject['source_identity'] and green.get('red_proof_id')==red.get('id'), 'Current actual linked pair required.')
+            need(all(green.get('protection_receipts',{}).get(k,{}).get('after_hash')==digest(v['after']) for k,v in package['protection_observations'].items()),'Renew proof after protected context changes.')
             contract=green['integrity']['contract'];validate_test_pair(red['integrity'],green['integrity'],contract,require_review=False)
             need(oracle.get('input_hashes')==contract['input_hashes'] and oracle.get('authority_refs')==contract['oracle_authority']
                  and oracle.get('failure_relevance'),'Independent actual oracle/failure relevance required.')
@@ -113,8 +125,10 @@ def reduce_session(subject, action, record):
         for finding in review.get('findings',[]):
             need(finding.get('id') and finding.get('severity') in {'critical','important','minor','info'},'Structured finding identity and severity required.')
             existing=next((f for f in updated.get('unresolved_findings',[]) if f['id']==finding['id']),None)
-            need(not existing or existing==finding,'Finding identity cannot silently replace another obligation.')
-            if not existing:updated.setdefault('unresolved_findings',[]).append(deepcopy(finding))
+            normalized={**finding,'status':finding.get('status','open')}
+            need(existing is not None or normalized['status']=='open','New report findings start open; resolution/waiver needs its own authorized transition.')
+            need(existing is None or {**existing,'status':existing.get('status','open')}==normalized,'Finding identity cannot silently replace another obligation.')
+            if existing is None:updated.setdefault('unresolved_findings',[]).append(deepcopy(normalized))
     elif action=='authorize-session-repair':
         authorization=record.get('authorization',{})
         need(record.get('contract_hash')==subject['review_contract_hash'] and authorization.get('approved') is True
@@ -130,8 +144,7 @@ def reduce_session(subject, action, record):
         need(current,'Current independent assessment required.')
         required=set(subject['review_contract']['request'].get('required_perspectives',[]))
         need(required.issubset({r.get('perspective') for r in current}),'Every required independent perspective must report.')
-        actors=[r['actor_id'] for r in current if r.get('perspective') in required]
-        need(len(set(actors))>=len(required),'Required perspectives need distinct actual actors.')
+        need(independent_coverage(required,current),'Required perspectives need a distinct actual actor assignment.')
         if subject.get('repair_authorization'):
             need(all(r['verdict']=='pass' for r in current),'Authorized repair needs current passing reviews.')
             need(not any(f.get('status') not in {'resolved','waived','duplicate'} for f in subject.get('unresolved_findings',[])),'Repair findings remain unresolved.')
@@ -169,10 +182,13 @@ def _commit(path,state,op,action,record,*,client=None,kind=None):
     return transact_session(path,state['version'],op,{'action':action,'record':record})
 
 
-def _live(subject):
+def _live(subject, *, diagnostic=False):
     from .enforcement_live import source_observation,assert_protection_current
     observation=source_observation(subject)
     need(observation['source_identity']==subject['source_identity'],'Observe/capture current source before acceptance.')
+    if diagnostic:
+        from .enforcement_live import protection_observations
+        return protection_observations(subject)
     protection=assert_protection_current(subject)
     from .test_inputs import proof_inputs_current
     for proof in subject.get('verification_proofs',{}).values():
@@ -182,6 +198,12 @@ def _live(subject):
 
 
 def capture(path,phase,operation_id,timeout=300):
+    marker=SESSION_EXECUTION.set({'path':str(Path(path).resolve()),'id':operation_id,'mode':'execution'})
+    try:return _capture(path,phase,operation_id,timeout)
+    finally:SESSION_EXECUTION.reset(marker)
+
+
+def _capture(path,phase,operation_id,timeout=300):
     from .review_sessions import read_session
     from .enforcement_live import source_observation,assert_protection_current
     from .test_inputs import capture_input_bindings
@@ -206,9 +228,17 @@ def capture(path,phase,operation_id,timeout=300):
         'oracle_authority':verification['authority_refs'],'session_contract_hash':subject['review_contract_hash'],
         'clarification_binding':clarification_binding(subject,{}),'protection_context_hash':digest(protection)}
     _commit(path,state,operation_id+':reserve','execution-claim',{'id':operation_id,'owner_pid':os.getpid(),'client_request_hash':client_hash,
-        'contract_hash':subject['review_contract_hash'],'clarification_binding':clarification_binding(subject,{}),'source_observation':observation})
+        'contract_hash':subject['review_contract_hash'],'clarification_binding':clarification_binding(subject,{}),'source_observation':observation,'verification_contract':contract,'protection_receipts':protection})
     state=read_session(path);ended=False
     try:
+        # Observe files, then take the final decision snapshot immediately before spawn.
+        need(source_observation(subject)==observation and capture_input_bindings(repo,verification['input_paths'])==inputs
+             and assert_protection_current(subject)==protection,'Launch inputs changed after reservation.')
+        latest=read_session(path)['subject']
+        require_action(subject_decision(latest,'proof',{}))
+        need(latest['review_contract_hash']==subject['review_contract_hash']
+             and clarification_binding(latest,{})==contract['clarification_binding']
+             and latest.get('executions',{}).get(operation_id,{}).get('status')=='launching','Launch contract or decisions changed.')
         result=run_bounded(verification['argv'],repo,timeout);ended=True
         logs=path.with_name(path.name+'.artifacts')
         need(not any(logs.resolve().is_relative_to(Path(r['location']).resolve()) for r in subject['repositories'].values()),'Evidence artifacts must remain outside reviewed scope.')
@@ -237,9 +267,9 @@ def capture(path,phase,operation_id,timeout=300):
 def prepare(path,operation_id):
     prior=_retry(path,operation_id,'package',{})
     if prior:return prior
-    state=_read(path);subject=state['subject'];protection=_live(subject)
+    state=_read(path);subject=state['subject'];protection=_live(subject,diagnostic=True)
     package={'schema_version':1,'role':'session','session_id':subject['id'],'source_identity':subject['source_identity'],
-        'context':context(subject),'protection_receipts':protection}
+        'context':context(subject),'protection_observations':protection}
     package['package_hash']=digest(package)
     _commit(path,state,operation_id,'session-package',{'package':package},client={},kind='package');return package
 
@@ -247,11 +277,16 @@ def prepare(path,operation_id):
 def record_review(path,report,operation_id):
     prior=_retry(path,operation_id,'review',report)
     if prior:return prior
-    state=_read(path);_live(state['subject'])
+    state=_read(path);observations=_live(state['subject'],diagnostic=True)
+    package=state['subject'].get('review_packages',{}).get(report.get('package_hash'),{})
+    need(package.get('protection_observations')==observations,'Protection observation changed since review preparation.')
     from .storage_objects import read_object
     for oracle in report.get('test_oracles',[]):
         for key in ('red_proof_id','green_proof_id'):
             proof=state['subject']['verification_proofs'][oracle[key]];integrity=proof['integrity']
+            if key=='green_proof_id':
+                from .test_inputs import proof_inputs_current
+                need(proof_inputs_current(state['subject'],proof),'Current declared verification inputs required.')
             logs=Path(path).with_name(Path(path).name+'.artifacts')
             parsed=parse_test_evidence(read_object(logs,integrity['stdout_ref'],max_bytes=8*1024*1024).decode(),
                 read_object(logs,integrity['stderr_ref'],max_bytes=8*1024*1024).decode(),integrity['contract']['report_format'])
@@ -264,7 +299,37 @@ def record_review(path,report,operation_id):
 def complete(path,operation_id):
     prior=_retry(path,operation_id,'complete',{})
     if prior:return prior
-    state=_read(path);_live(state['subject'])
+    state=_read(path);_live(state['subject'],diagnostic=not bool(state['subject'].get('repair_authorization')))
     _commit(path,state,operation_id,'session-complete',{},client={},kind='complete')
     from .review_sessions import read_session
     return read_session(path)['subject']['completion']
+
+
+def independent_coverage(required,reviews):
+    candidates={p:{r['actor_id'] for r in reviews if r.get('perspective')==p} for p in required}
+    assigned={}
+    def assign(p,seen):
+        for actor in sorted(candidates[p]):
+            if actor in seen:continue
+            seen.add(actor)
+            if actor not in assigned or assign(assigned[actor],seen):
+                assigned[actor]=p
+                return True
+        return False
+    return all(assign(p,set()) for p in sorted(required))
+
+
+def guard_execution_event(path,subject,action,record):
+    if action not in {'execution-claim','execution-finish','session-proof','execution-reconcile'}:return
+    identifier=record.get('proof',{}).get('execution_id') if action=='session-proof' else record.get('id')
+    active=SESSION_EXECUTION.get()
+    need(active and active.get('path')==str(Path(path).resolve()) and active.get('id')==identifier,
+         'Execution events belong to the live capture/recovery adapter; generic session events cannot manufacture them.')
+    if action=='execution-reconcile':
+        from .process_liveness import process_alive
+        claimed=subject.get('executions',{}).get(identifier,{})
+        need(active.get('mode')=='recovery' and process_alive(claimed.get('owner_pid')) is False,
+             'Actual absent coordinator and recovery observation required.')
+    else:
+        owner=record if action=='execution-claim' else subject.get('executions',{}).get(identifier,{})
+        need(active.get('mode')=='execution' and owner.get('owner_pid')==os.getpid(),'Only the actual execution coordinator may record proof/finish.')

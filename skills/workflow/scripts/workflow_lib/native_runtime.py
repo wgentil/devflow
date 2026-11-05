@@ -137,13 +137,16 @@ def _probe(root,binding,stage,refresh,data,before_invoke=None):
         else:
             timeout=before_invoke() if before_invoke else 60
             result=backend.invoke(selected,'Reply exactly DEVFLOW_MODEL_PROBE. Do not inspect files or use tools.',binding['actor_id'],'none',timeout)
+        from .context_metrics import explicit_runtime_usage
+        observed_usage=explicit_runtime_usage(result.get('usage'))
+        usage={'runtime_usage':observed_usage} if observed_usage else {}
         observed=result.get('observed',{})
         if observed.get('model')!=selected['model'] or observed.get('provider') and observed['provider']!=selected['provider']:
-            invalidate(root,binding,context);return {'status':'block','reason_code':'MODEL_SUBSTITUTED','requested':selected,'observed':observed,'invocation_ref':result.get('invocation_ref')}
+            invalidate(root,binding,context);return {'status':'block','reason_code':'MODEL_SUBSTITUTED','requested':selected,'observed':observed,'invocation_ref':result.get('invocation_ref'),**usage}
         if binding['host']=='codex' and observed.get('effort')!=selected['effort']:
-            invalidate(root,binding,context);return {'status':'block','reason_code':'MODEL_SUBSTITUTED','requested':selected,'observed':observed,'invocation_ref':result.get('invocation_ref')}
+            invalidate(root,binding,context);return {'status':'block','reason_code':'MODEL_SUBSTITUTED','requested':selected,'observed':observed,'invocation_ref':result.get('invocation_ref'),**usage}
         remember_selected(root,binding,context,selected)
-        return {'status':'allow','reason_code':'NATIVE_SELECTION_VALIDATED','requested':selected,'observed':observed,'observation_source':result['observation_source'],'invocation_ref':result['invocation_ref'],'capability_validated':False,'mode':decision['mode']}
+        return {'status':'allow','reason_code':'NATIVE_SELECTION_VALIDATED','requested':selected,'observed':observed,'observation_source':result['observation_source'],'invocation_ref':result['invocation_ref'],'capability_validated':False,'mode':decision['mode'],**usage}
     except NativeError as exc:
         if 'context' in locals():invalidate(root,binding,context)
         return {'status':'block','reason_code':exc.code,'error_kind':exc.error_kind,'message':str(exc)}

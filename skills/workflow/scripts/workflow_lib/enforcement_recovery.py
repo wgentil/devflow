@@ -1,11 +1,14 @@
 """Observed coordinator death plus explicit human worker-stop evidence; no killing/relaunch."""
 from copy import deepcopy
+from contextvars import ContextVar
 import hashlib,time
 from pathlib import Path
 from .document_units import digest
 from .store import WorkflowError
 from .effect_claims import transition_effect
 
+
+NATIVE_RECOVERY_LEASE=ContextVar('devflow_native_recovery_lease',default=None)
 
 def need(ok,message):
     if not ok:raise WorkflowError('WORKER_RECONCILIATION_REQUIRED',message)
@@ -82,8 +85,11 @@ def reconcile_native(root,request,operation_id):
         need(effect,'Known reserved effect required.')
         observation=observe(identifier,native.get('launcher_pid',effect.get('owner_pid')),effect.get('worker_ref') or identifier,
             request.get('worker_stop_confirmation',{}),key)
-        return _commit(root,operation_id,'native-reconcile',{'binding_id':binding['binding_id'],'revision':binding['revision'],
-            'invocation_id':identifier,'observation_id':operation_id+':termination','observation':observation,'client_request_hash':client_hash},binding)
+        marker=NATIVE_RECOVERY_LEASE.set((binding['run_id'],identifier,key))
+        try:
+            return _commit(root,operation_id,'native-reconcile',{'binding_id':binding['binding_id'],'revision':binding['revision'],
+                'invocation_id':identifier,'observation_id':operation_id+':termination','observation':observation,'client_request_hash':client_hash},binding)
+        finally:NATIVE_RECOVERY_LEASE.reset(marker)
 
 
 def validate_tool_observation(claimed,observation):
@@ -123,4 +129,7 @@ def reconcile_session(path,execution_id,confirmation,operation_id):
     state=read_session(path);claimed=state['subject'].get('executions',{}).get(execution_id,{})
     need(claimed.get('status') in {'launching','uncertain'},'Known active/uncertain tool required.')
     observation=observe(execution_id,claimed.get('owner_pid'),execution_id,confirmation,digest(str(Path(path).resolve())))
-    return _commit(path,state,operation_id,'execution-reconcile',{'id':execution_id,'observation':observation},client=client,kind='recovery')
+    from .session_evidence import SESSION_EXECUTION
+    marker=SESSION_EXECUTION.set({'path':str(Path(path).resolve()),'id':execution_id,'mode':'recovery'})
+    try:return _commit(path,state,operation_id,'execution-reconcile',{'id':execution_id,'observation':observation},client=client,kind='recovery')
+    finally:SESSION_EXECUTION.reset(marker)

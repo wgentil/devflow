@@ -22,7 +22,15 @@ def independent_dispositions(subject: dict, hashes: set[str], *, live: bool) -> 
                     or review.get('fresh') is False or review.get('verdict') not in {'pass', 'request-changes', 'block'}): continue
             package = require_package(subject.get('review_packages', {}).get(review.get('package_hash')))
             if not package or package.get('source_identity') != subject.get('source_identity'): continue
-            if live:
+            if subject.get('review_contract_hash'):
+                from .session_evidence import package_current
+                if not package_current(subject,package):continue
+                observations=package.get('protection_observations',{})
+                if not all(d['observation_hash'] in {o['observation_hash'] for o in observations.values()} for d in relevant):continue
+                if live:
+                    from .enforcement_live import protection_observations
+                    if observations!=protection_observations(subject):continue
+            elif live:
                 from .host_completion import package_current
                 if not package_current(subject, package): continue
             elif not review_bindings_current(subject, package, live=False): continue
@@ -75,3 +83,15 @@ def validate_receipts(subject: dict, receipts: dict) -> None:
             and receipt.get('after_hash') == digest(observation.get('after')), 'Exact protected-content observation required.')
         observations[repo_id] = observation
     _require(make_receipts(subject, observations, live=False) == receipts, 'Protection receipt differs from current authorization and review.')
+
+
+def validate_diagnostic_observations(subject,observations):
+    inventories=subject.get('protected_inventories',{})
+    _require(isinstance(observations,dict) and bool(inventories) and set(observations)==set(inventories)==set(subject.get('repositories',{})),
+             'Diagnostic observations must cover every declared protection inventory.')
+    for repo_id,observation in observations.items():
+        row=inventories[repo_id]
+        _require(observation.get('before')==row['baseline'] and observation.get('baseline_hash')==digest(row['baseline'])
+                 and observation.get('after',{}).get('inventory_hash')==digest(row['inventory'])
+                 and observation.get('observation_hash')==digest({k:v for k,v in observation.items() if k!='observation_hash'}),
+                 'Exact protected observation required for diagnostic review; it is not an approval receipt.')

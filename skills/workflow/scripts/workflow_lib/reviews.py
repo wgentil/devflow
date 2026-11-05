@@ -185,12 +185,6 @@ def record_review(run: dict, package_hash: str, reviewer: dict, report: dict) ->
     for prior_role, entries in run.get("reviews", {}).items():
         if prior_role != role and any(entry.get("actor_id") == actor for entry in entries):
             raise ValueError("reviewer actor IDs must be distinct across review roles")
-    if enforcement_version(run)==1:
-        for prior_role, entries in run.get('reviews',{}).items():
-            for prior in entries:
-                if prior.get('invocation_ref')==invocation:raise ValueError('Each assessment requires a fresh actual invocation.')
-                if prior.get('actor_id')==actor and prior.get('perspective')!=report.get('perspective'):
-                    raise ValueError('Different perspectives require distinct actual actors.')
     limits = {"item": 4, "branch": 1, "acceptance": 1}
     corrections = sum(entry.get("verdict") == "request-changes"
                       and (role != "item" or entry.get("item_id") == report.get("item_id"))
@@ -238,6 +232,7 @@ def record_review(run: dict, package_hash: str, reviewer: dict, report: dict) ->
     if enforcement_version(run) == 1:
         from .oracle_acceptance import validate_oracle_acceptance
         review['semantic_approvals'] = validate_oracle_acceptance(run, package, review)
+        validate_review_contract(run,review)
     return review
 
 
@@ -288,3 +283,28 @@ def validate_item_review_scope(run: dict, package: dict, report: dict) -> None:
             or item['attempts'][-1].get('token') != package.get('item_attempt_token')
             or package.get('governing_digest') != run.get('governing_digest')):
         raise ValueError('Item review must match the completed item, current attempt and governing inputs.')
+
+
+def validate_review_contract(run,review):
+    """Durable independence, perspective and correction limits; no live I/O."""
+    role=review.get('role');actor=review.get('actor_id');invocation=review.get('invocation_ref')
+    if not actor or not invocation:raise ValueError('Actual reviewer actor and invocation required.')
+    perspective=review.get('perspective')
+    if perspective is not None and perspective not in {'code','test','architecture','security'}:
+        raise ValueError('Review perspective must be supported.')
+    for entries in run.get('reviews',{}).values():
+        for prior in entries:
+            if prior.get('invocation_ref')==invocation:raise ValueError('Each assessment requires a fresh actual invocation.')
+            if prior.get('actor_id')==actor and prior.get('perspective')!=perspective:
+                raise ValueError('Different perspectives require distinct actual actors.')
+    limit={'item':4,'branch':1,'acceptance':1}.get(role)
+    corrections=sum(prior.get('verdict')=='request-changes' and (role!='item' or prior.get('item_id')==review.get('item_id'))
+        for prior in run.get('reviews',{}).get(role,[]))
+    if limit is not None and review.get('verdict')=='request-changes' and corrections>=limit:
+        raise ValueError(f'{role} correction limit reached; adjudication is required')
+    findings=review.get('findings')
+    if not isinstance(findings,list) or any(not isinstance(f,dict) for f in findings):raise ValueError('Structured findings required.')
+    if review.get('verdict')=='request-changes' and not findings:raise ValueError('request-changes requires findings.')
+    for field in ('closure_dispositions','test_oracles','protected_dispositions'):
+        if not isinstance(review.get(field,[]),list) or any(not isinstance(v,dict) for v in review.get(field,[])):
+            raise ValueError(field+' must be an array of records')

@@ -100,6 +100,30 @@ raise SystemExit(0 if outcome=='passed' else 1)
         run['plan']['work_items'][0].update(verification_inputs=['test_target.py'],verification_target_ids=['test_target'],requirement_ids=['R1'])
         transact(self.root,state['version'],'enforce',{'kind':'fixture','payload':{'runs':{'run-1':run}}})
         argv=[sys.executable,'test_target.py']
+        # A clarification recorded after initial reads must prevent the code process.
+        from unittest.mock import patch
+        from workflow_lib.evidence import repository_fingerprint
+        from workflow_lib.store import WorkflowError
+        checks=[]
+        def inject_question(repo):
+            observed=repository_fingerprint(repo);checks.append(observed)
+            if len(checks)==2:
+                current=read_state(self.root);subject=current['data']['runs']['run-1']
+                transact(self.root,current['version'],'late-question',{'kind':'domain.enforcement.question','payload':{'request':{
+                    'run_id':'run-1','record':{'id':'q','text':'Confirm retention rule?','scope':['W1'],
+                        'source_identity':subject.get('source_identity','fixture-source'),'spec_hash':'fixture-approved-spec'}}}})
+            return observed
+        actual_run=subprocess.run;processes=[]
+        def observed_run(command,*args,**kwargs):
+            if command==argv:processes.append(command)
+            return actual_run(command,*args,**kwargs)
+        with patch('workflow_lib.evidence.repository_fingerprint',side_effect=inject_question),patch('workflow_lib.evidence.subprocess.run',side_effect=observed_run):
+            with self.assertRaises(WorkflowError):self.capture(self.root,'run-1','attempt-1','RED',argv,['test_target.py'],['test_target'],10)
+        self.assertEqual(processes,[],'A blocked action must have zero code subprocess effects.')
+        current=read_state(self.root)
+        transact(self.root,current['version'],'actual-answer',{'kind':'domain.enforcement.answer','payload':{'request':{
+            'run_id':'run-1','record':{'id':'q','question_version':1,'answer':'Thirty days','actor_id':'fixture-user',
+                'spec_hash':'fixture-approved-spec','material':False,'provenance':{'kind':'user-message','ref':'fixture-answer'}}}}})
         from unittest.mock import patch
         real_run=subprocess.run;executions=[]
         def concurrent_metadata(command,*args,**kwargs):
@@ -147,6 +171,10 @@ raise SystemExit(0 if outcome=='passed' else 1)
             'rationale':'Fixture reviewer inspects the unchanged assertion and actual retained RED/GREEN reports.'}]
         review=record_review(run,package['package_hash'],reviewer,report)
         transact(self.root,state['version'],'oracle-review',{'kind':'review.recorded','payload':{'run_id':'run-1','review':review}})
+        current=read_state(self.root)
+        forged={**review,'review_id':'renamed-same-invocation'}
+        with self.assertRaises(WorkflowError):transact(self.root,current['version'],'forged-review',
+            {'kind':'review.recorded','payload':{'run_id':'run-1','review':forged}})
         verified=read_state(self.root)['data']['runs']['run-1']['verifier_proofs'][green['id']]
         self.assertEqual(verified['semantic_status'],'reviewed')
         self.assertEqual(verified['semantic_review_id'],review['review_id'])
@@ -220,6 +248,25 @@ raise SystemExit(0 if outcome=='passed' else 1)
         from workflow_lib.delivery import prepare_delivery,verify_delivery,record_delivery
         manifest=prepare_delivery(ready,repo_inputs,'retained-branch')
         checked=verify_delivery(ready,manifest,manifest['manifest_hash'],repo_inputs)
+
+        # A later current block overrides a historical pass even without new findings.
+        current=read_state(self.root);subject=current['data']['runs']['run-1']
+        branch=subject['reviews']['branch'][-1]
+        blocked_review=record_review(subject,branch['package_hash'],
+            {'role':'branch','actor_id':branch['actor_id'],'invocation_ref':'fresh-blocking-invocation','tool_available':True},
+            {'package_hash':branch['package_hash'],'verdict':'block','findings':[]})
+        transact(self.root,current['version'],'later-block',{'kind':'review.recorded','payload':{'run_id':'run-1','review':blocked_review}})
+        current=read_state(self.root)
+        with self.assertRaises(WorkflowError):transact(self.root,current['version'],'renamed-block-review',
+            {'kind':'review.recorded','payload':{'run_id':'run-1','review':{**blocked_review,'review_id':'renamed-block-invocation'}}})
+        self.assertFalse(gate_status(read_state(self.root)['data']['runs']['run-1'])['can_advance'])
+        current=read_state(self.root);subject=current['data']['runs']['run-1']
+        with self.assertRaises((ValueError,WorkflowError)):prepare_delivery(subject,repo_inputs,'retained-branch')
+        renewed=record_review(subject,branch['package_hash'],
+            {'role':'branch','actor_id':branch['actor_id'],'invocation_ref':'fresh-renewed-pass','tool_available':True},
+            {'package_hash':branch['package_hash'],'verdict':'pass','findings':[],'test_oracles':report['test_oracles']})
+        transact(self.root,current['version'],'renewed-pass',{'kind':'review.recorded','payload':{'run_id':'run-1','review':renewed}})
+        self.assertTrue(gate_status(read_state(self.root)['data']['runs']['run-1'])['can_advance'])
 
         ready['effects']={'late':{'status':'uncertain','action_scope':{'item_id':'W1'}}}
         self.assertFalse(gate_status(ready)['can_advance'])

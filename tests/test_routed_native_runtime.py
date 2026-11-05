@@ -280,6 +280,8 @@ class RoutedNativeRuntimeTests(unittest.TestCase):
         run['effect_policy']['max_probe_attempts']=1
         transact(self.root,state['version'],'probe-budget',{'kind':'fixture','payload':state['data']})
         binding=read_state(self.root)['data']['host_bindings']['b1']
+        original=self.backend.invoke.side_effect
+        self.backend.invoke.side_effect=lambda *args:{**original(*args),'usage':{'inputTokens':3,'outputTokens':2}}
         with patch('workflow_lib.native_runtime.CodexBackend',return_value=self.backend):
             result=probe(self.root,binding,'implementation',estimated_cost=.25,operation_id='probe-one')
             self.assertEqual(result['status'],'allow')
@@ -289,6 +291,7 @@ class RoutedNativeRuntimeTests(unittest.TestCase):
         run=read_state(self.root)['data']['runs']['run']
         self.assertEqual(next(iter(run['effects'].values()))['effect_kind'],'probe')
         self.assertEqual(next(iter(run['effects'].values()))['status'],'completed')
+        self.assertEqual(next(iter(run['effects'].values()))['result']['runtime_usage'],{'input_tokens':3,'output_tokens':2})
 
     def test_enforced_probe_missing_estimate_never_constructs_backend(self):
         from workflow_lib.native_runtime import probe
@@ -319,9 +322,10 @@ with patch('workflow_lib.native_runtime.CodexBackend',return_value=backend):
             json.dumps({**self.request,'estimated_cost':1}),json.dumps(self.context)],capture_output=True,text=True,timeout=20)
         self.assertEqual(child.returncode,0,child.stderr)
         run=read_state(self.root)['data']['runs']['run'];before=copy.deepcopy(run['effects']['routed'])
-        request={'binding_id':'b1','revision':1,'invocation_id':'routed','worker_stop_confirmation':{
-            'approved':True,'actor_id':'fixture-user','worker_ref':'routed','reason':'Owned fixture coordinator and workers stopped.',
-            'provenance':{'kind':'user-message','ref':'fixture-stop-message'}}}
+        request=json.loads((ROOT/'docs/examples/enforced-native-reconcile.json').read_text())
+        request.update(binding_id='b1',revision=1,invocation_id='routed')
+        request['worker_stop_confirmation'].update(actor_id='fixture-user',worker_ref='routed',
+            reason='Owned fixture coordinator and workers stopped.',provenance={'kind':'user-message','ref':'fixture-stop-message'})
         receipt=reconcile(self.root,request,'recover-owned')
         self.assertEqual(read_state(self.root)['data']['runs']['run']['effects']['routed']['status'],'reconciled')
         self.assertTrue(reconcile(self.root,request,'recover-owned')['replayed'])
@@ -329,3 +333,18 @@ with patch('workflow_lib.native_runtime.CodexBackend',return_value=backend):
         self.assertEqual(after['estimated_cost'],before['estimated_cost'])
         self.assertEqual(after['claimed_at_ms'],before['claimed_at_ms'])
         self.assertEqual(receipt['status'],'block')
+
+    def test_reviewer_probe_uses_full_scoped_owner_guard_and_replays_without_new_call(self):
+        from workflow_lib.native_runtime import probe
+        self.enable_enforcement_fixture(limit=3)
+        state=read_state(self.root);run=state['data']['runs']['run'];run['effect_policy']['max_probe_attempts']=1
+        run['review_packages']={'pkg':{'role':'item','package_hash':'pkg'}}
+        run['clarifications']={'q':{'id':'q','version':1,'status':'pending','scope':['W1']}}
+        apply_host_event(state['data'],'attach',attachment(binding_id='review',session_id='rs',actor_id='reviewer',
+            role='item-reviewer',item_id='W1',package_hash='pkg',project_dir=state['data']['host_bindings']['b1']['project_dir']))
+        transact(self.root,state['version'],'reviewer-probe-fixture',{'kind':'fixture','payload':state['data']})
+        binding=read_state(self.root)['data']['host_bindings']['review']
+        with patch('workflow_lib.native_runtime.CodexBackend',return_value=self.backend):
+            self.assertEqual(probe(self.root,binding,'review',estimated_cost=.25,operation_id='reviewer-probe')['status'],'allow')
+            self.assertTrue(probe(self.root,binding,'review',estimated_cost=.25,operation_id='reviewer-probe')['replayed'])
+        self.backend.invoke.assert_called_once()

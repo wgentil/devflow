@@ -8,7 +8,7 @@
 
 **Tech Stack:** Python 3.11+ standard library, existing unittest runner, Git, JSON journals and existing SQLite/storage adapters and cross-process locks.
 
-**Spec:** [Python enforcement design](../specs/2026-11-04-python-enforcement-design.md), with the lifecycle/dependency contracts in the [companion design](../specs/2026-11-04-adversarial-review-repair-design.md). The user's “continue with autowork” selects enforcement first and authorizes isolated preparation. The user approved the plan and native execution. Runtime implementation and focused verification are complete; broad validation and final independent review are in progress.
+**Spec:** [Python enforcement design](../specs/2026-11-04-python-enforcement-design.md), with the lifecycle/dependency contracts in the [companion design](../specs/2026-11-04-adversarial-review-repair-design.md). The user's “continue with autowork” selects enforcement first and authorizes isolated preparation. The user approved the plan and native execution. Runtime implementation, focused verification and the independent review correction pass are complete; final full-suite verification is in progress.
 
 ## Global Constraints
 
@@ -128,9 +128,9 @@ All library paths below are relative to `skills/workflow/scripts/workflow_lib/`;
 
 **Interfaces:** Consume all Tasks 1–7 public commands, receipts and persisted state. Produce an R1–R9 assessment with changed-file/line evidence and a review-ready local branch.
 
-- [ ] Add public-command scenarios that open a question after preparation, reject affected dispatch, record a real fixture answer/amendment, renew proofs, independently close a finding and finally accept current content. Include forged-event attempts and mutation of policy/source/question between boundaries. Clearly label fixture approvals/native doubles.
-- [ ] Confirm missing integrations fail before changing adapters; complete missing wiring and run all new/focused suites. Invoke no paid provider or production control root.
-- [ ] Review/update every affected guide, skill metadata/diagram, shared reference and runnable example. Exercise changed examples; validate local links, package/metadata tests and `git diff --check`. Explain remaining semantic judgments, authenticated-host limitations and deferred companion orchestration accurately.
+- [x] Add public-command scenarios that open a question after preparation, reject affected dispatch, record a real fixture answer/amendment, renew proofs, independently close a finding and finally accept current content. Include forged-event attempts and mutation of policy/source/question between boundaries. Clearly label fixture approvals/native doubles.
+- [x] Confirm missing integrations fail before changing adapters; complete missing wiring and run all new/focused suites. Invoke no paid provider or production control root.
+- [x] Review/update every affected guide, skill metadata/diagram, shared reference and runnable example. Exercise changed examples; validate local links, package/metadata tests and `git diff --check`. Explain remaining semantic judgments, authenticated-host limitations and deferred companion orchestration accurately.
 - [ ] Run `python3 scripts/run_platform_tests.py --output /tmp/devflow-enforcement-full.json`; inspect all failures/errors/skips. Run available platform checks and report unexecuted Windows/live-host acceptance rather than implying it. Avoid version bump/release as part of this feature.
 - [ ] Obtain a fresh independent whole-branch implementation review, fix in-scope findings with reproductions and reverify affected checks. Record R1–R9 as MET/NOT MET/CANNOT VERIFY with resolvable changed-file evidence; do not call incomplete requirements complete.
 - [ ] Commit reviewable work excluding AGENTS.md, present branch/test evidence and ask for the concrete delivery choice. No merge, push or release authorization is inferred from older releases.

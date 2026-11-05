@@ -466,5 +466,6 @@ flowchart LR
     Check -->|Affected unresolved question| Ask[Record and classify actual user answer]
     Ask --> Check
     Check -->|Allowed dispatch| Reserve[Reserve shared budget and separate work or probe attempt]
-    Reserve --> Existing[Existing verification and review gates]
+    Reserve --> Launch[Recheck current source and questions immediately before effect]
+    Launch --> Existing[Existing verification and review gates]
 ```

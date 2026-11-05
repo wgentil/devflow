@@ -220,3 +220,11 @@ work. Process absence alone cannot prove remote termination. See the
 [foundation contracts](reference/python-enforcement.md) for native/tool/session
 recovery, probe developer flags and trust limitations. Older runs retain their
 existing reconciliation behavior.
+
+Selected-profile reconciliation uses the [exact stop-attestation example](examples/enforced-native-reconcile.json):
+identify the recorded worker reference, actual reason and user-message provenance.
+New native recovery events require the adapter-held lease and repeat the live
+coordinator absence check under the selected-state transaction lock. The older
+[legacy example](examples/native-reconcile.json) retains its original contract.
+Probe receipts retain normalized provider token usage separately when reported;
+no currency cost is inferred from those counts.

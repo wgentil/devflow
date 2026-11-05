@@ -10,6 +10,9 @@ The executable examples are:
 - `tests/test_evidence.py`: actual failing retention assertion, corrected GREEN,
   independent oracle review, candidate/closure, protected ignored-file rejection,
   exact-head acceptance and delivery blocker checks.
+- `tests/test_enforcement_review_corrections.py`: launch-blocker races, foreign
+  execution-finish rejection, direct native-recovery guards in both formats,
+  overlapping perspective coverage and public standalone protected-edit review.
 - `tests/test_standalone_evidence.py`: public `session-verify`, `session-prepare`,
   `session-review` and `session-complete` with a session SQLite file and raw logs
   outside the reviewed Git repository. A separate prose example distinguishes
@@ -22,7 +25,7 @@ The executable examples are:
 From a developer checkout, run:
 
 ```sh
-python3 scripts/run_platform_tests.py --pattern test_evidence.py --pattern test_standalone_evidence.py --pattern test_enforced_typed_tools.py --pattern test_routed_native_runtime.py --output /tmp/devflow-enforcement-examples.json
+python3 scripts/run_platform_tests.py --pattern test_evidence.py --pattern test_standalone_evidence.py --pattern test_enforced_typed_tools.py --pattern test_routed_native_runtime.py --pattern test_enforcement_review_corrections.py --output /tmp/devflow-enforcement-examples.json
 ```
 
 A finite effect policy includes `max_attempts`, optional `max_probe_attempts`

@@ -447,6 +447,10 @@ def _apply_event(state: dict, event: dict, *, metrics_source_hash=None) -> None:
                     or not isinstance(review.get('findings'),list)
                     or review.get('verdict') == 'request-changes' and not review['findings']):
                 raise WorkflowError('INVALID_EVENT','Versioned item review requires scoped findings and current attempt.')
+        if enforcement_version(run)==1:
+            from .reviews import validate_review_contract
+            try:validate_review_contract(run,review)
+            except ValueError as exc:raise WorkflowError('INVALID_EVENT',str(exc)) from exc
         actors = run.setdefault("actors", {})
         reviewer_key = review["role"] + (("_"+review["perspective"]) if enforcement_version(run)==1 and review.get("perspective") else "") + "_reviewer"
         if (review.get("actor_id") in run.get("implementer_actors", []) or review.get("actor_id") == actors.get("implementer")
@@ -859,6 +863,7 @@ def _transact_once(root: Path, expected_version: int, operation_id: str, event: 
             raise WorkflowError('MAINTENANCE_RECOVERY_REQUIRED', 'Resume the incomplete storage intent before work.')
         state, _ = _read_journal(root)
         _guard_transaction(state, event)
+        _guard_enforcement_transaction(state, event)
         from .storage_audit import operation_reserved
         if operation_reserved(root,operation_id):raise WorkflowError('OPERATION_CONFLICT','Operation ID belongs to physical maintenance.')
         previous = state["operations"].get(operation_id)
@@ -893,11 +898,23 @@ def _transact_once(root: Path, expected_version: int, operation_id: str, event: 
         return {"state": state, "event": committed, "replayed": False}
 
 
-def _guard_transaction(state: dict, event: dict) -> None:
+def _guard_enforcement_transaction(state: dict, event: dict) -> None:
     request=event['payload'].get('request',event['payload'])
     if not isinstance(request,dict):request={}
     from .action_policy import enforcement_version
     run=state['data'].get('runs',{}).get(request.get('run_id'),{})
+    if event['kind']=='domain.host.native-reconcile':
+        from .enforcement_recovery import NATIVE_RECOVERY_LEASE
+        from .process_liveness import process_alive
+        binding=state['data'].get('host_bindings',{}).get(request.get('binding_id'),{})
+        run=state['data'].get('runs',{}).get(binding.get('run_id'),{})
+        identifier=request.get('invocation_id');effect=run.get('effects',{}).get(identifier,{})
+        native=run.get('native_invocations',{}).get(identifier,{})
+        owner=native.get('launcher_pid',effect.get('owner_pid'))
+        key=hashlib.sha256((str(binding.get('run_id'))+':'+str(identifier)).encode()).hexdigest()
+        if (type(owner) is not int or process_alive(owner) is not False
+                or NATIVE_RECOVERY_LEASE.get()!=(binding.get('run_id'),identifier,key)):
+            raise WorkflowError('WORKER_RECONCILIATION_REQUIRED','Actual absent coordinator and adapter-held native recovery lease required.')
     if enforcement_version(run) is not None:
         kind=event['kind'];record=request.get('record',{})
         if kind=='domain.enforcement.tool-reconcile':
@@ -912,6 +929,19 @@ def _guard_transaction(state: dict, event: dict) -> None:
             owner=run.get('active_executions',{}).get(item_id,{})
             if owner.get('owner_pid')!=os.getpid():
                 raise WorkflowError('EXECUTION_OWNER_MISMATCH','Only the actual coordinator can record tool completion/proof; other processes require observed recovery.')
+
+    guard=HOST_CONTEXT.get()
+    if guard and event['kind']=='domain.enforcement.probe-transition':
+        from .hosts import validate_binding,require
+        from .effect_dispatch import binding_owner
+        binding=validate_binding(state['data'],guard['binding_id'],guard['revision'])
+        if binding['role']!='implementer':
+            effect=state['data']['runs'][binding['run_id']].get('effects',{}).get(request.get('record',{}).get('effect_id'),{})
+            require(effect.get('effect_kind')=='probe' and effect.get('owner_binding')==binding_owner(binding),
+                    'Reviewer can only record its own validation probe.')
+
+
+def _guard_transaction(state: dict, event: dict) -> None:
     guard = HOST_CONTEXT.get()
     if guard:
         from .hosts import validate_binding, require
@@ -931,11 +961,6 @@ def _guard_transaction(state: dict, event: dict) -> None:
                         and (record.get('scope') == 'review:' + binding['role'] + ':' + str(binding.get('package_hash', ''))
                              or record.get('effect_kind') == 'probe' and record.get('scope') == 'probe:' + binding['binding_id']),
                         'Reviewer reservation must match its exact attachment, package and item scope.')
-            if event['kind'] == 'domain.enforcement.probe-transition':
-                from .effect_dispatch import binding_owner
-                effect = state['data']['runs'][binding['run_id']].get('effects', {}).get(request.get('record', {}).get('effect_id'), {})
-                require(effect.get('effect_kind') == 'probe' and effect.get('owner_binding') == binding_owner(binding),
-                        'Reviewer can only record its own validation probe.')
             if event['kind'] == 'review.recorded':
                 review=request.get('review', {})
                 require(review.get('actor_id') == binding['actor_id'] and review.get('package_hash') == binding.get('package_hash'), 'Assessment must match reviewer attachment.')

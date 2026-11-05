@@ -36,6 +36,12 @@ raise SystemExit(0 if ok else 1)
             self.assertEqual(result.returncode,0,result.stdout+result.stderr)
             return json.loads(result.stdout)
         red=cli('session-verify','red',{'phase':'RED','timeout_seconds':10})
+        # Historical validation must bind proof source exactly to its reserved execution.
+        import copy
+        from workflow_lib.session_evidence import reduce_session
+        subject=copy.deepcopy(read_session(session)['subject']);subject['executions']['red']['status']='launching'
+        forged=copy.deepcopy(red);forged['source_observation']={'snapshots':{'repo-1':{'invented':'source'}},'source_identity':'forged'}
+        with self.assertRaises(WorkflowError):reduce_session(subject,'session-proof',{'proof':forged})
         (repo/'value').write_text('30')
         green=cli('session-verify','green',{'phase':'GREEN','timeout_seconds':10})
         self.assertNotEqual(red['source_identity'],green['source_identity'])

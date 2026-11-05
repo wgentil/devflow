@@ -22,7 +22,7 @@ def assert_source_current(subject: dict) -> None:
         raise WorkflowError('SOURCE_BINDING_STALE', 'Observe current source and renew affected evidence before acceptance.')
 
 
-def assert_protection_current(subject: dict) -> dict:
+def protection_observations(subject: dict) -> dict:
     if enforcement_version(subject) is None: return {}
     from .protected_changes import observe_protected_changes, validate_protected_changes
     protections = subject.get('protected_inventories')
@@ -31,5 +31,10 @@ def assert_protection_current(subject: dict) -> dict:
     observations = {}
     for key,row in protections.items():
         observations[key] = observe_protected_changes(Path(subject['repositories'][key]['location']), row['inventory'], row['baseline'])
+    return observations
+
+
+def assert_protection_current(subject: dict) -> dict:
+    if enforcement_version(subject) is None:return {}
     from .protection_receipts import make_receipts
-    return make_receipts(subject, observations, live=True)
+    return make_receipts(subject, protection_observations(subject), live=True)

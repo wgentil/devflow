@@ -28,10 +28,11 @@ def snapshot_protected(repo: Path, inventory: dict) -> dict:
         try:
             info = path.lstat()
             if stat.S_ISLNK(info.st_mode):
-                worktree = {'type': 'symlink', 'target': os.readlink(path)}
+                worktree = {'type': 'symlink', 'target': os.readlink(path), 'referent': _symlink_referent(repo,path)}
             elif stat.S_ISREG(info.st_mode):
-                worktree = {'type': 'file', 'sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
-                            'content_base64': base64.b64encode(path.read_bytes()).decode('ascii'), 'executable': bool(info.st_mode & 0o111)}
+                content=path.read_bytes()
+                worktree = {'type': 'file', 'sha256': hashlib.sha256(content).hexdigest(),
+                            'content_base64': base64.b64encode(content).decode('ascii'), 'executable': bool(info.st_mode & 0o111)}
             else:
                 raise WorkflowError('INVALID_PROTECTION_INVENTORY', 'Declare individual regular files or symlinks; directories and special files need explicit file scope.')
         except FileNotFoundError:
@@ -83,3 +84,24 @@ def validate_protected_changes(observation: dict, authorizations: list[dict], re
             {'observation_hash': expected, 'changed_paths': observation.get('changed_paths', [])[:100],
              'omitted_path_count': max(0, len(observation.get('changed_paths', []))-100)})
     return {'passed': True, 'observation_hash': expected}
+
+
+def _symlink_referent(repo,path):
+    pending=list(path.relative_to(repo).parts);cursor=repo;links=[]
+    while pending:
+        cursor=cursor/pending.pop(0)
+        if cursor.is_symlink():
+            if len(links)>=40:raise WorkflowError('PROTECTED_PATH_ESCAPE','Protected link chain is cyclic or too deep.')
+            target=os.readlink(cursor)
+            links.append({'path':cursor.relative_to(repo).as_posix(),'target':target})
+            destination=Path(os.path.normpath(cursor.parent/target))
+            if not destination.is_relative_to(repo):
+                raise WorkflowError('PROTECTED_PATH_ESCAPE','Protected symlink referents must remain inside the declared repository.')
+            pending=list(destination.relative_to(repo).parts)+pending;cursor=repo
+    result={'resolved_path':cursor.relative_to(repo).as_posix(),'link_chain':links}
+    try:info=cursor.lstat()
+    except FileNotFoundError:return {**result,'type':'missing'}
+    if not stat.S_ISREG(info.st_mode):raise WorkflowError('INVALID_PROTECTION_INVENTORY','Protected link must resolve to an individual regular file.')
+    content=cursor.read_bytes()
+    return {**result,'type':'file','sha256':hashlib.sha256(content).hexdigest(),
+        'content_base64':base64.b64encode(content).decode('ascii'),'executable':bool(info.st_mode&0o111)}

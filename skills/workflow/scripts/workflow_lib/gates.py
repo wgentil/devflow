@@ -83,24 +83,42 @@ def hardening_ready(run: dict, live: bool = True) -> bool:
     return True
 
 
-def _review_current(run: dict, review: dict, live: bool) -> bool:
-    if review.get('verdict') != 'pass' or review.get('fresh') is False: return False
-    if enforcement_version(run) is None: return True
+def _review_snapshot_current(run: dict, review: dict, live: bool) -> bool:
+    if review.get('fresh') is False:return False
+    if enforcement_version(run) is None:return True
     try:
         from .stored_records import require_package
         from .review_enforcement import review_bindings_current
-        package = require_package(run.get('review_packages', {}).get(review.get('package_hash')))
-        if not review_bindings_current(run, package, live=False): return False
+        package=require_package(run.get('review_packages',{}).get(review.get('package_hash')))
+        if not review_bindings_current(run,package,live=False):return False
         if live:
             from .host_completion import package_current
-            if not package_current(run, package): return False
-        if review.get('role') in {'item', 'branch'}:
-            from .oracle_acceptance import validate_oracle_acceptance
-            approvals = validate_oracle_acceptance(run, package, review)
-            if review.get('semantic_approvals') != approvals: return False
-            if any(run.get('verifier_proofs', {}).get(key, {}).get('semantic_status') != 'reviewed' for key in approvals): return False
+            if not package_current(run,package):return False
         return True
-    except (KeyError, TypeError, ValueError): return False
+    except Exception:
+        return False
+
+
+def _review_current(run: dict, review: dict, live: bool) -> bool:
+    if review.get('verdict')!='pass' or not _review_snapshot_current(run,review,live):return False
+    if enforcement_version(run) is None:return True
+    # The latest current assessment for each perspective is effective. A block
+    # from any effective perspective cannot be hidden by an earlier passing one.
+    effective={}
+    for candidate in run.get('reviews',{}).get(review.get('role'),[]):
+        if candidate.get('item_id')==review.get('item_id') and _review_snapshot_current(run,candidate,live):
+            effective[candidate.get('perspective')]=candidate
+    if (not any(r.get('review_id')==review.get('review_id') for r in effective.values())
+            or any(r.get('verdict')!='pass' for r in effective.values())):return False
+    try:
+        if review.get('role') in {'item','branch'}:
+            from .stored_records import require_package
+            from .oracle_acceptance import validate_oracle_acceptance
+            package=require_package(run['review_packages'][review['package_hash']])
+            approvals=validate_oracle_acceptance(run,package,review)
+            if review.get('semantic_approvals')!=approvals:return False
+            if any(run.get('verifier_proofs',{}).get(key,{}).get('semantic_status')!='reviewed' for key in approvals):return False
+        return True
     except Exception:
         return False
 

@@ -1,0 +1,15 @@
+{
+  "binding_id": "replace-with-active-binding",
+  "revision": 1,
+  "invocation_id": "implementation-001",
+  "worker_stop_confirmation": {
+    "approved": true,
+    "actor_id": "replace-with-human-who-confirmed-worker-and-children-stopped",
+    "worker_ref": "replace-with-recorded-effect-worker-ref",
+    "reason": "Replace with the actual basis for confirming this worker and all children stopped.",
+    "provenance": {
+      "kind": "user-message",
+      "ref": "replace-with-actual-user-message-reference"
+    }
+  }
+}

@@ -104,3 +104,18 @@ class ProtectedTests(unittest.TestCase):
             apply_enforcement(subject,'approve-protected-change',{**approval,'observation_hash':'different'})
         with self.assertRaises(WorkflowError):
             apply_enforcement(subject,'approve-protected-change',{**approval,'provenance':{}})
+
+    def test_ignored_symlink_referent_changes_and_external_targets_are_not_unprotected(self):
+        repo=self.setup_repo();api=self.api()
+        (repo/'.git/info/exclude').write_text('target\n')
+        (repo/'target').write_text('strict scanner')
+        (repo/'config-link').symlink_to('target')
+        subprocess.run(['git','add','config-link'],cwd=repo,check=True)
+        subprocess.run(['git','commit','-qm','protected link'],cwd=repo,check=True)
+        inventory={'paths':['config-link']};baseline=api.snapshot_protected(repo,inventory)
+        (repo/'target').write_text('relaxed scanner')
+        self.assertEqual(api.observe_protected_changes(repo,inventory,baseline)['changed_paths'],['config-link'])
+        outside=repo.parent/('outside-'+repo.name);outside.write_text('outside scope')
+        self.addCleanup(outside.unlink)
+        (repo/'config-link').unlink();(repo/'config-link').symlink_to(outside)
+        with self.assertRaises(WorkflowError):api.snapshot_protected(repo,inventory)

@@ -147,8 +147,13 @@ class SQLiteStoreTests(unittest.TestCase):
                     old['operations'][event['operation_id']] = deepcopy(event)
                     token = store.HOST_CONTEXT.set(event.get('host_binding'))
                     try:
-                        new = store.transact(target, position - 1, event['operation_id'],
-                            {'kind': event['kind'], 'payload': event['payload']})
+                        if event['kind']=='domain.host.native-reconcile':
+                            # Pure replay parity: live adapter observation is tested separately.
+                            with patch.object(store,'_guard_enforcement_transaction'):
+                                new=store.transact(target,position-1,event['operation_id'],{'kind':event['kind'],'payload':event['payload']})
+                        else:
+                            new = store.transact(target, position - 1, event['operation_id'],
+                                {'kind': event['kind'], 'payload': event['payload']})
                     finally: store.HOST_CONTEXT.reset(token)
                     self.assertEqual(new['event'], event)
                     from workflow_lib.run_archives import archive_run

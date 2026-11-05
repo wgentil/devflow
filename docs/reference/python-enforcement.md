@@ -72,7 +72,9 @@ not establish a relevant assertion failure. Exit status alone is insufficient.
 Inventories explicitly name individual files or symlinks from governing context.
 Directory/special-file entries are rejected rather than implying recursive coverage.
 Git path names are literal. Observations compare commit, index and worktree,
-retaining preimages, types and link values. A baseline cannot be reset to remove
+retaining preimages, types and link values. Confined symlinks also bind resolved
+referent bytes and link chains, including ignored targets. External targets and
+unsupported referent types block until protection scope is corrected. A baseline cannot be reset to remove
 its protection. Exact-change proposals, actual user approval and independent
 review are separate records; another edit needs another applicable authorization.
 
@@ -98,7 +100,10 @@ open. Non-waivable findings and affected pending business questions cannot be
 waived. Waived work is not verified repair. Public closure rechecks current source,
 protected context and actual review inputs; an old proof cannot close work after
 its protected verification context changes. Perspective labels may be retained on
-reports; this does not supply specialist dispatch.
+reports; this does not supply specialist dispatch. Effective workflow assessments
+are the latest current report for each scope/role/perspective. A current block in
+any effective perspective prevents advancing; an old pass cannot hide it. Reducers
+repeat invocation uniqueness, perspective/actor and correction-limit validation.
 
 Adopted requirement acceptance uses schema version 2 and binds the package, source
 and executed protection receipts into its identity. Durable reducers check current
@@ -164,10 +169,14 @@ explicit recovery. Cooperating helpers use real SQLite transactions; two actual
 competing processes cannot spend one allowance twice. Status reads launch no workers.
 Standalone primitives capture actual bounded RED/GREEN subprocesses with retained
 raw logs in a sibling artifact directory outside reviewed repositories. Independent
-review validates exact proof pairs, oracle authority and applicability. A report-only
+review validates exact proof pairs, oracle authority and applicability. Immediate
+pre-command checks prevent launches after newly recorded questions. Producer-only
+execution/proof transitions require the actual live capture context; generic
+session events cannot clear an execution or manufacture an OS observation. A report-only
 session can complete as assessed; verified repair additionally requires explicit
 user repair authorization, a distinct implementer, current passing independent
-review and applicable reviewed proof. It does not supply specialist orchestration.
+review and applicable reviewed proof. Required perspectives need a distinct-actor
+assignment covering each perspective, rather than an aggregate actor count. It does not supply specialist orchestration.
 
 ## Optional developer interfaces
 
@@ -229,3 +238,14 @@ An unrelated journal change may retry the evidence commit after current-scope
 checks; it never reruns the process. Question DTOs are bounded and reject imported
 answers/history; reopening requires `expected_question_version`. Historical
 answers remain in audit storage but do not accumulate in current prompt bindings.
+
+
+Standalone diagnostic packages bind raw protected-change observations so the
+independent disposition can be recorded before an approval receipt exists. Those
+observations do not authorize execution or verified completion. Exact user
+approval plus current independent disposition remains necessary at those strict
+boundaries. New findings start open; a report cannot import resolution, waiver or duplicate
+authority. New findings are assessment output and do not invalidate their own
+report; changed packaged input obligations still invalidate freshness.
+Native reconciliation live transactions require the adapter-held recovery lease
+and repeat OS coordinator absence checks; historical reducers make no live reads.

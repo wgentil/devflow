@@ -216,7 +216,13 @@ flowchart LR
     Adopt[Explicitly adopted run] --> Check[Current action and question checks]
     Check -->|Affected unresolved question| Ask[Record and classify actual user answer]
     Ask --> Check
-    Check -->|Diagnostic reviewer| Assess[Record assessment with current question and answer context]
+    Check -->|Diagnostic reviewer| Assess[Review current questions and raw protected-change observations]
     Check -->|Allowed| Closure[Current proof and independent perspective dispositions]
     Closure --> Existing[Existing verification and review gates]
 ```
+
+A diagnostic standalone package may review exact protected edits before independent
+approval exists; it does not authorize execution or verified completion. An
+assessment's new findings remain valid report output. Current workflow blocks
+supersede historical passes, and required standalone perspectives need distinct
+actual reviewer coverage.

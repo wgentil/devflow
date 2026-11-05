@@ -151,7 +151,8 @@ flowchart LR
     Ask --> Check
     Check -->|Allowed| Protect[Validate current declared protection context]
     Protect --> Claim[Reserve durable tool execution]
-    Claim --> Capture[Capture raw RED and GREEN evidence]
+    Claim --> Launch[Immediate live action and input recheck]
+    Launch --> Capture[Capture raw RED and GREEN evidence]
     Capture --> Review[Existing independent review assesses test oracle]
     Review --> Existing[Existing verification and review gates]
 ```
