@@ -11,6 +11,14 @@ def apply_enforcement(subject: dict, action: str, record: dict) -> dict:
     from .finding_closure import propose_correction, validate_closure
     if enforcement_version(subject) != 1:
         raise WorkflowError('ENFORCEMENT_REQUIRED', 'Adopt the current enforcement contract first.')
+    if subject.get('status') in {'complete', 'delivered', 'discarded'}:
+        raise WorkflowError('SCOPE_TERMINAL', 'Terminal scopes cannot authorize new mutations.')
+    if action in {'tool-claim','tool-finish','tool-reconcile'}:
+        from .tool_execution import reduce_tool
+        return reduce_tool(subject,action,record)
+    if action in {'execution-claim','execution-finish','execution-reconcile','session-proof','session-package','session-review','session-complete','authorize-session-repair'}:
+        from .session_evidence import reduce_session
+        return reduce_session(subject, action, record)
     reducers = {'question': record_question, 'answer': record_answer, 'claim': claim_effect,
                 'effect-transition': transition_effect, 'propose-fix': propose_correction}
     if action == 'claim' and record.get('snapshots') is not None:
@@ -28,8 +36,18 @@ def apply_enforcement(subject: dict, action: str, record: dict) -> dict:
                 and record.get('effect_id') not in subject.get('native_invocations', {}))
             if not safe_abort:
                 raise WorkflowError('TRANSPORT_RECEIPT_REQUIRED', 'Bound worker completion is recorded by its transport adapter; generic transitions cannot assert it.')
+    if subject.get('review_contract_hash') and action=='propose-fix' and not subject.get('repair_authorization'):
+        raise WorkflowError('REPAIR_AUTHORIZATION_REQUIRED','Review-only sessions cannot propose agent repairs.')
     if action in reducers: return reducers[action](subject, record)
     updated = deepcopy(subject)
+    if action == 'probe-transition':
+        effect = subject.get('effects', {}).get(record.get('effect_id'), {})
+        if effect.get('effect_kind') != 'probe':
+            raise WorkflowError('EFFECT_BLOCKED', 'Probe transitions cannot modify work claims.')
+        updated = transition_effect(subject, record)
+        if 'result' in record:
+            updated['effects'][record['effect_id']]['result'] = deepcopy(record['result'])
+        return updated
     if action == 'amend-review-contract':
         from .document_units import digest
         contract = subject.get('review_contract')
@@ -114,8 +132,8 @@ def apply_enforcement(subject: dict, action: str, record: dict) -> dict:
                 or not authorization.get('provenance', {}).get('ref')
                 or any(row.get('status') not in {'completed', 'failed', 'reconciled'}
                        for row in subject.get('effects', {}).values())
-                or set(previous) != set(policy)
-                or any(policy[key] < previous[key] for key in policy)
+                or set(previous) - {'max_probe_attempts'} != set(policy) - {'max_probe_attempts'}
+                or any(policy.get(key, 0) < previous.get(key, 0) for key in set(previous) | set(policy))
                 or policy == previous):
             raise WorkflowError('EFFECT_POLICY_BLOCKED', 'Approve an exact monotonic extension after workers are reconciled; spending and clock cannot reset.')
         updated.setdefault('effect_policy_extensions', []).append(deepcopy(record))

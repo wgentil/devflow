@@ -34,7 +34,7 @@ from workflow_lib.review_sessions import transact_session
 from workflow_lib.store import WorkflowError
 while not Path(sys.argv[3]).exists(): time.sleep(.01)
 try:
- r=transact_session(Path(sys.argv[2]),1,sys.argv[4],{'action':'claim','record':{'effect_id':sys.argv[4],'scope':'same','estimated_cost':1,'now_ms':1,'source_identity':'sha'}})
+ r=transact_session(Path(sys.argv[2]),1,sys.argv[4],{'action':'claim','record':{'effect_id':sys.argv[4],'scope':'same','estimated_cost':1,'now_ms':1,'source_identity':'sha','actor_id':'fixture-reviewer','action_scope':{'purpose':'review'}}})
  print('claimed')
 except WorkflowError: print('blocked')
 '''
@@ -114,3 +114,11 @@ except WorkflowError: print('blocked')
         with self.assertRaises(WorkflowError):
             api.initialize_session(base/'invalid.db',{'id':'s','repositories':[str(repo)],'source_identity':'sha',
                 'review_contract':{'estimate':float('nan')}})
+
+    def test_review_only_session_cannot_reserve_an_implementation_worker(self):
+        api=self.api();base=Path(self.enterContext(tempfile.TemporaryDirectory()));repo=base/'repo';repo.mkdir();path=base/'session.db'
+        api.initialize_session(path,{'id':'s','repositories':[str(repo)],'source_identity':'sha'})
+        api.transact_session(path,0,'cfg',{'action':'configure-effects','record':{'max_attempts':2,'max_estimated_cost':2,'max_elapsed_ms':1000,'authorization':{'approved':True,'actor_id':'fixture-user'}}})
+        with self.assertRaises(WorkflowError):
+            api.transact_session(path,1,'bad-worker',{'action':'claim','record':{'effect_id':'bad','scope':'repair','estimated_cost':1,
+                'source_identity':'sha','now_ms':1,'actor_id':'writer','action_scope':{'purpose':'repair'}}})

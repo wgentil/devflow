@@ -202,3 +202,21 @@ flowchart TD
     Resolve -->|Unavailable or unsupported| Block[Report unavailable; preserve attempt]
     Entry -->|Missing or escaping| Block
 ```
+
+
+## Opt-in Python enforcement
+
+Explicitly adopted runs reserve model work and validation probes before invocation.
+Work uses `max_attempts`; probes use `max_probe_attempts` (default zero). Both share
+finite estimated/observed cost and the original elapsed allowance. Probe requests
+need an estimate and exact operation ID; a retry returns the retained result.
+Native invocation timeouts are capped by remaining elapsed allowance. Estimates
+are reservations, not provider billing caps; raw usage is retained separately.
+
+Selected-profile recovery requires the recorded local coordinator to be absent
+and an exact user-message attestation that workers and children have stopped.
+It records termination evidence without refunding allowance or claiming successful
+work. Process absence alone cannot prove remote termination. See the
+[foundation contracts](reference/python-enforcement.md) for native/tool/session
+recovery, probe developer flags and trust limitations. Older runs retain their
+existing reconciliation behavior.

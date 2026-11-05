@@ -15,11 +15,15 @@ def _run(argv: list[str], cwd: Path, timeout: int, *, structured: bool = False) 
     if not isinstance(argv, list) or not argv or any(not isinstance(value, str) for value in argv):
         return {"passed": False, "failure": "INVALID_COMMAND"}
     try:
+        from .tool_execution import started,ended,before_command
+        before_command()
+        started()
         result = subprocess.run(argv, cwd=cwd, capture_output=True, timeout=timeout, check=False)
     except subprocess.TimeoutExpired:
         return {"passed": False, "failure": "TIMEOUT"}
     except OSError as exc:
         return {"passed": False, "failure": "COMMAND_FAILED", "detail": str(exc)}
+    ended()
     try:
         stdout = result.stdout.decode("utf-8", "strict" if structured else "replace")
     except UnicodeError:
@@ -148,6 +152,10 @@ def record_typed_proof(root: Path, run_id: str, token: str, proof: dict) -> dict
     record = {**proof, "run_id": run_id, "item_id": active["item_id"], "token": token,
               "repo_id": repo_id, "repository_head": fingerprint["head"],
               "worktree_digest": fingerprint["worktree_digest"]}
+    from .action_policy import enforcement_version
+    if enforcement_version(run) is not None:
+        from .tool_execution import proof_context
+        record.update(proof_context(run))
     if proof.get("kind") == "iac-apply":
         has_plan = any(previous.get("kind") == "iac-plan" and previous.get("passed") is True
                        and previous.get("token") == token and previous.get("repo_id", repo_id) == repo_id

@@ -3,7 +3,7 @@
   "baseline": {
     "aggregate_entry_bytes": 65937
   },
-  "duplicate_prose_bytes": 11344,
+  "duplicate_prose_bytes": 11448,
   "entry_bytes": {
     "skills/build-work/SKILL.md": 3140,
     "skills/ingest/SKILL.md": 2093,

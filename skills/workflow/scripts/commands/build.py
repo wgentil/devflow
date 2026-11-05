@@ -32,6 +32,7 @@ def register_commands(parser: argparse.ArgumentParser) -> None:
     verify.add_argument("--timeout", type=int, default=900)
     verify.add_argument("--red-proof-id")
     verify.add_argument("--red-run-id")
+    verify.add_argument("--operation-id")
     verify.add_argument("--report-format", choices=("json", "junit", "unittest"), default="json")
     iac_plan = subcommands.add_parser("verify-iac-plan")
     iac_plan.add_argument("--root", required=True)
@@ -57,6 +58,7 @@ def register_commands(parser: argparse.ArgumentParser) -> None:
     evaluation.add_argument("--baseline-id")
     evaluation.add_argument("--pass-rate-threshold", type=float, required=True)
     evaluation.add_argument("--timeout", type=int, default=900)
+    for action in (iac_plan,iac_apply,evaluation):action.add_argument('--operation-id')
     test_change = subcommands.add_parser("test-change")
     change_commands = test_change.add_subparsers(dest="test_change_command", required=True)
     proposal = change_commands.add_parser("propose")
@@ -136,6 +138,13 @@ def _dispatch(parsed: argparse.Namespace) -> dict:
         root = Path(parsed.root).expanduser().resolve()
         state = read_command(root, parsed, family='build')
         run = state["data"].get("runs", {}).get(parsed.run_id)
+        from workflow_lib.action_policy import enforcement_version
+        from workflow_lib.tool_execution import cached
+        from workflow_lib.document_units import digest
+        client_hash=digest(vars(parsed))
+        if run and enforcement_version(run) is not None and parsed.operation_id:
+            previous=cached(root,parsed.run_id,parsed.operation_id,client_hash)
+            if previous:return previous
         active = run.get("active_attempt") if run else None
         if not active or active.get("token") != parsed.attempt_id:
             raise WorkflowError("ATTEMPT_TOKEN_INVALID", "typed verifier requires the active attempt token")
@@ -145,6 +154,12 @@ def _dispatch(parsed: argparse.Namespace) -> dict:
         if not repository:
             raise WorkflowError("REPOSITORY_NOT_REGISTERED", "active work item has no registered repository")
         cwd = Path(repository["location"])
+        from workflow_lib.action_policy import enforcement_version
+        from workflow_lib.tool_execution import execution,CURRENT_TOOL
+        if enforcement_version(run) is not None and CURRENT_TOOL.get() is None:
+            with execution(root,parsed.run_id,parsed.attempt_id,parsed.operation_id,client_hash,
+                           getattr(parsed,'authorization_id',None)) as tool:
+                result=_dispatch(parsed);tool['result']=result;return result
         if parsed.build_command == "verify-iac-plan":
             from workflow_lib.evidence import repository_fingerprint
             before = repository_fingerprint(cwd)
@@ -175,6 +190,7 @@ def _dispatch(parsed: argparse.Namespace) -> dict:
             proof = verify_eval_set(json.loads(parsed.eval_argv_json), cwd, parsed.phase, baseline,
                                     parsed.pass_rate_threshold, parsed.timeout)
         if proof.get("passed"):
+            proof["cwd"]=str(cwd.resolve())
             return record_typed_proof(root, parsed.run_id, parsed.attempt_id, proof)
         return proof
     if parsed.build_command == "test-change":

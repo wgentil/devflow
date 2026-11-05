@@ -200,14 +200,16 @@ Pass `--prior-findings-json` an array like [prior-findings.json](../../docs/exam
 
 Explicitly adopted runs apply versioned clarification checks at affected action
 boundaries. Preserve actual user-answer provenance and renew stale preparation;
-read-only assessments remain possible. The complete enforcement and review/repair
-design is still in progress; see [current scope and developer contracts](../../docs/reference/python-enforcement.md).
+read-only assessments remain possible. The enforcement foundation is opt-in; specialist orchestration and automatic
+repair belong to the companion implementation; see [current scope and developer contracts](../../docs/reference/python-enforcement.md).
 
 Packages include recorded scoped questions/answers and actual pending execution
 proofs. Independent closure dispositions must map applicable current proofs to
 all consolidated obligations. A completed diagnostic assessment can resolve one
 finding while others remain open; affected unresolved business questions still
-block closure. Perspective labels do not supply specialist orchestration.
+block closure and cannot be waived. Required perspectives use distinct actors
+and invocations with exact finding-contract bindings. Standalone assessed reports
+are separate from explicitly authorized verified repair; neither supplies specialist orchestration.
 
 ```mermaid
 flowchart LR
@@ -215,5 +217,6 @@ flowchart LR
     Check -->|Affected unresolved question| Ask[Record and classify actual user answer]
     Ask --> Check
     Check -->|Diagnostic reviewer| Assess[Record assessment with current question and answer context]
-    Check -->|Allowed| Existing[Existing verification and review gates]
+    Check -->|Allowed| Closure[Current proof and independent perspective dispositions]
+    Closure --> Existing[Existing verification and review gates]
 ```

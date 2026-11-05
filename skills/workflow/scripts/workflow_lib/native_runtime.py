@@ -114,8 +114,17 @@ def remember_selected(root,binding,context,resolved):
 
 
 @reservation('native-dispatch')
-def probe(root,binding,stage,refresh=False):
-    data=read_host(root,binding_id=binding['binding_id'])['data'];backend=(CodexBackend if binding['host']=='codex' else ClaudeBackend)(binding['project_dir'])
+def probe(root,binding,stage,refresh=False,*,estimated_cost=None,operation_id=None,budget_owner=None,data_override=None):
+    data=data_override or read_host(root,binding_id=binding['binding_id'])['data']
+    if enforcement_version(data['runs'][binding['run_id']]) is not None:
+        from .probe_budget import budgeted_probe
+        return budgeted_probe(root,binding,stage,refresh,estimated_cost,operation_id,
+            lambda guard:_probe(root,binding,stage,refresh,data,guard),owner=budget_owner,data=data)
+    return _probe(root,binding,stage,refresh,data)
+
+
+def _probe(root,binding,stage,refresh,data,before_invoke=None):
+    backend=(CodexBackend if binding['host']=='codex' else ClaudeBackend)(binding['project_dir'])
     try:
         context=discover(root,binding,refresh,backend);decision=resolve(data,binding,stage,context)
         if not decision.get('resolved'):decision=candidate_intent(data,binding,stage,context)
@@ -123,13 +132,16 @@ def probe(root,binding,stage,refresh=False):
         selected=decision['resolved']
         if binding['host']=='codex':
             backend.configure(selected,'DevFlow selected-model configuration validation. No tools, file access or external actions.','read-only')
-            result=backend.invoke(selected,'Reply exactly DEVFLOW_MODEL_PROBE. Do not use tools or inspect files.',binding['actor_id'],'read-only',60)
-        else:result=backend.invoke(selected,'Reply exactly DEVFLOW_MODEL_PROBE. Do not inspect files or use tools.',binding['actor_id'],'none',60)
+            timeout=before_invoke() if before_invoke else 60
+            result=backend.invoke(selected,'Reply exactly DEVFLOW_MODEL_PROBE. Do not use tools or inspect files.',binding['actor_id'],'read-only',timeout)
+        else:
+            timeout=before_invoke() if before_invoke else 60
+            result=backend.invoke(selected,'Reply exactly DEVFLOW_MODEL_PROBE. Do not inspect files or use tools.',binding['actor_id'],'none',timeout)
         observed=result.get('observed',{})
         if observed.get('model')!=selected['model'] or observed.get('provider') and observed['provider']!=selected['provider']:
-            invalidate(root,binding,context);return {'status':'block','reason_code':'MODEL_SUBSTITUTED','requested':selected,'observed':observed}
+            invalidate(root,binding,context);return {'status':'block','reason_code':'MODEL_SUBSTITUTED','requested':selected,'observed':observed,'invocation_ref':result.get('invocation_ref')}
         if binding['host']=='codex' and observed.get('effort')!=selected['effort']:
-            invalidate(root,binding,context);return {'status':'block','reason_code':'MODEL_SUBSTITUTED','requested':selected,'observed':observed}
+            invalidate(root,binding,context);return {'status':'block','reason_code':'MODEL_SUBSTITUTED','requested':selected,'observed':observed,'invocation_ref':result.get('invocation_ref')}
         remember_selected(root,binding,context,selected)
         return {'status':'allow','reason_code':'NATIVE_SELECTION_VALIDATED','requested':selected,'observed':observed,'observation_source':result['observation_source'],'invocation_ref':result['invocation_ref'],'capability_validated':False,'mode':decision['mode']}
     except NativeError as exc:
@@ -371,7 +383,7 @@ def invoke(root,request,operation_id):
         return receipt
 
 
-def handoff_preflight(root,data,target):
+def handoff_preflight(root,data,target,*,probe_operation_id=None,estimated_cost=None,budget_owner=None):
     """Native destination access validation occurs before ownership changes."""
     target={**target,'revision':1}
     request=preferences(data,target,'implementation')
@@ -382,7 +394,8 @@ def handoff_preflight(root,data,target):
     decision=resolve(data,target,'implementation',context)
     if request.get('mode','advisory')=='strict' and not context['capabilities'].get('observe'):
         return {**decision,'status':'block','reason_code':'EFFECTIVE_CONFIGURATION_UNOBSERVABLE','policy_revision':revision}
-    selected=probe(root,target,'implementation')
+    selected=(probe(root,target,'implementation',estimated_cost=estimated_cost,operation_id=probe_operation_id,
+        budget_owner=budget_owner,data_override=data) if enforcement_version(data['runs'][target['run_id']]) is not None else probe(root,target,'implementation'))
     if selected['status']!='allow':return {**selected,'policy_revision':revision}
     decision=resolve(data,target,'implementation',cached_context(root,target))
     return {**decision,'observed':selected.get('observed'),'observation_source':selected.get('observation_source'),'invocation_ref':selected.get('invocation_ref'),'policy_revision':revision}
@@ -392,6 +405,10 @@ def handoff_preflight(root,data,target):
 def reconcile(root,request,operation_id):
     """Never kill or restart a worker; explicit stop attestation closes an orphan."""
     root=Path(root);state=read_host(root,request=request,operation_id=operation_id);data=state['data']
+    scoped=data['runs'].get(data.get('host_bindings',{}).get(request.get('binding_id'),{}).get('run_id'),{})
+    if enforcement_version(scoped) is not None:
+        from .enforcement_recovery import reconcile_native
+        return reconcile_native(root,request,operation_id)
     finish={'binding_id':request.get('binding_id'),'revision':request.get('revision'),'invocation_id':request.get('invocation_id'),'client_request_hash':hashlib.sha256(json.dumps(request,sort_keys=True,separators=(',',':')).encode()).hexdigest(),'result':{'status':'interrupted','error_kind':'unavailable','reason_code':'NATIVE_ORPHAN_RECONCILED','worker_stop_confirmation':request.get('worker_stop_confirmation')}}
     previous=state['operations'].get(operation_id)
     if previous:

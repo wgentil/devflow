@@ -38,7 +38,7 @@ def _required_proof(run: dict, item: dict, live: bool = True) -> dict | None:
         actual = (phase if kind == "code" else kind + ("-post" if kind == "agent-evaluation" and phase == "post" else ""))
         if (proof.get("passed") is True and proof.get("item_id") == item["id"]
                 and proof.get("token") == token and actual in expected and evidence.get("fresh", True)):
-            if enforcement_version(run) is not None and kind == 'code':
+            if enforcement_version(run) is not None:
                 from .test_inputs import proof_inputs_current
                 from .protection_receipts import validate_receipts
                 from .store import WorkflowError
@@ -46,7 +46,7 @@ def _required_proof(run: dict, item: dict, live: bool = True) -> dict | None:
                     validate_receipts(run, evidence.get('protection_receipts'))
                     if live:
                         from .enforcement_live import assert_protection_current
-                        if (not proof_inputs_current(run, evidence)
+                        if (kind=='code' and not proof_inputs_current(run, evidence)
                                 or assert_protection_current(run) != evidence['protection_receipts']): continue
                 except WorkflowError: continue
             if not live:
@@ -375,6 +375,8 @@ def waive_finding(run: dict, finding_id: str, authorization: dict) -> dict:
         raise ValueError("finding waiver needs explicit run-scoped authorization and rationale")
     updated = deepcopy(run)
     target = next(value for value in updated["unresolved_findings"] if value["id"] == finding_id)
+    from .finding_closure import validate_waiver
+    validate_waiver(run, finding)
     target.update({"status": "waived", "waiver": deepcopy(authorization)})
     return updated
 

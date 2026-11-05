@@ -113,3 +113,16 @@ class ActionPolicyTests(unittest.TestCase):
         _apply_event(state,{'kind':'finding.resolved','payload':{'run_id':'r','finding_id':'f',
             'resolution':{'actor_id':'fixture-author','why':'legacy evidence','evidence_refs':['fixture-proof']}}})
         self.assertEqual(state['data']['runs']['r']['unresolved_findings'][0]['status'],'resolved')
+
+    def test_selected_namespace_with_missing_policy_fails_closed(self):
+        from workflow_lib.action_policy import subject_decision
+        for value in (None,True,'1'):
+            subject={'enforcement':{'protocol':'devflow.python-enforcement/v1','policy_version':value}}
+            self.assertEqual(subject_decision(subject,'delivery',{})['status'],'block')
+
+    def test_terminal_run_cannot_adopt_a_new_contract(self):
+        from workflow_lib.store import WorkflowError
+        for status in ('complete','delivered','discarded'):
+            with self.assertRaises(WorkflowError):
+                self.policy().adopt_enforcement({'id':'r','state_version':1,'status':status},
+                    {'approved':True,'actor_id':'user','run_id':'r','state_version':1})

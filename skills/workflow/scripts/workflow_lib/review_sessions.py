@@ -55,7 +55,8 @@ def initialize_session(path: Path, manifest: dict) -> dict:
     if not isinstance(contract, dict):
         raise WorkflowError('INVALID_SESSION', 'Review contract must be an object.')
     contract = {'scope': {'repositories': repos, 'source_identity': manifest['source_identity']}, 'request': contract}
-    subject = {**manifest, 'review_contract': contract, 'review_contract_hash': digest(contract), 'enforcement': {'protocol':'devflow.python-enforcement/v1', 'policy_version': 1}, 'state_version': 0}
+    subject = {**manifest, 'repositories': {'repo-'+str(i+1):{'location':str(Path(repo).resolve())} for i,repo in enumerate(repos)},
+        'status':'active', 'governing_digest':digest(contract['scope']), 'review_contract': contract, 'review_contract_hash': digest(contract), 'enforcement': {'protocol':'devflow.python-enforcement/v1', 'policy_version': 1}, 'state_version': 0}
     raw = _encode({'schema_version': 1, 'version': 0, 'subject': subject})
     path.parent.mkdir(parents=True, exist_ok=True)
     try:
@@ -103,6 +104,16 @@ def transact_session(path: Path, expected_version: int, operation_id: str, event
         subject = apply_enforcement(state['subject'], event['action'], event['record'])
         updated = {**state, 'version': expected_version+1, 'subject': subject}
         receipt = {'version': updated['version'], 'operation_id': operation_id, 'subject_hash': digest(subject), 'replayed': False}
+        record=event.get('record',{})
+        if record.get('_client_request_hash'):receipt['client_request_hash']=record['_client_request_hash']
+        if record.get('package'):receipt['artifact_id']=record['package']['package_hash']
+        if record.get('review'):receipt['artifact_id']=digest(record['review'])
         conn.execute('UPDATE manifest SET body=? WHERE id=1', (_encode(updated),))
         conn.execute('INSERT INTO operations VALUES (?,?,?)', (operation_id, request_hash, _encode(receipt)))
         return receipt
+
+
+def lookup_operation(path: Path, operation_id: str) -> dict | None:
+    with _connection(path) as conn:
+        row=conn.execute('SELECT receipt FROM operations WHERE id=?',(operation_id,)).fetchone()
+        return json.loads(row[0]) if row else None

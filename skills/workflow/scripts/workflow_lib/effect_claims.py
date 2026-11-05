@@ -15,11 +15,12 @@ def _number(value):
 
 
 def validate_effect_policy(policy: dict) -> None:
-    _require(isinstance(policy, dict) and set(policy) == {
+    _require(isinstance(policy, dict) and set(policy) - {'max_probe_attempts'} == {
         'max_attempts', 'max_estimated_cost', 'max_elapsed_ms'}, 'Explicit effect limit fields required.')
     _require(type(policy['max_attempts']) is int and policy['max_attempts'] > 0
         and _number(policy['max_estimated_cost']) and _number(policy['max_elapsed_ms'])
-        and policy['max_elapsed_ms'] > 0, 'Explicit finite effect limits required.')
+        and policy['max_elapsed_ms'] > 0
+        and type(policy.get('max_probe_attempts', 0)) is int and policy.get('max_probe_attempts', 0) >= 0, 'Explicit finite effect limits required.')
 
 
 def claim_effect(subject: dict, request: dict) -> dict:
@@ -29,8 +30,14 @@ def claim_effect(subject: dict, request: dict) -> dict:
     if prior:
         _require(prior['request_hash'] == digest(request), 'Effect identity belongs to a different request.')
         return deepcopy(subject)
+    if subject.get('review_contract_hash'):
+        purpose=request.get('action_scope',{}).get('purpose')
+        _require(purpose in {'review','repair','probe'} and isinstance(request.get('actor_id'),str) and request['actor_id'], 'Declare standalone worker purpose and actor.')
+        if purpose=='repair':
+            _require(subject.get('repair_authorization') and request['actor_id']==subject.get('actors',{}).get('implementer'), 'Explicit exact-scope repair authorization required.')
+        else:_require(request['actor_id']!=subject.get('actors',{}).get('implementer'), 'Review/probe actor must be independent of repairs.')
     decision_action = ('review-report' if request.get('owner_binding', {}).get('role') in {
-        'item-reviewer', 'branch-reviewer', 'acceptance-reviewer', 'pr-reviewer'} else 'dispatch')
+        'item-reviewer', 'branch-reviewer', 'acceptance-reviewer', 'pr-reviewer'} or subject.get('review_contract_hash') and request.get('action_scope',{}).get('purpose') in {'review','probe'} else 'dispatch')
     require_action(subject_decision(subject, decision_action, request.get('action_scope', {})))
     policy = subject.get('effect_policy', {})
     _require(type(policy.get('max_attempts')) is int and policy['max_attempts'] > 0
@@ -39,8 +46,11 @@ def claim_effect(subject: dict, request: dict) -> dict:
     cost, now = request.get('estimated_cost'), request.get('now_ms')
     _require(_number(cost) and type(now) is int and now >= 0, 'Known finite cost and time required.')
     effects = subject.get('effects', {})
-    _require(len(effects) < policy['max_attempts'], 'Attempt limit reached.')
-    _require(sum(row['estimated_cost'] for row in effects.values()) + cost <= policy['max_estimated_cost'], 'Cost reservation limit reached.')
+    kind = request.get('effect_kind', 'work')
+    _require(kind in {'work', 'probe'}, 'Known effect attempt category required.')
+    limit = policy.get('max_probe_attempts', 0) if kind == 'probe' else policy['max_attempts']
+    _require(type(limit) is int and sum(row.get('effect_kind', 'work') == kind for row in effects.values()) < limit, kind + ' attempt limit reached.')
+    _require(sum(max(row['estimated_cost'], row.get('observed_cost', 0)) for row in effects.values()) + cost <= policy['max_estimated_cost'], 'Cost reservation limit reached.')
     _require(sum(row.get('observed_cost', 0) for row in effects.values()) <= policy['max_estimated_cost'], 'Observed spending limit exceeded.')
     _require(now - subject.get('effects_started_ms', now) < policy['max_elapsed_ms'], 'Elapsed limit reached.')
     _require(not any(row['scope'] == request['scope'] and row['status'] not in {'completed', 'failed', 'reconciled'}
@@ -50,7 +60,9 @@ def claim_effect(subject: dict, request: dict) -> dict:
     decision = subject_decision(subject, decision_action, request.get('action_scope', {}))
     updated.setdefault('effects', {})[identifier] = {
         'effect_id': identifier, 'request_hash': digest(request), 'scope': request['scope'],
-        'estimated_cost': cost, 'claimed_at_ms': now, 'status': 'claimed',
+        **({'owner_pid':request['owner_pid']} if 'owner_pid' in request else {}),
+        'estimated_cost': cost, 'claimed_at_ms': now, 'status': 'claimed', 'effect_kind': kind,
+        **({'client_request_hash': request['client_request_hash']} if 'client_request_hash' in request else {}),
         'source_identity': request['source_identity'], 'decision': decision, 'decision_action': decision_action,
         'action_scope': deepcopy(request.get('action_scope', {})),
         'effect_policy_hash': digest(policy), 'history': [],
@@ -89,11 +101,13 @@ def transition_effect(subject: dict, request: dict) -> dict:
     effect = subject.get('effects', {}).get(request.get('effect_id'))
     _require(effect, 'Known effect required.')
     target = request.get('status')
-    allowed = {'claimed': {'launching', 'failed'}, 'launching': {'running', 'uncertain'},
+    allowed = {'claimed': {'launching', 'failed'}, 'launching': {'running', 'uncertain', 'failed'},
                'running': {'completed', 'failed', 'uncertain'}, 'uncertain': {'reconciled'},
                'completed': set(), 'failed': set(), 'reconciled': set()}
     _require(target in allowed.get(effect['status'], set()), 'Invalid effect transition; uncertain launches require reconciliation.')
     _require(type(request.get('now_ms')) is int and request['now_ms'] >= max([effect['claimed_at_ms']] + [row['now_ms'] for row in effect.get('history', [])]), 'Valid transition time required.')
+    if effect['status'] == 'launching' and target == 'failed':
+        _require(request.get('dispatch_started') is False, 'Known non-dispatch observation required.')
     if target == 'launching':
         validate_launch_receipt(subject, effect, {'source_identity': subject.get('source_identity'), 'now_ms': request['now_ms']})
     if target == 'reconciled':

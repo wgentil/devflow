@@ -620,9 +620,10 @@ conversion; historical context artifacts remain available.
 
 ## Python enforcement development status
 
-The current development branch includes an opt-in clarification/enforcement
-foundation. Existing runs are not silently upgraded. The complete proposed
-safeguards, standalone specialist reviews and bounded repair orchestration are
-not yet implemented. See the [foundation status and developer contracts](reference/python-enforcement.md)
-for implemented boundaries and remaining integration. Normal plugin onboarding
+The current development branch includes an opt-in Python clarification/enforcement
+foundation. Existing runs are not silently upgraded. It includes scoped user
+questions, proof/closure protection, durable work and probe budgets, recovery and
+standalone execution/review/completion primitives. Standalone specialist
+orchestration and bounded automatic repair remain companion work. See the [foundation status and developer contracts](reference/python-enforcement.md)
+for implemented boundaries and limitations. Normal plugin onboarding
 and the existing workflow remain the supported path.

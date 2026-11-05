@@ -1,10 +1,11 @@
 # Python enforcement foundation (development branch)
 
-This is an opt-in development foundation, not the complete proposed enforcement
-contract. Do not deploy it as a replacement for the supported workflow gates.
+This is an opt-in development foundation for the approved Python enforcement
+contract. Existing runs retain their original behavior unless explicitly adopted.
 The [implementation plan](../superpowers/plans/2026-11-04-python-enforcement.md)
-tracks remaining integration and verification. Specialist orchestration, standalone
-review/fix completion and bounded automatic repair remain unfinished.
+tracks implementation and verification. Specialist orchestration and bounded
+automatic repair remain subsequent companion work; standalone execution, review
+and completion primitives are available here.
 
 ## Action boundaries and compatibility
 
@@ -89,10 +90,12 @@ Proofs must belong to the applicable current item attempt and sufficient proof k
 code proof additionally needs independent oracle acceptance. Execution-inapplicable
 closure requires explicit independent evidence. Unresolved disagreements and missing
 required perspectives block closure. One invocation cannot impersonate several
-required reviewers. Multi-perspective closure aggregation remains unfinished.
+required reviewers. Closure can aggregate `review_ids` from distinct required perspectives. Every
+disposition binds the finding contract and all consolidated obligations.
 
 A completed request-changes assessment may resolve one finding while others remain
-open. Waived work is not verified repair. Public closure rechecks current source,
+open. Non-waivable findings and affected pending business questions cannot be
+waived. Waived work is not verified repair. Public closure rechecks current source,
 protected context and actual review inputs; an old proof cannot close work after
 its protected verification context changes. Perspective labels may be retained on
 reports; this does not supply specialist dispatch.
@@ -101,8 +104,10 @@ Adopted requirement acceptance uses schema version 2 and binds the package, sour
 and executed protection receipts into its identity. Durable reducers check current
 proof/review prerequisites. Delivery preparation, verification, recording and its
 reducer honor the final gate rather than the stage label alone. Live final gates
-also detect protected ignored-file edits. Typed non-code evidence, additional
-completion adapters and broader failure-window coverage still need integration.
+also detect protected ignored-file edits. Typed non-code execution uses the same
+durable execution claims, source observations and protected-context receipts.
+Infrastructure apply consumes its exact authorization when claimed; renaming an
+operation cannot reuse that authorization.
 
 ## Dispatch, budgets and recovery
 
@@ -123,13 +128,22 @@ Policy extension requires exact predecessor policy, nondecreasing finite limits,
 actual user authorization/reason/message provenance and reconciled/terminal workers.
 It retains the original elapsed-time start and all spending/attempt history. Cost
 reservations are estimates, not provider billing caps. Work-dispatch budgeting is
-implemented; accounting for existing paid model-validation probes remains unresolved.
+implemented for work and model-validation probes. `max_attempts` counts model
+work; `max_probe_attempts` separately counts probes (default zero). Both draw from
+the same `max_estimated_cost` and `max_elapsed_ms`, including reserved or higher observed
+cost. There is no automatic conversion of provider token usage into currency.
+Selected-profile probes require an explicit estimate and operation ID; the
+optional developer `host model-probe` flags are `--estimated-cost` and
+`--operation-id`. Handoff preflight accepts `probe_estimated_cost`. Exact retries
+reuse retained results without constructing another backend.
 
 A caller-supplied assertion that an OS worker stopped is insufficient for
-reconciliation. A recorded adapter termination observation is required. Its producer
-and recovery integration remain unfinished; selected uncertain claims fail closed
-rather than accepting a fabricated stop receipt. No distributed exactly-once or
-provider cancellation guarantee is claimed.
+reconciliation. A recorded adapter termination observation is required. Recovery checks that the
+recorded local coordinator process is absent and requires an exact user-message
+attestation that its workers and children have stopped. Process absence alone
+does not prove remote termination. Native, tool and standalone reconciliation
+retain spending/history and never declare successful work or relaunch a worker.
+No distributed exactly-once or provider cancellation guarantee is claimed.
 
 ## Standalone persistence
 
@@ -148,14 +162,18 @@ remain blocked until that approval matches. Contract corruption fails closed.
 Manifest bodies are limited to 4 MiB. Failed/corrupt initialization is preserved for
 explicit recovery. Cooperating helpers use real SQLite transactions; two actual
 competing processes cannot spend one allowance twice. Status reads launch no workers.
-This plumbing does not yet capture standalone test execution or finish review/fix
-sessions, and does not provide standalone specialist orchestration.
+Standalone primitives capture actual bounded RED/GREEN subprocesses with retained
+raw logs in a sibling artifact directory outside reviewed repositories. Independent
+review validates exact proof pairs, oracle authority and applicability. A report-only
+session can complete as assessed; verified repair additionally requires explicit
+user repair authorization, a distinct implementer, current passing independent
+review and applicable reviewed proof. It does not supply specialist orchestration.
 
 ## Optional developer interfaces
 
 The helper's `enforcement` group offers `decide`, `adopt`, `question`, `answer`,
 `propose-fix`, `close-finding`, `configure-effects`, `extend-effects`, `claim`,
-`effect-transition`, `observe-source`, `protect-inventory`,
+`effect-transition`, `observe-source`, `protect-inventory`, `reconcile-tool`,
 `propose-protected-change` and `approve-protected-change`.
 
 Workflow actions take `--root` and `--input`; mutations require explicit
@@ -192,3 +210,22 @@ Exercise public-command fixtures with the ordinary developer runner:
 `python3 -m unittest discover -s tests -p test_enforcement_integration.py -v`.
 No production control roots, paid provider probes, merge or release are needed.
 Plugin onboarding remains conversational; these are optional developer interfaces.
+
+
+`session-protect-inventory`, `session-verify`, `session-prepare`, `session-review`,
+`session-complete` and `session-reconcile` take `--session` and `--operation-id`.
+Verify, review, inventory and reconcile also take `--input`. Verification input
+names `phase` and optional positive `timeout_seconds`; the command, targets and
+inputs come from the approved session contract. Preparation and completion take
+no input file. `session-event` records exact `authorize-session-repair` approval
+before repair work; recording a candidate alone does not authorize repair.
+See [owned fixture examples](../examples/python-enforcement.md).
+
+Code and typed tool verification accept an optional `--operation-id`. For adopted
+runs, durable tool claims precede execution, block conflicting work and bind the
+actual coordinator, attempt, source, decisions and protected context. Exact
+completed retries return retained evidence. Uncertain executions require recovery.
+An unrelated journal change may retry the evidence commit after current-scope
+checks; it never reruns the process. Question DTOs are bounded and reject imported
+answers/history; reopening requires `expected_question_version`. Historical
+answers remain in audit storage but do not accumulate in current prompt bindings.

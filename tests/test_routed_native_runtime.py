@@ -272,3 +272,60 @@ class RoutedNativeRuntimeTests(unittest.TestCase):
         from workflow_lib.routing_evaluation import routing_statistics
         stats=routing_statistics(read_state(self.root)['data'],{'run_id':'run'})
         self.assertEqual(stats['escalations'],1);self.assertEqual(stats['retries'],1)
+
+    def test_enforced_probe_uses_own_attempt_pool_and_exact_retry_never_invokes_twice(self):
+        from workflow_lib.native_runtime import probe
+        self.enable_enforcement_fixture()
+        state=read_state(self.root);run=state['data']['runs']['run']
+        run['effect_policy']['max_probe_attempts']=1
+        transact(self.root,state['version'],'probe-budget',{'kind':'fixture','payload':state['data']})
+        binding=read_state(self.root)['data']['host_bindings']['b1']
+        with patch('workflow_lib.native_runtime.CodexBackend',return_value=self.backend):
+            result=probe(self.root,binding,'implementation',estimated_cost=.25,operation_id='probe-one')
+            self.assertEqual(result['status'],'allow')
+            self.assertTrue(probe(self.root,binding,'implementation',estimated_cost=.25,operation_id='probe-one')['replayed'])
+            with self.assertRaises(WorkflowError):probe(self.root,binding,'implementation',estimated_cost=.25,operation_id='probe-two')
+        self.backend.invoke.assert_called_once()
+        run=read_state(self.root)['data']['runs']['run']
+        self.assertEqual(next(iter(run['effects'].values()))['effect_kind'],'probe')
+        self.assertEqual(next(iter(run['effects'].values()))['status'],'completed')
+
+    def test_enforced_probe_missing_estimate_never_constructs_backend(self):
+        from workflow_lib.native_runtime import probe
+        self.enable_enforcement_fixture()
+        binding=read_state(self.root)['data']['host_bindings']['b1']
+        with patch('workflow_lib.native_runtime.CodexBackend') as backend:
+            with self.assertRaises(WorkflowError):probe(self.root,binding,'implementation',operation_id='unknown-probe')
+            backend.assert_not_called()
+
+    def test_dead_owned_coordinator_requires_real_stop_confirmation_and_reconciles_without_refund(self):
+        import subprocess
+        from workflow_lib.native_runtime import reconcile
+        self.enable_enforcement_fixture(limit=3)
+        script="""import json,sys,copy
+from pathlib import Path
+from unittest.mock import Mock,patch
+sys.path.insert(0,sys.argv[1])
+from workflow_lib.native_runtime import invoke
+from workflow_lib.native_models import NativeError
+backend=Mock();backend.identity.return_value={'account_key':'account','cacheable':True}
+backend.discover.return_value=json.loads(sys.argv[4])
+backend.configure.side_effect=lambda selected,*a:{'observed':copy.deepcopy(selected),'observation_source':'host-effective-configuration'}
+backend.invoke.side_effect=NativeError('unavailable')
+with patch('workflow_lib.native_runtime.CodexBackend',return_value=backend):
+ invoke(Path(sys.argv[2]),json.loads(sys.argv[3]),'owned-crash')
+"""
+        child=subprocess.run([sys.executable,'-c',script,str(ROOT/'skills/workflow/scripts'),str(self.root),
+            json.dumps({**self.request,'estimated_cost':1}),json.dumps(self.context)],capture_output=True,text=True,timeout=20)
+        self.assertEqual(child.returncode,0,child.stderr)
+        run=read_state(self.root)['data']['runs']['run'];before=copy.deepcopy(run['effects']['routed'])
+        request={'binding_id':'b1','revision':1,'invocation_id':'routed','worker_stop_confirmation':{
+            'approved':True,'actor_id':'fixture-user','worker_ref':'routed','reason':'Owned fixture coordinator and workers stopped.',
+            'provenance':{'kind':'user-message','ref':'fixture-stop-message'}}}
+        receipt=reconcile(self.root,request,'recover-owned')
+        self.assertEqual(read_state(self.root)['data']['runs']['run']['effects']['routed']['status'],'reconciled')
+        self.assertTrue(reconcile(self.root,request,'recover-owned')['replayed'])
+        after=read_state(self.root)['data']['runs']['run']['effects']['routed']
+        self.assertEqual(after['estimated_cost'],before['estimated_cost'])
+        self.assertEqual(after['claimed_at_ms'],before['claimed_at_ms'])
+        self.assertEqual(receipt['status'],'block')

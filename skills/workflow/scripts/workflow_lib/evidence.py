@@ -71,7 +71,7 @@ def repository_fingerprint(location: Path) -> dict:
 
 
 def _report(stdout: str, stderr: str = "", report_format: str = "json", red_proof_id: str | None = None,
-                     red_run_id: str | None = None) -> dict:
+                     red_run_id: str | None = None, operation_id: str | None = None) -> dict:
     if report_format == "unittest":
         import re
         result = {}
@@ -123,7 +123,7 @@ def _report(stdout: str, stderr: str = "", report_format: str = "json", red_proo
 def capture_evidence(root: Path, run_id: str, token: str, phase: str, command: list[str],
                      test_paths: list[str], target_ids: list[str], timeout: int,
                      report_format: str = "json", red_proof_id: str | None = None,
-                     red_run_id: str | None = None) -> dict:
+                     red_run_id: str | None = None, operation_id: str | None = None) -> dict:
     if phase not in {"RED", "GREEN"} or not isinstance(command, list) or not command or any(not isinstance(arg, str) for arg in command):
         raise WorkflowError("INVALID_EVIDENCE_REQUEST", "phase and argv are invalid")
     if (type(timeout) is not int or timeout <= 0 or not isinstance(test_paths, list)
@@ -132,8 +132,18 @@ def capture_evidence(root: Path, run_id: str, token: str, phase: str, command: l
             or any(not isinstance(name, str) or not name for name in target_ids)):
         raise WorkflowError("INVALID_EVIDENCE_REQUEST", "timeout, test paths, and target IDs are required")
     root = Path(root).expanduser().resolve()
+    from .tool_execution import cached,execution,CURRENT_TOOL
+    client_hash=__import__('hashlib').sha256(__import__('json').dumps([run_id,token,phase,command,test_paths,target_ids,timeout,report_format,red_proof_id,red_run_id],sort_keys=True).encode()).hexdigest()
+    if operation_id and CURRENT_TOOL.get() is None:
+        previous=cached(root,run_id,operation_id,client_hash)
+        if previous:return previous
     state = read_current(root, run_id=run_id, run_ids=(red_run_id,) if red_run_id else ())
     run = state["data"].get("runs", {}).get(run_id)
+    if run and enforcement_version(run) is not None and CURRENT_TOOL.get() is None:
+        with execution(root,run_id,token,operation_id,client_hash) as tool:
+            result=capture_evidence(root,run_id,token,phase,command,test_paths,target_ids,timeout,report_format,red_proof_id,red_run_id,operation_id)
+            tool['result']=result
+            return result
     active = run.get("active_attempt") if run else None
     if not active or active.get("token") != token:
         raise WorkflowError("ATTEMPT_TOKEN_INVALID", "evidence requires the active attempt token")
@@ -180,8 +190,11 @@ def capture_evidence(root: Path, run_id: str, token: str, phase: str, command: l
         before_observation = source_observation({**run, 'repositories': run.get('repositories') or {repo_id: repository}})
     started = _now()
     try:
+        from .tool_execution import started as mark_tool_started,ended as mark_tool_ended
+        mark_tool_started()
         completed = subprocess.run(command, cwd=repo, capture_output=True,
                                    timeout=timeout, check=False)
+        mark_tool_ended()
         exit_code, stdout_raw, stderr_raw = completed.returncode, completed.stdout, completed.stderr
     except subprocess.TimeoutExpired as exc:
         finished = _now()
@@ -249,6 +262,8 @@ def capture_evidence(root: Path, run_id: str, token: str, phase: str, command: l
         protection_after = assert_protection_current(run)
         if protection_before != protection_after:
             raise WorkflowError('PROTECTION_CHANGED_DURING_VERIFICATION', 'Protected verification context changed during execution; renew its proof contract.')
+        from .tool_execution import proof_context
+        proof.update(proof_context(run))
         proof['protection_receipts'] = protection_after
         integrity = {**parse_test_evidence(stdout, stderr, report_format), 'phase': phase,
             'contract': integrity_contract, 'semantic_status': 'pending-review', 'source_identity': observation['source_identity'],
@@ -275,6 +290,16 @@ def capture_evidence(root: Path, run_id: str, token: str, phase: str, command: l
         proof['source_observation'] = observation
     proof.update(verification_contract=contract, contract_hash=digest(contract))
     if red_source is not None: proof['red_source'] = red_source
-    response = transact(root, state["version"], f"verification:{proof['id']}",
-                        {"kind": "verification.recorded", "payload": {"run_id": run_id, "proof": proof}})
-    return proof
+    for retry in range(4):
+        if enforcement_version(run) is not None:
+            from .tool_execution import proof_context
+            state = read_current(root, run_id=run_id)
+            proof_context(state['data']['runs'][run_id])
+        try:
+            transact(root, state["version"], f"verification:{proof['id']}",
+                     {"kind": "verification.recorded", "payload": {"run_id": run_id, "proof": proof}})
+            return proof
+        except WorkflowError as exc:
+            if exc.code != 'STALE_STATE' or enforcement_version(run) is None or retry == 3:
+                raise
+    raise AssertionError('unreachable')

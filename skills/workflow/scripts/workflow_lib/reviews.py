@@ -185,6 +185,12 @@ def record_review(run: dict, package_hash: str, reviewer: dict, report: dict) ->
     for prior_role, entries in run.get("reviews", {}).items():
         if prior_role != role and any(entry.get("actor_id") == actor for entry in entries):
             raise ValueError("reviewer actor IDs must be distinct across review roles")
+    if enforcement_version(run)==1:
+        for prior_role, entries in run.get('reviews',{}).items():
+            for prior in entries:
+                if prior.get('invocation_ref')==invocation:raise ValueError('Each assessment requires a fresh actual invocation.')
+                if prior.get('actor_id')==actor and prior.get('perspective')!=report.get('perspective'):
+                    raise ValueError('Different perspectives require distinct actual actors.')
     limits = {"item": 4, "branch": 1, "acceptance": 1}
     corrections = sum(entry.get("verdict") == "request-changes"
                       and (role != "item" or entry.get("item_id") == report.get("item_id"))

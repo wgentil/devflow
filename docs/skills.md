@@ -118,5 +118,6 @@ remains 1. The harness reports runtime/recovery needs without requiring users to
 understand formats or command names.
 
 The [Python enforcement foundation](reference/python-enforcement.md) is an
-in-progress helper extension, not a separate skill or a complete replacement for
-workflow verification and review.
+opt-in helper extension covering workflow and standalone enforcement primitives.
+It is not a separate skill; specialist orchestration and automatic repair remain
+companion work.

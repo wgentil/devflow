@@ -61,6 +61,18 @@ def supplemental_domain_streams():
     yield pair('domain.enforcement.adopt', {'runs': {'r': {'id': 'r', 'state_version': 0,
         'status': 'active', 'active_attempt': None}}}, {'run_id': 'r', 'authorization': {
         'approved': True, 'actor_id': 'fixture-user', 'run_id': 'r', 'state_version': 0}})
+    # Pure historical termination facts; no live process observation during replay.
+    import hashlib
+    confirmation={'approved':True,'actor_id':'fixture-user','worker_ref':'worker',
+        'reason':'all workers/children stopped','provenance':{'kind':'user-message','ref':'fixture-stop'}}
+    observation={'effect_id':'e','worker_ref':'worker','owner_pid':12345,'owner_absent':True,
+        'lease_key':hashlib.sha256(b'r:e').hexdigest(),'basis':'os-owner-stopped','now_ms':20,
+        'evidence_refs':['fixture-stop'],'confirmation':confirmation}
+    yield pair('domain.host.native-reconcile',{'host_bindings':{'b':{'binding_id':'b','run_id':'r',
+        'status':'active','revision':1,'role':'implementer','actor_id':'fixture-author'}},'runs':{'r':{
+        'id':'r','effects':{'e':{'effect_id':'e','status':'uncertain','owner_pid':12345,'worker_ref':'worker',
+            'claimed_at_ms':10,'history':[]}},'native_invocations':{}}}},
+        {'binding_id':'b','revision':1,'invocation_id':'e','observation_id':'termination','observation':observation})
     yield pair('domain.improve.trace-enable', {'runs': {'r': {'id': 'r'}}},
                {'run_id': 'r', 'actor_id': 'owner'})
     yield pair('domain.stats.legacy-import', {}, {'record': {

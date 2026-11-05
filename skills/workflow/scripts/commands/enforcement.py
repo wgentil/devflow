@@ -10,10 +10,15 @@ from workflow_lib.store import WorkflowError
 def register_commands(parser):
     group = parser.add_parser('enforcement')
     actions = group.add_subparsers(dest='enforcement_command', required=True)
-    for name in ('decide', 'adopt', 'question', 'answer', 'propose-fix', 'close-finding', 'configure-effects', 'extend-effects', 'claim', 'effect-transition', 'observe-source', 'protect-inventory', 'propose-protected-change', 'approve-protected-change'):
+    for name in ('decide', 'adopt', 'question', 'answer', 'propose-fix', 'close-finding', 'configure-effects', 'extend-effects', 'claim', 'effect-transition', 'observe-source', 'protect-inventory', 'reconcile-tool', 'propose-protected-change', 'approve-protected-change'):
         command = actions.add_parser(name)
         add_journal_options(command)
         command.add_argument('--input', required=True)
+    for name in ('session-verify','session-prepare','session-review','session-complete','session-protect-inventory','session-reconcile'):
+        command=actions.add_parser(name)
+        command.add_argument('--session',required=True)
+        command.add_argument('--operation-id',required=True)
+        if name in {'session-verify','session-review','session-protect-inventory','session-reconcile'}:command.add_argument('--input',required=True)
     for name in ('session-init', 'session-event', 'session-status'):
         command = actions.add_parser(name)
         command.add_argument('--session', required=True)
@@ -27,12 +32,33 @@ def dispatch(parsed):
     if parsed.enforcement_command.startswith('session-'):
         from workflow_lib.review_sessions import initialize_session, read_session, transact_session
         path = Path(parsed.session)
+        if parsed.enforcement_command in {'session-verify','session-prepare','session-review','session-complete','session-protect-inventory','session-reconcile'}:
+            from workflow_lib.session_evidence import capture,prepare,record_review,complete
+            name=parsed.enforcement_command
+            if name=='session-prepare':return prepare(path,parsed.operation_id)
+            if name=='session-complete':return complete(path,parsed.operation_id)
+            request=json.loads(Path(parsed.input).read_text(encoding='utf-8'))
+            if name=='session-verify':return capture(path,request['phase'],parsed.operation_id,request.get('timeout_seconds',300))
+            if name=='session-review':return record_review(path,request,parsed.operation_id)
+            if name=='session-reconcile':
+                from workflow_lib.enforcement_recovery import reconcile_session
+                return reconcile_session(path,request['execution_id'],request['worker_stop_confirmation'],parsed.operation_id)
+            from workflow_lib.session_evidence import _retry,_commit
+            prior=_retry(path,parsed.operation_id,'inventory',request)
+            if prior:return prior
+            state=read_session(path);subject=state['subject']
+            from workflow_lib.protected_changes import snapshot_protected
+            record={**request,'baseline':snapshot_protected(Path(subject['repositories'][request['repo_id']]['location']),request['inventory'])}
+            return _commit(path,state,parsed.operation_id,'protect-inventory',record,client=request,kind='inventory')
         if parsed.enforcement_command == 'session-status': return read_session(path)
         request = json.loads(Path(parsed.input).read_text(encoding='utf-8'))
         if parsed.enforcement_command == 'session-init': return initialize_session(path, request)
         return transact_session(path, parsed.expected_version, parsed.operation_id, request)
 
     request = json.loads(Path(parsed.input).read_text(encoding='utf-8'))
+    if parsed.enforcement_command=='reconcile-tool':
+        from workflow_lib.enforcement_recovery import reconcile_tool
+        return reconcile_tool(Path(parsed.root),request['run_id'],request['record']['execution_id'],request['record']['worker_stop_confirmation'],parsed.operation_id)
     if parsed.enforcement_command == 'close-finding':
         if not parsed.root:
             raise WorkflowError('CONTROL_ROOT_REQUIRED', 'mutations require --root')
@@ -49,7 +75,7 @@ def dispatch(parsed):
         from workflow_lib.finding_closure import validate_closure
         from workflow_lib.enforcement_live import assert_source_current, assert_protection_current
         from workflow_lib.host_completion import package_current
-        validate_closure(subject, request['record'])
+        closure=validate_closure(subject, request['record'])
         assert_source_current(subject)
         protection_receipts = assert_protection_current(subject)
         candidate = subject.get('corrections', {}).get(request['record']['finding_id'], {})
@@ -58,11 +84,10 @@ def dispatch(parsed):
             evidence = subject.get('verification_proofs', {}).get(verifier.get('evidence_id'), {})
             if evidence.get('kind') == 'code' and evidence.get('protection_receipts') != protection_receipts:
                 raise WorkflowError('FINDING_CLOSURE_BLOCKED', 'Renew code proof after a protected verification-context change.')
-        review = next(r for rows in subject.get('reviews', {}).values() for r in rows
-                      if r.get('review_id') == request['record']['review_id'])
-        package = subject.get('review_packages', {}).get(review.get('package_hash'))
-        if not package or not package_current(subject, package):
-            raise WorkflowError('FINDING_CLOSURE_BLOCKED', 'Current actual review inputs required before closing the finding.')
+        for review in (r for rows in subject.get('reviews',{}).values() for r in rows if r.get('review_id') in closure['review_ids']):
+            package=subject.get('review_packages',{}).get(review['package_hash'])
+            if not package or not package_current(subject,package):
+                raise WorkflowError('FINDING_CLOSURE_BLOCKED','Current actual review inputs required before closing the finding.')
         parsed.expected_version = state['version']
     if parsed.enforcement_command == 'protect-inventory':
         from workflow_lib.protected_changes import snapshot_protected

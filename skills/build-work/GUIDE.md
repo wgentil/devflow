@@ -134,13 +134,15 @@ non-success labels likewise never complete work. No proof is selected implicitly
 
 Explicitly adopted runs apply versioned clarification checks at affected action
 boundaries. Preserve actual user-answer provenance and renew stale preparation;
-read-only assessments remain possible. The complete enforcement and review/repair
-design is still in progress; see [current scope and developer contracts](../../docs/reference/python-enforcement.md).
+read-only assessments remain possible. The enforcement foundation is opt-in; specialist orchestration and automatic
+repair belong to the companion implementation; see [current scope and developer contracts](../../docs/reference/python-enforcement.md).
 
 Adopted code verification requires declared governing protection inventories.
 Capture binds compact protected-content receipts before and after execution;
 changing that context requires renewed linked evidence. Raw RED/GREEN remains
-pending semantic approval by the existing independent review round.
+pending semantic approval by the existing independent review round. Code and
+typed tools reserve a durable execution identity; an exact operation retry reuses
+the result. Uncertain executions require reconciliation before replacement.
 
 ```mermaid
 flowchart LR
@@ -148,7 +150,8 @@ flowchart LR
     Check -->|Affected unresolved question| Ask[Record actual user answer]
     Ask --> Check
     Check -->|Allowed| Protect[Validate current declared protection context]
-    Protect --> Capture[Capture raw RED and GREEN evidence]
+    Protect --> Claim[Reserve durable tool execution]
+    Claim --> Capture[Capture raw RED and GREEN evidence]
     Capture --> Review[Existing independent review assesses test oracle]
     Review --> Existing[Existing verification and review gates]
 ```

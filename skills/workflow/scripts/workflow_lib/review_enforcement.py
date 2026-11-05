@@ -2,7 +2,7 @@
 from pathlib import Path
 from copy import deepcopy
 from .document_units import digest
-from .clarifications import clarification_binding, relevant_questions
+from .clarifications import clarification_binding, current_questions
 from .test_inputs import capture_input_bindings
 from .store import WorkflowError
 
@@ -31,9 +31,12 @@ def review_bindings(subject: dict, role: str, item_id: str | None = None, *, liv
                 observed[proof['id']] = {'unavailable': True}
         else: observed[proof['id']] = expected
     scope = {'item_id': item_id} if item_id is not None else {}
+    from .finding_closure import finding_hash
+    findings={f['id']:{'finding_hash':finding_hash(f),'finding':{k:v for k,v in f.items() if k not in {'status','resolution'}}}
+        for f in subject.get('unresolved_findings',[]) if item_id is None or not f.get('item_id') or f['item_id']==item_id}
     return {'logical': {'policy_hash': digest(subject.get('enforcement', {})), 'role': role,
         'item_id': item_id, 'clarifications': clarification_binding(subject, scope),
-        'question_answers': deepcopy(relevant_questions(subject, scope)), 'proofs': proofs},
+        'question_answers': deepcopy(current_questions(subject, scope)), 'proofs': proofs,'findings':findings},
         'observed_inputs': observed}
 
 

@@ -1,6 +1,7 @@
 """Live reservation adapter; journal replay remains pure and never dispatches."""
 from pathlib import Path
 import math
+import os
 import time
 from .store import WorkflowError, transact
 from .storage_access import read_current, operation_lookup
@@ -13,7 +14,7 @@ def binding_owner(binding: dict) -> dict:
 
 
 def reserve_dispatch(root: Path, run_id: str, effect_id: str, exclusive_scope: str,
-                     estimated_cost: float | None, operation_id: str, action_scope: dict, *, owner_binding: dict | None = None) -> dict:
+                     estimated_cost: float | None, operation_id: str, action_scope: dict, *, owner_binding: dict | None = None, effect_kind: str = 'work', client_request_hash: str | None = None) -> dict:
     root = Path(root)
     claim_id = operation_id + ':enforcement-claim'
     if operation_lookup(root, claim_id):
@@ -27,8 +28,9 @@ def reserve_dispatch(root: Path, run_id: str, effect_id: str, exclusive_scope: s
         raise WorkflowError('EFFECT_ALREADY_CLAIMED', 'Effect identity already has a reservation; reconcile before replacement.')
     observation = source_observation(subject)
     request = {'run_id': run_id, 'record': {'effect_id': effect_id, 'scope': exclusive_scope,
-        'estimated_cost': estimated_cost, 'now_ms': int(time.time()*1000),
-        'action_scope': action_scope, **observation,
+        'estimated_cost': estimated_cost, 'owner_pid':os.getpid(), 'now_ms': int(time.time()*1000),
+        'action_scope': action_scope, 'effect_kind': effect_kind, **observation,
+        **({'client_request_hash': client_request_hash} if client_request_hash is not None else {}),
         **({'owner_binding': binding_owner(owner_binding)} if owner_binding is not None else {})}}
     response = transact(root, state['version'], claim_id,
         {'kind': 'domain.enforcement.claim', 'payload': {'request': request}})

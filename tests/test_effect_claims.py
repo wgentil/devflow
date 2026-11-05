@@ -102,3 +102,20 @@ class ClaimTests(unittest.TestCase):
         with self.assertRaises(WorkflowError):
             api.transition_effect(subject,{'effect_id':'one','status':'reconciled','now_ms':13,
                 'termination_receipt':{'effect_id':'one','worker_ref':'worker','basis':'os-owner-stopped'}})
+
+    def test_probe_and_work_have_separate_attempt_counts_but_shared_spend_and_clock(self):
+        api=self.api();subject=self.subject()
+        subject['effect_policy'].update(max_attempts=1,max_probe_attempts=1,max_estimated_cost=4)
+        probe={**self.request('probe','probe'),'effect_kind':'probe'}
+        subject=api.claim_effect(subject,probe)
+        subject=api.transition_effect(subject,{'effect_id':'probe','status':'failed','now_ms':11})
+        subject=api.claim_effect(subject,self.request('work','work'))
+        self.assertEqual(subject['effects_started_ms'],10)
+        with self.assertRaises(WorkflowError):api.claim_effect(subject,{**probe,'effect_id':'another-probe'})
+        with self.assertRaises(WorkflowError):api.claim_effect(subject,self.request('another-work','other'))
+        self.assertEqual(sum(e['estimated_cost'] for e in subject['effects'].values()),4)
+
+    def test_observed_overrun_is_charged_before_new_reservations(self):
+        api=self.api();subject=api.claim_effect(self.subject(),{**self.request(),'estimated_cost':1})
+        subject=api.transition_effect(subject,{'effect_id':'one','status':'failed','now_ms':11,'observed_cost':2})
+        with self.assertRaises(WorkflowError):api.claim_effect(subject,self.request('two','b'))

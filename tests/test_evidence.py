@@ -100,7 +100,18 @@ raise SystemExit(0 if outcome=='passed' else 1)
         run['plan']['work_items'][0].update(verification_inputs=['test_target.py'],verification_target_ids=['test_target'],requirement_ids=['R1'])
         transact(self.root,state['version'],'enforce',{'kind':'fixture','payload':{'runs':{'run-1':run}}})
         argv=[sys.executable,'test_target.py']
-        red=self.capture(self.root,'run-1','attempt-1','RED',argv,['test_target.py'],['test_target'],10)
+        from unittest.mock import patch
+        real_run=subprocess.run;executions=[]
+        def concurrent_metadata(command,*args,**kwargs):
+            result=real_run(command,*args,**kwargs)
+            if command==argv:
+                executions.append(command)
+                current=read_state(self.root)
+                transact(self.root,current['version'],'unrelated-metadata',{'kind':'fixture','payload':{'unrelated_note':'independent'}})
+            return result
+        with patch('workflow_lib.evidence.subprocess.run',side_effect=concurrent_metadata):
+            red=self.capture(self.root,'run-1','attempt-1','RED',argv,['test_target.py'],['test_target'],10)
+        self.assertEqual(len(executions),1,'A metadata race must not rerun the test process.')
         (self.repo/'value.txt').write_text('30')
         subprocess.run(['git','commit','-qam','fix retention\n\nWork-Item: W1'],cwd=self.repo,check=True)
         green=self.capture(self.root,'run-1','attempt-1','GREEN',argv,['test_target.py'],['test_target'],10)
@@ -109,6 +120,7 @@ raise SystemExit(0 if outcome=='passed' else 1)
         self.assertTrue((self.root/green['stdout_ref']).is_file())
         self.assertEqual(green['integrity']['semantic_status'],'pending-review')
         self.assertEqual(set(green['protection_receipts']),{'repo-1'})
+        self.assertTrue(green.get('execution_id'))
         from workflow_lib.gates import _required_proof
         current_run=read_state(self.root)['data']['runs']['run-1']
         self.assertIsNotNone(_required_proof(current_run,current_run['plan']['work_items'][0]))
@@ -162,7 +174,8 @@ raise SystemExit(0 if outcome=='passed' else 1)
             assessment={'package_hash':package['package_hash'],'verdict':'pass','findings':[]}
             if role=='branch':
                 assessment['test_oracles']=report['test_oracles']
-                assessment['closure_dispositions']=[{'finding_id':'retention-defect',
+                from workflow_lib.finding_closure import finding_hash
+                assessment['closure_dispositions']=[{'finding_id':'retention-defect','finding_hash':finding_hash(run['unresolved_findings'][0]),
                     'source_identity':green['source_identity'],'obligations':['retention-rule'],
                     'disposition':'resolved','proof_ids':[green['id']],
                     'proof_applicability':{green['id']:['retention-rule']}}]

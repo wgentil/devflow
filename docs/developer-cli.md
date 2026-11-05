@@ -798,3 +798,9 @@ project or global Git configuration is not changed.
 See [Python enforcement foundation](reference/python-enforcement.md) for additive
 commands, receipt contracts, standalone session storage and current limitations.
 These developer interfaces do not change plugin-user installation requirements.
+
+Adopted verification can use `--operation-id` for durable tool retry identity.
+Model-validation probes take separate attempt allowance but share work cost/time
+limits; `host model-probe` requires `--estimated-cost` and `--operation-id` under
+the selected profile. The foundation reference documents standalone verification,
+review, completion and explicit native/tool/session recovery commands.

@@ -61,6 +61,9 @@ def apply_host_event(state: dict, kind: str, request: dict) -> dict:
                   'authorization': deepcopy(authorization)}
         goals[binding['binding_id']] = record
         return deepcopy(record)
+    if kind=='native-reconcile':
+        from .enforcement_recovery import apply_native
+        return apply_native(state,req)
     if kind in {'native-start','native-finish'}:return apply_native_event(state,kind,req)
     if kind == 'legacy-adopt':
         require(req.get('adopt_legacy') is True and not any(b['run_id']==req.get('run_id') for b in state.get('host_bindings',{}).values()), 'Legacy adoption is explicit and only for pre-binding runs.')
@@ -322,6 +325,7 @@ def apply_native_event(state,kind,req):
         if enforcement_version(run) is not None:
             from .effect_claims import transition_effect
             require(req.get('enforcement_effect_id') == identifier, 'Native launch requires its exact enforcement claim.')
+            require(run.get('effects', {}).get(identifier, {}).get('effect_kind', 'work') == 'work', 'A probe reservation cannot launch implementation or review work.')
             from .effect_dispatch import binding_owner
             require(run.get('effects', {}).get(identifier, {}).get('owner_binding') == binding_owner(binding),
                     'Native launch must own the reservation for this exact attachment and scope.')

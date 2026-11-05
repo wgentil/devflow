@@ -51,6 +51,8 @@ def require_action(decision: dict) -> None:
 
 
 def adopt_enforcement(run: dict, authorization: dict) -> dict:
+    if run.get('status') in {'complete', 'delivered', 'discarded'}:
+        raise WorkflowError('SCOPE_TERMINAL', 'Terminal scopes cannot adopt a new contract.')
     if (authorization.get('approved') is not True or not authorization.get('actor_id')
             or authorization.get('run_id') != run.get('id')
             or authorization.get('state_version') != run.get('state_version')):
@@ -83,7 +85,9 @@ def enforcement_version(subject: dict):
     policy = subject.get('enforcement')
     if not isinstance(policy, dict): return None
     protocol = policy.get('protocol')
-    if protocol == 'devflow.python-enforcement/v1': return policy.get('policy_version')
+    if protocol == 'devflow.python-enforcement/v1':
+        value = policy.get('policy_version')
+        return value if type(value) is int else 'unsupported-policy'
     if isinstance(protocol, str) and protocol.startswith('devflow.python-enforcement/'):
         return 'unsupported:' + protocol
     return None
@@ -95,8 +99,9 @@ def subject_decision(subject: dict, action: str, scope: dict) -> dict:
         return evaluate_action(action, scope, {'policy_version': None})
     from .clarifications import clarification_blockers, clarification_binding
     blockers = clarification_blockers(subject, scope) if action != 'review-report' else []
-    if action in {'completion', 'delivery'}:
-        for identifier, effect in subject.get('effects', {}).items():
+    if action in {'completion', 'delivery','finding'}:
+        active = {**subject.get('effects',{}),**{'tool:'+k:v for k,v in subject.get('active_executions',{}).items()}, **{'execution:'+k:v for k,v in subject.get('executions',{}).items()}}
+        for identifier, effect in active.items():
             if effect.get('status') not in {'completed', 'failed', 'reconciled'}:
                 item_id = effect.get('action_scope', {}).get('item_id')
                 synthetic = {'id': 'effect:' + identifier, 'version': 1, 'status': 'pending',

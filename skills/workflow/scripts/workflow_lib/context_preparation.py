@@ -202,10 +202,10 @@ def _prepare_context(root:Path,run:dict,envelope:dict,item_ids:list[str],*,stage
     scoped_envelope=deepcopy(envelope)
     from .action_policy import enforcement_version
     if enforcement_version(actual) is not None:
-        from .clarifications import relevant_questions
+        from .clarifications import current_questions
         records = {}
         for selected_id in item_ids or [None]:
-            for question in relevant_questions(actual, {'item_id': selected_id} if selected_id else {}):
+            for question in current_questions(actual, {'item_id': selected_id} if selected_id else {}):
                 records[question['id']] = deepcopy(question)
         if records:
             scoped_envelope['clarifications'] = {'required': True, 'binding': digest(records),

@@ -126,3 +126,13 @@ class ClarificationTests(unittest.TestCase):
                 _apply_event({'data':{'runs':{'r':subject}}},{'kind':'run.attempt.issued',
                     'payload':{'run_id':'r','attempt':{'item_id':item_id,'token':'fresh',
                         'state_version':2,'status':'active','result':None}}})
+
+    def test_question_cannot_import_answer_history_or_reopen_a_stale_version(self):
+        api=self.api()
+        for extra in ({'answer':{'answer':'invented'}},{'history':[{'status':'answered'}]},{'text':'x'*70000}):
+            with self.subTest(extra=list(extra)),self.assertRaises(WorkflowError):
+                api.record_question(self.subject(),{**self.question(),**extra})
+        subject=api.record_question(self.subject(),self.question())
+        with self.assertRaises(WorkflowError):api.record_question(subject,self.question())
+        reopened=api.record_question(subject,{**self.question(),'expected_question_version':1})
+        self.assertEqual(reopened['clarifications']['q']['version'],2)

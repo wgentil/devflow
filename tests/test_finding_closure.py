@@ -19,6 +19,10 @@ class ClosureTests(unittest.TestCase):
                 'fresh':True,'verdict':'pass','package_hash':'pkg','closure_dispositions':[
                     {'finding_id':'f','source_identity':'sha','obligations':['o1','o2'],'disposition':'resolved','proof_ids':['p'],'proof_applicability':{'p':['o1','o2']}}]}]},
             'review_packages':{'pkg':{'package_hash':'pkg','role':'branch','source_identity':'sha'}}}
+        from workflow_lib.finding_closure import finding_hash
+        current_hash=finding_hash(subject['unresolved_findings'][0])
+        subject['corrections']['f']['finding_hash']=current_hash
+        subject['reviews']['branch'][0]['closure_dispositions'][0]['finding_hash']=current_hash
         from workflow_lib.review_enforcement import review_bindings
         subject['review_packages']['pkg']['enforcement_bindings']=review_bindings(subject,'branch')
         return subject
@@ -41,7 +45,7 @@ class ClosureTests(unittest.TestCase):
         s=self.fixture();s['corrections']['f']['proof_ids']=[]
         d=s['reviews']['branch'][0]['closure_dispositions'][0];d['proof_ids']=[]
         with self.assertRaises(WorkflowError):self.validate(s)
-        d['execution_inapplicable']={'reason':'Prose defect','evidence_refs':['docs/file:1']}
+        d['execution_inapplicable']={'reason':'Prose defect','evidence_refs':['package:pkg']}
         self.assertEqual(self.validate(s)['status'],'resolved')
     def test_waiver_is_not_verified_repair(self):
         s=self.fixture();s['reviews']['branch'][0]['closure_dispositions'][0]['disposition']='waived'
@@ -67,3 +71,41 @@ class ClosureTests(unittest.TestCase):
     def test_individual_resolution_can_be_recorded_in_request_changes_assessment(self):
         subject=self.fixture();subject['reviews']['branch'][0]['verdict']='request-changes'
         self.assertEqual(self.validate(subject)['status'],'resolved')
+
+    def test_multi_perspective_closure_requires_distinct_current_invocations(self):
+        import copy
+        subject=self.fixture();subject['unresolved_findings'][0]['required_perspectives']=['code','security']
+        first=subject['reviews']['branch'][0];first['perspective']='code'
+        other=copy.deepcopy(first);other.update(review_id='security-review',actor_id='security-actor',invocation_ref='security-call',perspective='security')
+        subject['reviews']['branch'].append(other)
+        from workflow_lib.finding_closure import validate_closure,finding_hash
+        from workflow_lib.review_enforcement import review_bindings
+        subject['corrections']['f']['finding_hash']=finding_hash(subject['unresolved_findings'][0])
+        for r in subject['reviews']['branch']:r['closure_dispositions'][0]['finding_hash']=finding_hash(subject['unresolved_findings'][0])
+        subject['review_packages']['pkg']['enforcement_bindings']=review_bindings(subject,'branch')
+        result=validate_closure(subject,{'finding_id':'f','review_ids':['rev','security-review']})
+        self.assertEqual(set(result['review_ids']),{'rev','security-review'})
+        other['actor_id']=first['actor_id']
+        with self.assertRaises(WorkflowError):validate_closure(subject,{'finding_id':'f','review_ids':['rev','security-review']})
+
+    def test_changed_finding_contract_cannot_reuse_old_candidate_and_disposition(self):
+        subject=self.fixture()
+        from workflow_lib.finding_closure import propose_correction
+        subject=propose_correction(subject,{'finding_id':'f','source_identity':'sha','proof_ids':['p'],'rationale':'fixture'})
+        subject['unresolved_findings'][0]['description']='A different failure with the same ID.'
+        with self.assertRaises(WorkflowError):self.validate(subject)
+
+    def test_nonwaivable_finding_and_pending_business_question_cannot_be_waived(self):
+        from workflow_lib.gates import waive_finding
+        from workflow_lib.store import _apply_event
+        subject=self.fixture();subject['unresolved_findings'][0]['non_waivable']=True
+        auth={'approved':True,'run_id':'r','finding_id':'f','scope':'fixture','actor_id':'fixture-user','reason':'waive'}
+        with self.assertRaises((ValueError,WorkflowError)):waive_finding(subject,'f',auth)
+        with self.assertRaises(WorkflowError):_apply_event({'data':{'runs':{'r':subject}}},{'kind':'finding.waived',
+            'payload':{'run_id':'r','finding_id':'f','authorization':auth}})
+
+        subject['unresolved_findings'][0].pop('non_waivable')
+        subject['clarifications']={'business-rule':{'id':'business-rule','version':1,'status':'pending','scope':None}}
+        with self.assertRaises(WorkflowError):waive_finding(subject,'f',auth)
+        with self.assertRaises(WorkflowError):_apply_event({'data':{'runs':{'r':subject}}},{'kind':'finding.waived',
+            'payload':{'run_id':'r','finding_id':'f','authorization':auth}})

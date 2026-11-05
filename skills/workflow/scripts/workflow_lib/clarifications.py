@@ -1,5 +1,6 @@
 """Versioned questions and recorded user answers; no business-rule inference."""
 from copy import deepcopy
+import json
 from .store import WorkflowError
 
 
@@ -9,10 +10,18 @@ def authority_binding(subject: dict) -> tuple[str, str | None]:
     return 'spec_hash', subject.get('plan', {}).get('spec_hash')
 
 
+def bounded(record, allowed=None):
+    try:
+        if not isinstance(record,dict) or allowed is not None and set(record)-set(allowed):raise ValueError()
+        if len(json.dumps(record,allow_nan=False).encode())>262144:raise ValueError()
+    except (ValueError,TypeError):raise WorkflowError('INVALID_CLARIFICATION','Bounded finite clarification fields required; authority/history cannot be imported.')
+
+
 def record_question(subject: dict, request: dict) -> dict:
+    bounded(request,{'id','text','scope','source_identity','spec_hash','contract_hash','expected_question_version'})
     authority_key, authority_hash = authority_binding(subject)
     if (not isinstance(request.get('id'), str) or not request['id'].strip()
-            or not isinstance(request.get('text'), str) or not request['text'].strip()
+            or not isinstance(request.get('text'), str) or not request['text'].strip() or len(request['text'].encode())>65536
             or not request.get('source_identity') or not authority_hash or request.get(authority_key) != authority_hash):
         raise WorkflowError('INVALID_QUESTION', 'Question needs identity, text and current source/spec binding.')
     scope = request.get('scope')
@@ -22,10 +31,14 @@ def record_question(subject: dict, request: dict) -> dict:
     updated = deepcopy(subject)
     questions = updated.setdefault('clarifications', {})
     prior = questions.get(request['id'])
+    if prior and request.get('expected_question_version')!=prior['version']:
+        raise WorkflowError('QUESTION_VERSION_CONFLICT','Reopening requires the exact current question version.')
+    if not prior and len(questions)>=256:raise WorkflowError('CLARIFICATION_LIMIT','Scope or archive questions before adding more.')
     row = deepcopy(request)
     row.update(version=prior['version']+1 if prior else 1, status='pending')
     if prior:
         row['history'] = prior.get('history', []) + [{k: v for k,v in prior.items() if k != 'history'}]
+    bounded(row)
     questions[request['id']] = row
     invalidate_question_evidence(updated, request['id'])
     updated['enforcement_revision'] = subject.get('enforcement_revision', 0)+1
@@ -33,6 +46,7 @@ def record_question(subject: dict, request: dict) -> dict:
 
 
 def record_answer(subject: dict, request: dict) -> dict:
+    bounded(request,{'id','question_version','answer','actor_id','provenance','material','spec_hash','contract_hash'})
     authority_key, _ = authority_binding(subject)
     question = subject.get('clarifications', {}).get(request.get('id'))
     provenance = request.get('provenance', {})
@@ -67,9 +81,13 @@ def relevant_questions(subject: dict, scope: dict) -> list[dict]:
             if target not in graph or unknown or row.get('scope') is None or ancestors.intersection(row['scope'])]
 
 
+def current_questions(subject: dict, scope: dict) -> list[dict]:
+    return [{k:v for k,v in row.items() if k!='history'} for row in relevant_questions(subject,scope)]
+
+
 def clarification_binding(subject: dict, scope: dict) -> str:
     from .document_units import digest
-    return digest({row['id']: row for row in relevant_questions(subject, scope)})
+    return digest({row['id']: row for row in current_questions(subject, scope)})
 
 
 def clarification_blockers(subject: dict, scope: dict) -> list[dict]:

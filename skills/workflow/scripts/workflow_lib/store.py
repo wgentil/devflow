@@ -95,7 +95,7 @@ def _apply_event(state: dict, event: dict, *, metrics_source_hash=None) -> None:
         return
     if kind in {'run.attempt.issued','run.attempt.abandoned','run.result.recorded','run.item.amended','run.discarded','review.package.prepared'}:
         run = data.get('runs', {}).get(payload.get('run_id'), {})
-        if any(record.get('status') == 'running' for record in run.get('native_invocations', {}).values()):
+        if run.get('active_executions') or any(record.get('status') == 'running' for record in run.get('native_invocations', {}).values()):
             raise WorkflowError('NATIVE_INVOCATION_ACTIVE', 'Stop or finish native work before changing the attempt.')
     action = {'run.attempt.issued': 'attempt', 'run.reverification.started': 'attempt',
               'run.result.recorded': 'completion', 'verification.recorded': 'proof',
@@ -241,6 +241,8 @@ def _apply_event(state: dict, event: dict, *, metrics_source_hash=None) -> None:
                     or select_red_source(data,run['id'],proof['item_id'],contract,source.get('proof_id'),source.get('run_id')) != source):
                 raise WorkflowError('INVALID_EVENT', 'Reused RED lineage differs from recorded proof.')
         if enforcement_version(run) is not None:
+            from .tool_execution import validate_execution
+            validate_execution(run,proof)
             from .test_integrity import verification_integrity_contract, validate_test_pair
             from .document_units import digest
             item = next(row for row in run['plan']['work_items'] if row['id'] == proof['item_id'])
@@ -377,12 +379,22 @@ def _apply_event(state: dict, event: dict, *, metrics_source_hash=None) -> None:
                 if (not baseline or baseline.get("phase") != "baseline" or baseline.get("token") != active["token"]
                         or baseline.get("case_set_hash") != proof.get("case_set_hash")):
                     raise WorkflowError("INVALID_EVENT", "post evaluation requires the matching baseline")
+        if enforcement_version(run) is not None:
+            from .tool_execution import validate_execution
+            from .protection_receipts import validate_receipts
+            validate_execution(run,proof);validate_receipts(run,proof.get('protection_receipts'))
+            observation=proof.get('source_observation',{})
+            from .document_units import digest
+            if observation.get('source_identity')!=digest(observation.get('snapshots',{})) or proof.get('source_identity')!=observation['source_identity']:
+                raise WorkflowError('INVALID_EVENT','Bound typed execution source required.')
+            run['source_identity']=proof['source_identity'];run['source_observation']=observation
         run["verification_proofs"][proof["id"]] = proof
         final_phase = (proof.get("kind") == "iac-apply" or
                        proof.get("kind") == "agent-evaluation" and proof.get("phase") == "post")
         if final_phase:
             run.setdefault("verifier_proofs", {})[proof["id"]] = {
-                "passed": True, "item_id": proof["item_id"], "token": proof["token"], "evidence_id": proof["id"]}
+                "passed": True, "item_id": proof["item_id"], "token": proof["token"], "evidence_id": proof["id"],
+                **({"source_identity":proof["source_identity"]} if proof.get("source_identity") else {})}
     elif kind == "review.package.prepared":
         run = data.setdefault("runs", {}).get(payload.get("run_id"))
         package = payload.get("package")
@@ -436,7 +448,7 @@ def _apply_event(state: dict, event: dict, *, metrics_source_hash=None) -> None:
                     or review.get('verdict') == 'request-changes' and not review['findings']):
                 raise WorkflowError('INVALID_EVENT','Versioned item review requires scoped findings and current attempt.')
         actors = run.setdefault("actors", {})
-        reviewer_key = review["role"] + "_reviewer"
+        reviewer_key = review["role"] + (("_"+review["perspective"]) if enforcement_version(run)==1 and review.get("perspective") else "") + "_reviewer"
         if (review.get("actor_id") in run.get("implementer_actors", []) or review.get("actor_id") == actors.get("implementer")
                 or any(key != reviewer_key and actor == review.get("actor_id") for key, actor in actors.items())):
             raise WorkflowError("INVALID_EVENT", "reviewer actor is not independent for this role")
@@ -592,6 +604,8 @@ def _apply_event(state: dict, event: dict, *, metrics_source_hash=None) -> None:
                 or authorization.get("run_id") != payload.get("run_id")
                 or authorization.get("finding_id") != payload.get("finding_id") or not authorization.get("scope")):
             raise WorkflowError("INVALID_EVENT", "finding waiver lacks explicit scoped authorization")
+        from .finding_closure import validate_waiver
+        validate_waiver(run, finding)
         finding.update({"status": "waived", "waiver": authorization})
     elif kind == "delivery.recorded":
         run = data.setdefault("runs", {}).get(payload.get("run_id"))
@@ -880,6 +894,24 @@ def _transact_once(root: Path, expected_version: int, operation_id: str, event: 
 
 
 def _guard_transaction(state: dict, event: dict) -> None:
+    request=event['payload'].get('request',event['payload'])
+    if not isinstance(request,dict):request={}
+    from .action_policy import enforcement_version
+    run=state['data'].get('runs',{}).get(request.get('run_id'),{})
+    if enforcement_version(run) is not None:
+        kind=event['kind'];record=request.get('record',{})
+        if kind=='domain.enforcement.tool-reconcile':
+            from .process_liveness import process_alive
+            owner=run.get('active_executions',{}).get(record.get('item_id'),{})
+            if not owner.get('owner_pid') or process_alive(owner['owner_pid']) is not False:
+                raise WorkflowError('EXECUTION_OWNER_MISMATCH','Coordinator must be absent before recovery.')
+        if kind=='domain.enforcement.tool-claim' and record.get('owner_pid')!=os.getpid():
+            raise WorkflowError('EXECUTION_OWNER_MISMATCH','Live tool claim must identify its actual coordinator.')
+        if kind in {'domain.enforcement.tool-finish','verification.recorded','verification.typed.recorded'}:
+            item_id=record.get('item_id') if kind.startswith('domain.') else request.get('proof',{}).get('item_id')
+            owner=run.get('active_executions',{}).get(item_id,{})
+            if owner.get('owner_pid')!=os.getpid():
+                raise WorkflowError('EXECUTION_OWNER_MISMATCH','Only the actual coordinator can record tool completion/proof; other processes require observed recovery.')
     guard = HOST_CONTEXT.get()
     if guard:
         from .hosts import validate_binding, require
@@ -889,15 +921,21 @@ def _guard_transaction(state: dict, event: dict) -> None:
             require(check_release(binding['release'],release_descriptor(),1)['status']=='allow', 'Installed helper differs from attached release; reload and refresh.', 'RELEASE_MISMATCH')
         request = event['payload'].get('request',event['payload'])
         if binding['role'] != 'implementer':
-            require(event['kind'] in {'review.package.prepared','review.recorded','domain.host.detach','domain.host.task-bind','domain.host.model-receipt','domain.host.model-interrupt','domain.host.native-start','domain.host.native-finish','domain.enforcement.claim'}, 'Reviewer binding cannot mutate implementation.')
+            require(event['kind'] in {'review.package.prepared','review.recorded','domain.host.detach','domain.host.task-bind','domain.host.model-receipt','domain.host.model-interrupt','domain.host.native-start','domain.host.native-finish','domain.host.native-reconcile','domain.enforcement.claim','domain.enforcement.probe-transition'}, 'Reviewer binding cannot mutate implementation.')
             if event['kind'] == 'domain.enforcement.claim':
                 from .effect_dispatch import binding_owner
                 record = request.get('record', {})
                 scope = {'item_id': binding['item_id']} if binding.get('item_id') else {}
                 require(record.get('owner_binding') == binding_owner(binding)
                         and record.get('action_scope') == scope
-                        and record.get('scope') == 'review:' + binding['role'] + ':' + str(binding.get('package_hash', '')),
+                        and (record.get('scope') == 'review:' + binding['role'] + ':' + str(binding.get('package_hash', ''))
+                             or record.get('effect_kind') == 'probe' and record.get('scope') == 'probe:' + binding['binding_id']),
                         'Reviewer reservation must match its exact attachment, package and item scope.')
+            if event['kind'] == 'domain.enforcement.probe-transition':
+                from .effect_dispatch import binding_owner
+                effect = state['data']['runs'][binding['run_id']].get('effects', {}).get(request.get('record', {}).get('effect_id'), {})
+                require(effect.get('effect_kind') == 'probe' and effect.get('owner_binding') == binding_owner(binding),
+                        'Reviewer can only record its own validation probe.')
             if event['kind'] == 'review.recorded':
                 review=request.get('review', {})
                 require(review.get('actor_id') == binding['actor_id'] and review.get('package_hash') == binding.get('package_hash'), 'Assessment must match reviewer attachment.')

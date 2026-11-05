@@ -25,6 +25,9 @@ def register_commands(parser):
         action.add_argument('--revision',type=int,required=True)
         action.add_argument('--stage',default='implementation')
         action.add_argument('--refresh',action='store_true')
+        if name=='model-probe':
+            action.add_argument('--estimated-cost',type=float)
+            action.add_argument('--operation-id')
     for name in ('model-run','model-reconcile'):
         native=commands.add_parser(name)
         native.add_argument('--root',required=True)
@@ -114,7 +117,7 @@ def _dispatch(parsed):
         parity=check_release(binding['release'],release_descriptor(),1)
         if parity['status']!='allow':raise WorkflowError('RELEASE_MISMATCH',parity['message'])
         from workflow_lib.native_runtime import discover, probe
-        if parsed.host_command=='model-probe':return probe(Path(parsed.root),binding,parsed.stage,parsed.refresh)
+        if parsed.host_command=='model-probe':return probe(Path(parsed.root),binding,parsed.stage,parsed.refresh,estimated_cost=parsed.estimated_cost,operation_id=parsed.operation_id)
         return discover(Path(parsed.root),binding,parsed.refresh)
     if parsed.host_command == 'check':
         from workflow_lib.host_completion import check_completion
@@ -210,7 +213,9 @@ def _dispatch(parsed):
             _identity(target)
             require(target['host']==prepared.get('target_host') and target['actor_id']==prepared.get('target_actor_id') and target['run_id']==source.get('run_id') and target['project_dir']==source.get('project_dir') and target['role']=='implementer' and (not prepared.get('target_session_id') or target['session_id']==prepared['target_session_id']), 'Destination differs from prepared target.')
             from workflow_lib.native_runtime import handoff_preflight
-            request['destination_decision'] = handoff_preflight(Path(parsed.root),state['data'],target)
+            request['destination_decision'] = handoff_preflight(Path(parsed.root),state['data'],target,
+                probe_operation_id=parsed.operation_id+':handoff-probe' if parsed.operation_id_explicit else None,
+                estimated_cost=request.get('probe_estimated_cost'),budget_owner=source)
             # Repeat reads immediately before committing; no cached source identity is sufficient.
             if release_descriptor(source_root) != source_release or release_descriptor() != installed:
                 raise WorkflowError('RELEASE_CHANGED','Package changed during transfer; source owner unchanged.')

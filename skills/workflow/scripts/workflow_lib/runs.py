@@ -130,7 +130,7 @@ def record_result(run: dict, token: str, result: dict) -> dict:
             from .test_inputs import proof_inputs_current
             if evidence.get('kind') == 'code' and not proof_inputs_current(run, evidence):
                 raise WorkflowError('VERIFICATION_STALE', 'Declared verification inputs changed after GREEN verification.')
-            if evidence.get('kind') == 'code':
+            if evidence:
                 from .enforcement_live import assert_protection_current
                 if assert_protection_current(run) != evidence.get('protection_receipts'):
                     raise WorkflowError('VERIFICATION_STALE', 'Protected verification context changed after GREEN verification.')
