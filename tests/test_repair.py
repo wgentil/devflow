@@ -24,7 +24,7 @@ class RepairDecisionTests(unittest.TestCase):
 
     def test_pending_question_blocks_repair_before_claim(self):
         run=self.run_record()
-        run['enforcement']={'policy_version':1}
+        run['enforcement']={'protocol':'devflow.python-enforcement/v1', 'policy_version':1}
         run['clarifications']={'q':{'id':'q','version':1,'status':'pending','scope':None}}
         decision=repair_decision(run,1000)
         self.assertEqual(decision['status'],'blocked')

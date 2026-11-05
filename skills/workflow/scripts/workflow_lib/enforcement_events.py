@@ -1,4 +1,6 @@
 """Pure shared enforcement mutations for workflow runs and standalone sessions."""
+
+from .action_policy import enforcement_version
 from copy import deepcopy
 from .store import WorkflowError
 
@@ -7,10 +9,25 @@ def apply_enforcement(subject: dict, action: str, record: dict) -> dict:
     from .clarifications import record_question, record_answer
     from .effect_claims import claim_effect, transition_effect
     from .finding_closure import propose_correction, validate_closure
-    if subject.get('enforcement', {}).get('policy_version') != 1:
+    if enforcement_version(subject) != 1:
         raise WorkflowError('ENFORCEMENT_REQUIRED', 'Adopt the current enforcement contract first.')
     reducers = {'question': record_question, 'answer': record_answer, 'claim': claim_effect,
                 'effect-transition': transition_effect, 'propose-fix': propose_correction}
+    if action == 'claim' and record.get('snapshots') is not None:
+        from .document_units import digest
+        if not record.get('snapshots') or record.get('source_identity') != digest(record['snapshots']):
+            raise WorkflowError('SOURCE_OBSERVATION_REQUIRED', 'Reservation source observation mismatch.')
+        observed = deepcopy(subject)
+        observed['source_identity'] = record['source_identity']
+        observed['source_observation'] = {'snapshots': deepcopy(record['snapshots']), 'source_identity': record['source_identity']}
+        return claim_effect(observed, record)
+    if action == 'effect-transition':
+        effect = subject.get('effects', {}).get(record.get('effect_id'), {})
+        if effect.get('owner_binding') and record.get('status') not in {'uncertain', 'reconciled'}:
+            safe_abort = (effect.get('status') == 'claimed' and record.get('status') == 'failed'
+                and record.get('effect_id') not in subject.get('native_invocations', {}))
+            if not safe_abort:
+                raise WorkflowError('TRANSPORT_RECEIPT_REQUIRED', 'Bound worker completion is recorded by its transport adapter; generic transitions cannot assert it.')
     if action in reducers: return reducers[action](subject, record)
     updated = deepcopy(subject)
     if action == 'protect-inventory':
@@ -26,6 +43,26 @@ def apply_enforcement(subject: dict, action: str, record: dict) -> dict:
             raise WorkflowError('PROTECTION_INVENTORY_BLOCKED', 'Exact governing inventory authorization required; existing baselines cannot be reset.')
         updated.setdefault('protected_inventories', {})[repo_id] = deepcopy(record)
         return updated
+    if action == 'propose-protected-change':
+        from .document_units import digest
+        observation = record.get('observation', {})
+        baseline = subject.get('protected_inventories', {}).get(record.get('repo_id'), {}).get('baseline')
+        if (not baseline or observation.get('before') != baseline
+                or observation.get('baseline_hash') != digest(baseline)
+                or observation.get('observation_hash') != digest({k:v for k,v in observation.items() if k != 'observation_hash'})
+                or not (observation.get('changed_paths') or observation.get('inventory_changed'))):
+            raise WorkflowError('PROTECTED_CHANGE_BLOCKED', 'Exact retained protected-change observation required.')
+        updated.setdefault('protected_change_proposals', {})[observation['observation_hash']] = deepcopy(record)
+        return updated
+    if action == 'approve-protected-change':
+        proposal = subject.get('protected_change_proposals', {}).get(record.get('observation_hash'), {})
+        if (not proposal or record.get('repo_id') != proposal.get('repo_id')
+                or record.get('approved') is not True or not record.get('actor_id') or not record.get('reason')
+                or record.get('provenance', {}).get('kind') != 'user-message'
+                or not record.get('provenance', {}).get('ref')):
+            raise WorkflowError('PROTECTED_CHANGE_BLOCKED', 'Actual user approval of the exact retained proposal required.')
+        updated.setdefault('protected_authorizations', []).append(deepcopy(record))
+        return updated
     if action == 'observe-source':
         from .document_units import digest
         if not record.get('snapshots') or record.get('source_identity') != digest(record['snapshots']):
@@ -33,10 +70,33 @@ def apply_enforcement(subject: dict, action: str, record: dict) -> dict:
         updated['source_identity'] = record['source_identity']
         updated['source_observation'] = deepcopy(record)
         return updated
+    if action == 'extend-effects':
+        from .document_units import digest
+        from .effect_claims import validate_effect_policy
+        policy, authorization = record.get('policy'), record.get('authorization', {})
+        validate_effect_policy(policy)
+        previous = subject.get('effect_policy', {})
+        if (record.get('previous_policy_hash') != digest(previous)
+                or authorization.get('approved') is not True or not authorization.get('actor_id')
+                or not authorization.get('reason')
+                or authorization.get('provenance', {}).get('kind') != 'user-message'
+                or not authorization.get('provenance', {}).get('ref')
+                or any(row.get('status') not in {'completed', 'failed', 'reconciled'}
+                       for row in subject.get('effects', {}).values())
+                or set(previous) != set(policy)
+                or any(policy[key] < previous[key] for key in policy)
+                or policy == previous):
+            raise WorkflowError('EFFECT_POLICY_BLOCKED', 'Approve an exact monotonic extension after workers are reconciled; spending and clock cannot reset.')
+        updated.setdefault('effect_policy_extensions', []).append(deepcopy(record))
+        updated['effect_policy'] = deepcopy(policy)
+        return updated
     if action == 'configure-effects':
         if subject.get('effects') or not isinstance(record.get('authorization'), dict) or record['authorization'].get('approved') is not True or not record['authorization'].get('actor_id'):
             raise WorkflowError('EFFECT_POLICY_BLOCKED', 'Explicit initial policy authorization required; existing spending cannot be reset.')
-        updated['effect_policy'] = deepcopy({k:v for k,v in record.items() if k != 'authorization'})
+        from .effect_claims import validate_effect_policy
+        policy = {k:v for k,v in record.items() if k != 'authorization'}
+        validate_effect_policy(policy)
+        updated['effect_policy'] = deepcopy(policy)
         return updated
     if action == 'close-finding':
         closure = validate_closure(subject, record)

@@ -1,4 +1,6 @@
 """Live source/protection observation. Never called by historical reducers."""
+
+from .action_policy import enforcement_version
 from pathlib import Path
 from .document_units import digest
 from .store import WorkflowError
@@ -14,14 +16,14 @@ def source_observation(subject: dict) -> dict:
 
 
 def assert_source_current(subject: dict) -> None:
-    if subject.get('enforcement', {}).get('policy_version') is None: return
+    if enforcement_version(subject) is None: return
     observed = source_observation(subject)
     if observed['source_identity'] != subject.get('source_identity'):
         raise WorkflowError('SOURCE_BINDING_STALE', 'Observe current source and renew affected evidence before acceptance.')
 
 
 def assert_protection_current(subject: dict) -> None:
-    if subject.get('enforcement', {}).get('policy_version') is None: return
+    if enforcement_version(subject) is None: return
     from .protected_changes import observe_protected_changes, validate_protected_changes
     protections = subject.get('protected_inventories')
     if not isinstance(protections, dict) or set(protections) != set(subject.get('repositories', {})):

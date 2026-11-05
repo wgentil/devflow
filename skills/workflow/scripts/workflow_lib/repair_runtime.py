@@ -113,7 +113,7 @@ def run_repair(root: Path, run_id: str, operation_id: str, estimated_cost: float
                 'configured verification and independent review will determine success.')
     request = {'binding_id': binding['binding_id'], 'revision': binding['revision'],
                'invocation_id': operation_id + ':worker', 'stage': 'implementation',
-               'access': 'workspace-write', 'prompt': prompt}
+               'access': 'workspace-write', 'prompt': prompt, 'estimated_cost': estimated_cost}
     try:
         worker = invoke(root, request, operation_id + ':native')
     except Exception:

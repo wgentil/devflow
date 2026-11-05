@@ -67,6 +67,7 @@ def _reduce(data, kind, req, version, *, metrics_source_hash=None):
         require(run is not None, 'known run required')
         updated = adopt_enforcement(run, req.get('authorization', {}))
         data['runs'][req['run_id']] = updated
+        data['enforcement_guard'] = {'protocol': 'devflow.python-enforcement/v1', 'schema_version': 1}
         return {'run_id': req['run_id'], 'enforcement': updated['enforcement']}
     if kind == 'domain.pr.rework':
         run = data.get('runs', {}).get(req.get('run_id'))

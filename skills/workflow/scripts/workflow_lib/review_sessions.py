@@ -43,7 +43,7 @@ def initialize_session(path: Path, manifest: dict) -> dict:
         raise WorkflowError('INVALID_SESSION', 'Explicit repositories, source identity and session ID required.')
     if any(path.resolve().is_relative_to(Path(repo).resolve()) for repo in repos):
         raise WorkflowError('SESSION_INSIDE_SCOPE', 'Keep session output outside reviewed repositories.')
-    subject = {**manifest, 'enforcement': {'policy_version': 1}, 'state_version': 0}
+    subject = {**manifest, 'enforcement': {'protocol':'devflow.python-enforcement/v1', 'policy_version': 1}, 'state_version': 0}
     raw = _encode({'schema_version': 1, 'version': 0, 'subject': subject})
     path.parent.mkdir(parents=True, exist_ok=True)
     try:

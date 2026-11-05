@@ -1,4 +1,6 @@
 """Deterministic host bindings and task scopes. Journal owns all authority."""
+
+from .action_policy import enforcement_version
 from copy import deepcopy
 from .store import WorkflowError
 
@@ -317,6 +319,15 @@ def apply_native_event(state,kind,req):
             require(isinstance(auth,dict), 'Replacement authorization must be an object.')
             explicit=auth.get('approved') is True and isinstance(auth.get('actor_id'),str) and bool(auth['actor_id'])
             require(explicit or prior.get('retry_allowed') is True and retry_count<=2, 'Replacement needs an explicit user decision; automatic retry allowance exhausted.', 'MODEL_REPLACEMENT_REQUIRED')
+        if enforcement_version(run) is not None:
+            from .effect_claims import transition_effect
+            require(req.get('enforcement_effect_id') == identifier, 'Native launch requires its exact enforcement claim.')
+            from .effect_dispatch import binding_owner
+            require(run.get('effects', {}).get(identifier, {}).get('owner_binding') == binding_owner(binding),
+                    'Native launch must own the reservation for this exact attachment and scope.')
+            transitioned = transition_effect(run, {'effect_id': identifier, 'status': 'launching',
+                'now_ms': req.get('enforcement_transition_ms')})
+            run['effects'] = transitioned['effects']
         record={**req,'scope':scope,'status':'running','retry_count':retry_count}
         if 'routing' in decision:
             lineage['last_invocation_id'] = identifier
@@ -352,6 +363,19 @@ def apply_native_event(state,kind,req):
         run.setdefault('model_interruptions',[]).append(stopped)
         record.update(retry_allowed=stopped['retry_allowed'],error_kind=stopped['error_kind'])
     else:receipt['reason_code']=receipt.get('eligible_reason_code',receipt.get('reason_code','NATIVE_INVOCATION_COMPLETED'))
+    if enforcement_version(run) is not None:
+        from .effect_claims import transition_effect
+        worker_ref = result.get('invocation_ref')
+        now_ms = req.get('enforcement_transition_ms')
+        if (result['status'] == 'completed' or result.get('transport_completed') is True) and worker_ref:
+            transitioned = transition_effect(run, {'effect_id': identifier, 'status': 'running',
+                'worker_ref': worker_ref, 'now_ms': now_ms})
+            transitioned = transition_effect(transitioned, {'effect_id': identifier, 'status': 'completed',
+                'worker_ref': worker_ref, 'now_ms': now_ms})
+        else:
+            transitioned = transition_effect(run, {'effect_id': identifier, 'status': 'uncertain',
+                'worker_ref': worker_ref or identifier, 'now_ms': now_ms})
+        run['effects'] = transitioned['effects']
     run.setdefault('model_receipts',{})[identifier]=receipt
     record.update(status=result['status'],result=result)
     return deepcopy(receipt)

@@ -1,4 +1,6 @@
 """Production native discovery and scoped invocation coordinator; hooks never call it."""
+
+from .action_policy import enforcement_version
 from copy import deepcopy
 import hashlib
 import json
@@ -196,6 +198,24 @@ def invoke(root,request,operation_id):
             if prior['status']=='running':raise WorkflowError('NATIVE_INVOCATION_ACTIVE','Interrupted launcher requires explicit stopped-worker reconciliation.')
             return {**run['model_receipts'][identifier],'replayed':True}
         binding=validate_binding(data,request['binding_id'],request['revision'])
+        enforcement_effect = None
+        if enforcement_version(run) is not None:
+            from .effect_dispatch import reserve_dispatch
+            action_scope = {'item_id': run['active_attempt']['item_id']} if run.get('active_attempt') and stage == 'implementation' else ({'item_id': binding['item_id']} if binding.get('item_id') else {})
+            exclusive_scope = 'implementation' if stage == 'implementation' else 'review:' + binding['role'] + ':' + str(binding.get('package_hash', ''))
+            host_token = HOST_CONTEXT.set({'binding_id': binding['binding_id'], 'revision': binding['revision'], 'release': binding['release']})
+            try:
+                enforcement_effect = reserve_dispatch(root, binding['run_id'], identifier, exclusive_scope,
+                    request.get('estimated_cost'), operation_id, action_scope, owner_binding=binding)
+            finally: HOST_CONTEXT.reset(host_token)
+            authoritative = read_context_state(root, binding_id=binding['binding_id'])
+            data = authoritative['data']; run = data['runs'][binding['run_id']]
+        def finish_request(worker_result):
+            payload = {'binding_id': binding['binding_id'], 'revision': binding['revision'],
+                'invocation_id': identifier, 'result': worker_result}
+            if enforcement_effect is not None:
+                payload['enforcement_transition_ms'] = int(time.time()*1000)
+            return payload
         try:
             from .context_checkpoints import checkpoint_read
             context_limit = request.get('context_max_bytes', 20000)
@@ -284,6 +304,9 @@ def invoke(root,request,operation_id):
                 start['replacement_of'] = predecessor
                 auth = request['escalation_authorization']
                 start['replacement_authorization'] = {'approved':auth['approved'],'actor_id':auth['actor_id']}
+            if enforcement_effect is not None:
+                start['enforcement_effect_id'] = identifier
+                start['enforcement_transition_ms'] = int(time.time()*1000)
             _commit(root,operation_id+':native-start','native-start',start,binding,prepared=preparations[-1] if preparations else None);started=True
             if request.get('task_id'):
                 scope=invocation_scope(binding,run,stage,{})
@@ -294,6 +317,13 @@ def invoke(root,request,operation_id):
                 from .host_locators import write_task_index
                 now=read_host(root,binding_id=binding['binding_id'])['data'];tasks=[t['task_id'] for t in now.get('host_tasks',{}).values() if t['host']==binding['host'] and t['session_id']==binding['session_id']]
                 write_task_index(Path(binding['project_dir']),binding['host'],binding['session_id'],root,tasks)
+            if enforcement_effect is not None:
+                from .enforcement_live import source_observation
+                from .effect_claims import validate_active_dispatch
+                current = read_host(root, binding_id=binding['binding_id'])['data']['runs'][binding['run_id']]
+                from .action_policy import subject_decision, require_action
+                require_action(subject_decision(current, enforcement_effect.get('decision_action', 'dispatch'), enforcement_effect['action_scope']))
+                validate_active_dispatch(current, identifier, {**source_observation(current), 'now_ms': int(time.time()*1000)})
             if binding['host']=='codex':
                 configuration=backend.configure(decision['resolved'],native_input['configuration_text'],access)
                 observed=configuration['observed'];resolved=decision['resolved']
@@ -303,7 +333,18 @@ def invoke(root,request,operation_id):
             latest = read_host(root, binding_id=binding['binding_id'])['data']['runs'][binding['run_id']]
             require_action(subject_decision(latest, 'dispatch' if access == 'workspace-write' else 'review-report',
                 {'item_id': latest['active_attempt']['item_id']} if latest.get('active_attempt') else {}))
-            if result is None:result=backend.invoke(decision['resolved'],prompt,binding['actor_id'],access,request.get('timeout_seconds',300))
+            if enforcement_effect is not None:
+                validate_active_dispatch(latest, identifier, {**source_observation(latest), 'now_ms': int(time.time()*1000)})
+            timeout_seconds = request.get('timeout_seconds', 300)
+            if enforcement_effect is not None:
+                remaining_ms = (latest['effect_policy']['max_elapsed_ms']
+                    - (int(time.time()*1000) - latest['effects_started_ms']))
+                if remaining_ms <= 0:
+                    raise WorkflowError('EFFECT_BLOCKED', 'Elapsed dispatch budget exhausted before invocation.')
+                timeout_seconds = min(timeout_seconds, remaining_ms / 1000)
+            if result is None:result=backend.invoke(decision['resolved'],prompt,binding['actor_id'],access,timeout_seconds)
+            # Backend completion is independent of the worker's semantic report.
+            result['transport_completed'] = result.get('status') == 'completed' and bool(result.get('invocation_ref'))
             if task_facts is not None and result.get('status') == 'completed':
                 from .routing_receipts import project_worker_result
                 result=project_worker_result(result,invocation_scope(binding,run,stage,{}))
@@ -320,11 +361,11 @@ def invoke(root,request,operation_id):
         except BaseException:
             if started:
                 if backend:backend.close();backend=None
-                _commit(root,operation_id+':native-finish','native-finish',{'binding_id':binding['binding_id'],'revision':binding['revision'],'invocation_id':identifier,'result':{'status':'interrupted','error_kind':'unavailable','reason_code':'NATIVE_EXECUTION_INTERRUPTED'}},binding)
+                _commit(root,operation_id+':native-finish','native-finish',finish_request({'status':'interrupted','error_kind':'unavailable','reason_code':'NATIVE_EXECUTION_INTERRUPTED'}),binding)
             raise
         finally:
             if backend:backend.close()
-        receipt=_commit(root,operation_id+':native-finish','native-finish',{'binding_id':binding['binding_id'],'revision':binding['revision'],'invocation_id':identifier,'result':result},binding)
+        receipt=_commit(root,operation_id+':native-finish','native-finish',finish_request(result),binding)
         if receipt['status']=='allow' and context:remember_selected(root,binding,context,receipt['resolved'])
         elif context:invalidate(root,binding,context)
         return receipt

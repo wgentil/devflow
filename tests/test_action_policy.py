@@ -39,6 +39,15 @@ class ActionPolicyTests(unittest.TestCase):
         with self.assertRaises(WorkflowError):
             p.adopt_enforcement(run, {})
 
+    def test_adoption_cannot_downgrade_or_erase_active_effect_authority(self):
+        from workflow_lib.store import WorkflowError
+        authorization={'approved':True,'actor_id':'user','run_id':'r','state_version':1}
+        for fields in ({'effects':{'e':{'status':'launching'}}},
+                       {'effects':{'e':{'status':'uncertain'}}},
+                       {'enforcement':{'protocol':'devflow.python-enforcement/v2','policy_version':2}}):
+            with self.subTest(fields=fields), self.assertRaises(WorkflowError):
+                self.policy().adopt_enforcement({'id':'r','state_version':1,**fields},authorization)
+
     def test_direct_event_rejects_invalid_decision(self):
         from workflow_lib.journal_domains import reduce_event
         from workflow_lib.store import WorkflowError
@@ -77,3 +86,30 @@ class ActionPolicyTests(unittest.TestCase):
         from workflow_lib.action_policy import subject_decision
         subject={'clarifications':{'extension-record':{'status':'pending'}}}
         self.assertEqual(subject_decision(subject,'delivery',{})['status'],'not-applicable')
+    def test_old_extension_using_policy_version_is_not_silent_adoption(self):
+        from workflow_lib.action_policy import subject_decision
+        old_profile={'policy_version':1}
+        subject={'enforcement':old_profile,'clarifications':{'opaque':{'status':'pending'}}}
+        self.assertEqual(subject_decision(subject,'delivery',{})['status'],'not-applicable')
+    def test_generic_event_cannot_remove_an_adopted_contract(self):
+        import tempfile
+        from workflow_lib.store import transact,read_state,WorkflowError
+        from workflow_lib.sqlite_store import initialize_store
+        from control_store_fixtures import legacy_root
+        for initialize in (legacy_root,initialize_store):
+            with tempfile.TemporaryDirectory() as tmp:
+                root=Path(tmp)/'control';initialize(root)
+                transact(root,0,'seed',{'kind':'fixture','payload':{'runs':{'r':{'id':'r','status':'active','state_version':0}}}})
+                transact(root,1,'adopt',{'kind':'domain.enforcement.adopt','payload':{'request':{'run_id':'r','authorization':{
+                    'approved':True,'actor_id':'fixture-user','run_id':'r','state_version':0}}}})
+                with self.assertRaises(WorkflowError):
+                    transact(root,2,'bypass',{'kind':'note','payload':{'runs':{'r':{'id':'r','status':'active','state_version':0}}}})
+                self.assertEqual(read_state(root)['data']['runs']['r']['enforcement']['policy_version'],1)
+
+    def test_opaque_legacy_metadata_does_not_block_original_finding_resolution(self):
+        from workflow_lib.store import _apply_event
+        state={'data':{'runs':{'r':{'id':'r','enforcement':{'extension':'older metadata'},
+            'unresolved_findings':[{'id':'f'}]}}}}
+        _apply_event(state,{'kind':'finding.resolved','payload':{'run_id':'r','finding_id':'f',
+            'resolution':{'actor_id':'fixture-author','why':'legacy evidence','evidence_refs':['fixture-proof']}}})
+        self.assertEqual(state['data']['runs']['r']['unresolved_findings'][0]['status'],'resolved')

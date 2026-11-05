@@ -1,7 +1,7 @@
 """Explicit entity read/write scopes for operational and reducer views."""
 from dataclasses import dataclass
 
-GLOBAL_KEYS = ('resolved_context', 'resolved_context_source_hash', 'artifacts', 'authorization_scope', 'unresolved_findings', 'spec', 'spec_pair', 'approval', 'spec_approval_invalidated', 'plan', 'plan_validation',
+GLOBAL_KEYS = ('enforcement_guard', 'resolved_context', 'resolved_context_source_hash', 'artifacts', 'authorization_scope', 'unresolved_findings', 'spec', 'spec_pair', 'approval', 'spec_approval_invalidated', 'plan', 'plan_validation',
     'repositories', 'context', 'context_hash', 'governing_input_receipt', 'governing_reassessment_required',
     'current_source_indexes', 'snapshot_hash', 'snapshot_valid', 'migration',
     'model_policy', 'routing_policy', 'maintenance_policy')

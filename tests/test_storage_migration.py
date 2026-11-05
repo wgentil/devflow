@@ -45,7 +45,7 @@ class StorageMigrationTests(unittest.TestCase):
                         if row.get('status') == 'running': row['status'] = 'interrupted'
                     for row in run.get('repair_cycles', []):
                         if row.get('status') == 'claimed': row['status'] = 'aborted'
-                if runs:
+                if runs != state['data'].get('runs', {}):
                     n = len(events) + 1
                     event = {'schema_version': 1, 'sequence': n, 'operation_id': 'fixture-quiescent',
                              'kind': 'fixture.quiescent', 'payload': {'runs': runs}}

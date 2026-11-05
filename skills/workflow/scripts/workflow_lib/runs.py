@@ -57,20 +57,24 @@ def start_run(state: dict, run_id: str, plan: dict) -> dict:
     }
 
 
+def validate_attempt_eligibility(run: dict, item_id: str) -> None:
+    if run.get("status") != "active":
+        raise WorkflowError("RUN_NOT_ACTIVE", "run is not active")
+    if run.get("active_attempt") is not None:
+        raise WorkflowError("ATTEMPT_ACTIVE", "finish or abandon the active attempt first")
+    if item_id not in run["items"]:
+        raise WorkflowError("WORK_ITEM_NOT_FOUND", f"unknown work item {item_id}")
+    completed = {key for key, value in run["items"].items() if value["status"] == "complete"}
+    eligible = {item["id"] for item in ready_items(run["plan"], completed)}
+    if item_id not in eligible:
+        raise WorkflowError("ITEM_INELIGIBLE", f"work item {item_id} is blocked or already complete")
+
+
 def issue_attempt(run: dict, item_id: str) -> dict:
     from .action_policy import require_action, subject_decision
     require_action(subject_decision(run, 'attempt', {'item_id': item_id}))
+    validate_attempt_eligibility(run, item_id)
     result = deepcopy(run)
-    if result.get("status") != "active":
-        raise WorkflowError("RUN_NOT_ACTIVE", "run is not active")
-    if result.get("active_attempt") is not None:
-        raise WorkflowError("ATTEMPT_ACTIVE", "finish or abandon the active attempt first")
-    if item_id not in result["items"]:
-        raise WorkflowError("WORK_ITEM_NOT_FOUND", f"unknown work item {item_id}")
-    completed = {key for key, value in result["items"].items() if value["status"] == "complete"}
-    eligible = {item["id"] for item in ready_items(result["plan"], completed)}
-    if item_id not in eligible:
-        raise WorkflowError("ITEM_INELIGIBLE", f"work item {item_id} is blocked or already complete")
     result["state_version"] += 1
     attempt = {
         "token": token_hex(24),
@@ -121,6 +125,11 @@ def record_result(run: dict, token: str, result: dict) -> dict:
                     or (item["kind"] == "agent-config" and kind == "agent-evaluation" and phase == "post"))
         if not eligible:
             raise WorkflowError("VERIFIER_PROOF_MISMATCH", "proof kind is not sufficient for this work item")
+        from .action_policy import enforcement_version
+        if enforcement_version(run) is not None:
+            from .test_inputs import proof_inputs_current
+            if evidence.get('kind') == 'code' and not proof_inputs_current(run, evidence):
+                raise WorkflowError('VERIFICATION_STALE', 'Declared verification inputs changed after GREEN verification.')
         if evidence.get("kind") == "code":
             from pathlib import Path
             from .evidence import repository_fingerprint

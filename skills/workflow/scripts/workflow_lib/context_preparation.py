@@ -200,6 +200,16 @@ def _prepare_context(root:Path,run:dict,envelope:dict,item_ids:list[str],*,stage
         'storage_identity':deepcopy(state.get('_storage')),'governing_hash':digest(data.get('governing_input_receipt')),'files':files,'tail_hash':state.get('_storage',{}).get('head_hash') if state.get('_storage') else digest(tail) if tail else None}
     projected={'id':run['id'],'plan':{'work_items':deepcopy(chosen)}}
     scoped_envelope=deepcopy(envelope)
+    from .action_policy import enforcement_version
+    if enforcement_version(actual) is not None:
+        from .clarifications import relevant_questions
+        records = {}
+        for selected_id in item_ids or [None]:
+            for question in relevant_questions(actual, {'item_id': selected_id} if selected_id else {}):
+                records[question['id']] = deepcopy(question)
+        if records:
+            scoped_envelope['clarifications'] = {'required': True, 'binding': digest(records),
+                'records': [records[key] for key in sorted(records)]}
     # Reserve diagnostic shape before optional content spends the byte budget.
     scoped_envelope['preparation']={'preflight_ms':9999999999999,'worker_ms':9999999999999,'total_ms':9999999999999,'journal_version':state['version'],'binding_hash':'0'*64}
     payload={'root':str(root),'scope':scope,'run':projected,'envelope':scoped_envelope,'selection':selection,'sources':sources,'policy':policy}

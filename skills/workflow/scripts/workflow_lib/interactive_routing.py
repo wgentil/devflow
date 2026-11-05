@@ -6,6 +6,7 @@ from copy import deepcopy
 from contextlib import ExitStack
 import hashlib
 import os
+import time
 from pathlib import Path
 
 from .document_units import digest
@@ -17,7 +18,8 @@ from .model_policy import resolve_profile
 from .native_runtime import policy, preferences, prices, invocation_context, _native_lease, _commit
 from .routing_receipts import routing_lineage_id, worker_task_prompt, project_worker_result
 from .releases import check_release, release_descriptor
-from .store import WorkflowError
+from .store import WorkflowError, HOST_CONTEXT
+from .action_policy import enforcement_version
 from .host_projection import read_host
 from .storage_pins import reservation
 from .task_routing import normalize_task_facts
@@ -136,6 +138,17 @@ def dispatch_delegation(root: Path, request: dict, operation_id: str, bridge=Non
             if prior['status'] == 'running':
                 raise WorkflowError('NATIVE_INVOCATION_ACTIVE', 'Interactive worker is running or needs stopped-worker reconciliation.')
             return {**data['runs'][binding['run_id']]['model_receipts'][identifier], 'replayed': True}
+        enforcement_effect = None
+        run = data['runs'][binding['run_id']]
+        if enforcement_version(run) is not None:
+            from .effect_dispatch import reserve_dispatch
+            action_scope = {'item_id': run['active_attempt']['item_id']} if run.get('active_attempt') and request.get('stage') == 'implementation' else ({'item_id': binding['item_id']} if binding.get('item_id') else {})
+            exclusive_scope = 'implementation' if request.get('stage') == 'implementation' else 'review:' + binding['role'] + ':' + str(binding.get('package_hash', ''))
+            token = HOST_CONTEXT.set({'binding_id': binding['binding_id'], 'revision': binding['revision'], 'release': binding['release']})
+            try:
+                enforcement_effect = reserve_dispatch(root, binding['run_id'], identifier, exclusive_scope,
+                    request.get('estimated_cost'), operation_id, action_scope, owner_binding=binding)
+            finally: HOST_CONTEXT.reset(token)
         # Only an in-process embedding adapter can supply these facts. The
         # portable CLI never imports bridge names or trusts serialized context.
         prepared = prepare_delegation(root, request, bridge.capabilities(),preparation_consumer=retain)
@@ -156,8 +169,16 @@ def dispatch_delegation(root: Path, request: dict, operation_id: str, bridge=Non
                 return {**fresh,'reason_code':'ESCALATION_PREDECESSOR_MISMATCH'}
             auth=request['escalation_authorization']
             start.update(replacement_of=predecessor,replacement_authorization={'approved':auth['approved'],'actor_id':auth['actor_id']})
+        if enforcement_effect is not None:
+            start['enforcement_effect_id'] = identifier
+            start['enforcement_transition_ms'] = int(time.time()*1000)
         _commit(root, operation_id + ':native-start', 'native-start', start, binding,prepared=preparations[-1] if preparations else None)
         try:
+            if enforcement_effect is not None:
+                from .effect_claims import validate_active_dispatch
+                from .enforcement_live import source_observation
+                current = read_host(root, request=request)['data']['runs'][binding['run_id']]
+                validate_active_dispatch(current, identifier, {**source_observation(current), 'now_ms': int(time.time()*1000)})
             handle = bridge.spawn(fresh)
             result = bridge.collect(handle)
             if not isinstance(result, dict): raise ValueError('Malformed interactive result')
@@ -165,6 +186,7 @@ def dispatch_delegation(root: Path, request: dict, operation_id: str, bridge=Non
             # A failed collect does not prove that a remote worker stopped.
             return {'status': 'block', 'dispatch': True, 'reason_code': 'INTERACTIVE_RECONCILE_REQUIRED',
                     'invocation_id': identifier, 'message': 'Confirm the worker stopped before reconciling or launching a replacement.'}
+        result['transport_completed'] = result.get('status') == 'completed' and bool(result.get('invocation_ref'))
         if result.get('status') != 'interrupted':
             result = project_worker_result(result,fresh['scope'])
         from .context_metrics import record_context_measurement, explicit_runtime_usage
@@ -176,7 +198,8 @@ def dispatch_delegation(root: Path, request: dict, operation_id: str, bridge=Non
         if result.get('observation_source') not in {'host-effective-configuration', 'host-invocation-metadata'}:
             result.update(observed=None, observation_source=None)
         return _commit(root, operation_id + ':native-finish', 'native-finish',
-            {'binding_id': binding['binding_id'], 'revision': binding['revision'], 'invocation_id': identifier, 'result': result}, binding)
+            {'binding_id': binding['binding_id'], 'revision': binding['revision'], 'invocation_id': identifier, 'result': result,
+             **({'enforcement_transition_ms': int(time.time()*1000)} if enforcement_effect is not None else {})}, binding)
 
 
 def measure_delegation_payload(configuration: dict, prompt: str, preloaded_units: list[dict]) -> dict:

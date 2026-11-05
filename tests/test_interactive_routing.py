@@ -35,6 +35,18 @@ class InteractiveRoutingTests(unittest.TestCase):
                         'supported':True,'account_key':'account','configuration_hash':'config',
                         'model_efforts':{'candidate':['medium','high']},'custom_agent':{},
                         'agent_defaults':{},'parent':{},'overrides':{}}}
+    def test_enforced_interactive_claim_and_exact_retry_spawn_once(self):
+        from workflow_lib.interactive_routing import dispatch_delegation
+        self.fixture.enable_enforcement_fixture()
+        request={**self.request,'estimated_cost':1}
+        bridge=Bridge(self.context)
+        result=dispatch_delegation(self.root,request,'enforced-interactive',bridge)
+        self.assertEqual(result['status'],'allow')
+        run=read_state(self.root)['data']['runs']['run']
+        self.assertEqual(run['effects']['routed']['status'],'completed')
+        self.assertTrue(dispatch_delegation(self.root,request,'enforced-interactive',bridge)['replayed'])
+        self.assertEqual(len(bridge.spawns),1)
+
     def test_unavailable_bridge_prepares_but_never_dispatches_or_mints_receipts(self):
         from workflow_lib.interactive_routing import prepare_delegation,dispatch_delegation
         before=read_state(self.root)['version']

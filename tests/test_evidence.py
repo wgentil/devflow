@@ -52,7 +52,7 @@ class EvidenceTests(unittest.TestCase):
     def test_enforced_capture_requires_independent_integrity_contract(self):
         from workflow_lib.store import read_state, WorkflowError
         state=read_state(self.root);run=state['data']['runs']['run-1']
-        run['enforcement']={'policy_version':1}
+        run['enforcement']={'protocol':'devflow.python-enforcement/v1', 'policy_version':1}
         transact(self.root,state['version'],'enforce',{'kind':'fixture','payload':{'runs':{'run-1':run}}})
         with self.assertRaises(WorkflowError):
             self.capture(self.root,'run-1','attempt-1','RED',
@@ -63,7 +63,7 @@ class EvidenceTests(unittest.TestCase):
         from workflow_lib.store import read_state, WorkflowError
         proof=self.capture(self.root,'run-1','attempt-1','RED',
             self.command({'tests':[{'id':'test_target','outcome':'failed'}]},1),['test_target.py'],['test_target'],10)
-        state=read_state(self.root);run=state['data']['runs']['run-1'];run['enforcement']={'policy_version':1}
+        state=read_state(self.root);run=state['data']['runs']['run-1'];run['enforcement']={'protocol':'devflow.python-enforcement/v1', 'policy_version':1}
         transact(self.root,state['version'],'enforce',{'kind':'fixture','payload':{'runs':{'run-1':run}}})
         proof={**proof,'id':'forged-new-proof'}
         with self.assertRaises(WorkflowError):
@@ -83,13 +83,11 @@ raise SystemExit(0 if outcome=='passed' else 1)
         (self.repo/'test_target.py').write_text(script)
         (self.repo/'value.txt').write_text('60')
         state=read_state(self.root);run=state['data']['runs']['run-1']
-        run['enforcement']={'policy_version':1};run['actors']={'implementer':'fixture-author'}
+        run['enforcement']={'protocol':'devflow.python-enforcement/v1', 'policy_version':1};run['actors']={'implementer':'fixture-author'}
+        run['repositories']=state['data']['repositories']
+        run['items']['W1']['attempts']=[dict(run['active_attempt'])]
         run['plan']['spec_hash']='fixture-approved-spec'
-        run['plan']['work_items'][0].update(verification_inputs=['test_target.py'],verification_target_ids=['test_target'])
-        run['reviews']={'branch':[{'review_id':'fixture-oracle-review','actor_id':'fixture-reviewer','invocation_ref':'fixture-review-call',
-            'verdict':'pass','test_oracles':[{'item_id':'W1','input_hashes':{'test_target.py':hashlib.sha256(script.encode()).hexdigest()},
-            'target_ids':['test_target'],'spec_hash':'fixture-approved-spec','rationale':'thirty days is the approved fixture rule',
-            'authority_refs':['fixture-spec:R1'],'failure_relevance':'sixty days violates the rule'}]}]}
+        run['plan']['work_items'][0].update(verification_inputs=['test_target.py'],verification_target_ids=['test_target'],requirement_ids=['R1'])
         transact(self.root,state['version'],'enforce',{'kind':'fixture','payload':{'runs':{'run-1':run}}})
         argv=[sys.executable,'test_target.py']
         red=self.capture(self.root,'run-1','attempt-1','RED',argv,['test_target.py'],['test_target'],10)
@@ -98,6 +96,45 @@ raise SystemExit(0 if outcome=='passed' else 1)
         self.assertNotEqual(red['source_identity'],green['source_identity'])
         self.assertEqual(green['integrity']['baseline_source'],red['source_identity'])
         self.assertTrue((self.root/green['stdout_ref']).is_file())
+        self.assertEqual(green['integrity']['semantic_status'],'pending-review')
+        from workflow_lib.gates import _required_proof
+        current_run=read_state(self.root)['data']['runs']['run-1']
+        self.assertIsNotNone(_required_proof(current_run,current_run['plan']['work_items'][0]))
+        from workflow_lib.runs import record_result
+        from workflow_lib.reviews import prepare_review,record_review
+        from workflow_lib.store import WorkflowError
+        state=read_state(self.root);run=state['data']['runs']['run-1']
+        result={'outcome':'passed','verifier_proof_id':green['id']}
+        record_result(run,'attempt-1',result)
+        transact(self.root,state['version'],'runtime-result',{'kind':'run.result.recorded','payload':{
+            'run_id':'run-1','token':'attempt-1','result':result,'verified':True,'verifier_proof_id':green['id']}})
+        state=read_state(self.root);run=state['data']['runs']['run-1']
+        package=prepare_review(run,'item',{'repo-1':{'location':str(self.repo),'base':green['repository_head'],'head':green['repository_head']}},item_id='W1')
+        transact(self.root,state['version'],'oracle-package',{'kind':'review.package.prepared','payload':{'run_id':'run-1','package':package}})
+        state=read_state(self.root);run=state['data']['runs']['run-1']
+        reviewer={'role':'item','actor_id':'fixture-independent-reviewer','invocation_ref':'fixture-real-review-call','tool_available':True}
+        report={'package_hash':package['package_hash'],'verdict':'pass','item_id':'W1','findings':[]}
+        with self.assertRaises(WorkflowError):record_review(run,package['package_hash'],reviewer,report)
+        contract=green['integrity']['contract']
+        report['test_oracles']=[{'item_id':'W1','red_proof_id':red['id'],'green_proof_id':green['id'],
+            'input_hashes':contract['input_hashes'],'target_ids':['test_target'],
+            'authority_refs':['spec:fixture-approved-spec#R1'],'clarification_binding':contract['clarification_binding'],
+            'failure_relevance':'Actual sixty-day value fails the independently specified thirty-day assertion.',
+            'rationale':'Fixture reviewer inspects the unchanged assertion and actual retained RED/GREEN reports.'}]
+        review=record_review(run,package['package_hash'],reviewer,report)
+        transact(self.root,state['version'],'oracle-review',{'kind':'review.recorded','payload':{'run_id':'run-1','review':review}})
+        verified=read_state(self.root)['data']['runs']['run-1']['verifier_proofs'][green['id']]
+        self.assertEqual(verified['semantic_status'],'reviewed')
+        self.assertEqual(verified['semantic_review_id'],review['review_id'])
+        from workflow_lib.gates import gate_status
+        import copy
+        accepted_run=read_state(self.root)['data']['runs']['run-1']
+        self.assertEqual(gate_status(accepted_run)['stage'],'branch-review')
+        unbound=copy.deepcopy(accepted_run)
+        unbound['reviews']['item'][0]['semantic_approvals']={}
+        self.assertEqual(gate_status(unbound)['stage'],'item-review')
+
+
 
     def test_actual_target_red_green(self):
         red = self.capture(self.root, "run-1", "attempt-1", "RED",

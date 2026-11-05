@@ -100,6 +100,12 @@ def prepare_pr_review(run: dict, pr_snapshot: dict, repo: Path,
             'artifacts': run.get('artifacts', {}), 'verification_proofs': run.get('verification_proofs', {}),
             'prior_reviews': run.get('reviews', {}), 'prior_findings': run.get('pr_findings', []),
             'input_paths': changed}
+    from .action_policy import enforcement_version
+    if enforcement_version(run) is not None:
+        from .review_enforcement import review_bindings
+        from .enforcement_live import source_observation
+        body['enforcement_bindings'] = review_bindings(run, 'pr', live=True)
+        body['source_identity'] = source_observation(run)['source_identity']
     body['package_hash'] = _hash(body)
     return body
 

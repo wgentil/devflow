@@ -31,7 +31,7 @@ class EnforcementIntegrationTests(unittest.TestCase):
                 decision=self.cli(base,'decide','--root',root,request={'run_id':'r','action':'dispatch','scope':{'item_id':'a'}})
                 self.assertEqual(decision['status'],'block')
                 self.cli(base,'answer','--root',root,'--operation-id','answer',request={'run_id':'r','record':{
-                    'id':'q','question_version':1,'answer':'30 days','actor_id':'fixture-user','spec_hash':'spec',
+                    'id':'q','question_version':1,'answer':'30 days','actor_id':'fixture-user','spec_hash':'spec','material':False,
                     'provenance':{'kind':'user-message','ref':'fixture-message'}}})
                 decision=self.cli(base,'decide','--root',root,request={'run_id':'r','action':'dispatch','scope':{'item_id':'a'}})
                 self.assertEqual(decision['status'],'allow')
@@ -51,7 +51,45 @@ class EnforcementIntegrationTests(unittest.TestCase):
             base=Path(tmp);repo=base/'repo';repo.mkdir();root=base/'control';sqlite_store.initialize_store(root)
             for args in (['init','-q'],['config','user.email','fixture@example.invalid'],['config','user.name','Fixture']):subprocess.run(['git',*args],cwd=repo,check=True)
             (repo/'source.py').write_text('value=1');subprocess.run(['git','add','.'],cwd=repo,check=True);subprocess.run(['git','commit','-qm','base'],cwd=repo,check=True)
-            run={'id':'r','state_version':0,'enforcement':{'policy_version':1},'repositories':{'r':{'location':str(repo)}}}
+            run={'id':'r','state_version':0,'enforcement':{'protocol':'devflow.python-enforcement/v1', 'policy_version':1},'repositories':{'r':{'location':str(repo)}}}
             store.transact(root,0,'seed',{'kind':'fixture','payload':{'runs':{'r':run}}})
             self.cli(base,'observe-source','--root',root,'--operation-id','observe',request={'run_id':'r'})
             self.assertEqual(store.read_state(root)['data']['runs']['r']['source_identity'],source_observation(run)['source_identity'])
+
+    def test_protected_proposal_and_approval_public_commands_both_formats(self):
+        from workflow_lib.document_units import digest
+        for initialize in (legacy_root,sqlite_store.initialize_store):
+            with tempfile.TemporaryDirectory() as tmp:
+                base=Path(tmp);root=base/'control';initialize(root);repo=base/'repo';repo.mkdir()
+                for argv in (['init','-q'],['config','user.email','fixture@example.invalid'],['config','user.name','Fixture']):
+                    subprocess.run(['git',*argv],cwd=repo,check=True)
+                target=repo/'acceptance.py';target.write_text('original rule')
+                subprocess.run(['git','add','.'],cwd=repo,check=True)
+                subprocess.run(['git','commit','-qm','fixture baseline'],cwd=repo,check=True)
+                run={'id':'r','state_version':0,'status':'active','governing_digest':'g',
+                    'repositories':{'repo':{'location':str(repo)}}}
+                store.transact(root,0,'seed',{'kind':'fixture','payload':{'runs':{'r':run}}})
+                self.cli(base,'adopt','--root',root,'--operation-id','adopt',request={'run_id':'r',
+                    'authorization':{'approved':True,'actor_id':'fixture-user','run_id':'r','state_version':0}})
+                inventory={'paths':['acceptance.py'],'governing_digest':'g'}
+                self.cli(base,'protect-inventory','--root',root,'--operation-id','inventory',request={'run_id':'r',
+                    'record':{'repo_id':'repo','inventory':inventory,'authorization':{'approved':True,
+                        'actor_id':'fixture-user','reason':'declared acceptance contract','governing_digest':'g',
+                        'inventory_hash':digest(inventory)}}})
+                target.write_text('candidate rule')
+                proposal={'run_id':'r','record':{'repo_id':'repo'}}
+                self.cli(base,'propose-protected-change','--root',root,'--operation-id','proposal',request=proposal)
+                subject=store.read_state(root)['data']['runs']['r']
+                observation_hash=next(iter(subject['protected_change_proposals']))
+                approval={'run_id':'r','record':{'repo_id':'repo','observation_hash':observation_hash,
+                    'approved':True,'actor_id':'fixture-user','reason':'actual fixture decision',
+                    'provenance':{'kind':'user-message','ref':'fixture-message'}}}
+                self.cli(base,'approve-protected-change','--root',root,'--operation-id','approval',request=approval)
+                target.write_text('different unapproved bytes')
+                self.cli(base,'propose-protected-change','--root',root,'--operation-id','proposal',request=proposal)
+                current=store.read_state(root)['data']['runs']['r']
+                self.assertEqual(current['protected_change_proposals'],subject['protected_change_proposals'])
+                self.assertEqual(current['protected_authorizations'],[approval['record']])
+                from workflow_lib.enforcement_live import assert_protection_current
+                with self.assertRaises(store.WorkflowError):assert_protection_current(current)
+                self.assertEqual(target.read_text(),'different unapproved bytes')

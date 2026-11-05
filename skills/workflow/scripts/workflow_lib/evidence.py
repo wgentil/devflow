@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from .action_policy import enforcement_version
+
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -154,11 +156,13 @@ def capture_evidence(root: Path, run_id: str, token: str, phase: str, command: l
         resolved_paths[name] = source
     before_tests = {name: _sha(path.read_bytes()) for name, path in resolved_paths.items()}
     integrity_contract = None
-    if run.get('enforcement', {}).get('policy_version') is not None:
+    if enforcement_version(run) is not None:
         from .action_policy import subject_decision, require_action
         require_action(subject_decision(run, 'proof', {'item_id': item_id}))
         from .test_integrity import verification_integrity_contract
-        integrity_contract = verification_integrity_contract(run, work_item, before_tests, target_ids, command, report_format)
+        from .test_inputs import capture_input_bindings
+        input_bindings = capture_input_bindings(repo, test_paths)
+        integrity_contract = verification_integrity_contract(run, work_item, before_tests, target_ids, command, report_format, input_bindings)
     from .red_reuse import verification_contract, select_red_source
     from .document_units import digest
     contract = verification_contract(run,work_item,repo_id,before_tests,target_ids,command,report_format)
@@ -168,6 +172,10 @@ def capture_evidence(root: Path, run_id: str, token: str, phase: str, command: l
     if red_proof_id:
         red_source = select_red_source(state['data'],run_id,item_id,contract,red_proof_id,red_run_id)
     before_repo = repository_fingerprint(repo)
+    before_observation = None
+    if integrity_contract is not None:
+        from .enforcement_live import source_observation
+        before_observation = source_observation({**run, 'repositories': run.get('repositories') or {repo_id: repository}})
     started = _now()
     try:
         completed = subprocess.run(command, cwd=repo, capture_output=True,
@@ -195,6 +203,9 @@ def capture_evidence(root: Path, run_id: str, token: str, phase: str, command: l
         return {"passed": False, "failure": "REPOSITORY_CHANGED_DURING_VERIFICATION", "exit_code": exit_code,
                 "started_at": started, "finished_at": finished,
                 "stdout_ref": _blob(root, stdout_raw), "stderr_ref": _blob(root, stderr_raw)}
+    if integrity_contract is not None and capture_input_bindings(repo, test_paths) != input_bindings:
+        return {'passed': False, 'failure': 'TEST_INPUTS_CHANGED_DURING_VERIFICATION', 'exit_code': exit_code,
+                'stdout_ref': _blob(root, stdout_raw), 'stderr_ref': _blob(root, stderr_raw)}
     try:
         outcomes = _report(stdout, stderr, report_format)
     except WorkflowError as exc:
@@ -230,8 +241,11 @@ def capture_evidence(root: Path, run_id: str, token: str, phase: str, command: l
         from .test_integrity import parse_test_evidence, validate_test_pair
         from .enforcement_live import source_observation
         observation = source_observation({**run, 'repositories': run.get('repositories') or {repo_id: repository}})
+        if observation != before_observation:
+            return {'passed': False, 'failure': 'REPOSITORY_CHANGED_DURING_VERIFICATION', 'exit_code': exit_code,
+                    'stdout_ref': proof['stdout_ref'], 'stderr_ref': proof['stderr_ref']}
         integrity = {**parse_test_evidence(stdout, stderr, report_format), 'phase': phase,
-            'contract': integrity_contract, 'source_identity': observation['source_identity'],
+            'contract': integrity_contract, 'semantic_status': 'pending-review', 'source_identity': observation['source_identity'],
             'passed': True, 'exit_code': exit_code, 'stdout_ref': proof['stdout_ref'], 'stderr_ref': proof['stderr_ref']}
         if phase == 'RED':
             if (not all(t in integrity['outcomes'] and integrity['outcomes'][t] in {'failed', 'passed'} for t in target_ids)
@@ -243,10 +257,13 @@ def capture_evidence(root: Path, run_id: str, token: str, phase: str, command: l
             if red_source is not None:
                 source_run = state['data']['runs'][red_source['run_id']]
                 sources = [source_run['verification_proofs'][red_source['proof_id']]]
+                from copy import deepcopy
+                proof['red_baseline'] = deepcopy(sources[0])
             if not sources: raise WorkflowError('TEST_INTEGRITY_BLOCKED', 'Linked versioned RED proof required.')
-            baseline = sources[-1]['integrity']
+            baseline = sources[-1].get('integrity')
+            if not isinstance(baseline, dict): raise WorkflowError('TEST_INTEGRITY_BLOCKED', 'Versioned RED evidence required; legacy execution cannot be relabeled.')
             integrity['baseline_source'] = baseline['source_identity']
-            validate_test_pair(baseline, integrity, integrity_contract)
+            validate_test_pair(baseline, integrity, integrity_contract, require_review=False)
         proof['integrity'] = integrity
         proof['source_identity'] = observation['source_identity']
         proof['source_observation'] = observation

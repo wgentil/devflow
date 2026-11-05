@@ -10,7 +10,7 @@ from workflow_lib.store import WorkflowError
 def register_commands(parser):
     group = parser.add_parser('enforcement')
     actions = group.add_subparsers(dest='enforcement_command', required=True)
-    for name in ('decide', 'adopt', 'question', 'answer', 'propose-fix', 'close-finding', 'configure-effects', 'claim', 'effect-transition', 'observe-source', 'protect-inventory'):
+    for name in ('decide', 'adopt', 'question', 'answer', 'propose-fix', 'close-finding', 'configure-effects', 'extend-effects', 'claim', 'effect-transition', 'observe-source', 'protect-inventory', 'propose-protected-change', 'approve-protected-change'):
         command = actions.add_parser(name)
         add_journal_options(command)
         command.add_argument('--input', required=True)
@@ -50,6 +50,26 @@ def dispatch(parsed):
         record = request['record']
         repo = subject['repositories'][record['repo_id']]
         request = {**request, 'record': {**record, 'baseline': snapshot_protected(Path(repo['location']), record['inventory'])}}
+        parsed.expected_version = state['version']
+    if parsed.enforcement_command == 'propose-protected-change':
+        from workflow_lib.protected_changes import observe_protected_changes
+        from workflow_lib.storage_access import operation_lookup
+        prior = operation_lookup(Path(parsed.root), parsed.operation_id)
+        if prior:
+            previous = prior.get('payload', {}).get('request', {})
+            if (prior.get('kind') != 'domain.enforcement.propose-protected-change'
+                    or previous.get('run_id') != request.get('run_id')
+                    or previous.get('record', {}).get('repo_id') != request.get('record', {}).get('repo_id')):
+                raise WorkflowError('OPERATION_CONFLICT', 'Operation belongs to another protected-change proposal.')
+            return commit(parsed, prior['kind'], previous)
+        state = read_current(Path(parsed.root), run_id=request['run_id'])
+        subject = state['data']['runs'][request['run_id']]
+        repo_id = request['record']['repo_id']
+        protection = subject.get('protected_inventories', {}).get(repo_id)
+        if not protection: raise WorkflowError('PROTECTION_INVENTORY_REQUIRED', 'Declare governing inventory first.')
+        observation = observe_protected_changes(Path(subject['repositories'][repo_id]['location']),
+            protection['inventory'], protection['baseline'])
+        request = {'run_id': request['run_id'], 'record': {'repo_id': repo_id, 'observation': observation}}
         parsed.expected_version = state['version']
     if parsed.enforcement_command == 'observe-source':
         from workflow_lib.enforcement_live import source_observation

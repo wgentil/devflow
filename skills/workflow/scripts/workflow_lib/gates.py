@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from .action_policy import enforcement_version
+
 from copy import deepcopy
 import hashlib
 import json
@@ -38,6 +40,9 @@ def _required_proof(run: dict, item: dict, live: bool = True) -> dict | None:
                 and proof.get("token") == token and actual in expected and evidence.get("fresh", True)):
             if not live:
                 return proof
+            if enforcement_version(run) is not None and kind == 'code':
+                from .test_inputs import proof_inputs_current
+                if not proof_inputs_current(run, evidence): continue
             try:
                 from .evidence import repository_fingerprint
                 repo = run.get("repositories", {}).get(evidence.get("repo_id"), {})
@@ -70,6 +75,28 @@ def hardening_ready(run: dict, live: bool = True) -> bool:
     return True
 
 
+def _review_current(run: dict, review: dict, live: bool) -> bool:
+    if review.get('verdict') != 'pass' or review.get('fresh') is False: return False
+    if enforcement_version(run) is None: return True
+    try:
+        from .stored_records import require_package
+        from .review_enforcement import review_bindings_current
+        package = require_package(run.get('review_packages', {}).get(review.get('package_hash')))
+        if not review_bindings_current(run, package, live=False): return False
+        if live:
+            from .host_completion import package_current
+            if not package_current(run, package): return False
+        if review.get('role') in {'item', 'branch'}:
+            from .oracle_acceptance import validate_oracle_acceptance
+            approvals = validate_oracle_acceptance(run, package, review)
+            if review.get('semantic_approvals') != approvals: return False
+            if any(run.get('verifier_proofs', {}).get(key, {}).get('semantic_status') != 'reviewed' for key in approvals): return False
+        return True
+    except (KeyError, TypeError, ValueError): return False
+    except Exception:
+        return False
+
+
 def gate_status(run: dict, live: bool = True) -> dict:
     if run.get("status") in {"delivered", "discarded"}:
         return {"stage": run["status"], "can_advance": False, "blocking_findings": [],
@@ -95,14 +122,16 @@ def gate_status(run: dict, live: bool = True) -> dict:
         stage = "implementation"
     else:
         reviewed = {review.get("item_id") for review in run.get("reviews", {}).get("item", [])
-                    if review.get("verdict") == "pass" and review.get("fresh", True)}
+                    if _review_current(run, review, live)}
         unreviewed = [item["id"] for item in items if item["id"] not in reviewed]
         stage = "item-review" if unreviewed else "branch-review"
-        if not unreviewed and any(review.get("verdict") == "pass" and review.get("fresh", True)
+        if not unreviewed and any(_review_current(run, review, live)
                                   for review in run.get("reviews", {}).get("branch", [])):
             stage = "acceptance"
             accepted = run.get("acceptances", [])
-            if accepted and accepted[-1].get("complete") is True and accepted[-1].get("fresh", True):
+            if accepted and accepted[-1].get("complete") is True and accepted[-1].get("fresh", True) and (enforcement_version(run) is None or any(
+                    review.get("package_hash") == accepted[-1].get("package_hash") and _review_current(run, review, live)
+                    for review in run.get("reviews", {}).get("acceptance", []))):
                 stage = "delivery" if hardening_ready(run, live) else "hardening"
     actions = [{'item_id':item['id'],'command':'run reverify',
                 'reason':'Completed code proof no longer matches the repository; issue a fresh attempt and GREEN proof.'}
@@ -308,7 +337,7 @@ def waive_finding(run: dict, finding_id: str, authorization: dict) -> dict:
 
 
 def resolve_finding(run: dict, finding_id: str, actor_id: str, why: str, evidence_refs: list[str]) -> dict:
-    if run.get('enforcement', {}).get('policy_version') is not None:
+    if enforcement_version(run) is not None:
         from .store import WorkflowError
         raise WorkflowError('INDEPENDENT_CLOSURE_REQUIRED', 'Use enforcement close-finding with current proof and independent disposition.')
     finding = next((value for value in run.get("unresolved_findings", []) if value.get("id") == finding_id), None)

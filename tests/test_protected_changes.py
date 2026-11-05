@@ -31,6 +31,33 @@ class ProtectedTests(unittest.TestCase):
             observed=api.observe_protected_changes(repo,inventory,baseline)
             self.assertEqual(observed['changed_paths'],['acceptance.py'])
             with self.assertRaises(WorkflowError):api.validate_protected_changes(observed,[],[])
+    def test_literal_path_with_brackets_detects_index_only_change(self):
+        repo=self.setup_repo();api=self.api();name='acceptance[1].py'
+        (repo/name).write_text('original')
+        subprocess.run(['git','add','.'],cwd=repo,check=True)
+        subprocess.run(['git','commit','-qm','literal baseline'],cwd=repo,check=True)
+        inventory={'paths':[name]};baseline=api.snapshot_protected(repo,inventory)
+        (repo/name).write_text('staged replacement')
+        subprocess.run(['git','add','.'],cwd=repo,check=True)
+        (repo/name).write_text('original')
+        self.assertEqual(api.observe_protected_changes(repo,inventory,baseline)['changed_paths'],[name])
+
+    def test_directory_inventory_requires_explicit_file_scope(self):
+        repo=self.setup_repo();(repo/'contracts').mkdir()
+        with self.assertRaises(WorkflowError):
+            self.api().snapshot_protected(repo,{'paths':['contracts']})
+
+    def test_snapshot_retains_reviewable_preimages_from_all_three_layers(self):
+        import base64
+        repo=self.setup_repo();api=self.api()
+        (repo/'acceptance.py').write_text('staged bytes')
+        subprocess.run(['git','add','.'],cwd=repo,check=True)
+        (repo/'acceptance.py').write_text('working bytes')
+        entry=api.snapshot_protected(repo,{'paths':['acceptance.py']})['entries']['acceptance.py']
+        self.assertEqual(base64.b64decode(entry['worktree']['content_base64']),b'working bytes')
+        self.assertEqual(base64.b64decode(entry['index_preimages'][0]['content_base64']),b'staged bytes')
+        self.assertEqual(base64.b64decode(entry['commit_preimages'][0]['content_base64']),b'assert True\n')
+
     def test_inventory_cannot_remove_its_own_protection(self):
         repo=self.setup_repo();api=self.api();baseline=api.snapshot_protected(repo,{'paths':['acceptance.py']})
         observation=api.observe_protected_changes(repo,{'paths':[]},baseline)
@@ -50,10 +77,30 @@ class ProtectedTests(unittest.TestCase):
         from workflow_lib.enforcement_events import apply_enforcement
         repo=self.setup_repo();inv={'paths':['acceptance.py'],'governing_digest':'g'}
         record={'repo_id':'r','inventory':inv,'baseline':self.api().snapshot_protected(repo,inv)}
-        subject={'id':'run','enforcement':{'policy_version':1},'governing_digest':'g','repositories':{'r':{'location':str(repo)}}}
+        subject={'id':'run','enforcement':{'protocol':'devflow.python-enforcement/v1', 'policy_version':1},'governing_digest':'g','repositories':{'r':{'location':str(repo)}}}
         with self.assertRaises(WorkflowError):apply_enforcement(subject,'protect-inventory',record)
         record['authorization']={'approved':True,'actor_id':'fixture-user','inventory_hash':record['baseline']['inventory_hash'],'governing_digest':'g','reason':'declared acceptance contract'}
         updated=apply_enforcement(subject,'protect-inventory',record)
         self.assertEqual(updated['protected_inventories']['r']['inventory'],inv)
         record['inventory']={'paths':[],'governing_digest':'g'}
         with self.assertRaises(WorkflowError):apply_enforcement(updated,'protect-inventory',record)
+
+    def test_proposal_and_user_approval_bind_exact_retained_change(self):
+        from workflow_lib.enforcement_events import apply_enforcement
+        repo=self.setup_repo();api=self.api();inventory={'paths':['acceptance.py']}
+        baseline=api.snapshot_protected(repo,inventory)
+        subject={'enforcement':{'protocol':'devflow.python-enforcement/v1','policy_version':1},
+            'repositories':{'r':{'location':str(repo)}},
+            'protected_inventories':{'r':{'inventory':inventory,'baseline':baseline}}}
+        (repo/'acceptance.py').write_text('approved candidate')
+        observation=api.observe_protected_changes(repo,inventory,baseline)
+        subject=apply_enforcement(subject,'propose-protected-change',{'repo_id':'r','observation':observation})
+        approval={'repo_id':'r','observation_hash':observation['observation_hash'],'approved':True,
+            'actor_id':'fixture-user','reason':'changed business acceptance rule',
+            'provenance':{'kind':'user-message','ref':'fixture-message'}}
+        updated=apply_enforcement(subject,'approve-protected-change',approval)
+        self.assertEqual(updated['protected_authorizations'],[approval])
+        with self.assertRaises(WorkflowError):
+            apply_enforcement(subject,'approve-protected-change',{**approval,'observation_hash':'different'})
+        with self.assertRaises(WorkflowError):
+            apply_enforcement(subject,'approve-protected-change',{**approval,'provenance':{}})

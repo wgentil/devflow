@@ -38,6 +38,122 @@ class RoutedNativeRuntimeTests(unittest.TestCase):
     def call(self,request=None):
         with patch('workflow_lib.native_runtime.CodexBackend',return_value=self.backend):
             return invoke(self.root,request or self.request,'routed-op')
+    def test_enforced_native_dispatch_requires_known_cost_before_worker(self):
+        state=read_state(self.root);run=state['data']['runs']['run']
+        run['enforcement']={'protocol':'devflow.python-enforcement/v1', 'policy_version':1}
+        run['effect_policy']={'max_attempts':1,'max_estimated_cost':1,'max_elapsed_ms':100000}
+        transact(self.root,state['version'],'enforce',{'kind':'fixture','payload':state['data']})
+        with self.assertRaises(WorkflowError) as caught:self.call()
+        self.assertEqual(caught.exception.code,'PRICE_UNKNOWN')
+        self.backend.invoke.assert_not_called()
+
+    def enable_enforcement_fixture(self, limit=1):
+        import subprocess
+        repo=Path(self.temp.name)/'owned-repo';repo.mkdir()
+        for args in (['init','-q'],['config','user.email','fixture@example.invalid'],['config','user.name','Fixture']):subprocess.run(['git',*args],cwd=repo,check=True)
+        (repo/'source.py').write_text('value=1')
+        subprocess.run(['git','add','.'],cwd=repo,check=True);subprocess.run(['git','commit','-qm','base'],cwd=repo,check=True)
+        state=read_state(self.root);run=state['data']['runs']['run']
+        run['enforcement']={'protocol':'devflow.python-enforcement/v1', 'policy_version':1};run['effect_policy']={'max_attempts':limit,'max_estimated_cost':limit,'max_elapsed_ms':100000}
+        run['repositories']={'repo':{'location':str(repo)}};state['data']['repositories']=copy.deepcopy(run['repositories'])
+        state['data']['host_bindings']['b1']['project_dir']=str(repo)
+        transact(self.root,state['version'],'enforce-real-fixture',{'kind':'fixture','payload':state['data']})
+
+    def test_enforced_native_timeout_cannot_exceed_remaining_elapsed_budget(self):
+        self.enable_enforcement_fixture()
+        self.call({**self.request, 'estimated_cost': 1})
+        timeout = self.backend.invoke.call_args.args[4]
+        self.assertGreater(timeout, 0)
+        self.assertLessEqual(timeout, 100)
+
+    def test_reviewer_reservation_is_limited_to_its_attached_package(self):
+        from workflow_lib.effect_dispatch import reserve_dispatch
+        from workflow_lib.store import HOST_CONTEXT
+        self.enable_enforcement_fixture(limit=3)
+        state=read_state(self.root)
+        state['data']['runs']['run']['review_packages']={'pkg':{'role':'item','package_hash':'pkg'}}
+        state['data']['runs']['run']['clarifications']={'q':{'id':'q','version':1,'status':'pending','scope':['W1']}}
+        apply_host_event(state['data'],'attach',attachment(binding_id='review',session_id='rs',
+            actor_id='reviewer',role='item-reviewer',item_id='W1',package_hash='pkg',
+            project_dir=state['data']['host_bindings']['b1']['project_dir']))
+        transact(self.root,state['version'],'attach-review-fixture',{'kind':'fixture','payload':state['data']})
+        binding=state['data']['host_bindings']['review']
+        token=HOST_CONTEXT.set({'binding_id':'review','revision':binding['revision'],'release':binding['release']})
+        try:
+            receipt=reserve_dispatch(self.root,'run','review-call','review:item-reviewer:pkg',1,
+                'review-claim',{'item_id':'W1'},owner_binding=binding)
+            self.assertEqual(receipt['owner_binding']['actor_id'],'reviewer')
+            with self.assertRaises(WorkflowError):
+                reserve_dispatch(self.root,'run','foreign','implementation',1,'foreign-claim',{},owner_binding=binding)
+        finally:HOST_CONTEXT.reset(token)
+
+    def test_enforced_native_completion_retains_claim_lineage(self):
+        self.enable_enforcement_fixture()
+        request={**self.request,'estimated_cost':1}
+        result=self.call(request)
+        self.assertEqual(result['status'],'allow')
+        run=read_state(self.root)['data']['runs']['run']
+        self.assertEqual(run['effects']['routed']['status'],'completed')
+        self.assertEqual(run['effects']['routed']['estimated_cost'],1)
+        self.assertTrue(self.call(request)['replayed'])
+        self.backend.invoke.assert_called_once()
+
+    def test_finished_transport_with_partial_work_does_not_leave_uncertain_worker(self):
+        self.enable_enforcement_fixture(limit=3)
+        self.backend.invoke.side_effect=lambda selected,*args:{'status':'completed',
+            'observed':copy.deepcopy(selected),'observation_source':'host-effective-configuration',
+            'invocation_ref':'codex://partial','output':'{}'}
+        result=self.call({**self.request,'estimated_cost':1})
+        self.assertEqual(result['status'],'block')
+        run=read_state(self.root)['data']['runs']['run']
+        self.assertEqual(run['effects']['routed']['status'],'completed')
+        self.assertEqual(result['worker_outcome']['status'],'partial')
+
+    def test_uncertain_native_worker_blocks_replacement_with_budget_remaining(self):
+        from workflow_lib.native_models import NativeError
+        self.enable_enforcement_fixture(limit=3)
+        self.backend.invoke.side_effect=NativeError('unavailable')
+        result=self.call({**self.request,'estimated_cost':1})
+        self.assertEqual(result['status'],'block')
+        run=read_state(self.root)['data']['runs']['run']
+        self.assertEqual(run['effects']['routed']['status'],'uncertain')
+        with patch('workflow_lib.native_runtime.CodexBackend',return_value=self.backend):
+            with self.assertRaises(WorkflowError) as caught:
+                invoke(self.root,{**self.request,'invocation_id':'replacement','estimated_cost':1},'replacement-op')
+        self.assertEqual(caught.exception.code,'EFFECT_BLOCKED')
+        self.backend.invoke.assert_called_once()
+
+    def test_crash_after_launch_keeps_uncertain_claim_and_history(self):
+        self.enable_enforcement_fixture(limit=3)
+        self.backend.invoke.side_effect=RuntimeError('injected after launch')
+        with self.assertRaises(RuntimeError):self.call({**self.request,'estimated_cost':1})
+        run=read_state(self.root)['data']['runs']['run']
+        self.assertEqual(run['effects']['routed']['status'],'uncertain')
+        self.assertEqual([row['to'] for row in run['effects']['routed']['history']],['launching','uncertain'])
+        self.assertEqual(run['effects']['routed']['estimated_cost'],1)
+
+    def test_legacy_opaque_enforcement_metadata_is_not_adoption(self):
+        state=read_state(self.root)
+        state['data']['runs']['run']['enforcement']=None
+        transact(self.root,state['version'],'opaque-legacy',{'kind':'fixture','payload':state['data']})
+        self.assertEqual(self.call()['status'],'allow')
+
+    def test_recorded_user_answer_is_in_required_worker_context(self):
+        from workflow_lib.enforcement_live import source_observation
+        self.enable_enforcement_fixture()
+        state=read_state(self.root);run=state['data']['runs']['run']
+        source=source_observation(run)['source_identity'];spec_hash=run['plan']['spec_hash']
+        transact(self.root,state['version'],'question',{'kind':'domain.enforcement.question','payload':{'request':{'run_id':'run','record':{
+            'id':'q','text':'Which retention window applies?','scope':['W1'],'source_identity':source,'spec_hash':spec_hash}}}})
+        state=read_state(self.root)
+        transact(self.root,state['version'],'answer',{'kind':'domain.enforcement.answer','payload':{'request':{'run_id':'run','record':{
+            'id':'q','question_version':1,'answer':'Thirty days.','actor_id':'fixture-user','material':False,'spec_hash':spec_hash,
+            'provenance':{'kind':'user-message','ref':'fixture-real-message'}}}}})
+        self.assertEqual(self.call({**self.request,'estimated_cost':1})['status'],'allow')
+        prompt=self.backend.invoke.call_args.args[1]
+        self.assertEqual(prompt.count('Thirty days.'),1)
+        self.assertIn('fixture-real-message',prompt)
+
     def test_task_specific_effort_reaches_launch_and_retry_is_exact(self):
         result=self.call()
         self.assertEqual(result['resolved']['effort'],'high')

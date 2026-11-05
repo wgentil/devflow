@@ -1,5 +1,6 @@
 """Declared protection inventory and exact Git/index/worktree observations."""
 import hashlib
+import base64
 import os
 from pathlib import Path
 import stat
@@ -9,7 +10,7 @@ from .store import WorkflowError
 
 
 def _git(repo, *args):
-    result = subprocess.run(['git', *args], cwd=repo, capture_output=True, check=False)
+    result = subprocess.run(['git', '--literal-pathspecs', *args], cwd=repo, capture_output=True, check=False)
     if result.returncode: raise WorkflowError('PROTECTION_OBSERVATION_FAILED', result.stderr.decode('utf-8', 'replace'))
     return result.stdout
 
@@ -29,14 +30,29 @@ def snapshot_protected(repo: Path, inventory: dict) -> dict:
             if stat.S_ISLNK(info.st_mode):
                 worktree = {'type': 'symlink', 'target': os.readlink(path)}
             elif stat.S_ISREG(info.st_mode):
-                worktree = {'type': 'file', 'sha256': hashlib.sha256(path.read_bytes()).hexdigest(), 'executable': bool(info.st_mode & 0o111)}
+                worktree = {'type': 'file', 'sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
+                            'content_base64': base64.b64encode(path.read_bytes()).decode('ascii'), 'executable': bool(info.st_mode & 0o111)}
             else:
-                worktree = {'type': 'other', 'mode': info.st_mode}
+                raise WorkflowError('INVALID_PROTECTION_INVENTORY', 'Declare individual regular files or symlinks; directories and special files need explicit file scope.')
         except FileNotFoundError:
             worktree = {'type': 'missing'}
-        entries[name] = {'worktree': worktree,
-            'index': _git(repo, 'ls-files', '--stage', '-z', '--', name).hex(),
-            'commit': _git(repo, 'ls-tree', '-z', 'HEAD', '--', name).hex()}
+        index = _git(repo, 'ls-files', '--stage', '-z', '--', name)
+        commit = _git(repo, 'ls-tree', '-z', 'HEAD', '--', name)
+        def preimages(raw, index_layer):
+            images = []
+            for record in raw.split(b'\0'):
+                if not record: continue
+                metadata = record.split(b'\t', 1)[0].split()
+                oid = metadata[1 if index_layer else 2].decode('ascii')
+                mode = metadata[0].decode('ascii')
+                # Gitlinks identify another repository rather than a blob.
+                content = None if mode == '160000' or set(oid) == {'0'} else _git(repo, 'cat-file', 'blob', oid)
+                images.append({'mode': mode, 'object_id': oid,
+                    'stage': metadata[2].decode('ascii') if index_layer else None,
+                    'content_base64': base64.b64encode(content).decode('ascii') if content is not None else None})
+            return images
+        entries[name] = {'worktree': worktree, 'index': index.hex(), 'commit': commit.hex(),
+            'index_preimages': preimages(index, True), 'commit_preimages': preimages(commit, False)}
     return {'schema_version': 1, 'inventory': inventory, 'inventory_hash': digest(inventory), 'entries': entries}
 
 

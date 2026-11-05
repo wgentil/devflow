@@ -16,6 +16,10 @@ def _decision(status, reason, blockers=None, **extra):
 def package_current(run, package):
     from .stored_records import require_package
     package=require_package(package)
+    from .action_policy import enforcement_version
+    if enforcement_version(run) is not None:
+        from .review_enforcement import review_bindings_current
+        if not review_bindings_current(run, package, live=True): return False
     from .reviews import _git
     plan_hash=hashlib.sha256(json.dumps(run.get('plan',{}),sort_keys=True,ensure_ascii=False,separators=(',',':')).encode()).hexdigest()
     if package.get('plan_hash') != plan_hash or package.get('spec_hash') != run.get('plan',{}).get('spec_hash'):return False

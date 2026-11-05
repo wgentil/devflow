@@ -116,7 +116,7 @@ class ReviewTests(unittest.TestCase):
 
     def test_enforcement_package_and_disposition_bind_real_source(self):
         from workflow_lib.enforcement_live import source_observation
-        self.run['enforcement']={'policy_version':1}
+        self.run['enforcement']={'protocol':'devflow.python-enforcement/v1', 'policy_version':1}
         self.run['repositories']={'repo-1':{'location':str(self.repo)}}
         prepare,record,_=self.module()
         package=prepare(self.run,'branch',{'repo-1':{'location':str(self.repo),'base':self.base,'head':self.head}})
@@ -124,7 +124,7 @@ class ReviewTests(unittest.TestCase):
         self.run['review_packages']={package['package_hash']:package}
         dispositions=[{'finding_id':'f','source_identity':package['source_identity'],'obligations':['f'],
                        'disposition':'resolved','proof_ids':['p']}]
-        report={'package_hash':package['package_hash'],'verdict':'pass','findings':[],'closure_dispositions':dispositions,'protected_dispositions':[{'observation_hash':'exact','verdict':'pass'}]}
+        report={'package_hash':package['package_hash'],'verdict':'block','findings':[],'closure_dispositions':dispositions,'protected_dispositions':[{'observation_hash':'exact','verdict':'pass'}]}
         result=record(self.run,package['package_hash'],{'role':'branch','actor_id':'reviewer','tool_available':True,'invocation_ref':'fixture-call'},report)
         self.assertEqual(result.get('closure_dispositions'),dispositions)
         self.assertEqual(result.get('protected_dispositions'),[{'observation_hash':'exact','verdict':'pass'}])

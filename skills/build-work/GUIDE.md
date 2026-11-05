@@ -142,5 +142,7 @@ flowchart LR
     Adopt[Explicitly adopted run] --> Check[Current action and question checks]
     Check -->|Affected unresolved question| Ask[Record actual user answer]
     Ask --> Check
-    Check -->|Allowed| Existing[Existing verification and review gates]
+    Check -->|Allowed| Capture[Capture raw RED and GREEN evidence]
+    Capture --> Review[Existing independent review assesses test oracle]
+    Review --> Existing[Existing verification and review gates]
 ```

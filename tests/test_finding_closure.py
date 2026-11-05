@@ -6,7 +6,7 @@ from workflow_lib.store import WorkflowError
 
 class ClosureTests(unittest.TestCase):
     def fixture(self):
-        return {'id':'r','enforcement':{'policy_version':1},'source_identity':'sha',
+        return {'id':'r','enforcement':{'protocol':'devflow.python-enforcement/v1', 'policy_version':1},'source_identity':'sha',
             'actors':{'implementer':'author'},'unresolved_findings':[{'id':'f','obligations':['o1','o2']}],
             'corrections':{'f':{'source_identity':'sha','proof_ids':['p']}},
             'verifier_proofs':{'p':{'passed':True,'fresh':True,'source_identity':'sha'}},

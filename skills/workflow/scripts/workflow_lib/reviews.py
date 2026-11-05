@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from .action_policy import enforcement_version
+
 from copy import deepcopy
 import hashlib
 import json
@@ -120,9 +122,11 @@ def prepare_review(run: dict, role: str, repo_heads: dict,
     if item_id is not None:
         body.update(schema_version=2,item_id=item_id,item_attempt_token=run['items'][item_id]['attempts'][-1]['token'],
                     governing_digest=run.get('governing_digest'))
-    if run.get('enforcement', {}).get('policy_version') == 1:
+    if enforcement_version(run) == 1:
         from .enforcement_live import source_observation
         body['source_identity'] = source_observation(run)['source_identity']
+        from .review_enforcement import review_bindings
+        body['enforcement_bindings'] = review_bindings(run, role, item_id, live=True)
     body = deepcopy(body)
     body["package_hash"] = hashlib.sha256(_canonical(body).encode()).hexdigest()
     return body
@@ -169,6 +173,10 @@ def record_review(run: dict, package_hash: str, reviewer: dict, report: dict) ->
         if current != repo["untracked_hashes"]:
             from .review_inputs import whole_review_change_diagnostics
             raise ValueError('Review untracked inputs changed after package preparation: '+str(whole_review_change_diagnostics(location,repo)))
+    if enforcement_version(run) is not None:
+        from .review_enforcement import review_bindings_current
+        if not review_bindings_current(run, package, live=True):
+            raise ValueError('Review question, proof or declared input bindings changed after preparation.')
     if report.get("package_hash") != package_hash or report.get("verdict") not in {"pass", "request-changes", "block"}:
         raise ValueError("review report must bind the package and use a supported verdict")
     if package.get('schema_version') == 2:
@@ -204,7 +212,7 @@ def record_review(run: dict, package_hash: str, reviewer: dict, report: dict) ->
               "findings": report["findings"], "review_id": hashlib.sha256(
                   _canonical({"package": package_hash, "actor": actor, "invocation": invocation,
                               "report": report}).encode()).hexdigest()}
-    if run.get('enforcement', {}).get('policy_version') == 1:
+    if enforcement_version(run) == 1:
         for field in ('closure_dispositions', 'test_oracles', 'protected_dispositions'):
             values = report.get(field, [])
             if not isinstance(values, list) or any(not isinstance(v, dict) for v in values):
@@ -215,6 +223,9 @@ def record_review(run: dict, package_hash: str, reviewer: dict, report: dict) ->
     if package.get('schema_version') == 2:
         review['schema_version']=2
         review['item_attempt_token']=package['item_attempt_token']
+    if enforcement_version(run) == 1:
+        from .oracle_acceptance import validate_oracle_acceptance
+        review['semantic_approvals'] = validate_oracle_acceptance(run, package, review)
     return review
 
 

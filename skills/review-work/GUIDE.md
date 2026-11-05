@@ -206,7 +206,8 @@ design is still in progress; see [current scope and developer contracts](../../d
 ```mermaid
 flowchart LR
     Adopt[Explicitly adopted run] --> Check[Current action and question checks]
-    Check -->|Affected unresolved question| Ask[Record actual user answer]
+    Check -->|Affected unresolved question| Ask[Record and classify actual user answer]
     Ask --> Check
+    Check -->|Diagnostic reviewer| Assess[Record assessment with current question and answer context]
     Check -->|Allowed| Existing[Existing verification and review gates]
 ```

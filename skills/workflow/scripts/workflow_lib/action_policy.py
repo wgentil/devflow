@@ -55,11 +55,17 @@ def adopt_enforcement(run: dict, authorization: dict) -> dict:
             or authorization.get('run_id') != run.get('id')
             or authorization.get('state_version') != run.get('state_version')):
         raise WorkflowError('ENFORCEMENT_AUTHORIZATION_REQUIRED', 'Approve the exact current run version.')
-    if run.get('active_attempt') or any(row.get('status') in {'running', 'claimed', 'uncertain'}
+    selected = enforcement_version(run)
+    if selected is not None:
+        raise WorkflowError('ENFORCEMENT_ALREADY_SELECTED', 'Existing contracts require an explicit migration; adoption cannot downgrade or reset them.')
+    if any(row.get('status') not in {'completed', 'failed', 'reconciled'}
+           for row in run.get('effects', {}).values()):
+        raise WorkflowError('WORKER_ACTIVE', 'Reconcile active or uncertain effect reservations before adoption.')
+    if run.get('active_attempt') or any(row.get('status') in {'running', 'claimed', 'launching', 'uncertain'}
             for row in list(run.get('native_invocations', {}).values()) + run.get('repair_cycles', [])):
         raise WorkflowError('WORKER_ACTIVE', 'Stop and reconcile active work before adoption.')
     updated = deepcopy(run)
-    updated['enforcement'] = {'policy_version': 1, 'authorization': deepcopy(authorization)}
+    updated['enforcement'] = {'protocol':'devflow.python-enforcement/v1', 'policy_version': 1, 'authorization': deepcopy(authorization)}
     for collection in ('verification_proofs', 'verifier_proofs', 'hardening_proofs'):
         for proof in updated.get(collection, {}).values():
             proof['fresh'] = False
@@ -73,17 +79,55 @@ def adopt_enforcement(run: dict, authorization: dict) -> dict:
     return updated
 
 
-def subject_decision(subject: dict, action: str, scope: dict) -> dict:
+def enforcement_version(subject: dict):
     policy = subject.get('enforcement')
-    if not isinstance(policy, dict) or policy.get('policy_version') is None:
+    if not isinstance(policy, dict): return None
+    protocol = policy.get('protocol')
+    if protocol == 'devflow.python-enforcement/v1': return policy.get('policy_version')
+    if isinstance(protocol, str) and protocol.startswith('devflow.python-enforcement/'):
+        return 'unsupported:' + protocol
+    return None
+
+
+def subject_decision(subject: dict, action: str, scope: dict) -> dict:
+    selected = enforcement_version(subject)
+    if selected is None:
         return evaluate_action(action, scope, {'policy_version': None})
-    from .clarifications import clarification_blockers
+    from .clarifications import clarification_blockers, clarification_binding
     blockers = clarification_blockers(subject, scope) if action != 'review-report' else []
+    if action in {'completion', 'delivery'}:
+        for identifier, effect in subject.get('effects', {}).items():
+            if effect.get('status') not in {'completed', 'failed', 'reconciled'}:
+                item_id = effect.get('action_scope', {}).get('item_id')
+                synthetic = {'id': 'effect:' + identifier, 'version': 1, 'status': 'pending',
+                             'scope': [item_id] if item_id else None}
+                affected = clarification_blockers({**subject, 'clarifications': {synthetic['id']: synthetic}}, scope)
+                blockers.extend(affected)
+
     return evaluate_action(action, scope, {
-        'policy_version': subject.get('enforcement', {}).get('policy_version'),
+        'policy_version': selected,
         'state_version': subject.get('state_version'),
         'policy_hash': digest(subject.get('enforcement', {})),
-        'questions_hash': digest(subject.get('clarifications', {})),
+        'questions_hash': clarification_binding(subject, scope),
         'source_identity': subject.get('source_identity'),
         'spec_hash': subject.get('plan', {}).get('spec_hash'),
         'required_evidence': [row['id'] for row in blockers], 'evidence': {}})
+
+
+def validate_authority_patch(data: dict, kind: str, payload: dict) -> None:
+    if data.get('enforcement_guard') != {'protocol': 'devflow.python-enforcement/v1', 'schema_version': 1}: return
+    reserved = {'runs', 'host_bindings', 'host_tasks', 'domain_receipts', 'enforcement_guard',
+                'spec', 'spec_pair', 'approval', 'spec_approval_invalidated', 'plan', 'plan_validation',
+                'context', 'context_hash', 'resolved_context', 'resolved_context_source_hash',
+                'repositories', 'governing_input_receipt', 'governing_reassessment_required',
+                'model_policy', 'routing_policy', 'document_approvals', 'document_proposals'}
+    allowed = {
+        'context.layer.set': {'context', 'context_hash'},
+        'context.resolved': {'resolved_context', 'resolved_context_source_hash'},
+        'context.resolution.recorded': {'resolved_context', 'resolved_context_source_hash'},
+        'repo.registered': {'repositories'}, 'spec.stored': {'spec', 'spec_pair'},
+        'spec.approved': {'approval', 'spec_approval_invalidated'},
+        'plan.validated': {'plan', 'plan_validation'}, 'document.approved': {'approval'},
+    }.get(kind, set())
+    if (set(payload) & reserved) - allowed:
+        raise WorkflowError('ENFORCEMENT_TRANSITION_REQUIRED', 'Use the validated transition; generic patches cannot replace enforcement authority or history.')
