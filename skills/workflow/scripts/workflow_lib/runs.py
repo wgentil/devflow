@@ -58,6 +58,8 @@ def start_run(state: dict, run_id: str, plan: dict) -> dict:
 
 
 def issue_attempt(run: dict, item_id: str) -> dict:
+    from .action_policy import require_action, subject_decision
+    require_action(subject_decision(run, 'attempt', {'item_id': item_id}))
     result = deepcopy(run)
     if result.get("status") != "active":
         raise WorkflowError("RUN_NOT_ACTIVE", "run is not active")
@@ -95,6 +97,8 @@ def record_result(run: dict, token: str, result: dict) -> dict:
     if not isinstance(result, dict) or not isinstance(result.get("outcome"), str):
         raise WorkflowError("INVALID_RESULT", "result requires an outcome string")
     source = _active(run, token)
+    from .action_policy import require_action, subject_decision
+    require_action(subject_decision(run, 'completion', {'item_id': source['item_id']}))
     success_labels = {'passed','success','successful','succeeded','complete','completed'}
     if result['outcome'] in success_labels and (result['outcome'] != 'passed' or not result.get('verifier_proof_id')):
         raise WorkflowError('VERIFIER_PROOF_REQUIRED',

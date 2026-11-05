@@ -58,6 +58,9 @@ def supplemental_domain_streams():
     def pair(kind, data, request):
         return [{'id': 'seed', 'kind': 'fixture', 'payload': data},
                 {'id': 'event', 'kind': kind, 'payload': {'request': request}}]
+    yield pair('domain.enforcement.adopt', {'runs': {'r': {'id': 'r', 'state_version': 0,
+        'status': 'active', 'active_attempt': None}}}, {'run_id': 'r', 'authorization': {
+        'approved': True, 'actor_id': 'fixture-user', 'run_id': 'r', 'state_version': 0}})
     yield pair('domain.improve.trace-enable', {'runs': {'r': {'id': 'r'}}},
                {'run_id': 'r', 'actor_id': 'owner'})
     yield pair('domain.stats.legacy-import', {}, {'record': {

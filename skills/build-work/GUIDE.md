@@ -128,3 +128,19 @@ labels without that contract fail before consuming the token; correct the reques
 and retry. Deliberate nonpassing labels such as `failed`, `blocked`, `skipped`
 or `error` record an unverified result and leave the item pending. Other
 non-success labels likewise never complete work. No proof is selected implicitly.
+
+
+## Opt-in enforcement development foundation
+
+Explicitly adopted runs apply versioned clarification checks at affected action
+boundaries. Preserve actual user-answer provenance and renew stale preparation;
+read-only assessments remain possible. The complete enforcement and review/repair
+design is still in progress; see [current scope and developer contracts](../../docs/reference/python-enforcement.md).
+
+```mermaid
+flowchart LR
+    Adopt[Explicitly adopted run] --> Check[Current action and question checks]
+    Check -->|Affected unresolved question| Ask[Record actual user answer]
+    Ask --> Check
+    Check -->|Allowed| Existing[Existing verification and review gates]
+```

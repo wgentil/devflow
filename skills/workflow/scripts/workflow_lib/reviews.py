@@ -120,6 +120,9 @@ def prepare_review(run: dict, role: str, repo_heads: dict,
     if item_id is not None:
         body.update(schema_version=2,item_id=item_id,item_attempt_token=run['items'][item_id]['attempts'][-1]['token'],
                     governing_digest=run.get('governing_digest'))
+    if run.get('enforcement', {}).get('policy_version') == 1:
+        from .enforcement_live import source_observation
+        body['source_identity'] = source_observation(run)['source_identity']
     body = deepcopy(body)
     body["package_hash"] = hashlib.sha256(_canonical(body).encode()).hexdigest()
     return body
@@ -201,6 +204,12 @@ def record_review(run: dict, package_hash: str, reviewer: dict, report: dict) ->
               "findings": report["findings"], "review_id": hashlib.sha256(
                   _canonical({"package": package_hash, "actor": actor, "invocation": invocation,
                               "report": report}).encode()).hexdigest()}
+    if run.get('enforcement', {}).get('policy_version') == 1:
+        for field in ('closure_dispositions', 'test_oracles', 'protected_dispositions'):
+            values = report.get(field, [])
+            if not isinstance(values, list) or any(not isinstance(v, dict) for v in values):
+                raise ValueError(field + ' must be an array of records')
+            review[field] = deepcopy(values)
     if item_id:
         review["item_id"] = item_id
     if package.get('schema_version') == 2:

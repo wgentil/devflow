@@ -22,6 +22,14 @@ class RepairDecisionTests(unittest.TestCase):
             'unresolved_findings': [],
         }
 
+    def test_pending_question_blocks_repair_before_claim(self):
+        run=self.run_record()
+        run['enforcement']={'policy_version':1}
+        run['clarifications']={'q':{'id':'q','version':1,'status':'pending','scope':None}}
+        decision=repair_decision(run,1000)
+        self.assertEqual(decision['status'],'blocked')
+        self.assertEqual(decision['reason_code'],'ACTION_BLOCKED')
+
     def test_failing_gate_is_scoped(self):
         decision = repair_decision(self.run_record(), 1000)
         self.assertEqual(decision['status'], 'ready')

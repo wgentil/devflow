@@ -116,3 +116,7 @@ New project control roots use format 2 with Python's SQLite support. Existing
 legacy roots are preserved until explicit conversion; logical workflow schema
 remains 1. The harness reports runtime/recovery needs without requiring users to
 understand formats or command names.
+
+The [Python enforcement foundation](reference/python-enforcement.md) is an
+in-progress helper extension, not a separate skill or a complete replacement for
+workflow verification and review.

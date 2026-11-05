@@ -49,6 +49,56 @@ class EvidenceTests(unittest.TestCase):
         from workflow_lib.evidence import capture_evidence
         return capture_evidence(*args)
 
+    def test_enforced_capture_requires_independent_integrity_contract(self):
+        from workflow_lib.store import read_state, WorkflowError
+        state=read_state(self.root);run=state['data']['runs']['run-1']
+        run['enforcement']={'policy_version':1}
+        transact(self.root,state['version'],'enforce',{'kind':'fixture','payload':{'runs':{'run-1':run}}})
+        with self.assertRaises(WorkflowError):
+            self.capture(self.root,'run-1','attempt-1','RED',
+                self.command({'tests':[{'id':'test_target','outcome':'failed'}]},1),
+                ['test_target.py'],['test_target'],10)
+
+    def test_enforced_reducer_rejects_legacy_proof_injection(self):
+        from workflow_lib.store import read_state, WorkflowError
+        proof=self.capture(self.root,'run-1','attempt-1','RED',
+            self.command({'tests':[{'id':'test_target','outcome':'failed'}]},1),['test_target.py'],['test_target'],10)
+        state=read_state(self.root);run=state['data']['runs']['run-1'];run['enforcement']={'policy_version':1}
+        transact(self.root,state['version'],'enforce',{'kind':'fixture','payload':{'runs':{'run-1':run}}})
+        proof={**proof,'id':'forged-new-proof'}
+        with self.assertRaises(WorkflowError):
+            transact(self.root,read_state(self.root)['version'],'inject',{'kind':'verification.recorded','payload':{'run_id':'run-1','proof':proof}})
+
+    def test_enforced_real_red_green_uses_reviewed_oracle_and_real_sources(self):
+        import hashlib
+        from workflow_lib.store import read_state
+        script = """import json
+from pathlib import Path
+outcome='passed';phase=None
+try: assert Path('value.txt').read_text() == '30'
+except AssertionError: outcome='failed';phase='test-assertion'
+print(json.dumps({'schema':'devflow-test-report-v2','tests':[{'id':'test_target','outcome':outcome,'failure_phase':phase}]}))
+raise SystemExit(0 if outcome=='passed' else 1)
+"""
+        (self.repo/'test_target.py').write_text(script)
+        (self.repo/'value.txt').write_text('60')
+        state=read_state(self.root);run=state['data']['runs']['run-1']
+        run['enforcement']={'policy_version':1};run['actors']={'implementer':'fixture-author'}
+        run['plan']['spec_hash']='fixture-approved-spec'
+        run['plan']['work_items'][0].update(verification_inputs=['test_target.py'],verification_target_ids=['test_target'])
+        run['reviews']={'branch':[{'review_id':'fixture-oracle-review','actor_id':'fixture-reviewer','invocation_ref':'fixture-review-call',
+            'verdict':'pass','test_oracles':[{'item_id':'W1','input_hashes':{'test_target.py':hashlib.sha256(script.encode()).hexdigest()},
+            'target_ids':['test_target'],'spec_hash':'fixture-approved-spec','rationale':'thirty days is the approved fixture rule',
+            'authority_refs':['fixture-spec:R1'],'failure_relevance':'sixty days violates the rule'}]}]}
+        transact(self.root,state['version'],'enforce',{'kind':'fixture','payload':{'runs':{'run-1':run}}})
+        argv=[sys.executable,'test_target.py']
+        red=self.capture(self.root,'run-1','attempt-1','RED',argv,['test_target.py'],['test_target'],10)
+        (self.repo/'value.txt').write_text('30')
+        green=self.capture(self.root,'run-1','attempt-1','GREEN',argv,['test_target.py'],['test_target'],10)
+        self.assertNotEqual(red['source_identity'],green['source_identity'])
+        self.assertEqual(green['integrity']['baseline_source'],red['source_identity'])
+        self.assertTrue((self.root/green['stdout_ref']).is_file())
+
     def test_actual_target_red_green(self):
         red = self.capture(self.root, "run-1", "attempt-1", "RED",
                            self.command({"tests": [{"id": "test_target", "outcome": "failed"}]}, 1),

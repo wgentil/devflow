@@ -194,3 +194,19 @@ acceptance packages always retain conservative whole-tree behavior.
 ## Prior findings as reviewer context
 
 Pass `--prior-findings-json` an array like [prior-findings.json](../../docs/examples/prior-findings.json). Each entry needs a unique nonempty `id`; optional severity must be `critical`, `important`, `minor` or `info`, optional path must be nonempty, and optional line must be a positive integer. Legacy minimal ID objects remain accepted. The reviewer checks prior findings against current code; the array does not automatically resolve findings or waive gates.
+
+
+## Opt-in enforcement development foundation
+
+Explicitly adopted runs apply versioned clarification checks at affected action
+boundaries. Preserve actual user-answer provenance and renew stale preparation;
+read-only assessments remain possible. The complete enforcement and review/repair
+design is still in progress; see [current scope and developer contracts](../../docs/reference/python-enforcement.md).
+
+```mermaid
+flowchart LR
+    Adopt[Explicitly adopted run] --> Check[Current action and question checks]
+    Check -->|Affected unresolved question| Ask[Record actual user answer]
+    Ask --> Check
+    Check -->|Allowed| Existing[Existing verification and review gates]
+```

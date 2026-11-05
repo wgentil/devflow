@@ -167,7 +167,7 @@ class SQLiteStoreTests(unittest.TestCase):
         self.assertFalse(registered_domain_kinds() - covered, f'Missing domain branches: {registered_domain_kinds() - covered}')
         families = {kind.split('.')[1] for kind in covered if kind.startswith('domain.')}
         self.assertEqual(families, {'host', 'pr', 'repair', 'issues', 'outbox', 'migrate',
-                                   'ingest', 'stats', 'improve', 'harden'})
+                                   'ingest', 'stats', 'improve', 'harden', 'enforcement'})
 
     def test_invalid_reducer_variants_have_legacy_failure_parity(self):
         from storage_event_cases import (basic_event_streams, captured_event_streams,

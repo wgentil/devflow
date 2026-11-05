@@ -53,6 +53,21 @@ def reduce_event(data, kind, payload, version, *, metrics_source_hash=None):
 
 
 def _reduce(data, kind, req, version, *, metrics_source_hash=None):
+    if kind.startswith('domain.enforcement.') and kind != 'domain.enforcement.adopt':
+        from .enforcement_events import apply_enforcement
+        run = data.get('runs', {}).get(req.get('run_id'))
+        require(run is not None, 'known run required')
+        action = kind.removeprefix('domain.enforcement.')
+        updated = apply_enforcement(run, action, req['record'])
+        data['runs'][req['run_id']] = updated
+        return {'run_id': req['run_id'], 'subject_hash': digest(updated)}
+    if kind == 'domain.enforcement.adopt':
+        from .action_policy import adopt_enforcement
+        run = data.get('runs', {}).get(req.get('run_id'))
+        require(run is not None, 'known run required')
+        updated = adopt_enforcement(run, req.get('authorization', {}))
+        data['runs'][req['run_id']] = updated
+        return {'run_id': req['run_id'], 'enforcement': updated['enforcement']}
     if kind == 'domain.pr.rework':
         run = data.get('runs', {}).get(req.get('run_id'))
         require(run and run.get('status') == 'active' and run.get('pending_pr')

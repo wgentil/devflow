@@ -153,6 +153,12 @@ def capture_evidence(root: Path, run_id: str, token: str, phase: str, command: l
             raise WorkflowError("TEST_FILE_NOT_FOUND", f"test file does not exist: {name}")
         resolved_paths[name] = source
     before_tests = {name: _sha(path.read_bytes()) for name, path in resolved_paths.items()}
+    integrity_contract = None
+    if run.get('enforcement', {}).get('policy_version') is not None:
+        from .action_policy import subject_decision, require_action
+        require_action(subject_decision(run, 'proof', {'item_id': item_id}))
+        from .test_integrity import verification_integrity_contract
+        integrity_contract = verification_integrity_contract(run, work_item, before_tests, target_ids, command, report_format)
     from .red_reuse import verification_contract, select_red_source
     from .document_units import digest
     contract = verification_contract(run,work_item,repo_id,before_tests,target_ids,command,report_format)
@@ -220,6 +226,30 @@ def capture_evidence(root: Path, run_id: str, token: str, phase: str, command: l
              "repository_head": before_repo["head"], "worktree_digest": before_repo["worktree_digest"],
              "test_hashes": before_tests, "target_outcomes": target_outcomes, "test_counts": test_counts, "passed": True,
              "stdout_ref": _blob(root, stdout_raw), "stderr_ref": _blob(root, stderr_raw)}
+    if integrity_contract is not None:
+        from .test_integrity import parse_test_evidence, validate_test_pair
+        from .enforcement_live import source_observation
+        observation = source_observation({**run, 'repositories': run.get('repositories') or {repo_id: repository}})
+        integrity = {**parse_test_evidence(stdout, stderr, report_format), 'phase': phase,
+            'contract': integrity_contract, 'source_identity': observation['source_identity'],
+            'passed': True, 'exit_code': exit_code, 'stdout_ref': proof['stdout_ref'], 'stderr_ref': proof['stderr_ref']}
+        if phase == 'RED':
+            if (not all(t in integrity['outcomes'] and integrity['outcomes'][t] in {'failed', 'passed'} for t in target_ids)
+                    or not any(integrity['outcomes'].get(t) == 'failed' and integrity['classification'].get(t) == 'assertion' for t in target_ids)):
+                raise WorkflowError('TEST_INTEGRITY_BLOCKED', 'Target assertion phase is not substantiated by this report.')
+        else:
+            sources = [p for p in run.get('verification_proofs', {}).values() if p.get('phase') == 'RED'
+                       and p.get('token') == token and p.get('integrity', {}).get('contract') == integrity_contract]
+            if red_source is not None:
+                source_run = state['data']['runs'][red_source['run_id']]
+                sources = [source_run['verification_proofs'][red_source['proof_id']]]
+            if not sources: raise WorkflowError('TEST_INTEGRITY_BLOCKED', 'Linked versioned RED proof required.')
+            baseline = sources[-1]['integrity']
+            integrity['baseline_source'] = baseline['source_identity']
+            validate_test_pair(baseline, integrity, integrity_contract)
+        proof['integrity'] = integrity
+        proof['source_identity'] = observation['source_identity']
+        proof['source_observation'] = observation
     proof.update(verification_contract=contract, contract_hash=digest(contract))
     if red_source is not None: proof['red_source'] = red_source
     response = transact(root, state["version"], f"verification:{proof['id']}",

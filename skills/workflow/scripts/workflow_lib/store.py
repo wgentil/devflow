@@ -93,6 +93,17 @@ def _apply_event(state: dict, event: dict, *, metrics_source_hash=None) -> None:
         run = data.get('runs', {}).get(payload.get('run_id'), {})
         if any(record.get('status') == 'running' for record in run.get('native_invocations', {}).values()):
             raise WorkflowError('NATIVE_INVOCATION_ACTIVE', 'Stop or finish native work before changing the attempt.')
+    action = {'run.attempt.issued': 'attempt', 'run.reverification.started': 'attempt',
+              'run.result.recorded': 'completion', 'verification.recorded': 'proof',
+              'verification.typed.recorded': 'proof', 'acceptance.recorded': 'completion',
+              'delivery.recorded': 'delivery', 'finding.resolved': 'finding'}.get(kind)
+    if kind == 'finding.resolved' and data.get('runs', {}).get(payload.get('run_id'), {}).get('enforcement'):
+        raise WorkflowError('INDEPENDENT_CLOSURE_REQUIRED', 'Use the independent closure transition.')
+    if action:
+        from .action_policy import subject_decision, require_action
+        subject = data.get('runs', {}).get(payload.get('run_id'), {})
+        item_id = (payload.get('attempt') or payload.get('proof') or subject.get('active_attempt') or {}).get('item_id')
+        require_action(subject_decision(subject, action, {'item_id': item_id} if item_id else {}))
     if kind.startswith("domain."):
         from .journal_domains import reduce_event
         result = (reduce_event(data, kind, payload, event.get("sequence", 1) - 1, metrics_source_hash=metrics_source_hash)
@@ -213,11 +224,45 @@ def _apply_event(state: dict, event: dict, *, metrics_source_hash=None) -> None:
                     or proof.get('contract_hash') != digest(contract)
                     or select_red_source(data,run['id'],proof['item_id'],contract,source.get('proof_id'),source.get('run_id')) != source):
                 raise WorkflowError('INVALID_EVENT', 'Reused RED lineage differs from recorded proof.')
+        if run.get('enforcement', {}).get('policy_version') is not None:
+            from .test_integrity import verification_integrity_contract, validate_test_pair
+            from .document_units import digest
+            item = next(row for row in run['plan']['work_items'] if row['id'] == proof['item_id'])
+            integrity = proof.get('integrity', {})
+            contract = integrity.get('contract', {})
+            expected = verification_integrity_contract(run, item, proof.get('test_hashes', {}),
+                contract.get('targets', []), proof.get('argv', []), contract.get('report_format'))
+            observation = proof.get('source_observation', {})
+            if (contract != expected or not observation.get('snapshots')
+                    or observation.get('source_identity') != digest(observation['snapshots'])
+                    or proof.get('source_identity') != observation['source_identity']
+                    or integrity.get('source_identity') != observation['source_identity']
+                    or integrity.get('stdout_ref') != proof.get('stdout_ref')
+                    or integrity.get('stderr_ref') != proof.get('stderr_ref')
+                    or integrity.get('outcomes') != proof.get('target_outcomes')
+                    or integrity.get('exit_code') != proof.get('exit_code')):
+                raise WorkflowError('TEST_INTEGRITY_BLOCKED', 'Proof bindings differ from the approved execution contract.')
+            if proof.get('phase') == 'RED':
+                if not all(t in integrity.get('outcomes', {}) for t in contract['targets']) or not any(
+                    integrity['outcomes'][t] == 'failed' and integrity.get('classification', {}).get(t) == 'assertion'
+                    for t in contract['targets']):
+                    raise WorkflowError('TEST_INTEGRITY_BLOCKED', 'Target assertion failure required.')
+            else:
+                baselines = [row['integrity'] for row in run.get('verification_proofs', {}).values()
+                    if row.get('phase') == 'RED' and row.get('token') == proof.get('token') and row.get('integrity', {}).get('contract') == contract]
+                if proof.get('red_source'):
+                    source = proof['red_source']
+                    baselines = [data['runs'][source['run_id']]['verification_proofs'][source['proof_id']].get('integrity', {})]
+                if not baselines: raise WorkflowError('TEST_INTEGRITY_BLOCKED', 'Versioned RED baseline required.')
+                validate_test_pair(baselines[-1], integrity, contract)
+            run['source_identity'] = observation['source_identity']
+            run['source_observation'] = observation
         run["verification_proofs"][proof["id"]] = proof
         if proof.get("phase") == "GREEN":
             run.setdefault("verifier_proofs", {})[proof["id"]] = {
                 "passed": True, "item_id": proof["item_id"], "token": proof["token"],
                 "evidence_id": proof["id"],
+                **({"source_identity": proof["source_identity"]} if proof.get("source_identity") else {}),
             }
     elif kind == "authorization.recorded":
         run = data.setdefault("runs", {}).get(payload.get("run_id"))

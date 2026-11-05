@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import argparse
 
-from . import build, delivery, review, ingest, stats, issues, migrate, docs, harden, host, repair, improve, pr, context_artifact, state
+from . import build, delivery, review, ingest, stats, issues, migrate, docs, harden, host, repair, improve, pr, context_artifact, state, enforcement
 
 
 def register_commands(parser: argparse.ArgumentParser) -> None:
     """Register the build, review, and delivery command groups."""
-    for module in (build, review, delivery, ingest, stats, issues, migrate, docs, harden, host, repair, improve, pr, context_artifact, state):
+    for module in (build, review, delivery, ingest, stats, issues, migrate, docs, harden, host, repair, improve, pr, context_artifact, state, enforcement):
         module.register_commands(parser)
 
 
@@ -20,6 +20,7 @@ def dispatch(parsed: argparse.Namespace) -> dict:
                "stats": stats, "issues": issues, "migrate": migrate, "docs": docs, "harden": harden, "host": host, "repair": repair, "improve": improve, "pr": pr}
     modules['context-artifact'] = context_artifact
     modules['state'] = state
+    modules['enforcement'] = enforcement
     module = modules.get(command)
     if module is None:
         raise ValueError(f"unsupported command group: {command}")

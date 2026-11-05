@@ -290,6 +290,9 @@ def apply_native_event(state,kind,req):
     identifier=req.get('invocation_id')
     require(isinstance(identifier,str) and identifier, 'Native invocation ID required.')
     if kind=='native-start':
+        from .action_policy import subject_decision, require_action
+        require_action(subject_decision(run, 'dispatch' if binding.get('role') == 'implementer' else 'review-report',
+            {'item_id': run['active_attempt']['item_id']} if run.get('active_attempt') else {}))
         require(identifier not in records and identifier not in run.get('model_receipts',{}), 'Invocation ID is immutable.')
         require_no_native_work(run,binding['binding_id'])
         require(req.get('policy_revision')==len(run.get('model_overrides',[])), 'Model policy changed before native dispatch.', 'STALE_STATE')

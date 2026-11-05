@@ -49,6 +49,12 @@ def repair_decision(run: dict, now_ms: int) -> dict:
     scope = {key: delta[key] for key in ('finding_ids', 'gate_ids', 'item_ids', 'missing_gate_ids')}
     scope['implementer_actor'] = run.get('actors', {}).get('implementer')
     base = {'scope': scope, 'delta_hash': delta['digest'], 'remaining': remaining}
+    from .action_policy import subject_decision
+    scopes = [{'item_id': item_id} for item_id in scope['item_ids']] or [{}]
+    decisions = [subject_decision(run, 'dispatch', item_scope) for item_scope in scopes]
+    blocked = next((d for d in decisions if d['status'] == 'block'), None)
+    if blocked:
+        return {**base, 'status': 'blocked', 'reason_code': 'ACTION_BLOCKED', 'policy_decision': blocked}
     if run.get('status') != 'active':
         return {**base, 'status': 'blocked', 'reason_code': 'RUN_NOT_ACTIVE'}
     if not delta['finding_ids'] and not delta['gate_ids'] and not delta['item_ids']:

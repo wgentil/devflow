@@ -299,6 +299,10 @@ def invoke(root,request,operation_id):
                 observed=configuration['observed'];resolved=decision['resolved']
                 if any(observed.get(k)!=resolved.get(k) for k in ('model','effort','provider')):
                     result={**configuration,'status':'interrupted','error_kind':'unavailable','reason_code':'MODEL_SUBSTITUTED'}
+            from .action_policy import subject_decision, require_action
+            latest = read_host(root, binding_id=binding['binding_id'])['data']['runs'][binding['run_id']]
+            require_action(subject_decision(latest, 'dispatch' if access == 'workspace-write' else 'review-report',
+                {'item_id': latest['active_attempt']['item_id']} if latest.get('active_attempt') else {}))
             if result is None:result=backend.invoke(decision['resolved'],prompt,binding['actor_id'],access,request.get('timeout_seconds',300))
             if task_facts is not None and result.get('status') == 'completed':
                 from .routing_receipts import project_worker_result

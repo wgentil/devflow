@@ -65,6 +65,10 @@ def check_completion(state: dict, binding: dict, task_id: str, live: bool = True
     except WorkflowError:return _decision('block','STALE_BINDING')
     run=state.get('runs',{}).get(task['run_id'])
     if not run:return _decision('block','RUN_UNAVAILABLE')
+    from .action_policy import subject_decision
+    decision = subject_decision(run, 'review-report' if task.get('scope') == 'review' else 'completion',
+                                {'item_id': task['item_id']} if task.get('item_id') else {})
+    if decision['status'] == 'block': return _decision('block', 'ACTION_BLOCKED', decision['blocker_ids'], policy_decision=decision)
     if any(row.get('status') == 'claimed' for row in run.get('repair_cycles', [])):
         return _decision('block', 'REPAIR_LEASE_ACTIVE')
     from .model_policy import effective_preferences

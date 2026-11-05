@@ -5,9 +5,9 @@ description: Guide a software project through scoped context, requirements, plan
 
 # workflow
 
-Guide setup, requirements, planning, verified work, review and delivery. Resolve the bundled helper relative to this skill; check Python 3.11+ and capture `version`. Call `host init` in the actual working directory; retain its control root/repo ID. New roots use v2; legacy roots stay legacy. Offer guided document setup and the first-use ground interview; ask only unresolved material decisions. Never create a run before its ordinary prerequisites.
+Guide requirements, verified work, review and delivery. Resolve this skill's bundled helper; check Python 3.11+ and capture `version`. Call `host init` in the actual working directory; retain its control root/repo ID. New roots use v2; legacy roots stay legacy. Offer guided document setup and the first-use ground interview; ask only unresolved material decisions. Never create a run before its ordinary prerequisites.
 
-Use read-only inspection for current facts; mutating work rechecks inputs and records drift. Follow journal gate status and eligible attempts; preserve the active token. Coordinate distinct item, branch and acceptance reviewers, configured hardening and exact-head delivery. After recording delivery, ask once whether to update the [DevFlow Codex site](https://devflow-field-guide.waygent.chatgpt.site/); update it only if accepted.
+Inspect read-only; mutations recheck inputs and record drift. Follow journal gate status and eligible attempts; preserve the active token. Coordinate distinct item, branch and acceptance reviewers, configured hardening and exact-head delivery. After recording delivery, ask once whether to update the [DevFlow Codex site](https://devflow-field-guide.waygent.chatgpt.site/); update it only if accepted.
 
 Follow [maintenance guidance](GUIDE.md#control-state-maintenance) for requested maintenance: inspect without live approval repair; apply only an authorized exact plan and preserve history.
 
@@ -71,3 +71,5 @@ See [governing guidance](../../docs/reference/governing-inputs.md).
 ### First-use ground interview
 
 See [governing guidance](../../docs/reference/governing-inputs.md).
+
+[Enforcement scope](../../docs/reference/python-enforcement.md).

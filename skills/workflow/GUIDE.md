@@ -444,3 +444,19 @@ proceeding; no content is auto-approved. See [approval-ready setup](../project-c
 For unresolved deployment-release and performance-reliability topics, the ground-interview helper returns prompts about cached clients meeting new pages or APIs, static asset versioning and rollback, and reliability under mixed asset versions. Establish actual project behavior from evidence or ask the user; these are guidance within existing topics, not additional readiness gates. Answered and justified not-applicable topics stay resolved.
 
 After item-bound request-changes, gate status routes the pending item to implementation/retry even if its historical GREEN still matches the repository. Only a new proof-bound passing result completes the retry.
+
+
+## Opt-in enforcement development foundation
+
+Explicitly adopted runs apply versioned clarification checks at affected action
+boundaries. Preserve actual user-answer provenance and renew stale preparation;
+read-only assessments remain possible. The complete enforcement and review/repair
+design is still in progress; see [current scope and developer contracts](../../docs/reference/python-enforcement.md).
+
+```mermaid
+flowchart LR
+    Adopt[Explicitly adopted run] --> Check[Current action and question checks]
+    Check -->|Affected unresolved question| Ask[Record actual user answer]
+    Ask --> Check
+    Check -->|Allowed| Existing[Existing verification and review gates]
+```

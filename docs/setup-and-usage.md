@@ -617,3 +617,12 @@ full verification through the harness before continuing. Rebuilding an advisory
 locator or context cache does not repair authoritative storage. Current-context
 retrieval on format 2 rebuilds its selected cache scope on first use after
 conversion; historical context artifacts remain available.
+
+## Python enforcement development status
+
+The current development branch includes an opt-in clarification/enforcement
+foundation. Existing runs are not silently upgraded. The complete proposed
+safeguards, standalone specialist reviews and bounded repair orchestration are
+not yet implemented. See the [foundation status and developer contracts](reference/python-enforcement.md)
+for implemented boundaries and remaining integration. Normal plugin onboarding
+and the existing workflow remain the supported path.

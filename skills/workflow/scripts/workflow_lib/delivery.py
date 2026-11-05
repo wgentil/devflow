@@ -66,6 +66,8 @@ def _gate_run(run: dict, outcome: str) -> dict:
 
 
 def prepare_delivery(run: dict, repositories: dict, outcome: str) -> dict:
+    from .action_policy import subject_decision, require_action
+    require_action(subject_decision(run, 'delivery', {}))
     if outcome not in OUTCOMES or not isinstance(repositories, dict) or not repositories:
         raise ValueError("delivery outcome and repository manifest are required")
     if run.get("status") != "active" or gate_status(_gate_run(run, outcome)).get("stage") != "delivery":

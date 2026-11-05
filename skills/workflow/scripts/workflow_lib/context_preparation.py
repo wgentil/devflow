@@ -131,6 +131,10 @@ def _prepare_context(root:Path,run:dict,envelope:dict,item_ids:list[str],*,stage
     validated_files=_validated_governing_files(data)
     actual=data.get('runs',{}).get(run['id'])
     _require(isinstance(actual,dict),'Context preparation needs a current run.','RUN_NOT_FOUND');_accept_run(actual,run)
+    from .action_policy import subject_decision, require_action
+    action = 'dispatch' if stage in {'implementation', 'build'} else 'review-report'
+    for item_id in item_ids or [None]:
+        require_action(subject_decision(actual, action, {'item_id': item_id} if item_id else {}))
     _validate_envelope(data,run,envelope,item_ids,max_bytes)
     binding_id=envelope.get('binding_id')
     if binding_id:

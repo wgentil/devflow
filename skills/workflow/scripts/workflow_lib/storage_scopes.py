@@ -42,7 +42,7 @@ DOMAIN_NAMESPACES = {
     'outbox': ('outbox', 'write_authorizations', 'issues', 'snapshots', 'groups'),
     'migrate': ('migration',), 'ingest': (),
     'stats': ('usage', 'usage_expectations', 'prices', 'reports', 'legacy_imports'),
-    'harden': (), 'repair': (), 'pr': ('pr_setup',),
+    'enforcement': (), 'harden': (), 'repair': (), 'pr': ('pr_setup',),
     'improve': (), 'host': (),
 }
 

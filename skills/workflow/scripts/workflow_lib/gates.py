@@ -308,6 +308,9 @@ def waive_finding(run: dict, finding_id: str, authorization: dict) -> dict:
 
 
 def resolve_finding(run: dict, finding_id: str, actor_id: str, why: str, evidence_refs: list[str]) -> dict:
+    if run.get('enforcement', {}).get('policy_version') is not None:
+        from .store import WorkflowError
+        raise WorkflowError('INDEPENDENT_CLOSURE_REQUIRED', 'Use enforcement close-finding with current proof and independent disposition.')
     finding = next((value for value in run.get("unresolved_findings", []) if value.get("id") == finding_id), None)
     if (not finding or not isinstance(actor_id, str) or not actor_id.strip() or not isinstance(why, str) or not why.strip()
             or not isinstance(evidence_refs, list) or not evidence_refs

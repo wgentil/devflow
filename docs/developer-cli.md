@@ -792,3 +792,9 @@ validation and COMMIT; they are not complete-command SQL totals.
 Owned benchmark Git fixtures disable automatic/detached maintenance so Git lock
 creation/removal does not race strict read-only repository snapshots. Existing
 project or global Git configuration is not changed.
+
+## Python enforcement development interfaces
+
+See [Python enforcement foundation](reference/python-enforcement.md) for additive
+commands, receipt contracts, standalone session storage and current limitations.
+These developer interfaces do not change plugin-user installation requirements.
