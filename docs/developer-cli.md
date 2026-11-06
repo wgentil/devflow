@@ -888,3 +888,19 @@ returned complete proposal needs actual user authorization before submission.
 `recovery.json` names `original_operation_id` and the exact
 `worker_stop_confirmation`; reconcile underlying model/tool workers first.
 Supplemental test input is [illustrated here](examples/review-extra-tests.json).
+
+
+### Local review summaries and reports
+
+```text
+review summary --root /absolute/control --run-id RUN
+review summary --session /absolute/review.sqlite3
+review reuse --root /absolute/control --run-id RUN --input review-reuse.json --operation-id reuse-1
+review escaped-defect --session /absolute/review.sqlite3 --input escaped-report.json --operation-id escape-1
+```
+
+Summary is read-only. Reuse/escaped-defect commands accept either scope form and
+require exact input/operation identity. Reuse input names `id` and `review_id`;
+see the [illustrative later report](examples/review-escaped-defect.json). The caller
+must supply real original review IDs and actual user-message provenance. These
+records do not rerun reviewers, change coverage or authorize work.

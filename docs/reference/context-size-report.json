@@ -1,9 +1,9 @@
 {
-  "aggregate_entry_bytes": 27701,
+  "aggregate_entry_bytes": 27821,
   "baseline": {
     "aggregate_entry_bytes": 65937
   },
-  "duplicate_prose_bytes": 13709,
+  "duplicate_prose_bytes": 15173,
   "entry_bytes": {
     "skills/build-work/SKILL.md": 3592,
     "skills/ingest/SKILL.md": 2093,
@@ -11,15 +11,15 @@
     "skills/migrate/SKILL.md": 1707,
     "skills/plan-work/SKILL.md": 2419,
     "skills/project-context/SKILL.md": 2333,
-    "skills/review-work/SKILL.md": 3690,
+    "skills/review-work/SKILL.md": 3691,
     "skills/specify/SKILL.md": 2244,
-    "skills/stats/SKILL.md": 1981,
+    "skills/stats/SKILL.md": 2101,
     "skills/ux-reviewer/SKILL.md": 1872,
-    "skills/workflow/SKILL.md": 4088
+    "skills/workflow/SKILL.md": 4087
   },
   "schema_version": 1,
   "stage_load_bytes": {
-    "acceptance": 10802,
+    "acceptance": 10801,
     "build-work": 10953,
     "context": 6348,
     "implementation": 10953,
@@ -29,13 +29,13 @@
     "plan-work": 8870,
     "planning": 8870,
     "project-context": 6348,
-    "review": 10173,
-    "review-work": 10173,
+    "review": 10174,
+    "review-work": 10174,
     "specification": 9707,
     "specify": 9707,
-    "stats": 7710,
+    "stats": 7830,
     "ux-reviewer": 6674,
-    "workflow": 10802
+    "workflow": 10801
   },
   "unit_bytes": {
     "common#1e6f0adae858d8e7": 3702,
@@ -96,7 +96,7 @@
     "guide.stats.3#2fbf0d712a7218e6": 977,
     "guide.stats.4#ed5a1ecea3a937e4": 926,
     "guide.stats.5#4431748eaacb9300": 557,
-    "guide.stats.6#11d1796d24338ca7": 112,
+    "guide.stats.6#11d1796d24338ca7": 114,
     "guide.ux-reviewer#e9e252b8998c9004": 1100,
     "guide.ux-reviewer.2#c60d72843aca9d51": 227,
     "guide.ux-reviewer.3#547a7a3be20dff74": 1225,
@@ -151,10 +151,10 @@
     "skill.migrate#1e6f0adae858d8e7": 1707,
     "skill.plan-work#1e6f0adae858d8e7": 2419,
     "skill.project-context#1e6f0adae858d8e7": 2333,
-    "skill.review-work#1e6f0adae858d8e7": 3690,
+    "skill.review-work#1e6f0adae858d8e7": 3691,
     "skill.specify#1e6f0adae858d8e7": 2244,
-    "skill.stats#1e6f0adae858d8e7": 1981,
+    "skill.stats#1e6f0adae858d8e7": 2101,
     "skill.ux-reviewer#1e6f0adae858d8e7": 1872,
-    "skill.workflow#1e6f0adae858d8e7": 4088
+    "skill.workflow#1e6f0adae858d8e7": 4087
   }
 }

@@ -337,6 +337,9 @@ print(json.dumps(review_driver.advance_orchestration(Path(SESSION),json.loads(Pa
         self.assertEqual((base/'worker-count').read_text(),'x')
         self.assertEqual({r['perspective'] for r in run['reviews']['item'] if r.get('fresh') is not False},{'code','test','architecture','security'})
         self.assertNotEqual(result['status'],'complete');self.assertEqual(result['next_action']['scope']['role'],'branch',result)
+        for receipt in run['model_receipts'].values():
+            if receipt.get('dispatch') is True:
+                self.assertIsInstance(receipt.get('started_ms'),int);self.assertGreaterEqual(receipt.get('finished_ms'),receipt['started_ms'])
     def test_workflow_format1_real_repair_preserves_final_gates(self):self.workflow_repair(1)
     def test_workflow_format2_real_repair_preserves_final_gates(self):self.workflow_repair(2)
 
@@ -408,6 +411,8 @@ review_driver.advance_orchestration(Path(SESSION),json.loads(Path(INPUT).read_te
         with patch('workflow_lib.native_runtime.policy',return_value=policy),patch('workflow_lib.session_models.CodexBackend',backend):
             result=self.api().run_orchestration(path,request,'surviving-defect',40)
         self.assertEqual(result['next_action']['reason_code'],'NO_PROGRESS',result)
+        from workflow_lib.review_summary import summarize_review
+        self.assertEqual(summarize_review(read_session(path)['subject'])['no_progress_stops'],1)
         self.assertEqual((base/'worker-count').read_text(),'xx');self.assertNotIn('completion',read_session(path)['subject'])
 
     def test_registered_repository_redirect_cannot_change_executed_source(self):

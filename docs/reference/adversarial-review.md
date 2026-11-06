@@ -3,7 +3,7 @@
 The approved [implementation plan](../superpowers/plans/2026-11-05-adversarial-review-repair.md)
 extends the merged [Python enforcement foundation](python-enforcement.md).
 This branch is in implementation: policy/risk and implementation-contract prerequisites are available;
-workflow specialist dispatch, selected-scope coverage gates and standalone review sessions are implemented; explicit bounded repair is implemented; outcome summaries and final integration assessment remain in progress.
+workflow specialist dispatch, selected-scope coverage gates and standalone review sessions are implemented; explicit bounded repair is implemented; local outcome summaries are implemented; final integration assessment remains in progress.
 
 New workflow runs declare `devflow.adversarial-review/v1` with shared enforcement.
 Existing stored runs retain their original contract. Explicit adoption requires
@@ -385,3 +385,45 @@ business-rule question. Supplemental bytes, contracts and review packages must
 remain current. Original protected files still require their existing change
 process. A report cannot close a finding it originated; later independent
 assessment is required. [Developer command examples](../developer-cli.md#bounded-review-and-repair).
+
+
+## Reuse and local outcomes
+
+`review summary` reads only the selected run/session metadata. It does not dispatch,
+load source/package bodies, fetch provider telemetry or infer production incidents.
+It reports unique canonical actionable findings (requested correction/question
+with recorded evidence), raw constituent dispositions, duplicate aliases,
+perspective/severity counts, confirmed/unresolved findings, repair cycles,
+recorded no-progress stops, current blocking questions and recorded reuse.
+Confirmed findings have resolved evidence or an original non-diagnostic completed
+model assessment; an unvalidated user report is separately actionable.
+
+`review_wall_ms` is the earliest-start/latest-finish span of retained review
+invocations; `summed_invocation_ms` adds their intervals. Overlap therefore does
+not add to wall span. Workflow and session native producers retain their actual
+launch/result timestamps; historical missing measurements remain unknown.
+`observed_cost`, `estimated_reserved_cost` and token totals distinguish actual
+measurements from reservations. Missing cost/usage/timing reports expose explicit
+`unknown_measurements` and partial `known_subtotals`; missing cost never becomes
+zero. Prelaunch blocked receipts are attempts, not completed model invocations.
+Uncertain invocations retain an unknown measurement count. Measurements describe
+the selected recorded scope and do not establish improved defect rates or speed.
+
+`confirmed_escaped_defects` is unknown without an explicit later report.
+`review escaped-defect` records a user-confirmed, evidence-linked report referring
+to an actual retained original review, including after completion. The immutable
+entry requires an ID, original `review_id`, external/local `report_ref`,
+`confirmed: true`, and actual user-message provenance. Equal report references
+count once. This is report bookkeeping and grants no repair, acceptance or delivery
+authority. It does not independently observe production or contact another system.
+
+`review reuse` records the exact original assessment/receipt and checked bindings,
+never a new execution or additional coverage. The pure `review_reuse` validator
+requires the same current package, original independent invocation, eligible
+observed model/effort, policy/risk, approved requirements/contract, dependency
+inputs, question answers and applicable proofs. Live command callers also check
+source/protections. Changed/unknown inputs require renewal. PR reuse is declined;
+its separate fresh exact-head/status checks remain required. No cross-package or
+cross-head inheritance is added. Existing exact invocation retries return their
+original receipt without relaunch; a returned historical receipt alone is not a
+current pass. Final integration/acceptance gates remain independent.

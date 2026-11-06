@@ -139,3 +139,5 @@ The review-work skill supports [standalone selected Git scope](reference/adversa
 Workflow and review-work share [bounded next-action state](reference/adversarial-review.md#bounded-orchestration-state); legacy repair stays one-shot until explicit policy selection.
 
 Workflow, review-work and build-work document [live bounded execution and additive regression inputs](reference/adversarial-review.md#bounded-live-execution).
+
+Review-work, workflow and stats expose [deterministic local outcome summaries and conservative receipt reuse](reference/adversarial-review.md#reuse-and-local-outcomes).

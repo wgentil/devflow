@@ -79,3 +79,20 @@ The hash binds reviewed feedback and later approved eval cases. See the
 ## Host usage example
 
 Read [canonical guidance](../../docs/hosts.md). Stage routing is declared in this skill.
+
+
+## Local review outcomes
+
+Read the [summary and conservative reuse contract](../../docs/reference/adversarial-review.md#reuse-and-local-outcomes)
+for read-only scope metrics, unknown costs/escapes, original-receipt reuse and
+explicit later reports. These commands do not add model calls or replace gates.
+
+```mermaid
+flowchart LR
+    Records[Selected retained metadata] --> Summary[Counts, wall span, summed time and unknowns]
+    Original[Original assessment and exact package] --> Bindings{All current bindings valid?}
+    Bindings -->|Yes| Reuse[Record original receipt without execution]
+    Bindings -->|No or PR| Renew[Required fresh assessment and gates]
+    Later[Explicit later report linked to original review] --> Escapes[Confirmed report count]
+    Escapes --> Summary
+```

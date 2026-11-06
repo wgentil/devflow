@@ -60,4 +60,4 @@ See [canonical guidance](../../docs/reference/governing-inputs.md#governing-docu
 
 See [canonical guidance](../../docs/reference/governing-inputs.md#governing-input-reassessment).
 
-[Bounded repair](../../docs/reference/adversarial-review.md#bounded-live-execution).
+[Review/outcomes](../../docs/reference/adversarial-review.md#bounded-live-execution).

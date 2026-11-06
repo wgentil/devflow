@@ -18,6 +18,15 @@ from workflow_lib.store import WorkflowError, transact
 def register_commands(parser: argparse.ArgumentParser) -> None:
     review = parser.add_parser("review")
     actions = review.add_subparsers(dest="review_command", required=True)
+    for name in ('summary','escaped-defect','reuse'):
+        action=actions.add_parser(name)
+        scope=action.add_mutually_exclusive_group(required=True)
+        scope.add_argument('--root')
+        scope.add_argument('--session')
+        action.add_argument('--run-id')
+        if name!='summary':
+            action.add_argument('--input',required=True)
+            action.add_argument('--operation-id',required=True)
     for name in ('adopt','assess-risk','contract','rationale','prerequisites','dispatch','coverage'):
         action=actions.add_parser(name)
         action.add_argument('--root',required=True)
@@ -78,6 +87,19 @@ def register_commands(parser: argparse.ArgumentParser) -> None:
 
 
 def dispatch(parsed: argparse.Namespace) -> dict:
+    if parsed.review_command in {'summary','escaped-defect','reuse'}:
+        from workflow_lib.review_driver import Subject
+        from workflow_lib.review_summary import summarize_review
+        session=bool(parsed.session)
+        if session and parsed.run_id or not session and not parsed.run_id:
+            raise WorkflowError('REVIEW_SUMMARY_BLOCKED','Select a standalone session or actual root/run.')
+        request={'session':True} if session else {'run_id':parsed.run_id}
+        location=Path(parsed.session if session else parsed.root).expanduser().resolve()
+        adapter=Subject(location,request);_,subject=adapter.read()
+        if parsed.review_command=='summary':return summarize_review(subject)
+        record=json.loads(Path(parsed.input).read_text(encoding='utf-8'))
+        if parsed.review_command=='reuse':adapter.live(subject)
+        return adapter.event('report-escaped-defect' if parsed.review_command=='escaped-defect' else 'record-review-reuse',record,parsed.operation_id)
     if parsed.review_command in {'start','status','next','report','recover','repair-proposal','authorize-repair'}:
         from workflow_lib.standalone_reviews import start_standalone,standalone_status
         path=Path(parsed.session).expanduser().resolve()

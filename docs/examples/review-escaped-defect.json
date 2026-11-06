@@ -1,0 +1,11 @@
+{
+  "id": "later-report-1",
+  "review_id": "REPLACE_WITH_RETAINED_ORIGINAL_REVIEW_ID",
+  "report_ref": "REPLACE_WITH_ACTUAL_LATER_REPORT_REFERENCE",
+  "confirmed": true,
+  "provenance": {
+    "kind": "user-message",
+    "ref": "REPLACE_WITH_ACTUAL_USER_CONFIRMATION",
+    "actor_id": "REPLACE_WITH_ACTUAL_REPORTER"
+  }
+}

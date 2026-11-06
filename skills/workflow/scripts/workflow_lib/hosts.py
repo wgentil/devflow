@@ -380,7 +380,8 @@ def apply_native_event(state,kind,req):
     require(result.get('status') in {'completed','interrupted'}, 'Native result status required.')
     receipt={**deepcopy(record['decision']),'invocation_id':identifier,'stage':record['stage'],'scope':deepcopy(record['scope']),'policy_revision':record['policy_revision'],'account_key':record.get('account_key'),
              'observed':result.get('observed'),'observation_source':result.get('observation_source'),
-             'invocation_ref':result.get('invocation_ref'),'output_ref':result.get('output_ref'),'usage':result.get('usage')}
+             'invocation_ref':result.get('invocation_ref'),'output_ref':result.get('output_ref'),'usage':result.get('usage'),
+             'started_ms':record.get('enforcement_transition_ms'),'finished_ms':req.get('enforcement_transition_ms')}
     if record['scope'].get('perspective'):
         receipt['review_report_hash']=result.get('review_report_hash')
         receipt['diagnostic']=record.get('diagnostic') is True

@@ -72,4 +72,4 @@ See [governing guidance](../../docs/reference/governing-inputs.md).
 
 See [governing guidance](../../docs/reference/governing-inputs.md).
 
-[Bounded repair](../../docs/reference/adversarial-review.md#bounded-live-execution).
+[Review/repair](../../docs/reference/adversarial-review.md#bounded-live-execution).

@@ -34,3 +34,5 @@ Read [procedures](REFERENCE.md) for the matching stage/mode before verification,
 ## Shared host contract
 
 See [canonical guidance](../../docs/reference/host-lifecycle.md).
+
+[Local review outcomes and unknown measurements](../../docs/reference/adversarial-review.md#reuse-and-local-outcomes).

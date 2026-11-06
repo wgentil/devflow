@@ -243,7 +243,11 @@ def _advance(location,request,operation_id,request_hash):
                 adapter.event('orchestration-clear-blocker',{'input_hash':input_binding(subject)},operation_id+':resume')
                 _,subject=adapter.read()
             action=orchestration_next(subject,now())
-            if action['kind'] in {'blocked','ask-user','reconcile'}:return {'advanced':False,'executed':False,'next_action':action}
+            if action['kind'] in {'blocked','ask-user','reconcile'}:
+                if action['reason_code']=='NO_PROGRESS' and not subject['review_orchestration'].get('blocker'):
+                    adapter.event('orchestration-block',{'input_hash':input_binding(subject),'reason_code':'NO_PROGRESS',
+                        'required_evidence':action['required_evidence'],'evidence_refs':[c['cycle_id'] for c in subject['review_orchestration']['cycles']]},operation_id+':stop-decision')
+                return {'advanced':False,'executed':False,'next_action':action}
             if action['kind']=='complete':
                 if adapter.session:
                     from .session_evidence import complete
