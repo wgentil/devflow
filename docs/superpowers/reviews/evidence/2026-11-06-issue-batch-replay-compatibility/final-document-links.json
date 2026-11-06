@@ -1,0 +1,20 @@
+{
+  "problems": [],
+  "checked_markdown": [
+    "docs/developer-cli.md",
+    "docs/examples/issue-replay-recovery.md",
+    "docs/reference/control-maintenance.md",
+    "docs/reference/control-storage.md",
+    "docs/setup-and-usage.md",
+    "docs/superpowers/plans/2026-11-06-issue-batch-replay-compatibility.md",
+    "docs/superpowers/reviews/2026-11-06-issue-batch-replay-compatibility-decisions.md",
+    "docs/superpowers/reviews/2026-11-06-issue-batch-replay-compatibility.md",
+    "docs/superpowers/reviews/evidence/2026-11-06-issue-batch-replay-compatibility/execution-ledger.md",
+    "docs/superpowers/reviews/evidence/2026-11-06-issue-batch-replay-compatibility/independent-review.md",
+    "docs/superpowers/reviews/evidence/2026-11-06-issue-batch-replay-compatibility/progress.md",
+    "docs/superpowers/specs/2026-11-06-issue-batch-replay-compatibility-design.md",
+    "skills/issues/GUIDE.md",
+    "skills/issues/REFERENCE.md",
+    "skills/issues/SKILL.md"
+  ]
+}
