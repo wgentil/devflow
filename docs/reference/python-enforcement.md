@@ -3,9 +3,9 @@
 This is an opt-in development foundation for the approved Python enforcement
 contract. Existing runs retain their original behavior unless explicitly adopted.
 The [implementation plan](../superpowers/plans/2026-11-04-python-enforcement.md)
-tracks implementation and verification. Specialist orchestration and bounded
-automatic repair remain subsequent companion work; standalone execution, review
-and completion primitives are available here.
+tracks the foundation. The companion adds specialist and standalone review; shared
+bounded automatic repair remains in integration. Standalone execution, review and
+completion primitives are available here.
 
 ## Action boundaries and compatibility
 
@@ -249,3 +249,5 @@ authority. New findings are assessment output and do not invalidate their own
 report; changed packaged input obligations still invalidate freshness.
 Native reconciliation live transactions require the adapter-held recovery lease
 and repeat OS coordinator absence checks; historical reducers make no live reads.
+
+The companion now adds [standalone selected-scope native review](adversarial-review.md#standalone-selected-scope-review); primitive manifests retain compatibility. Read-only defaults, exact source identity and independent output remain enforced.

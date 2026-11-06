@@ -623,8 +623,8 @@ conversion; historical context artifacts remain available.
 The current development branch includes the Python clarification/enforcement
 foundation. New runs select it; existing runs are not silently upgraded. It includes scoped user
 questions, proof/closure protection, durable work and probe budgets, recovery and
-standalone execution/review/completion primitives. Standalone specialist
-orchestration and bounded automatic repair remain companion work. See the [foundation status and developer contracts](reference/python-enforcement.md)
+standalone execution/review/completion primitives. Standalone specialist review is
+now available; bounded automatic repair remains companion work. See the [foundation status and developer contracts](reference/python-enforcement.md)
 for implemented boundaries and limitations. Normal plugin onboarding
 and the existing workflow remain the supported path.
 
@@ -642,8 +642,11 @@ independent oracle and actual assertion discrimination evidence. Optional owned
 challenges are diagnostic helpers; automatic admission is still pending. Workflow specialist dispatch now uses actual native or in-process host receipts.
 Content-bound coverage gates now enforce required independent perspectives across
 workflow and exact PR stages; diagnostics remain distinct from passes. Required
-review artifacts contain the complete scoped inputs. Standalone conversational
-orchestration and bounded repair remain in implementation; missing eligible
+review artifacts contain the complete scoped inputs. Standalone selected-scope
+review is available without a project/spec/plan or workflow root. Ask for an explicit
+commit range or working tree and external session output. It defaults to report only;
+source edits and project command execution need separate authorization. Shared
+bounded repair remains in implementation; missing eligible
 mappings still block automatic specialist work. See [current review scope](reference/adversarial-review.md).
 
 Finding grouping uses evidence in existing independent reviews, retains every original obligation and never resets limits. [Finding lineage](reference/adversarial-review.md#finding-lineage-and-dispositions) describes atomic member closure and distinct resolved/rejected/deferred/waived outcomes; diagnostics cannot authorize current-policy resolution or rejection.

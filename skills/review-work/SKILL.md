@@ -5,19 +5,19 @@ description: Prepare content-bound review packages and record independent Devflo
 
 # review-work
 
-Arrange independent item, branch and acceptance reviews over exact current content-bound packages. Read the required full package artifact; echo its `review_input_ref` and exact `reviewed_inputs`. Cover every changed file and approved requirement. Retain original finding obligations in cited reports; an implementer cannot self-approve.
+Review exact current packages independently by item, branch and acceptance stage. Read the full required artifact; echo `review_input_ref` and exact `reviewed_inputs`. Cover changes and approved requirements; preserve cited original obligations. Implementers cannot self-approve.
 
-For current-policy test review, require independent oracle authority, behavior-to-assertion mapping and actual relevant discrimination; see [test quality](../../docs/reference/adversarial-review.md#test-quality-assessment).
+Current-policy test review requires independent oracle authority, behavior-to-assertion mapping and relevant discrimination; see [test quality](../../docs/reference/adversarial-review.md#test-quality-assessment).
 
-For current-policy specialists, bind perspective and exact package to an actual independent invocation; use eligible configured routes and preserve requested/resolved/observed settings. Prepared requests and advisory candidates do not prove compliant coverage.
+Bind each specialist's actual independent invocation to its perspective/package and eligible configured route; retain requested/resolved/observed settings. Prepared requests and advisory candidates do not prove coverage.
 
-Before recording a review, read the matching package/rework procedure. Rework invalidates affected packages/evidence. A UX report or failure digest is input, not proof or acceptance. Hosted PR review requires the full diff, exact head and confirmed required status; never merge implicitly.
+Read the matching package/rework procedure before recording. Rework invalidates affected evidence. UX reports/failure digests are inputs. Hosted PR review requires full diff, exact head and confirmed status; never merge implicitly.
 
-Read [shared invariants](../../docs/reference/workflow-invariants.md) and the declared stage sections before work. The harness runs helpers and guides the user. For delegated work read [task routing](../../docs/reference/task-routing.md#task-decisions); use the actual stage and preserve user constraints.
+Read [shared invariants](../../docs/reference/workflow-invariants.md) and declared stage sections. The harness runs helpers. For delegation follow [task routing](../../docs/reference/task-routing.md#task-decisions) and preserve stage/user constraints.
 
 ```mermaid
 flowchart LR
-    Scope[Current task and declared inputs] --> Checks[Live checks and shared invariants]
+    Scope[Workflow package or explicit standalone Git scope] --> Checks[Live checks and shared invariants]
     Checks --> Inputs[Complete scoped item inputs or whole-tree checks]
     Inputs --> Model[Actual scoped specialist receipt]
     Model --> Quality[Independent oracle and discrimination]
@@ -37,6 +37,8 @@ flowchart LR
 <!-- /devflow:routes -->
 
 For item reviews, pass `--item ID`; explicit complete [input scopes](REFERENCE.md#scoped-item-review-liveness) can isolate unrelated work; valid request-changes reopens only that item for retry and fresh verification.
+
+Outside a workflow, select an explicit Git range/working tree and external output; default to report only. [Standalone review](../../docs/reference/adversarial-review.md#standalone-selected-scope-review).
 
 ## Documentation
 

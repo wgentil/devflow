@@ -13,6 +13,9 @@ def apply_enforcement(subject: dict, action: str, record: dict) -> dict:
         raise WorkflowError('ENFORCEMENT_REQUIRED', 'Adopt the current enforcement contract first.')
     if subject.get('status') in {'complete', 'delivered', 'discarded'}:
         raise WorkflowError('SCOPE_TERMINAL', 'Terminal scopes cannot authorize new mutations.')
+    if action.startswith('session-model-'):
+        from .session_models import reduce_model
+        return reduce_model(subject,action,record)
     if action in {'consolidate-findings','split-findings','finding-disposition'}:
         from .finding_index import consolidate_findings,split_findings,record_disposition
         return {'consolidate-findings':consolidate_findings,'split-findings':split_findings,'finding-disposition':record_disposition}[action](subject,record)

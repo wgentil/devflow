@@ -1,0 +1,10 @@
+{
+  "mode": "working-tree",
+  "intent": [
+    {
+      "id": "review-scope",
+      "text": "Review only the selected changes; ask about uncertain business outcomes."
+    }
+  ],
+  "governing_paths": []
+}

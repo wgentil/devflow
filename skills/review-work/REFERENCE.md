@@ -104,3 +104,5 @@ use this same check. Diagnostics list up to 64 changed paths with omission count
 old whole-tree packages can disclose unavailable per-path detail for legacy metadata.
 
 Finding metadata commands and atomic closure: [finding lineage](../../docs/reference/adversarial-review.md#finding-lineage-and-dispositions).
+
+For review without a workflow, use [standalone review](../../docs/reference/adversarial-review.md#standalone-selected-scope-review); developer command shapes are in the linked CLI reference.

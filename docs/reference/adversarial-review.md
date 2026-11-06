@@ -3,7 +3,7 @@
 The approved [implementation plan](../superpowers/plans/2026-11-05-adversarial-review-repair.md)
 extends the merged [Python enforcement foundation](python-enforcement.md).
 This branch is in implementation: policy/risk and implementation-contract prerequisites are available;
-workflow specialist dispatch and selected-scope coverage gates are implemented; standalone conversational orchestration and bounded repair are still being integrated.
+workflow specialist dispatch, selected-scope coverage gates and standalone review sessions are implemented; shared bounded repair is still being integrated.
 
 New workflow runs declare `devflow.adversarial-review/v1` with shared enforcement.
 Existing stored runs retain their original contract. Explicit adoption requires
@@ -233,3 +233,57 @@ without user waiver. Resolved, rejected, deferred and waived remain distinct.
 Only proof-backed independently resolved obligations enter verified repair
 progress. Waivers, new IDs, grouping and splitting never create verified progress.
 See the illustrative [lineage request](../examples/finding-lineage.json).
+
+
+## Standalone selected-scope review
+
+Ask the harness to review an explicit base-to-head range or the current working
+tree, and choose an output location outside the repository. No registered project,
+specification, plan or workflow root is required. The harness must resolve the
+selected mode and scope explicitly; it never guesses a comparison branch. Session
+creation preserves repository settings and source and never posts to GitHub.
+
+Committed ranges pin both SHAs and exclude dirty, staged and untracked changes.
+Working-tree mode binds actual HEAD, index entries, tracked content and untracked
+files. The external owned snapshot contains exact selected bytes and executable
+modes, plus range and staged diffs. Snapshot creation uses Git plumbing without
+project filters/hooks; source hashing performs no project command execution.
+Symlinks/submodules are explicitly unsupported and block rather than disappearing.
+A selected snapshot is bounded to 32 MiB; the existing session manifest limit is
+4 MiB, including protection preimages. Oversized manifests block before creating
+the session database. A failed initial snapshot may remain externally; preserve
+it and choose a fresh output rather than overwriting uncertain artifacts.
+
+Selected `AGENTS.md` files and explicit `governing_paths` retain hashes. Full
+organization discovery is unavailable here and is disclosed as a limitation.
+Supply actual user intent or authority refs; missing business authority remains
+a limitation and disputed intended outcomes produce real questions. The immutable
+review copy initially protects every selected file. It is not authorization to
+edit the user's checkout, change protected inputs or run project verification.
+
+`review start` selects scope only. Status/next/report reads never invoke a model or
+project check. Explicit `review next --execute` invokes an independent read-only
+specialist through the existing native adapters, shared model policy, prerequisite
+checks and finite explicitly authorized effect budget. Request `diagnostic: true`
+for investigation without complete prerequisites; such work never grants a pass.
+Empty shipped mappings produce resumable blocked output before constructing a
+backend. Explicit model preferences retain strict eligibility, supported effort,
+model restrictions and finite price/cost constraints; unavailable prices block.
+The transport's observed settings and sealed structured output are recorded before
+report ingestion. Exact retries reuse that output and cannot dispatch again.
+
+`review report` returns `pass`, `changes-requested`, `needs-clarification`, or
+`blocked`, actual coverage, questions, limitations and active workers. A pass needs
+all applicable current independent perspectives and prerequisite evidence. A
+positively exempt lightweight prose change still needs whole-scope independent
+risk confirmation. Missing discrimination in substantive read-only review is
+reported without pretending that a regression/mutation experiment ran. Standalone
+results always return `workflow_acceptance: false`.
+
+After interruption, `review recover` requires OS-observed coordinator absence, the
+same exclusive lease and an exact user-message attestation identifying the stopped
+worker and all children. It records reconciliation without relaunch/refund.
+Report-only sessions cannot authorize writers. Bounded opted-in repair and editable
+scope renewal are subsequent integration work. Legacy primitive session manifests
+remain readable. [Optional developer commands](../developer-cli.md#standalone-review)
+and [start request](../examples/standalone-review.json) show the interface.

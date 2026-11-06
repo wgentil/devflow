@@ -822,3 +822,41 @@ contracts are in [actual specialist dispatch](reference/adversarial-review.md#ac
 compact current assessment references and missing perspectives. `review record`
 can bind `--model-invocation-id`; accepted content must match actual structured
 transport output and exact input coverage. See [report contract](reference/adversarial-review.md#content-bound-reports-and-effective-coverage).
+
+
+## Standalone review
+
+These are optional developer commands, not plugin-user setup. From a development
+checkout, use the existing command entry point:
+
+```bash
+python3 skills/workflow/scripts/run.py review start --repository /absolute/repo --session /external/review/session.db --input docs/examples/standalone-review.json
+python3 skills/workflow/scripts/run.py review status --session /external/review/session.db
+python3 skills/workflow/scripts/run.py review next --session /external/review/session.db
+python3 skills/workflow/scripts/run.py review report --session /external/review/session.db
+```
+
+Start input chooses `mode: working-tree` or `mode: committed-range` with explicit
+`base`/`head`. Optional `intent`, `authority_refs`, `governing_paths`, `verification`
+and `id` bind the requested review; declaring verification does not execute it.
+For actual execution, first record applicable contracts/protection and an explicit
+finite `configure-effects` policy through `enforcement session-event`; the existing
+session event interface binds its operation ID and expected version. Then:
+
+```bash
+python3 skills/workflow/scripts/run.py review next --session /external/review/session.db --execute --operation-id security-1 --input /external/security-request.json
+```
+
+Execution input contains `perspective`, `host`, independent `actor_id`, finite
+`estimated_cost`, optional `diagnostic`, `timeout_seconds`, `prompt` and
+`preferences`. Preferences use existing model-policy keys; strict validated routes
+remain mandatory. An empty `allowed_models` list blocks every route. Missing
+eligible models/prices/prerequisites return blockers; no unvalidated replacement
+or writer is launched. Exact operation retries return retained native/report facts.
+
+For stopped workers, `review recover --session … --operation-id … --input …`
+accepts `invocation_id` and `worker_stop_confirmation`; confirmation requires
+`approved`, actual `actor_id`, exact `worker_ref`, reason and user-message provenance
+(kind/ref). The adapter additionally observes absent OS coordinator and holds the
+original lease. This command never kills or replaces workers. Full behavior and
+limits: [standalone review](reference/adversarial-review.md#standalone-selected-scope-review).

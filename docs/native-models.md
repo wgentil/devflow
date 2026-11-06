@@ -242,3 +242,5 @@ Specialist transports seal actual structured review output and retain a monotoni
 review sequence. An unrecorded newer output blocks stale coverage. Complete
 package artifacts carry proof/intent/check material and the output contract;
 interactive worker envelopes carry that structured report under `review`.
+
+Standalone [review sessions](reference/adversarial-review.md#standalone-selected-scope-review) use the same eligible native adapters with session-local claims, actual observed receipts and sealed output. No fabricated workflow binding is created; missing mappings remain blockers. Recovery observes the original coordinator and exact worker-stop attestation.

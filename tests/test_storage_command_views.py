@@ -205,8 +205,10 @@ sql._decode=selected
         store._apply_event(preview,{'kind':'domain.issues.start','payload':{'request':request},
             'sequence':before['version']+1,'operation_id':'preview'})
         identifier=preview['data']['domain_receipts']['preview']['run_id']
+        from workflow_lib.review_policy import new_review_policy
         store.transact(self.root,before['version'],'collision',{'kind':'run.started','payload':{'run':{
-            'id':identifier,'status':'active','active_attempt':None,'original_identity':'retain'}}})
+            'id':identifier,'status':'active','active_attempt':None,'original_identity':'retain',
+            'review_policy':new_review_policy(),'enforcement':{'protocol':'devflow.python-enforcement/v1','policy_version':1}}}})
         input_=self.request('start-issue.json',request)
         result=self.cli('issues','start','--root',self.root,'--input',input_,'--operation-id','start-issue',expected=2)
         self.assertEqual(result['error'],'RUN_ALREADY_EXISTS')

@@ -25,6 +25,19 @@ def register_commands(parser: argparse.ArgumentParser) -> None:
         action.add_argument('--input',required=True)
         action.add_argument('--operation-id',required=name not in {'prerequisites','coverage'})
         action.add_argument('--expected-version',type=int)
+    for name in ('start','status','next','report','recover'):
+        action=actions.add_parser(name)
+        action.add_argument('--session',required=True)
+        if name=='start':
+            action.add_argument('--repository',required=True)
+            action.add_argument('--input',required=True)
+        if name=='recover':
+            action.add_argument('--input',required=True)
+            action.add_argument('--operation-id',required=True)
+        if name=='next':
+            action.add_argument('--input')
+            action.add_argument('--operation-id')
+            action.add_argument('--execute',action='store_true')
     package = actions.add_parser("package")
     package.add_argument("--root", required=True)
     package.add_argument("--run-id", required=True)
@@ -65,6 +78,21 @@ def register_commands(parser: argparse.ArgumentParser) -> None:
 
 
 def dispatch(parsed: argparse.Namespace) -> dict:
+    if parsed.review_command in {'start','status','next','report','recover'}:
+        from workflow_lib.standalone_reviews import start_standalone,standalone_status
+        path=Path(parsed.session).expanduser().resolve()
+        if parsed.review_command=='start':return start_standalone(Path(parsed.repository),json.loads(Path(parsed.input).read_text(encoding='utf-8')),path)
+        if parsed.review_command=='recover':
+            from workflow_lib.enforcement_recovery import reconcile_session_model
+            request=json.loads(Path(parsed.input).read_text(encoding='utf-8'))
+            return reconcile_session_model(path,request['invocation_id'],request['worker_stop_confirmation'],parsed.operation_id)
+        if parsed.review_command=='next':
+            if parsed.execute:
+                if not parsed.operation_id or not parsed.input:raise WorkflowError('OPERATION_ID_REQUIRED','Execution needs an explicit operation ID and input request.')
+                from workflow_lib.review_dispatch import dispatch_session_review
+                return dispatch_session_review(path,json.loads(Path(parsed.input).read_text(encoding='utf-8')),parsed.operation_id)
+            return standalone_status(path)['next_action']
+        return standalone_status(path)
     root = Path(parsed.root).expanduser().resolve()
     if parsed.review_command=='coverage':
         from workflow_lib.adversarial_reviews import review_coverage

@@ -1,3 +1,4 @@
+"""Frozen pre-policy public verification flow; adversarial integration covers new runs."""
 import json
 import ast
 import os
@@ -60,7 +61,15 @@ class VerificationFlowTests(unittest.TestCase):
             "acceptance_criteria": [{"kind": "code-test", "text": "test_feature passes"}]}]}
         plan_path = self.write_json("plan.json", plan)
         self.cli("plan", "validate", "--root", self.control, "--file", plan_path)
-        self.cli("run", "start", "--root", self.control, "--run-id", "flow-1", "--actor-id", "implementer")
+        # Explicit historical metadata; do not weaken live new-run policy checks.
+        sys.path.insert(0,str(ROOT/'skills/workflow/scripts'))
+        from workflow_lib.storage_access import read_current
+        from workflow_lib.store import transact
+        from workflow_lib.runs import start_run
+        state=read_current(self.control);data=state['data']
+        run=start_run(data,'flow-1',data['plan']);run.pop('review_policy');run.pop('enforcement')
+        run['actors']={'implementer':'implementer'}
+        transact(self.control,state['version'],'historical-flow-fixture',{'kind':'fixture','payload':{'runs':{'flow-1':run}}})
         attempt = self.cli("run", "next", "--root", self.control, "--run-id", "flow-1")["attempt_id"]
         runner = ("import json,runpy,sys; sys.dont_write_bytecode=True; sys.path.insert(0,'.'); outcome='passed'; "
                   "ns=runpy.run_path('tests/test_feature.py'); "

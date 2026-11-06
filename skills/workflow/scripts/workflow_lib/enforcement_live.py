@@ -7,6 +7,9 @@ from .store import WorkflowError
 
 
 def source_observation(subject: dict) -> dict:
+    if subject.get('standalone_scope'):
+        from .standalone_reviews import snapshot_observation
+        return snapshot_observation(subject)
     from .evidence import repository_fingerprint
     repositories = subject.get('repositories', {})
     if not repositories:

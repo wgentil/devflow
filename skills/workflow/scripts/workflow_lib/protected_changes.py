@@ -10,7 +10,7 @@ from .store import WorkflowError
 
 
 def _git(repo, *args):
-    result = subprocess.run(['git', '--literal-pathspecs', *args], cwd=repo, capture_output=True, check=False)
+    result = subprocess.run(['git', '--literal-pathspecs','-c','core.fsmonitor=false', *args], cwd=repo, capture_output=True, check=False)
     if result.returncode: raise WorkflowError('PROTECTION_OBSERVATION_FAILED', result.stderr.decode('utf-8', 'replace'))
     return result.stdout
 

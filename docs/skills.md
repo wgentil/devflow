@@ -133,3 +133,5 @@ Selected-policy review packages, reports and coverage share the [content-bound
 report contract](reference/adversarial-review.md#content-bound-reports-and-effective-coverage) across workflow, PR and host gates.
 
 Review work also retains [canonical finding lineage](reference/adversarial-review.md#finding-lineage-and-dispositions), with evidence-backed grouping and atomic constituent closure.
+
+The review-work skill supports [standalone selected Git scope](reference/adversarial-review.md#standalone-selected-scope-review) without initializing workflow state; report-only remains the default.

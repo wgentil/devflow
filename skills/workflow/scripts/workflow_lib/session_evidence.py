@@ -131,7 +131,7 @@ def reduce_session(subject, action, record):
         if review_version(subject)==1 and review.get('verdict')=='pass' and review.get('perspective')=='test':
             from .test_challenges import validate_test_quality
             validate_test_quality(subject,package,{**review,'role':'session'})
-        review={**deepcopy(review),'role':'session','review_id':digest(review),'fresh':True}
+        review={**deepcopy(review),'role':'session','review_id':digest(record['review']),'fresh':True}
         updated.setdefault('reviews',{}).setdefault('session',[]).append(review)
         for proof_id in approvals:
             updated.setdefault('verifier_proofs',{})[proof_id]={'passed':True,'fresh':True,'evidence_id':proof_id,
@@ -189,7 +189,7 @@ def _retry(path, operation_id, kind, client):
     if kind=='package':return subject['review_packages'][receipt['artifact_id']]
     if kind=='review':return next(r for r in subject['reviews']['session'] if r['review_id']==receipt['artifact_id'])
     if kind=='complete':return subject['completion']
-    return receipt
+    return {**receipt,'replayed':True}
 
 
 def _read(path):
@@ -205,6 +205,8 @@ def _commit(path,state,op,action,record,*,client=None,kind=None):
 
 
 def _live(subject, *, diagnostic=False):
+    from .standalone_reviews import assert_selection_current
+    assert_selection_current(subject)
     from .enforcement_live import source_observation,assert_protection_current
     observation=source_observation(subject)
     need(observation['source_identity']==subject['source_identity'],'Observe/capture current source before acceptance.')
@@ -304,6 +306,9 @@ def prepare(path,operation_id):
         from .adversarial_reviews import review_material
         package.update(review_material(subject,{'role':'session'}))
         package['risk_record']=subject.get('risk_assessments',{}).get(digest({'role':'session'}))
+        if subject.get('standalone_scope'):
+            package.update(standalone_scope=deepcopy(subject['standalone_scope']),repositories=deepcopy(subject['repositories']),
+                governing_evidence=deepcopy(subject.get('governing_evidence',{})),limitations=deepcopy(subject.get('limitations',[])))
     package['package_hash']=digest(package)
     _commit(path,state,operation_id,'session-package',{'package':package},client={},kind='package');return package
 

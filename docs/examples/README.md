@@ -112,3 +112,5 @@ never accepts an existing project root or removes existing run history.
 - [Interrupted backup retry](control-backup-recovery.md): optional developer commands preserving the original operation/actor/output identity.
 
 [finding-lineage.json](finding-lineage.json) illustrates an optional developer consolidation request; placeholders are not evidence and every original obligation remains open.
+
+[standalone-review.json](standalone-review.json) selects a read-only working-tree review. It does not authorize project commands, fixes or model spending.

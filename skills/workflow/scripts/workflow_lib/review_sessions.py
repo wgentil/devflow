@@ -39,7 +39,7 @@ def _connection(path):
     finally: conn.close()
 
 
-def initialize_session(path: Path, manifest: dict) -> dict:
+def initialize_session(path: Path, manifest: dict, *, standalone: dict | None = None) -> dict:
     path = Path(path).absolute()
     if (not isinstance(manifest, dict)
             or set(manifest) - {'id', 'repositories', 'source_identity', 'review_contract'}):
@@ -57,6 +57,21 @@ def initialize_session(path: Path, manifest: dict) -> dict:
     contract = {'scope': {'repositories': repos, 'source_identity': manifest['source_identity']}, 'request': contract}
     subject = {**manifest, 'repositories': {'repo-'+str(i+1):{'location':str(Path(repo).resolve())} for i,repo in enumerate(repos)},
         'status':'active', 'governing_digest':digest(contract['scope']), 'review_contract': contract, 'review_contract_hash': digest(contract), 'enforcement': {'protocol':'devflow.python-enforcement/v1', 'policy_version': 1}, 'state_version': 0}
+    if standalone is not None:
+        from .review_policy import require_review_policy
+        if set(standalone)!={'standalone_scope','standalone_request_hash','governing_evidence','limitations','review_policy'}:
+            raise WorkflowError('INVALID_SESSION','Exact standalone selection metadata required.')
+        subject.update(standalone);require_review_policy(subject)
+        from .standalone_reviews import snapshot_observation,assert_selection_current
+        from .protected_changes import snapshot_protected
+        assert_selection_current(subject)
+        observation=snapshot_observation(subject)
+        if observation['source_identity']!=subject['source_identity']:
+            raise WorkflowError('INVALID_SESSION','Initial selected source observation changed.')
+        subject['source_observation']=observation
+        inventory={'paths':sorted(standalone['standalone_scope']['files']),'governing_digest':subject['governing_digest']}
+        subject['protected_inventories']={'repo-1':{'inventory':inventory,
+            'baseline':snapshot_protected(Path(subject['repositories']['repo-1']['location']),inventory)}}
     raw = _encode({'schema_version': 1, 'version': 0, 'subject': subject})
     path.parent.mkdir(parents=True, exist_ok=True)
     try:
@@ -103,6 +118,8 @@ def transact_session(path: Path, expected_version: int, operation_id: str, event
             raise WorkflowError('STATE_VERSION_CONFLICT', 'Re-read the session before issuing a new operation.')
         from .session_evidence import guard_execution_event
         guard_execution_event(path,state['subject'],event['action'],event['record'])
+        from .session_models import guard
+        guard(path,state['subject'],event['action'],event['record'])
         from .finding_index import guard_live_finding
         guard_live_finding(state['subject'],event['action'],event['record'])
         subject = apply_enforcement(state['subject'], event['action'], event['record'])

@@ -128,3 +128,18 @@ def dispatch_workflow_review(root,request,operation_id):
     result=invoke(root,native_request,operation_id)
     if result.get('status')!='allow':return {**result,'next_action':'inspect-review-receipt-and-reconcile-if-uncertain'}
     return result
+
+
+def dispatch_session_review(path:Path,request:dict,operation_id:str)->dict:
+    from .review_sessions import read_session
+    from .native_runtime import policy
+    subject=read_session(path)['subject']
+    if operation_id in subject.get('native_invocations',{}):
+        from .session_models import dispatch
+        return dispatch(path,request,operation_id)
+    need(request.get('access','read-only')=='read-only','Session specialist review never authorizes source edits.')
+    scope=specialist_scope(subject,{'role':'session-reviewer','perspective':request.get('perspective')})
+    route_request={'host':request.get('host'),'stage':'review','perspective':scope['perspective'],'assessment':scope['assessment'],'mode':'strict'}
+    if not static_route_available(policy(),route_request):return {'status':'block','reason_code':'NO_VALIDATED_PERMITTED_MODEL','next_action':'configure-eligible-review-route'}
+    from .session_models import dispatch
+    return dispatch(path,request,operation_id)

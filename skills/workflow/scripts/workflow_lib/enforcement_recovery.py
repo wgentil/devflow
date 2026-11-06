@@ -133,3 +133,25 @@ def reconcile_session(path,execution_id,confirmation,operation_id):
     marker=SESSION_EXECUTION.set({'path':str(Path(path).resolve()),'id':execution_id,'mode':'recovery'})
     try:return _commit(path,state,operation_id,'execution-reconcile',{'id':execution_id,'observation':observation},client=client,kind='recovery')
     finally:SESSION_EXECUTION.reset(marker)
+
+
+def reconcile_session_model(path,invocation_id,confirmation,operation_id):
+    from .review_sessions import read_session
+    from .session_evidence import _retry,_commit
+    from .session_models import SESSION_MODEL
+    from .native_runtime import _native_lease
+    path=Path(path).resolve();request={'invocation_id':invocation_id,'confirmation':confirmation}
+    prior=_retry(path,operation_id,'session-model-recovery',request)
+    if prior:return prior
+    key=hashlib.sha256(invocation_id.encode()).hexdigest();lease=path.with_name(path.name+'.leases')/key
+    lease.parent.mkdir(parents=True,exist_ok=True)
+    with _native_lease(lease):
+        prior=_retry(path,operation_id,'session-model-recovery',request)
+        if prior:return prior
+        state=read_session(path);row=state['subject'].get('native_invocations',{}).get(invocation_id,{})
+        need(row.get('status') in {'claimed','launching','uncertain'},'Known unreconciled standalone model worker required.')
+        observation=observe(invocation_id,row.get('owner_pid'),invocation_id,confirmation,key)
+        marker=SESSION_MODEL.set({'path':str(path),'id':invocation_id,'mode':'recovery'})
+        try:return _commit(path,state,operation_id,'session-model-reconcile',{'invocation_id':invocation_id,
+            'observation_id':operation_id+':termination','observation':observation},client=request,kind='session-model-recovery')
+        finally:SESSION_MODEL.reset(marker)

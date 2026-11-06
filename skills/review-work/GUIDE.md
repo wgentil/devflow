@@ -334,3 +334,26 @@ flowchart LR
     Atomic -->|Yes| Resolve[Atomically resolve members]
     Atomic -->|No| Retain[Retain original obligations and budget]
 ```
+
+
+## Standalone review outside a workflow
+
+Use an explicit Git base/head range or working-tree selection and external output.
+No project, spec, plan or workflow root is created. Preserve missing governing and
+business evidence as limitations/questions. Creation and status do not run project
+commands; actual specialist execution needs explicit finite budget and eligible
+models. Read-only investigation may return incomplete coverage without granting a
+pass. Uncertain workers require observed recovery, never an automatic replacement.
+See [standalone scope, execution and limits](../../docs/reference/adversarial-review.md#standalone-selected-scope-review).
+
+```mermaid
+flowchart LR
+    Select[Explicit range or working tree] --> Copy[External exact snapshot and session]
+    Copy --> Read[Read status and next action without dispatch]
+    Read --> Execute{Explicit specialist execution?}
+    Execute -->|Yes| Guard[Shared budget, source, model and prerequisite guards]
+    Guard --> Native[Actual read-only native receipt and sealed report]
+    Native --> Report[Scoped pass, changes, clarification or blocked]
+    Native -->|Interrupted| Recover[Observed stop and exact user attestation]
+    Execute -->|No| Read
+```
