@@ -1,0 +1,37 @@
+name: Targeted release validation
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Windows Python 3.11 diagnostic or complete suite
+        required: true
+        default: focused
+        type: choice
+        options: [focused, full]
+permissions:
+  contents: read
+jobs:
+  windows-minimum:
+    runs-on: windows-latest
+    timeout-minutes: ${{ inputs.profile == 'full' && 90 || 30 }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Fetch frozen old-client baseline
+        run: git fetch --depth=1 origin refs/tags/v0.3.15:refs/tags/v0.3.15
+      - name: Focused review and repair integration
+        if: inputs.profile == 'focused'
+        run: python scripts/run_platform_tests.py --pattern test_adversarial_integration.py --output focused-review-report.json
+      - name: Focused storage scaling
+        if: inputs.profile == 'focused'
+        run: python scripts/run_platform_tests.py --pattern test_storage_scale.py --output focused-scale-report.json
+      - name: Complete minimum-Python Windows suite
+        if: inputs.profile == 'full'
+        run: python scripts/run_platform_tests.py --output platform-report.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: targeted-windows-311
+          path: '*-report.json'
