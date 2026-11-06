@@ -1,0 +1,12 @@
+test_capture_and_specify_do_not_select_policy (test_issue_run_contracts.IssueRunContractTests.test_capture_and_specify_do_not_select_policy) ... ok
+test_current_proof_without_execution_is_rejected (test_issue_run_contracts.IssueRunContractTests.test_current_proof_without_execution_is_rejected) ... ok
+test_legacy_construction_does_not_select_current_policy (test_issue_run_contracts.IssueRunContractTests.test_legacy_construction_does_not_select_current_policy) ... ok
+test_live_start_stamps_and_retry_does_not_consult_new_defaults (test_issue_run_contracts.IssueRunContractTests.test_live_start_stamps_and_retry_does_not_consult_new_defaults) ... ok
+test_plain_start_keeps_recorded_policy (test_issue_run_contracts.IssueRunContractTests.test_plain_start_keeps_recorded_policy) ... ok
+test_recorded_contract_survives_default_changes (test_issue_run_contracts.IssueRunContractTests.test_recorded_contract_survives_default_changes) ... ok
+test_unknown_contract_fails_closed (test_issue_run_contracts.IssueRunContractTests.test_unknown_contract_fails_closed) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.052s
+
+OK

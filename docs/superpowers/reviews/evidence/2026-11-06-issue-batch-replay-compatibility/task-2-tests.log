@@ -1,0 +1,18 @@
+test_changed_prefix_or_head_rejects_apply (test_issue_replay_recovery.RecoveryTests.test_changed_prefix_or_head_rejects_apply) ... ok
+test_conflicting_identity_cannot_overwrite (test_issue_replay_recovery.RecoveryTests.test_conflicting_identity_cannot_overwrite) ... ok
+test_failed_copy_validation_does_not_publish (test_issue_replay_recovery.RecoveryTests.test_failed_copy_validation_does_not_publish) ... ok
+test_identical_retry_returns_original_receipt (test_issue_replay_recovery.RecoveryTests.test_identical_retry_returns_original_receipt) ... ok
+test_interrupted_publication_is_not_success (test_issue_replay_recovery.RecoveryTests.test_interrupted_publication_is_not_success) ... ok
+test_legacy_choice_replays_old_red_proof (test_issue_replay_recovery.RecoveryTests.test_legacy_choice_replays_old_red_proof) ... ok
+test_recovery_inspection_works_before_materialization (test_issue_replay_recovery.RecoveryTests.test_recovery_inspection_works_before_materialization) ... ok
+test_recovery_path_symlink_rejects (test_issue_replay_recovery.RecoveryTests.test_recovery_path_symlink_rejects) ... ok
+test_replay_does_not_observe_live_sources (test_issue_replay_recovery.RecoveryTests.test_replay_does_not_observe_live_sources) ... ok
+test_unknown_or_partial_choices_reject (test_issue_replay_recovery.RecoveryTests.test_unknown_or_partial_choices_reject) ... ok
+test_unstamped_start_requires_choice_even_without_proofs (test_issue_replay_recovery.RecoveryTests.test_unstamped_start_requires_choice_even_without_proofs) ... ok
+test_v0318_choice_keeps_both_policies (test_issue_replay_recovery.RecoveryTests.test_v0318_choice_keeps_both_policies) ... ok
+test_wrong_choice_cannot_hide_modern_records (test_issue_replay_recovery.RecoveryTests.test_wrong_choice_cannot_hide_modern_records) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 0.414s
+
+OK

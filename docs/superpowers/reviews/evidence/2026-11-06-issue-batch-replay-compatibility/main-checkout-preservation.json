@@ -1,0 +1,8 @@
+{
+  "agents_sha256": "7840788b4c297cc446dcaf6a89e82d8ca575e16be7922d410264a446b03eb0f2",
+  "preserved": true,
+  "removed_own_committed_planning_copies": [
+    "docs/superpowers/specs/2026-11-06-issue-batch-replay-compatibility-design.md",
+    "docs/superpowers/plans/2026-11-06-issue-batch-replay-compatibility.md"
+  ]
+}

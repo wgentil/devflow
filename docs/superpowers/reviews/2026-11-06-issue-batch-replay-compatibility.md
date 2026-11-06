@@ -1,7 +1,8 @@
 # Issue #7: issue-batch replay compatibility repair
 
-Status: implementation and focused verification complete; full local suite and
-one independent whole-branch review are in progress. No merge, push, release,
+Status: implementation complete. The final complete local suite passes; all four
+Important findings from the single independent review were corrected with
+RED/GREEN regression evidence. No merge, push, release,
 installed-plugin update or production Bandpick recovery has occurred.
 
 [Approved design](../specs/2026-11-06-issue-batch-replay-compatibility-design.md)
@@ -55,7 +56,7 @@ blocked backup, and the interruption was correctly surfaced as the existing
 The first two import-only tests from the initial turn were replaced by actual
 assertion failures before implementation; they are not behavioral RED evidence.
 
-## Requirements (provisional until final verification)
+## Requirements (final local assessment)
 
 - R1: MET — original data/receipts match the independent old-release oracle and
   raw-event bytes survive recovery/conversion. Evidence: `tests/test_issue_replay_recovery.py:62`, `tests/test_issue_replay_upgrade.py:43`.
@@ -67,8 +68,8 @@ assertion failures before implementation; they are not behavioral RED evidence.
   v2 projection mismatch is rejected. Evidence: `tests/test_issue_replay_recovery.py:49`, `tests/test_issue_replay_upgrade.py:99`.
 - R5: MET — frozen expected outputs produced by actual tagged historical source,
   with retained generator and hashes. Evidence: `tests/fixtures/issue-replay-upgrade/provenance.json:1`.
-- R6: MET for documentation implementation; final complete-suite and review status
-  remain pending. Evidence: `docs/examples/issue-replay-recovery.md:1`, `skills/issues/SKILL.md:15`.
+- R6: MET — affected documentation, examples, complete-suite verification and
+  independent review/correction evidence are retained. Evidence: `docs/examples/issue-replay-recovery.md:1`, `skills/issues/SKILL.md:15`.
 
 ## Documentation and limits
 
@@ -99,5 +100,33 @@ storage formats for namespace auditing. All 47 issue-related tests pass.
 The first broad diagnostic run found two stale generated-documentation-report
 failures. Regeneration resolves them, with all seven documentation tests passing
 and no budget violations. That run was interrupted when review changes made it
-unsuitable as stable-source acceptance; its partial log is retained. A clean
-complete run now verifies the corrected source. No second review is claimed.
+unsuitable as stable-source acceptance; its partial log is retained. The final clean
+complete run passed on the corrected, unchanged source. No second review is claimed.
+
+## Final verification and delivery
+
+The [complete final report](evidence/2026-11-06-issue-batch-replay-compatibility/final-platform.json)
+records **1,302 tests, zero failures/errors, six expected native-Windows skips**
+in 782.679 runner seconds (782.264 unittest seconds). No expected failures or
+unexpected successes occurred. The raw log retains all cases and skip reasons.
+The six skips cover Windows locking, Job/process handles, NTFS junctions,
+fresh-root canonicalization and open-snapshot cleanup. This is local macOS /
+Python 3.14.7 verification, not native Windows acceptance.
+
+The retained runtime/test source snapshot exactly matches all source files after
+the run. The [evidence gate](evidence/2026-11-06-issue-batch-replay-compatibility/verify-final-evidence.py)
+checks that source identity, complete expected test count and successful report;
+it does not repeat the full suite. Final documentation/link/metadata checks and
+whitespace verification pass. The generated report was regenerated without
+raising any budget.
+
+The independent review's original not-ready verdict remains visible; the author
+verified every Important correction with failing-then-passing regression cases
+and the complete suite, as the approved one-review workflow requires. No second
+review or unsupported fresh-pass verdict is claimed. No Minor findings deferred.
+
+The [execution decisions](2026-11-06-issue-batch-replay-compatibility-decisions.md)
+retain every ruling, cost if wrong and task completion receipt. The main checkout's
+user-owned AGENTS.md edit is preserved. The named isolated branch is ready for a
+merge/PR/retention decision. Merge, push, issue closure, release, installation and
+production recovery remain separate authorized actions.

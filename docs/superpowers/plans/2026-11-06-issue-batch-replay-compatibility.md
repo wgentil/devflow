@@ -1,6 +1,6 @@
 # Issue-batch replay compatibility implementation plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans for Native execution, or superpowers:subagent-driven-development if the owner selects it. Steps use checkbox syntax for tracking. Await the owner's plan review and execution-method selection before implementation.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans for Native execution, or superpowers:subagent-driven-development if the owner selects it. Steps use checkbox syntax for tracking. The owner approved the plan and Native execution before implementation.
 
 **Goal:** Repair issue #7 while preserving original history and preventing silent policy changes for unstamped issue-batch runs.
 
@@ -76,11 +76,11 @@ history to discover recovery choices; full verification owns full-prefix checks.
 
 **Interfaces:** `validate_run_contract(value: dict) -> dict`; `historical_issue_run(data: dict, run_id: str, plan: dict, contract: dict | None) -> dict`. An explicit `None` means the fixed legacy contract, never current defaults. Unstamped public replay cannot choose `None` without Task 2's recovery context.
 
-- [ ] Generate frozen synthetic histories and expected outcomes using actual tagged v0.3.17 and v0.3.18 source in temporary directories. Record tag commit IDs, generation command and artifact hashes. Include an issue-build RED proof, plain run start, a v0.3.18 issue start before any proof and a current-policy history. Do not access production data.
-- [ ] Write `test_recorded_contract_survives_default_changes`, `test_plain_start_keeps_recorded_policy`, `test_unknown_contract_fails_closed`, `test_capture_and_specify_do_not_select_policy` and `test_current_proof_without_execution_is_rejected`. Assert exact selected objects, original identities and unchanged mandatory execution validation. Change/forbid the live policy factory during replay as a discrimination control.
-- [ ] Run `python3 -m unittest discover -s tests -p test_issue_run_contracts.py -v`; expect failing assertions for missing stamping/factory-dependent reconstruction, not fixture setup errors.
-- [ ] Implement fixed historical construction, strict recorded selection and live start stamping. Preserve the existing public direct `start_run` behavior. Exact retries must compare the original request before stamping so a changed future default cannot cause `OPERATION_CONFLICT` or select a different policy.
-- [ ] Rerun the module to PASS; run the existing action/adversarial policy, runs, issues and journal integration suites. Update `skills/issues/REFERENCE.md` for the new start record and commit the verified contract change.
+- [x] Generate frozen synthetic histories and expected outcomes using actual tagged v0.3.17 and v0.3.18 source in temporary directories. Record tag commit IDs, generation command and artifact hashes. Include an issue-build RED proof, plain run start, a v0.3.18 issue start before any proof and a current-policy history. Do not access production data.
+- [x] Write `test_recorded_contract_survives_default_changes`, `test_plain_start_keeps_recorded_policy`, `test_unknown_contract_fails_closed`, `test_capture_and_specify_do_not_select_policy` and `test_current_proof_without_execution_is_rejected`. Assert exact selected objects, original identities and unchanged mandatory execution validation. Change/forbid the live policy factory during replay as a discrimination control.
+- [x] Run `python3 -m unittest discover -s tests -p test_issue_run_contracts.py -v`; expect failing assertions for missing stamping/factory-dependent reconstruction, not fixture setup errors.
+- [x] Implement fixed historical construction, strict recorded selection and live start stamping. Preserve the existing public direct `start_run` behavior. Exact retries must compare the original request before stamping so a changed future default cannot cause `OPERATION_CONFLICT` or select a different policy.
+- [x] Rerun the module to PASS; run the existing action/adversarial policy, runs, issues and journal integration suites. Update `skills/issues/REFERENCE.md` for the new start record and commit the verified contract change.
 
 ## Task 2: Explicit recovery for unstamped histories
 
@@ -95,11 +95,11 @@ history to discover recovery choices; full verification owns full-prefix checks.
 
 Expose helper operations `issues replay-recovery-inspect`, `issues replay-recovery-validate` and `issues replay-recovery-apply`. Inspect needs `--root`; validate/apply use `--root`, `--input` and an explicit operation ID. Validate/apply input contains exact inspection identity, selections, actor and provenance; apply also binds the successful validation receipt. Inspect chooses no default. The harness presents the choices and obtains the user's answers; a model must not invent confirmation.
 
-- [ ] Write `test_unstamped_start_requires_choice_even_without_proofs`, `test_legacy_choice_replays_old_red_proof`, `test_v0318_choice_keeps_both_policies`, `test_wrong_choice_cannot_hide_modern_records`, `test_unknown_or_partial_choices_reject` and `test_replay_does_not_observe_live_sources`. Compare complete historical state and original operation receipts against the frozen oracle, excluding only separately identified physical recovery metadata.
-- [ ] Write `test_recovery_inspection_works_before_materialization`, `test_changed_prefix_or_head_rejects_apply`, `test_failed_copy_validation_does_not_publish`, `test_identical_retry_returns_original_receipt`, `test_conflicting_identity_cannot_overwrite`, `test_interrupted_publication_is_not_success` and confinement tests for symlink/junction escapes. Include non-ASCII paths and errors. Exercise v1/v2 and reject an explicitly selected policy that differs from the existing v2 stored policy.
-- [ ] Run `python3 -m unittest discover -s tests -p test_issue_replay_recovery.py -v`; expect RED at the absent recovery interface/behavior.
-- [ ] Implement the interfaces and CLI dispatch with durable metadata separated from logical events. Capture the source consistently, close all owned SQLite connections before cleanup, and forbid automatic repair, fallback selection and policy replacement. Exact retries may report earlier receipt plus current freshness diagnostics; they must not republish or claim current validation for changed input.
-- [ ] Rerun to PASS, retaining RED/GREEN logs and checksums of all original fixture events before/after. Update the issues guide's command/recovery contract and commit.
+- [x] Write `test_unstamped_start_requires_choice_even_without_proofs`, `test_legacy_choice_replays_old_red_proof`, `test_v0318_choice_keeps_both_policies`, `test_wrong_choice_cannot_hide_modern_records`, `test_unknown_or_partial_choices_reject` and `test_replay_does_not_observe_live_sources`. Compare complete historical state and original operation receipts against the frozen oracle, excluding only separately identified physical recovery metadata.
+- [x] Write `test_recovery_inspection_works_before_materialization`, `test_changed_prefix_or_head_rejects_apply`, `test_failed_copy_validation_does_not_publish`, `test_identical_retry_returns_original_receipt`, `test_conflicting_identity_cannot_overwrite`, `test_interrupted_publication_is_not_success` and confinement tests for symlink/junction escapes. Include non-ASCII paths and errors. Exercise v1/v2 and reject an explicitly selected policy that differs from the existing v2 stored policy.
+- [x] Run `python3 -m unittest discover -s tests -p test_issue_replay_recovery.py -v`; expect RED at the absent recovery interface/behavior.
+- [x] Implement the interfaces and CLI dispatch with durable metadata separated from logical events. Capture the source consistently, close all owned SQLite connections before cleanup, and forbid automatic repair, fallback selection and policy replacement. Exact retries may report earlier receipt plus current freshness diagnostics; they must not republish or claim current validation for changed input.
+- [x] Rerun to PASS, retaining RED/GREEN logs and checksums of all original fixture events before/after. Update the issues guide's command/recovery contract and commit.
 
 ## Task 3: Maintenance and storage parity
 
@@ -107,10 +107,10 @@ Expose helper operations `issues replay-recovery-inspect`, `issues replay-recove
 
 **Interfaces:** Every full-replay path uses Task 2's verified policy context. Copies, conversions and backups retain `replay-recovery/` as referenced recovery authority; GC never treats it as disposable cache. No changes to logical event numbering, hashes or identities.
 
-- [ ] Write `test_recovered_legacy_root_backup_relocate_convert_and_audit`, `test_recovered_v2_full_replay_and_archived_events`, `test_missing_or_tampered_recovery_authority_fails`, `test_append_preserves_prefix_selection`, `test_conversion_resume_retains_recovery_authority` and `test_v2_scoped_reads_do_not_scan_history`. Assert complete oracle data/receipt equality, source-byte preservation, full audit success and no unrelated event/body reads during routine scoped commands.
-- [ ] Run `python3 -m unittest discover -s tests -p test_issue_replay_upgrade.py -v`; expect RED for missing metadata preservation/replay integration.
-- [ ] Integrate policy contexts with full audit, checkpoint/archive, backups and conversion/resume. Keep physical receipt validation and existing lock/pin/live-work rules; do not bypass them to recover a root.
-- [ ] Rerun upgrade tests to PASS; run affected storage, archived-run and issue suites. Update `docs/reference/control-storage.md` and maintenance documentation. Commit the verified storage integration.
+- [x] Write `test_recovered_legacy_root_backup_relocate_convert_and_audit`, `test_recovered_v2_full_replay_and_archived_events`, `test_missing_or_tampered_recovery_authority_fails`, `test_append_preserves_prefix_selection`, `test_conversion_resume_retains_recovery_authority` and `test_v2_scoped_reads_do_not_scan_history`. Assert complete oracle data/receipt equality, source-byte preservation, full audit success and no unrelated event/body reads during routine scoped commands.
+- [x] Run `python3 -m unittest discover -s tests -p test_issue_replay_upgrade.py -v`; expect RED for missing metadata preservation/replay integration.
+- [x] Integrate policy contexts with full audit, checkpoint/archive, backups and conversion/resume. Keep physical receipt validation and existing lock/pin/live-work rules; do not bypass them to recover a root.
+- [x] Rerun upgrade tests to PASS; run affected storage, archived-run and issue suites. Update `docs/reference/control-storage.md` and maintenance documentation. Commit the verified storage integration.
 
 ## Task 4: User recovery guidance and complete verification
 
@@ -118,14 +118,16 @@ Expose helper operations `issues replay-recovery-inspect`, `issues replay-recove
 
 **Interfaces:** Document the implemented Task 2 helper shapes and outputs. Plugin users ask the host to inspect recovery, choose policy explicitly and review copy-validation evidence; direct Python commands appear only in optional developer references/examples. Clearly say an installed new helper cannot know an unstamped run's original policy automatically.
 
-- [ ] Write and exercise a complete synthetic recovery example through the public helper CLI for both choices, including a blocked wrong choice, exact retry and a subsequent normal append. Explain that recovery approval is per affected run and is not approval for a different root.
-- [ ] Review primary setup, skill index, metadata, links and examples. Describe actual limitations and any reviewed files requiring no content change. Include the distinction between changed replay semantics and actual journal corruption.
-- [ ] Run `python3 scripts/run_platform_tests.py --output <evidence>/full-platform.json`, retaining its log; expect the complete suite with zero failures/errors and only platform-appropriate documented skips. Run existing documentation/package checks and `git diff --check`. No repeated broader run unless changes or failures justify it.
-- [ ] Record R1–R6 as MET/NOT MET/CANNOT VERIFY with changed-file:line evidence, exact test results and source hashes. Record the original cross-version failure and the independently generated oracle provenance. No claim of production Bandpick recovery or native Windows acceptance from local fixtures.
-- [ ] Commit final docs/evidence. Under Native execution, obtain one independent whole-branch review covering all five Review Focus cases and the approved spec. Fix Critical/Important findings with RED→GREEN and appropriate suite verification; preserve rulings and deferred minors. Present the concrete delivery choice without merging, pushing, closing #7 or publishing a release.
+- [x] Write and exercise a complete synthetic recovery example through the public helper CLI for both choices, including a blocked wrong choice, exact retry and a subsequent normal append. Explain that recovery approval is per affected run and is not approval for a different root.
+- [x] Review primary setup, skill index, metadata, links and examples. Describe actual limitations and any reviewed files requiring no content change. Include the distinction between changed replay semantics and actual journal corruption.
+- [x] Run `python3 scripts/run_platform_tests.py --output <evidence>/full-platform.json`, retaining its log; expect the complete suite with zero failures/errors and only platform-appropriate documented skips. Run existing documentation/package checks and `git diff --check`. No repeated broader run unless changes or failures justify it.
+- [x] Record R1–R6 as MET/NOT MET/CANNOT VERIFY with changed-file:line evidence, exact test results and source hashes. Record the original cross-version failure and the independently generated oracle provenance. No claim of production Bandpick recovery or native Windows acceptance from local fixtures.
+- [x] Commit final docs/evidence. Under Native execution, obtain one independent whole-branch review covering all five Review Focus cases and the approved spec. Fix Critical/Important findings with RED→GREEN and appropriate suite verification; preserve rulings and deferred minors. Present the concrete delivery choice without merging, pushing, closing #7 or publishing a release.
 
 ## Self-review and execution handoff
 
 Coverage: R1 Tasks 1–3; R2 Task 1; R3 Tasks 2–3; R4 Tasks 2–3; R5 Task 1 plus upgrade assertions; R6 Task 4 and per-task docs. Review Focus 1/2/3/5 map to Task 2's named tests; Focus 4 maps to Task 3. Recovery metadata is physical authority, not a replacement journal event. The fixed historical contract and recorded current contract have distinct explicit inputs; a missing selection cannot choose either.
 
 Recommended execution: Native, because all tasks share the same selection and recovery contracts; one independent whole-branch reviewer provides a fresh check without repeated per-task agent contexts. Worktree creation, baseline tests and implementation begin after plan approval. Baseline is the current released source, not the installed v0.3.17 cache. The only current main-tree changes are the user's `AGENTS.md` edit and this task's spec/plan documents.
+
+Execution complete: final complete suite 1,302 tests, six native-Windows skips, zero failures/errors. One independent review produced four Important findings; all were corrected with RED/GREEN regressions and the final full suite. No production recovery or delivery action performed.
