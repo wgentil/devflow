@@ -1,0 +1,9 @@
+{
+  "source_tag": "v0.3.18",
+  "source_commit": "24806733928d41d3cf0a1cc7eefbda95d4738039",
+  "fixture": "tests/fixtures/issue-replay-upgrade/v0.3.17-proof.json",
+  "returncode": 2,
+  "stdout": "{\"error\":\"CORRUPT_STATE\",\"message\":\"event 00000006.json is invalid: Recorded matching execution/source/protection claim required.\"}\n",
+  "stderr": "",
+  "command_shape": "python3 -B <tag-source>/skills/workflow/scripts/run.py run status --root <owned-fixture-root> --run-id <fixture-run>"
+}

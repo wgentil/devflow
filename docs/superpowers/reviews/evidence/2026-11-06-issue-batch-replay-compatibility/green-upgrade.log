@@ -1,0 +1,12 @@
+test_append_preserves_prefix_selection (test_issue_replay_upgrade.UpgradeTests.test_append_preserves_prefix_selection) ... ok
+test_conversion_resume_retains_recovery_authority (test_issue_replay_upgrade.UpgradeTests.test_conversion_resume_retains_recovery_authority) ... ok
+test_missing_or_tampered_recovery_authority_fails (test_issue_replay_upgrade.UpgradeTests.test_missing_or_tampered_recovery_authority_fails) ... ok
+test_recovered_legacy_root_backup_relocate_convert_and_audit (test_issue_replay_upgrade.UpgradeTests.test_recovered_legacy_root_backup_relocate_convert_and_audit) ... ok
+test_recovered_v2_full_replay_and_archived_events (test_issue_replay_upgrade.UpgradeTests.test_recovered_v2_full_replay_and_archived_events) ... ok
+test_v2_existing_unstamped_projection_cannot_change_policy (test_issue_replay_upgrade.UpgradeTests.test_v2_existing_unstamped_projection_cannot_change_policy) ... ok
+test_v2_scoped_reads_do_not_scan_history (test_issue_replay_upgrade.UpgradeTests.test_v2_scoped_reads_do_not_scan_history) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 2.600s
+
+OK

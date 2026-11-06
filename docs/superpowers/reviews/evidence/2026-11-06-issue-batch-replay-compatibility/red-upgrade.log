@@ -1,0 +1,93 @@
+test_changed_prefix_or_head_rejects_apply (test_issue_replay_recovery.RecoveryTests.test_changed_prefix_or_head_rejects_apply) ... ok
+test_conflicting_identity_cannot_overwrite (test_issue_replay_recovery.RecoveryTests.test_conflicting_identity_cannot_overwrite) ... ok
+test_failed_copy_validation_does_not_publish (test_issue_replay_recovery.RecoveryTests.test_failed_copy_validation_does_not_publish) ... ok
+test_identical_retry_returns_original_receipt (test_issue_replay_recovery.RecoveryTests.test_identical_retry_returns_original_receipt) ... ok
+test_interrupted_publication_is_not_success (test_issue_replay_recovery.RecoveryTests.test_interrupted_publication_is_not_success) ... ok
+test_legacy_choice_replays_old_red_proof (test_issue_replay_recovery.RecoveryTests.test_legacy_choice_replays_old_red_proof) ... ok
+test_recovery_inspection_works_before_materialization (test_issue_replay_recovery.RecoveryTests.test_recovery_inspection_works_before_materialization) ... ok
+test_recovery_path_symlink_rejects (test_issue_replay_recovery.RecoveryTests.test_recovery_path_symlink_rejects) ... ok
+test_replay_does_not_observe_live_sources (test_issue_replay_recovery.RecoveryTests.test_replay_does_not_observe_live_sources) ... ok
+test_unknown_or_partial_choices_reject (test_issue_replay_recovery.RecoveryTests.test_unknown_or_partial_choices_reject) ... ok
+test_unstamped_start_requires_choice_even_without_proofs (test_issue_replay_recovery.RecoveryTests.test_unstamped_start_requires_choice_even_without_proofs) ... ok
+test_v0318_choice_keeps_both_policies (test_issue_replay_recovery.RecoveryTests.test_v0318_choice_keeps_both_policies) ... ok
+test_wrong_choice_cannot_hide_modern_records (test_issue_replay_recovery.RecoveryTests.test_wrong_choice_cannot_hide_modern_records) ... ok
+test_append_preserves_prefix_selection (test_issue_replay_upgrade.UpgradeTests.test_append_preserves_prefix_selection) ... ok
+test_conversion_resume_retains_recovery_authority (test_issue_replay_upgrade.UpgradeTests.test_conversion_resume_retains_recovery_authority) ... ERROR
+test_missing_or_tampered_recovery_authority_fails (test_issue_replay_upgrade.UpgradeTests.test_missing_or_tampered_recovery_authority_fails) ... ok
+test_recovered_legacy_root_backup_relocate_convert_and_audit (test_issue_replay_upgrade.UpgradeTests.test_recovered_legacy_root_backup_relocate_convert_and_audit) ... ERROR
+test_recovered_v2_full_replay_and_archived_events (test_issue_replay_upgrade.UpgradeTests.test_recovered_v2_full_replay_and_archived_events) ... ERROR
+test_v2_existing_unstamped_projection_cannot_change_policy (test_issue_replay_upgrade.UpgradeTests.test_v2_existing_unstamped_projection_cannot_change_policy) ... ok
+test_v2_scoped_reads_do_not_scan_history (test_issue_replay_upgrade.UpgradeTests.test_v2_scoped_reads_do_not_scan_history) ... ERROR
+
+======================================================================
+ERROR: test_conversion_resume_retains_recovery_authority (test_issue_replay_upgrade.UpgradeTests.test_conversion_resume_retains_recovery_authority)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_upgrade.py", line 91, in test_conversion_resume_retains_recovery_authority
+    first=maintenance.apply_compaction(self.root,plan['plan_hash'])
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/storage_maintenance.py", line 348, in apply_compaction
+    try: return _run_intent_locked(root,intent)
+                ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/storage_maintenance.py", line 296, in _run_intent_locked
+    stage = _stage_legacy(root,intent)
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/storage_maintenance.py", line 192, in _stage_legacy
+    if not report['valid']: raise WorkflowError('MAINTENANCE_VERIFICATION_FAILED',str(report['errors']))
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+workflow_lib.store.WorkflowError: ['Inspect issue replay recovery and explicitly select this run policy.']
+
+======================================================================
+ERROR: test_recovered_legacy_root_backup_relocate_convert_and_audit (test_issue_replay_upgrade.UpgradeTests.test_recovered_legacy_root_backup_relocate_convert_and_audit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_upgrade.py", line 47, in test_recovered_legacy_root_backup_relocate_convert_and_audit
+    maintenance.backup_control(self.root, backup)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/storage_maintenance.py", line 136, in backup_control
+    if blockers:raise WorkflowError('MAINTENANCE_BLOCKED','; '.join(blockers))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+workflow_lib.store.WorkflowError: in-flight work: 6792512fb7a42c01a1a64504
+
+======================================================================
+ERROR: test_recovered_v2_full_replay_and_archived_events (test_issue_replay_upgrade.UpgradeTests.test_recovered_v2_full_replay_and_archived_events)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_upgrade.py", line 71, in test_recovered_v2_full_replay_and_archived_events
+    self.recover();self.convert()
+                   ~~~~~~~~~~~~^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_upgrade.py", line 41, in convert
+    return maintenance.apply_compaction(self.root, plan['plan_hash'])
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/storage_maintenance.py", line 348, in apply_compaction
+    try: return _run_intent_locked(root,intent)
+                ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/storage_maintenance.py", line 296, in _run_intent_locked
+    stage = _stage_legacy(root,intent)
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/storage_maintenance.py", line 192, in _stage_legacy
+    if not report['valid']: raise WorkflowError('MAINTENANCE_VERIFICATION_FAILED',str(report['errors']))
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+workflow_lib.store.WorkflowError: ['Inspect issue replay recovery and explicitly select this run policy.']
+
+======================================================================
+ERROR: test_v2_scoped_reads_do_not_scan_history (test_issue_replay_upgrade.UpgradeTests.test_v2_scoped_reads_do_not_scan_history)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_upgrade.py", line 76, in test_v2_scoped_reads_do_not_scan_history
+    self.recover();self.convert()
+                   ~~~~~~~~~~~~^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_upgrade.py", line 41, in convert
+    return maintenance.apply_compaction(self.root, plan['plan_hash'])
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/storage_maintenance.py", line 348, in apply_compaction
+    try: return _run_intent_locked(root,intent)
+                ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/storage_maintenance.py", line 296, in _run_intent_locked
+    stage = _stage_legacy(root,intent)
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/storage_maintenance.py", line 192, in _stage_legacy
+    if not report['valid']: raise WorkflowError('MAINTENANCE_VERIFICATION_FAILED',str(report['errors']))
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+workflow_lib.store.WorkflowError: ['Inspect issue replay recovery and explicitly select this run policy.']
+
+----------------------------------------------------------------------
+Ran 20 tests in 1.802s
+
+FAILED (errors=4)

@@ -1,0 +1,197 @@
+test_changed_prefix_or_head_rejects_apply (test_issue_replay_recovery.RecoveryTests.test_changed_prefix_or_head_rejects_apply) ... FAIL
+test_conflicting_identity_cannot_overwrite (test_issue_replay_recovery.RecoveryTests.test_conflicting_identity_cannot_overwrite) ... FAIL
+test_failed_copy_validation_does_not_publish (test_issue_replay_recovery.RecoveryTests.test_failed_copy_validation_does_not_publish) ... FAIL
+test_identical_retry_returns_original_receipt (test_issue_replay_recovery.RecoveryTests.test_identical_retry_returns_original_receipt) ... FAIL
+test_interrupted_publication_is_not_success (test_issue_replay_recovery.RecoveryTests.test_interrupted_publication_is_not_success) ... FAIL
+test_legacy_choice_replays_old_red_proof (test_issue_replay_recovery.RecoveryTests.test_legacy_choice_replays_old_red_proof) ... FAIL
+test_recovery_inspection_works_before_materialization (test_issue_replay_recovery.RecoveryTests.test_recovery_inspection_works_before_materialization) ... FAIL
+test_recovery_path_symlink_rejects (test_issue_replay_recovery.RecoveryTests.test_recovery_path_symlink_rejects) ... FAIL
+test_replay_does_not_observe_live_sources (test_issue_replay_recovery.RecoveryTests.test_replay_does_not_observe_live_sources) ... FAIL
+test_unknown_or_partial_choices_reject (test_issue_replay_recovery.RecoveryTests.test_unknown_or_partial_choices_reject) ... FAIL
+test_unstamped_start_requires_choice_even_without_proofs (test_issue_replay_recovery.RecoveryTests.test_unstamped_start_requires_choice_even_without_proofs) ... ok
+test_v0318_choice_keeps_both_policies (test_issue_replay_recovery.RecoveryTests.test_v0318_choice_keeps_both_policies) ... FAIL
+test_wrong_choice_cannot_hide_modern_records (test_issue_replay_recovery.RecoveryTests.test_wrong_choice_cannot_hide_modern_records) ... FAIL
+
+======================================================================
+FAIL: test_changed_prefix_or_head_rejects_apply (test_issue_replay_recovery.RecoveryTests.test_changed_prefix_or_head_rejects_apply)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 88, in test_changed_prefix_or_head_rejects_apply
+    req = self.request(); receipt = self.api().validate_replay_recovery(self.root, req)
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 35, in request
+    inspected = self.api().inspect_replay_recovery(self.root)
+                ~~~~~~~~^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 30, in api
+    self.assertTrue(path.exists(), 'explicit replay recovery implementation missing')
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : explicit replay recovery implementation missing
+
+======================================================================
+FAIL: test_conflicting_identity_cannot_overwrite (test_issue_replay_recovery.RecoveryTests.test_conflicting_identity_cannot_overwrite)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 107, in test_conflicting_identity_cannot_overwrite
+    self.recover()
+    ~~~~~~~~~~~~^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 42, in recover
+    req = self.request(choice)
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 35, in request
+    inspected = self.api().inspect_replay_recovery(self.root)
+                ~~~~~~~~^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 30, in api
+    self.assertTrue(path.exists(), 'explicit replay recovery implementation missing')
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : explicit replay recovery implementation missing
+
+======================================================================
+FAIL: test_failed_copy_validation_does_not_publish (test_issue_replay_recovery.RecoveryTests.test_failed_copy_validation_does_not_publish)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 94, in test_failed_copy_validation_does_not_publish
+    req = self.request('v0.3.18')
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 35, in request
+    inspected = self.api().inspect_replay_recovery(self.root)
+                ~~~~~~~~^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 30, in api
+    self.assertTrue(path.exists(), 'explicit replay recovery implementation missing')
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : explicit replay recovery implementation missing
+
+======================================================================
+FAIL: test_identical_retry_returns_original_receipt (test_issue_replay_recovery.RecoveryTests.test_identical_retry_returns_original_receipt)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 99, in test_identical_retry_returns_original_receipt
+    req = self.request(); receipt = self.api().validate_replay_recovery(self.root, req)
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 35, in request
+    inspected = self.api().inspect_replay_recovery(self.root)
+                ~~~~~~~~^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 30, in api
+    self.assertTrue(path.exists(), 'explicit replay recovery implementation missing')
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : explicit replay recovery implementation missing
+
+======================================================================
+FAIL: test_interrupted_publication_is_not_success (test_issue_replay_recovery.RecoveryTests.test_interrupted_publication_is_not_success)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 117, in test_interrupted_publication_is_not_success
+    req = self.request(); receipt = self.api().validate_replay_recovery(self.root, req)
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 35, in request
+    inspected = self.api().inspect_replay_recovery(self.root)
+                ~~~~~~~~^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 30, in api
+    self.assertTrue(path.exists(), 'explicit replay recovery implementation missing')
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : explicit replay recovery implementation missing
+
+======================================================================
+FAIL: test_legacy_choice_replays_old_red_proof (test_issue_replay_recovery.RecoveryTests.test_legacy_choice_replays_old_red_proof)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 63, in test_legacy_choice_replays_old_red_proof
+    before = self.event_bytes(); self.recover()
+                                 ~~~~~~~~~~~~^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 42, in recover
+    req = self.request(choice)
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 35, in request
+    inspected = self.api().inspect_replay_recovery(self.root)
+                ~~~~~~~~^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 30, in api
+    self.assertTrue(path.exists(), 'explicit replay recovery implementation missing')
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : explicit replay recovery implementation missing
+
+======================================================================
+FAIL: test_recovery_inspection_works_before_materialization (test_issue_replay_recovery.RecoveryTests.test_recovery_inspection_works_before_materialization)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 56, in test_recovery_inspection_works_before_materialization
+    result = self.api().inspect_replay_recovery(self.root)
+             ~~~~~~~~^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 30, in api
+    self.assertTrue(path.exists(), 'explicit replay recovery implementation missing')
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : explicit replay recovery implementation missing
+
+======================================================================
+FAIL: test_recovery_path_symlink_rejects (test_issue_replay_recovery.RecoveryTests.test_recovery_path_symlink_rejects)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 125, in test_recovery_path_symlink_rejects
+    with self.assertRaises(store.WorkflowError): self.api().inspect_replay_recovery(self.root)
+                                                 ~~~~~~~~^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 30, in api
+    self.assertTrue(path.exists(), 'explicit replay recovery implementation missing')
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : explicit replay recovery implementation missing
+
+======================================================================
+FAIL: test_replay_does_not_observe_live_sources (test_issue_replay_recovery.RecoveryTests.test_replay_does_not_observe_live_sources)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 112, in test_replay_does_not_observe_live_sources
+    self.recover()
+    ~~~~~~~~~~~~^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 42, in recover
+    req = self.request(choice)
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 35, in request
+    inspected = self.api().inspect_replay_recovery(self.root)
+                ~~~~~~~~^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 30, in api
+    self.assertTrue(path.exists(), 'explicit replay recovery implementation missing')
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : explicit replay recovery implementation missing
+
+======================================================================
+FAIL: test_unknown_or_partial_choices_reject (test_issue_replay_recovery.RecoveryTests.test_unknown_or_partial_choices_reject)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 80, in test_unknown_or_partial_choices_reject
+    req = self.request(); req['selections'] = entries
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 35, in request
+    inspected = self.api().inspect_replay_recovery(self.root)
+                ~~~~~~~~^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 30, in api
+    self.assertTrue(path.exists(), 'explicit replay recovery implementation missing')
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : explicit replay recovery implementation missing
+
+======================================================================
+FAIL: test_v0318_choice_keeps_both_policies (test_issue_replay_recovery.RecoveryTests.test_v0318_choice_keeps_both_policies)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 70, in test_v0318_choice_keeps_both_policies
+    case = self.seed('v0.3.18-question.json'); self.recover('v0.3.18')
+                                               ~~~~~~~~~~~~^^^^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 42, in recover
+    req = self.request(choice)
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 35, in request
+    inspected = self.api().inspect_replay_recovery(self.root)
+                ~~~~~~~~^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 30, in api
+    self.assertTrue(path.exists(), 'explicit replay recovery implementation missing')
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : explicit replay recovery implementation missing
+
+======================================================================
+FAIL: test_wrong_choice_cannot_hide_modern_records (test_issue_replay_recovery.RecoveryTests.test_wrong_choice_cannot_hide_modern_records)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 75, in test_wrong_choice_cannot_hide_modern_records
+    with self.assertRaises(store.WorkflowError): self.recover('legacy')
+                                                 ~~~~~~~~~~~~^^^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 42, in recover
+    req = self.request(choice)
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 35, in request
+    inspected = self.api().inspect_replay_recovery(self.root)
+                ~~~~~~~~^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_recovery.py", line 30, in api
+    self.assertTrue(path.exists(), 'explicit replay recovery implementation missing')
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : explicit replay recovery implementation missing
+
+----------------------------------------------------------------------
+Ran 13 tests in 0.075s
+
+FAILED (failures=12)

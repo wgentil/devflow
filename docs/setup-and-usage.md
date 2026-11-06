@@ -665,3 +665,33 @@ See [dispatch and repair safeguards](reference/adversarial-review.md#final-dispa
 
 Standalone review accepts equivalent canonical Git root spellings on each platform
 and follows Git executable-mode configuration when selecting working-tree changes.
+
+## Recover an issue-batch history after an upgrade
+
+If a helper reports `ISSUE_POLICY_SELECTION_REQUIRED`, ask:
+
+> Inspect issue replay recovery for this project's control root. Show me the
+> original batch starts that need a policy choice. Do not choose for me.
+
+For each unstamped start, confirm whether it used the legacy contract or the
+v0.3.18 enforcement/review contract. The helper cannot reliably infer this from
+its event shape: both releases wrote the same start shape. A v0.3.18 run that has
+not executed any tools is still ambiguous. If you cannot establish its original
+contract, leave it unresolved rather than guessing.
+
+After those choices, ask the host to validate the recovery on a disposable copy
+and show the results before applying it to that exact root. Successful recovery
+adds immutable policy decisions alongside history; it does not rewrite original
+events or proofs. Copy/backup those decisions with the control root. A changed
+history invalidates the inspected proposal, and a choice that conflicts with
+existing evidence or stored v2 policies fails validation. Exact retries reuse the
+original decision. New issue batches record their policy and do not need this
+recovery step.
+
+The v0.3.18 symptom may instead say `CORRUPT_STATE` with “Recorded matching
+execution/source/protection claim required.” This compatibility defect alone
+does not establish damaged journal bytes. Preserve the root and use a helper
+containing this repair to inspect it. Do not delete proofs, edit event files or
+skip enforcement to work around the error. An installed v0.3.18 helper does not
+already contain the repair described here; it is available in the current
+repository repair branch, pending release.

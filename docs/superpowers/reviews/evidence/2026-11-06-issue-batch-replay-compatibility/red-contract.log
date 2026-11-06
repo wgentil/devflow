@@ -1,0 +1,36 @@
+test_legacy_construction_does_not_select_current_policy (test_issue_run_contracts.IssueRunContractTests.test_legacy_construction_does_not_select_current_policy) ... FAIL
+test_plain_start_keeps_recorded_policy (test_issue_run_contracts.IssueRunContractTests.test_plain_start_keeps_recorded_policy) ... ok
+test_recorded_contract_survives_default_changes (test_issue_run_contracts.IssueRunContractTests.test_recorded_contract_survives_default_changes) ... FAIL
+test_unknown_contract_fails_closed (test_issue_run_contracts.IssueRunContractTests.test_unknown_contract_fails_closed) ... FAIL
+
+======================================================================
+FAIL: test_legacy_construction_does_not_select_current_policy (test_issue_run_contracts.IssueRunContractTests.test_legacy_construction_does_not_select_current_policy)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_run_contracts.py", line 22, in test_legacy_construction_does_not_select_current_policy
+    self.assertTrue((Path(__file__).resolve().parents[1] / 'skills/workflow/scripts/workflow_lib/issue_run_contracts.py').exists(), 'recorded run contract implementation missing')
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : recorded run contract implementation missing
+
+======================================================================
+FAIL: test_recorded_contract_survives_default_changes (test_issue_run_contracts.IssueRunContractTests.test_recorded_contract_survives_default_changes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_run_contracts.py", line 11, in test_recorded_contract_survives_default_changes
+    self.assertTrue((Path(__file__).resolve().parents[1] / 'skills/workflow/scripts/workflow_lib/issue_run_contracts.py').exists(), 'recorded run contract implementation missing')
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : recorded run contract implementation missing
+
+======================================================================
+FAIL: test_unknown_contract_fails_closed (test_issue_run_contracts.IssueRunContractTests.test_unknown_contract_fails_closed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_run_contracts.py", line 30, in test_unknown_contract_fails_closed
+    self.assertTrue((Path(__file__).resolve().parents[1] / 'skills/workflow/scripts/workflow_lib/issue_run_contracts.py').exists(), 'recorded run contract implementation missing')
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true : recorded run contract implementation missing
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.017s
+
+FAILED (failures=3)

@@ -930,3 +930,36 @@ See the [runnable command examples](examples/platform-validation.md). The manual
 runs the entire suite with fail-fast evidence and a 90-minute CI ceiling. It uses
 static commands and read-only repository permission. It does not dispatch models,
 modify production roots, or replace the ordinary matrix's other platform cells.
+
+## Optional developer reference: issue-start replay recovery
+
+The public helper operations are `issues replay-recovery-inspect --root ROOT`,
+`issues replay-recovery-validate --root ROOT --input REQUEST --operation-id ID`,
+and `issues replay-recovery-apply --root ROOT --input REQUEST --operation-id ID`.
+These are maintainer interfaces; plugin users use the host guidance in the
+[primary setup guide](setup-and-usage.md#recover-an-issue-batch-history-after-an-upgrade).
+
+Validate input has `inspection` (the exact returned binding), `selections` (one
+`{event_digest, choice}` for every unresolved start), `actor_id`, `operation_id`,
+`confirmed: true`, and `provenance: {kind: "user-message", ref: "..."}`. Choice is
+exactly `legacy` or `v0.3.18`; neither has a default. Apply uses the same request
+plus `validation`, the complete successful validation response. CLI/input operation
+IDs must match. Read-only inspection works before materialization; validation
+and publication require the unbound operator path and use the control lock.
+
+Recovery uses a complete owned copy and does not run worker commands or contact
+providers. Validation returns `{schema_version, request_hash, replay_head,
+selections, status: "validated"}`. Apply returns `{completed, replayed, validation}`.
+It revalidates the copy and source before publication; a supplied receipt alone
+is not authorization to skip checks. Conflicting operation IDs are rejected
+across logical events, maintenance and recovery. Exact retry returns the original
+receipt; that historical receipt does not certify later appended events.
+
+Keep `replay-recovery/` with the original control history. Decisions bind canonical
+logical events and original raw legacy-event hashes, so copies and format
+conversion preserve identity without binding an absolute path. Full audit checks
+these prefixes and complete replay against stored projections. Scoped v2 reads
+do not scan history to find decisions. A previously materialized v2 projection
+that differs from the selected replay is rejected rather than rewritten.
+
+See the [runnable fixture example](examples/issue-replay-recovery.md).
