@@ -312,6 +312,16 @@
       "sha256": "65a2f0b66a9001d0f6763b8151de6a52be610be651c4212640987d00490212b9"
     },
     {
+      "file": "post-publication-documentation.json",
+      "bytes": 6595,
+      "sha256": "595bc74bc65208f99872f7fed7b7e69cf6194c188cd039af18c821ea7cf81dbb"
+    },
+    {
+      "file": "publication.json",
+      "bytes": 1112,
+      "sha256": "6c4720887ca2221f2c647b2538785e402c9bc803510e7f5404fa40741d6a0f5b"
+    },
+    {
       "file": "published-notes.md",
       "bytes": 2088,
       "sha256": "fb6c1e31aea2cd846de1d0ab85c40df6f26bb5226323909b8013d2080d46747a"
@@ -348,5 +358,8 @@
     }
   ],
   "prepared_notes": "published-notes.md",
-  "notes_link_resolution": "relative repository links resolved to GitHub URLs"
+  "notes_link_resolution": "relative repository links resolved to GitHub URLs",
+  "publication_receipt": "publication.json",
+  "published_tag_commit": "24806733928d41d3cf0a1cc7eefbda95d4738039",
+  "published_release_url": "https://github.com/wgentil/devflow/releases/tag/v0.3.18"
 }

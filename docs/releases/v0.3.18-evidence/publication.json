@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "release_id": 436872312,
+  "url": "https://github.com/wgentil/devflow/releases/tag/v0.3.18",
+  "tag": "v0.3.18",
+  "tag_commit": "24806733928d41d3cf0a1cc7eefbda95d4738039",
+  "published_at": "2026-11-06T18:56:25Z",
+  "draft": false,
+  "prerelease": false,
+  "latest_verified": true,
+  "notes_match_prepared_normalized": true,
+  "published_body_sha256": "fb6c1e31aea2cd846de1d0ab85c40df6f26bb5226323909b8013d2080d46747a",
+  "tag_source": {
+    "tag": "v0.3.18",
+    "commit": "24806733928d41d3cf0a1cc7eefbda95d4738039",
+    "descriptor": {
+      "plugin": "devflow",
+      "plugin_version": "0.3.18",
+      "state_schema_version": 1,
+      "supported_schemas": [
+        1
+      ],
+      "storage_format_version": 2,
+      "supported_storage_formats": [
+        1,
+        2
+      ],
+      "host_protocol_version": 1,
+      "release_id": "16909b124274b180698dc4b5784386e83cd8a367997120289043941d976ad6ab",
+      "fingerprint": "16909b124274b180698dc4b5784386e83cd8a367997120289043941d976ad6ab"
+    },
+    "clean_worktree_verified": true,
+    "remote_peeled_commit_verified": true
+  }
+}

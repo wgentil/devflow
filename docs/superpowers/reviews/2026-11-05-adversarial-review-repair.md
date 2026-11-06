@@ -100,3 +100,13 @@ retains all task completions, decisions and fix verification. No deferred minors
 Main remains at the original baseline. Nothing was pushed, merged or released;
 delivery remains the user's explicit choice. The user's local AGENTS.md change
 is preserved and excluded from all commits.
+
+
+## Subsequent authorized delivery
+
+The user subsequently authorized merge, push and release. Main was merged/pushed
+and [v0.3.18](https://github.com/wgentil/devflow/releases/tag/v0.3.18) published at `24806733928d41d3cf0a1cc7eefbda95d4738039`.
+[Release validation](../../releases/v0.3.18-validation.md) records the Windows
+corrections, all platform cells, distinct source boundaries, retained initial
+failures/timeout and the final 1,261-test local/minimum-Windows evidence. Earlier
+no-delivery statements above describe the preauthorization checkpoint.
