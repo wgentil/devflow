@@ -650,3 +650,5 @@ bounded repair remains in implementation; missing eligible
 mappings still block automatic specialist work. See [current review scope](reference/adversarial-review.md).
 
 Finding grouping uses evidence in existing independent reviews, retains every original obligation and never resets limits. [Finding lineage](reference/adversarial-review.md#finding-lineage-and-dispositions) describes atomic member closure and distinct resolved/rejected/deferred/waived outcomes; diagnostics cannot authorize current-policy resolution or rejection.
+
+An explicit [bounded orchestration policy](reference/adversarial-review.md#bounded-orchestration-state) now exposes shared workflow/session next actions and actual clarification text. It preserves clocks, spending and original obligations. Configuration/status do not run a loop; live bounded execution remains in integration.

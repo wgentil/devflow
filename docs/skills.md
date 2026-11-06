@@ -135,3 +135,5 @@ report contract](reference/adversarial-review.md#content-bound-reports-and-effec
 Review work also retains [canonical finding lineage](reference/adversarial-review.md#finding-lineage-and-dispositions), with evidence-backed grouping and atomic constituent closure.
 
 The review-work skill supports [standalone selected Git scope](reference/adversarial-review.md#standalone-selected-scope-review) without initializing workflow state; report-only remains the default.
+
+Workflow and review-work share [bounded next-action state](reference/adversarial-review.md#bounded-orchestration-state); legacy repair stays one-shot until explicit policy selection.

@@ -1,5 +1,5 @@
 {
-  "aggregate_entry_bytes": 27682,
+  "aggregate_entry_bytes": 27679,
   "baseline": {
     "aggregate_entry_bytes": 65937
   },
@@ -15,11 +15,11 @@
     "skills/specify/SKILL.md": 2244,
     "skills/stats/SKILL.md": 1981,
     "skills/ux-reviewer/SKILL.md": 1872,
-    "skills/workflow/SKILL.md": 4089
+    "skills/workflow/SKILL.md": 4086
   },
   "schema_version": 1,
   "stage_load_bytes": {
-    "acceptance": 10803,
+    "acceptance": 10800,
     "build-work": 10933,
     "context": 6348,
     "implementation": 10933,
@@ -35,7 +35,7 @@
     "specify": 9707,
     "stats": 7710,
     "ux-reviewer": 6674,
-    "workflow": 10803
+    "workflow": 10800
   },
   "unit_bytes": {
     "common#1e6f0adae858d8e7": 3702,
@@ -131,9 +131,9 @@
     "procedure.specify.1#148cd2d22847083f": 3389,
     "procedure.stats#1e6f0adae858d8e7": 1930,
     "procedure.ux-reviewer#1e6f0adae858d8e7": 2837,
-    "procedure.workflow#1e6f0adae858d8e7": 12265,
-    "procedure.workflow.1#8d1f71859ff19c32": 11450,
-    "procedure.workflow.2#2cf878c42c6d0ea9": 792,
+    "procedure.workflow#1e6f0adae858d8e7": 12251,
+    "procedure.workflow.1#8d1f71859ff19c32": 11435,
+    "procedure.workflow.2#2cf878c42c6d0ea9": 793,
     "recovery.input-scope#0d522a9ae1c7b207": 1849,
     "recovery.item-reviews#75510150b7dbdb97": 599,
     "recovery.red-source#2d63e3e19961a310": 570,
@@ -155,6 +155,6 @@
     "skill.specify#1e6f0adae858d8e7": 2244,
     "skill.stats#1e6f0adae858d8e7": 1981,
     "skill.ux-reviewer#1e6f0adae858d8e7": 1872,
-    "skill.workflow#1e6f0adae858d8e7": 4089
+    "skill.workflow#1e6f0adae858d8e7": 4086
   }
 }

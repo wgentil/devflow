@@ -151,6 +151,10 @@ def host_brief(state: dict, binding: dict, *, control_root: Path | None = None,
             'active_attempt':run.get('active_attempt'),'mapped_tasks':[t['task_id'] for t in tasks],
             'unmapped_tasks':'unaffected','blockers':relevant['stage']['blocking_findings'],
             'budget':relevant['budget'],'work_items':work_items,'context':context,'package_hash':binding.get('package_hash'),'evidence_refs':['journal:'+binding['run_id']]}
+    if run.get('review_orchestration'):
+        from .review_orchestration import orchestration_next
+        import time
+        envelope['next_action']=orchestration_next(run,int(time.time()*1000))
     if control_root is None:
         return envelope
     from .lifecycle_hooks import prepared_context

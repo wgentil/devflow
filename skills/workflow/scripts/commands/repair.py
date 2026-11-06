@@ -34,6 +34,9 @@ def dispatch(parsed):
         policy = json.loads(Path(parsed.input).read_text(encoding='utf-8'))
         return commit(parsed, 'domain.repair.configure', {'run_id': parsed.run_id, 'policy': policy})
     if parsed.repair_command == 'next':
+        state=read_current(root,run_id=parsed.run_id)
+        if state['data'].get('runs',{}).get(parsed.run_id,{}).get('review_orchestration'):
+            return {'kind':'blocked','reason_code':'ORCHESTRATION_RUN_REQUIRED','next_action':'Use the explicit bounded repair run driver; legacy next remains one-shot.'}
         if not parsed.operation_id_explicit:
             raise WorkflowError('OPERATION_ID_REQUIRED', 'repair dispatch requires --operation-id')
         return run_repair(root, parsed.run_id, parsed.operation_id, parsed.estimated_cost)

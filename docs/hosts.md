@@ -302,3 +302,5 @@ Current-policy assessment completion validates the same report bindings as the
 workflow. Diagnostic completion does not satisfy passing coverage. A reviewer
 can refresh its own established perspective for correction with a new actual
 invocation; changing independent stage/perspective identity remains prohibited.
+
+With an explicitly selected [review orchestration policy](reference/adversarial-review.md#bounded-orchestration-state), host briefs/resume views expose the current deterministic next action and actual pending question. This metadata does not start a hook loop or satisfy verification.

@@ -160,13 +160,18 @@ def standalone_status(path:Path)->dict:
     findings=[f for f in subject.get('unresolved_findings',[]) if f.get('status','open') not in {'resolved','waived','rejected','deferred'}]
     outcome=('needs-clarification' if questions else 'blocked' if not current else 'changes-requested' if findings else 'pass' if coverage.get('complete') else 'blocked')
     active={key:{k:row.get(k) for k in ('status','owner_pid','perspective','package_hash')} for key,row in subject.get('native_invocations',{}).items() if row.get('status') in {'claimed','launching','uncertain'}}
+    next_action={'kind':'ask-user' if questions else 'reconcile' if active else 'complete' if outcome=='pass' else 'review','executed':False,
+        **({'questions':questions} if questions else {}),**({'invocation_ids':sorted(active)} if active else {})}
+    if subject.get('review_orchestration'):
+        from .review_orchestration import orchestration_next
+        import time
+        next_action=orchestration_next(subject,int(time.time()*1000))
     return {'schema_version':1,'session_id':subject['id'],'version':state['version'],'outcome':outcome,'source_current':current,
         'selection':{k:subject.get('standalone_scope',{}).get(k) for k in ('mode','base_sha','head_sha','selection_hash')},
         'coverage':coverage,'questions':questions,'findings':findings,'limitations':subject.get('limitations',[]),
         'effective_reviews':{p:r['review_id'] for p,r in effective.items()},'workflow_acceptance':False,
         'active_workers':active,
-        'next_action':{'kind':'ask-user' if questions else 'reconcile' if active else 'complete' if outcome=='pass' else 'review','executed':False,
-            **({'questions':questions} if questions else {}),**({'invocation_ids':sorted(active)} if active else {})}}
+        'next_action':next_action}
 
 
 def snapshot_observation(subject):

@@ -860,3 +860,5 @@ accepts `invocation_id` and `worker_stop_confirmation`; confirmation requires
 (kind/ref). The adapter additionally observes absent OS coordinator and holds the
 original lease. This command never kills or replaces workers. Full behavior and
 limits: [standalone review](reference/adversarial-review.md#standalone-selected-scope-review).
+
+For current-policy bounded repair, `repair configure --root … --run-id … --input … --operation-id …` accepts the [orchestration wrapper](examples/review-orchestration.json). Authorize its exact real policy hash and shared effect-policy hash; placeholders do not authorize work. `repair status` returns a nonexecuting descriptor; legacy `repair next` requests the explicit live driver for upgraded policies. [State transitions](reference/adversarial-review.md#bounded-orchestration-state) preserve legacy meanings.

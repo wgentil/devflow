@@ -2,10 +2,9 @@
 
 ## Work orchestration
 
-The coordinating agent selects skills, runs helpers and arranges separate review
-invocations. The journal records progress and enforces gates. An explicit, opted-in
-bounded repair command can launch one scoped native worker for a failed configured
-hardening gate. Solid arrows below show the agent's process.
+The coordinator selects skills, runs helpers and arranges independent reviews.
+The journal enforces gates. Legacy opted-in repair launches one worker for a
+failed configured gate. See the explicit [bounded state upgrade](../../docs/reference/adversarial-review.md#bounded-orchestration-state).
 
 ```mermaid
 flowchart TD
@@ -160,3 +159,4 @@ unambiguous; ask a concise selection question for multiple runs. Initialization
 never approves specs or creates a run without its ordinary prerequisites.
 
 For stale completed code, use [reverification](../build-work/REFERENCE.md#reverify-completed-work).
+

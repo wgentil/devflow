@@ -505,3 +505,28 @@ flowchart LR
     Acceptance --> PR[Exact-head PR coverage when selected]
     PR --> Delivery[Existing authorized delivery decision]
 ```
+
+
+## Explicit review and repair state
+
+The [versioned orchestration policy](../../docs/reference/adversarial-review.md#bounded-orchestration-state)
+extends one-shot repair only when the user authorizes exact finite limits and the
+shared model budget hash. `repair status` and resume/host views then return a pure
+next action, including actual pending question text. A worker exit does not bypass
+RED/GREEN, configured checks, current packages, independent review or original
+finding closure. Waiting retains elapsed limits. Bookkeeping does not launch work;
+the live bounded driver is still being integrated.
+
+```mermaid
+flowchart LR
+    Policy[Exact finite user policy] --> Clarify[Current intent and actual questions]
+    Clarify --> Red[Relevant RED and fix rationale]
+    Red --> Worker[Actual implementer]
+    Worker --> Verify[Cheap checks and linked GREEN]
+    Verify --> Reviews[Fresh packages and independent required reviews]
+    Reviews --> Close[Original constituent closure]
+    Close --> Progress{Verified progress and remaining limits?}
+    Progress -->|Rework| Clarify
+    Progress -->|None or exhausted| Stop[Actual blocker and next action]
+    Progress -->|All evidence current| Final[Distinct final gates]
+```

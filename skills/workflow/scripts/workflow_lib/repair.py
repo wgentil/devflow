@@ -40,6 +40,9 @@ def failure_delta(run: dict) -> dict:
 
 def repair_decision(run: dict, now_ms: int) -> dict:
     """Describe one next repair action without claiming or launching work."""
+    if run.get('review_orchestration'):
+        from .review_orchestration import orchestration_next
+        return orchestration_next(run,now_ms)
     delta = failure_delta(run)
     policy = run.get('repair_policy', {})
     cycles = run.get('repair_cycles', [])
@@ -55,7 +58,9 @@ def repair_decision(run: dict, now_ms: int) -> dict:
     decisions = [subject_decision(run, 'dispatch', item_scope) for item_scope in scopes]
     blocked = next((d for d in decisions if d['status'] == 'block'), None)
     if blocked:
-        return {**base, 'status': 'blocked', 'reason_code': 'ACTION_BLOCKED', 'policy_decision': blocked}
+        from .clarifications import current_questions
+        return {**base, 'status': 'blocked', 'reason_code': 'ACTION_BLOCKED', 'policy_decision': blocked,
+            'questions':[q for q in current_questions(run,{}) if q.get('id') in blocked.get('blocker_ids',[])]}
     if run.get('status') != 'active':
         return {**base, 'status': 'blocked', 'reason_code': 'RUN_NOT_ACTIVE'}
     if not delta['finding_ids'] and not delta['gate_ids'] and not delta['item_ids']:

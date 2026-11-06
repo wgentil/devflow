@@ -24,7 +24,7 @@ flowchart LR
     Work --> Result{Worker outcome}
     Result -->|Complete scoped report| Evidence[Current coverage and next gate]
     Result -->|Stale completed proof| Reverify[Reverify with fresh token and GREEN]
-    Result -->|Partial or blocked| Recover[Resolve missing facts or controls]
+    Result -->|Partial or blocked| Recover[Questions or missing controls]
     Evidence -->|Terminal, opted-in idle v2| Compact[Best-effort compaction]
     Scope -->|Requested maintenance| Plan[Dry-run then authorized exact plan]
 ```
@@ -72,4 +72,4 @@ See [governing guidance](../../docs/reference/governing-inputs.md).
 
 See [governing guidance](../../docs/reference/governing-inputs.md).
 
-[Review gates](../../docs/reference/adversarial-review.md).
+[Review/repair](../../docs/reference/adversarial-review.md).

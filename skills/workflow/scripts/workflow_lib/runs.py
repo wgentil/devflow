@@ -179,7 +179,15 @@ def run_summary(run: dict) -> dict:
 
 def resume_status(run: dict) -> dict:
     completed = {key for key, value in run["items"].items() if value["status"] == "complete"}
-    return {"latest_attempts": {key: deepcopy(value["attempts"][-1])
+    extra={}
+    if run.get('review_orchestration'):
+        from .review_orchestration import orchestration_next
+        import time
+        extra['next_action']=orchestration_next(run,int(time.time()*1000))
+    from .clarifications import current_questions,clarification_blockers
+    pending={q['id'] for q in clarification_blockers(run,{})}
+    if pending:extra['questions']=[q for q in current_questions(run,{}) if q['id'] in pending]
+    return {**extra,"latest_attempts": {key: deepcopy(value["attempts"][-1])
                                for key, value in run["items"].items() if value.get("attempts")},
             "blocked_items": [{"id": item["id"], "blocked_by": sorted(set(item.get("dependencies", [])) - completed)}
                               for item in sorted(run["plan"]["work_items"], key=lambda item: item["id"])

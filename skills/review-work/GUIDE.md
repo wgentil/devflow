@@ -357,3 +357,5 @@ flowchart LR
     Native -->|Interrupted| Recover[Observed stop and exact user attestation]
     Execute -->|No| Read
 ```
+
+Opted-in [repair orchestration descriptors](../../docs/reference/adversarial-review.md#bounded-orchestration-state) also appear in standalone next/status output. Actual questions, limits, verification and independent coverage remain authoritative; a descriptor never means a worker ran.

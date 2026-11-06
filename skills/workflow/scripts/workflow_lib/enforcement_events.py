@@ -13,6 +13,9 @@ def apply_enforcement(subject: dict, action: str, record: dict) -> dict:
         raise WorkflowError('ENFORCEMENT_REQUIRED', 'Adopt the current enforcement contract first.')
     if subject.get('status') in {'complete', 'delivered', 'discarded'}:
         raise WorkflowError('SCOPE_TERMINAL', 'Terminal scopes cannot authorize new mutations.')
+    if action.startswith('orchestration-'):
+        from .review_orchestration import apply_orchestration
+        return apply_orchestration(subject,action.removeprefix('orchestration-'),record)
     if action.startswith('session-model-'):
         from .session_models import reduce_model
         return reduce_model(subject,action,record)

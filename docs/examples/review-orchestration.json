@@ -1,0 +1,22 @@
+{
+  "policy": {
+    "protocol": "devflow.review-orchestration/v1",
+    "schema_version": 1,
+    "enabled": true,
+    "max_attempts": 3,
+    "max_elapsed_ms": 600000,
+    "max_estimated_cost": 5,
+    "no_progress_window": 2,
+    "effect_policy_hash": "ACTUAL_AUTHORIZED_SHARED_POLICY_HASH"
+  },
+  "now_ms": 0,
+  "authorization": {
+    "approved": true,
+    "actor_id": "ACTUAL_USER",
+    "policy_hash": "ACTUAL_EXACT_POLICY_HASH",
+    "provenance": {
+      "kind": "user-message",
+      "ref": "ACTUAL_USER_MESSAGE"
+    }
+  }
+}

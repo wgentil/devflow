@@ -287,3 +287,54 @@ Report-only sessions cannot authorize writers. Bounded opted-in repair and edita
 scope renewal are subsequent integration work. Legacy primitive session manifests
 remain readable. [Optional developer commands](../developer-cli.md#standalone-review)
 and [start request](../examples/standalone-review.json) show the interface.
+
+
+## Bounded orchestration state
+
+`devflow.review-orchestration/v1` is an explicit opt-in policy, separate from the
+legacy one-shot repair policy. Configuration binds enabled status, finite attempt,
+elapsed, estimated spending and no-progress limits, and the exact existing shared
+`effect_policy_hash`. Actual user-message authorization names the policy hash.
+Selecting the review policy or reading status never enables the loop. Existing
+repair cycles, spending and the earliest repair/effect clock survive configuration.
+An explicit monotonic extension retains cycle identities and the elapsed clock;
+idle waiting cycles may extend, while active/uncertain effects or claimed actions
+must be reconciled first. Work and probe attempt limits stay in the shared effect
+policy; orchestration cannot refund either category.
+
+The pure next-action reducer returns `kind`, scoped findings/item, `input_hash`,
+`reason_code`, `required_evidence` and `executed: false`. It orders actual questions
+and current intent, relevant assertion RED, fix rationale, implementation, configured
+cheap checks, linked current GREEN, exact package, independent required reviews,
+constituent closure, progress and the distinct final workflow/session gates.
+A completed implementer receipt still leads to verification. Review-only findings
+are actionable without a failed hardening gate. Unknown affected workflow items
+need explicit mapping rather than an invented item. Original required perspectives
+and verifier applicability still control closure, including individual resolution
+in a report that requests changes elsewhere.
+
+Cycles pin their item even after an individual finding closes. Claims bind exact
+predecessor inputs; recorded results reference existing actual proofs, invocations,
+packages or dispositions. Descriptors and bookkeeping are not execution receipts.
+Uncertain actions/effects request reconciliation. Recorded missing tool/model/price
+blockers remain visible until explicit retry or input renewal; retries never reset
+limits. Pending business questions include the actual question text, even alongside
+an elapsed-limit blocker. A material answer still requires the governing amendment.
+
+Progress counts independently proof-backed original obligations and positive
+required-check facts. Aliases, new operation IDs, receipt timestamps, unrelated
+source changes, waivers/rejections/deferrals and regressing checks do not count as
+improvement. A fully assessed cycle may retain unresolved rework; it cannot claim
+successful completion. Required final workflow stages and exact PR-head checks
+remain independent. The thin live driver is the next integration step; status and
+hooks do not secretly execute this state machine.
+
+Optional developer configuration uses `repair configure` with a wrapper containing
+`policy`, `now_ms`, and `authorization`; ordinary legacy policy JSON retains its
+one-shot meaning. Session events use `orchestration-configure` and the same record.
+Subsequent shared transitions are `begin-cycle`, `claim-action`, `record-action`,
+`finish-cycle`, `block`, `clear-blocker`, and `extend`, prefixed `orchestration-` in
+session events or `domain.repair.orchestration-` in workflow journals. Workflow
+`repair status`, host/resume views and session `review next` expose descriptors.
+Legacy `repair next` does not run an upgraded loop; it requests the explicit bounded
+driver. [Policy shape](../examples/review-orchestration.json) is illustrative only.

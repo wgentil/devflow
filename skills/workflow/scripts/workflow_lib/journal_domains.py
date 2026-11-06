@@ -309,6 +309,12 @@ def _reduce(data, kind, req, version, *, metrics_source_hash=None):
         require(candidate['case_id'] not in cases, 'case already approved')
         cases[candidate['case_id']] = approved
         return {'case_id': candidate['case_id'], 'case_hash': candidate['case_hash']}
+    if kind.startswith('domain.repair.orchestration-'):
+        from .review_orchestration import apply_orchestration
+        run=data.get('runs',{}).get(req.get('run_id'))
+        require(run is not None,'Known orchestration run required.')
+        data['runs'][req['run_id']]=apply_orchestration(run,kind.removeprefix('domain.repair.orchestration-'),req['record'])
+        return {'run_id':req['run_id'],'action':kind.removeprefix('domain.repair.orchestration-'),'input_hash':digest(req['record'])}
     if kind.startswith('domain.repair.'):
         from .repair import failure_delta, repair_decision
         run = data.get('runs', {}).get(req.get('run_id'))
@@ -317,6 +323,10 @@ def _reduce(data, kind, req, version, *, metrics_source_hash=None):
         cycles = run.setdefault('repair_cycles', [])
         if action == 'configure':
             policy = req.get('policy')
+            if isinstance(policy,dict) and policy.get('policy',{}).get('protocol')=='devflow.review-orchestration/v1':
+                from .review_orchestration import apply_orchestration
+                data['runs'][req['run_id']]=apply_orchestration(run,'configure',policy)
+                return {'run_id':req['run_id'],'policy':deepcopy(policy['policy'])}
             require(isinstance(policy, dict) and set(policy) == {'enabled', 'max_attempts',
                     'max_elapsed_ms', 'max_estimated_cost', 'no_progress_window'}, 'complete repair policy required')
             import math
