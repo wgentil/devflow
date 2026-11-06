@@ -1,0 +1,19 @@
+F
+======================================================================
+FAIL: test_version_from_unrelated_cwd (test_package.PackageTests.test_version_from_unrelated_cwd)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/6f51/devflow/tests/test_package.py", line 35, in test_version_from_unrelated_cwd
+    self.assertEqual(descriptor['plugin_version'], '0.3.18')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: '0.3.17' != '0.3.18'
+- 0.3.17
+?      ^
++ 0.3.18
+?      ^
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.991s
+
+FAILED (failures=1)

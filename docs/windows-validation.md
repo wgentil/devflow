@@ -1,6 +1,6 @@
 # Windows validation status
 
-Current release: v0.3.17. See its [release validation](releases/v0.3.17-validation.md)
+Current release: v0.3.18. See its [release validation](releases/v0.3.18-validation.md)
 for exact-package results. The v0.3.13 matrix below is historical.
 
 DevFlow v0.3.13 contains the native Windows compatibility fixes. Automated core
