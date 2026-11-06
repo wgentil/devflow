@@ -24,7 +24,7 @@ use their executable directly. Detailed maintainer checks stay in the
 
 Codex and Claude have separate installations of the same shared package. Users
 choose when to upgrade. Both manifests and one skills/helper tree are included;
-the package version is `0.3.18`;
+the package version is `0.3.19`;
 the Claude marketplace descriptor is packaged at `.claude-plugin/marketplace.json`.
 The private GitHub repository `wgentil/devflow` serves the marketplace from
 `main`. Codex users with access to that repository can install it:
@@ -692,6 +692,5 @@ The v0.3.18 symptom may instead say `CORRUPT_STATE` with “Recorded matching
 execution/source/protection claim required.” This compatibility defect alone
 does not establish damaged journal bytes. Preserve the root and use a helper
 containing this repair to inspect it. Do not delete proofs, edit event files or
-skip enforcement to work around the error. An installed v0.3.18 helper does not
-already contain the repair described here; it is available in the current
-repository repair branch, pending release.
+skip enforcement to work around the error. This repair is included in v0.3.19. Upgrade and reload the selected host
+before inspection; upgrading does not choose or apply recovery automatically.

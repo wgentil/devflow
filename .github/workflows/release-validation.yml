@@ -19,8 +19,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Fetch frozen old-client baseline
-        run: git fetch --depth=1 origin refs/tags/v0.3.15:refs/tags/v0.3.15
+      - name: Fetch frozen compatibility baselines
+        run: git fetch --depth=1 origin refs/tags/v0.3.15:refs/tags/v0.3.15 refs/tags/v0.3.17:refs/tags/v0.3.17 refs/tags/v0.3.18:refs/tags/v0.3.18
       - name: Focused review and repair integration
         if: inputs.profile == 'focused'
         run: python scripts/run_platform_tests.py --pattern test_adversarial_integration.py --output focused-review-report.json

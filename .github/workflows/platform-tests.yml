@@ -17,8 +17,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-      - name: Fetch frozen old-client baseline
-        run: git fetch --depth=1 origin refs/tags/v0.3.15:refs/tags/v0.3.15
+      - name: Fetch frozen compatibility baselines
+        run: git fetch --depth=1 origin refs/tags/v0.3.15:refs/tags/v0.3.15 refs/tags/v0.3.17:refs/tags/v0.3.17 refs/tags/v0.3.18:refs/tags/v0.3.18
       - name: Complete ordinary platform suite
         run: python scripts/run_platform_tests.py --output platform-report.json
       - uses: actions/upload-artifact@v4
@@ -38,8 +38,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-      - name: Fetch frozen old-client baseline
-        run: git fetch --depth=1 origin refs/tags/v0.3.15:refs/tags/v0.3.15
+      - name: Fetch frozen compatibility baselines
+        run: git fetch --depth=1 origin refs/tags/v0.3.15:refs/tags/v0.3.15 refs/tags/v0.3.17:refs/tags/v0.3.17 refs/tags/v0.3.18:refs/tags/v0.3.18
       - name: Explicit legacy Windows code page
         shell: pwsh
         run: |
