@@ -17,7 +17,7 @@ Read [shared invariants](../../docs/reference/workflow-invariants.md) and declar
 
 ```mermaid
 flowchart LR
-    Scope[Workflow package or explicit standalone Git scope] --> Checks[Live checks and shared invariants]
+    Scope[Workflow package or canonical standalone Git root] --> Checks[Live checks and shared invariants]
     Checks --> Inputs[Complete scoped item inputs or whole-tree checks]
     Inputs --> Model[Configured route and intact input]
     Model --> Quality[Independent oracle and discrimination]
@@ -38,7 +38,7 @@ flowchart LR
 
 Item reviews use `--item ID`; complete [input scopes](REFERENCE.md#scoped-item-review-liveness) can isolate unrelated work; valid request-changes reopens only that item for retry and fresh verification.
 
-Outside a workflow, select an explicit Git range/working tree and external output; default to report only. [Standalone review](../../docs/reference/adversarial-review.md#standalone-selected-scope-review).
+Outside a workflow, select an canonical Git root and range/working tree and external output; default to report only. [Standalone review](../../docs/reference/adversarial-review.md#standalone-selected-scope-review).
 
 ## Documentation
 

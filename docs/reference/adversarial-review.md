@@ -469,3 +469,8 @@ the new test-quality requirement for actual assertion discrimination.
 Summaries use the shared native usage normalizer, including supported nested
 aggregate token fields and explicit zeros. Unknown executed state remains null
 on exact replay; it never becomes a false claim that no work occurred.
+
+Standalone Git root identity uses canonical physical paths rather than raw Git
+path spelling. Equivalent Windows separators or root aliases are accepted;
+subdirectories remain invalid. Working-tree modes honor Git `core.filemode` and
+staged executable modes. Ignored filesystem access bits do not invent changes.

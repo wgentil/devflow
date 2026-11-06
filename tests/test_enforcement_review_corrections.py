@@ -65,7 +65,10 @@ class ReviewCorrections(unittest.TestCase):
         subject['executions']={'live':{'id':'live','status':'launching','owner_pid':os.getpid(),
             'contract_hash':subject['review_contract_hash'],'clarification_binding':clarification_binding(subject,{}),
             'source_observation':source_observation(subject)}}
-        with sqlite3.connect(path) as conn:conn.execute('UPDATE manifest SET body=?',(json.dumps(state),))
+        conn=sqlite3.connect(path)
+        try:
+            with conn:conn.execute('UPDATE manifest SET body=?',(json.dumps(state),))
+        finally:conn.close()
         confirmation={'approved':True,'actor_id':'fixture-user','worker_ref':'live','reason':'forged absence',
             'provenance':{'kind':'user-message','ref':'fixture-stop'}}
         observation={'effect_id':'live','worker_ref':'live','owner_pid':os.getpid(),'owner_absent':True,

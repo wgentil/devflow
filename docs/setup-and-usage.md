@@ -662,3 +662,6 @@ minor findings remain visible without blocking completion. A required pre-review
 check can initiate code repair when its affected item mapping is explicit;
 unknown scope, unavailable tools and kind-specific proof gaps require a handoff.
 See [dispatch and repair safeguards](reference/adversarial-review.md#final-dispatch-and-repair-safeguards).
+
+Standalone review accepts equivalent canonical Git root spellings on each platform
+and follows Git executable-mode configuration when selecting working-tree changes.

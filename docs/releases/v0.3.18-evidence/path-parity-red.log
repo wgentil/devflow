@@ -1,0 +1,36 @@
+EF
+======================================================================
+ERROR: test_equivalent_git_root_spelling_is_accepted_but_subdirectory_is_not (test_standalone_path_parity.StandalonePathParityTests.test_equivalent_git_root_spelling_is_accepted_but_subdirectory_is_not)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/6f51/devflow/tests/test_standalone_path_parity.py", line 18, in test_equivalent_git_root_spelling_is_accepted_but_subdirectory_is_not
+    selected,content=standalone_reviews.select_source(repo,{'mode':'working-tree'})
+                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/6f51/devflow/skills/workflow/scripts/workflow_lib/standalone_reviews.py", line 29, in select_source
+    need(git(repository,'rev-parse','--show-toplevel').decode().strip()==str(repository),'Select the Git repository root explicitly.')
+    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/6f51/devflow/skills/workflow/scripts/workflow_lib/standalone_reviews.py", line 11, in need
+    if not ok:raise WorkflowError('STANDALONE_REVIEW_BLOCKED',message)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+workflow_lib.store.WorkflowError: Select the Git repository root explicitly.
+
+======================================================================
+FAIL: test_git_ignored_executable_bits_do_not_invent_working_tree_changes (test_standalone_path_parity.StandalonePathParityTests.test_git_ignored_executable_bits_do_not_invent_working_tree_changes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/6f51/devflow/tests/test_standalone_path_parity.py", line 31, in test_git_ignored_executable_bits_do_not_invent_working_tree_changes
+    self.assertEqual(selected['changed_paths'],[])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['AGENTS.md', 'value.py'] != []
+
+First list contains 2 additional elements.
+First extra element 0:
+'AGENTS.md'
+
+- ['AGENTS.md', 'value.py']
++ []
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.420s
+
+FAILED (failures=1, errors=1)

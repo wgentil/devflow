@@ -417,3 +417,8 @@ flowchart LR
     Mapping -->|Yes| Repair[Authorized code repair and independent review]
     Mapping -->|No| Handoff[Require scope clarification]
 ```
+
+Standalone selection compares canonical physical Git roots, accepts equivalent
+platform path spellings, and still rejects subdirectories. Working-tree executable
+modes follow Git core.filemode and staged modes, so Windows access bits cannot
+invent changes. See the [selection safeguards](../../docs/reference/adversarial-review.md#final-dispatch-and-repair-safeguards).

@@ -89,7 +89,7 @@ class StandaloneReviewTests(unittest.TestCase):
             def configure(self,resolved,brief,access='read-only'):return {'observed':resolved,'observation_source':'host-effective-configuration','invocation_ref':'fixture:configured'}
             def discover(self):return {'capabilities':fixture.capabilities(),'discovery':fixture.discovery()}
             def invoke(self,*args):
-                result=subprocess.run([sys.executable,'-c',"from pathlib import Path; p=Path('"+str(base/'counter')+"'); p.write_text(p.read_text()+'x' if p.exists() else 'x'); raise SystemExit(23)"],capture_output=True)
+                result=subprocess.run([sys.executable,'-c',"from pathlib import Path; p=Path("+repr(str(base/'counter'))+"); p.write_text(p.read_text()+'x' if p.exists() else 'x'); raise SystemExit(23)"],capture_output=True)
                 if result.returncode:raise NativeError('unavailable','Owned child exited before a model completion receipt.')
             def close(self):pass
         request={'perspective':'security','host':'codex','actor_id':'fixture-reviewer','estimated_cost':1,'diagnostic':True}
@@ -113,9 +113,16 @@ class StandaloneReviewTests(unittest.TestCase):
         from workflow_lib.standalone_reviews import start_standalone
         base,repo,first,head=self.fixture();marker=base/'filter-ran';script=base/'filter.py'
         script.write_text('import sys\nfrom pathlib import Path\nPath('+repr(str(marker))+').write_text("ran")\nsys.stdout.buffer.write(sys.stdin.buffer.read())\n')
-        config=base/'global.gitconfig';config.write_text('[filter "fixture"]\n clean = '+sys.executable+' '+str(script)+'\n')
+        import shlex
+        config=base/'global.gitconfig'
+        command=shlex.quote(Path(sys.executable).as_posix())+' '+shlex.quote(script.as_posix())
+        self.git(repo,'config','--file',str(config),'filter.fixture.clean',command)
         (repo/'.gitattributes').write_text('value.py filter=fixture\n')
-        with patch.dict(os.environ,{'GIT_CONFIG_GLOBAL':str(config)}):start_standalone(repo,{'mode':'working-tree'},base/'session.db')
+        with patch.dict(os.environ,{'GIT_CONFIG_GLOBAL':str(config)}):
+            self.git(repo,'diff','--','value.py')
+            self.assertTrue(marker.exists(),'The fixture must contain an effective real filter.')
+            marker.unlink()
+            start_standalone(repo,{'mode':'working-tree'},base/'session.db')
         self.assertFalse(marker.exists(),'Starting read-only review executed a project filter.')
     def test_actual_native_report_is_ingested_once_and_retries_without_dispatch(self):
         from unittest.mock import patch

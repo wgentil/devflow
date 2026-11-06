@@ -1,6 +1,6 @@
 """Explicit Git selections and external, resumable standalone review sessions."""
 from pathlib import Path
-import difflib,hashlib,json,os,subprocess
+import difflib,hashlib,json,os,stat,subprocess
 from .document_units import digest
 from .store import WorkflowError
 
@@ -26,7 +26,7 @@ def _path(value):
 
 def select_source(repository,request):
     repository=Path(repository).resolve();need(repository.is_dir(),'Existing Git repository required.')
-    need(git(repository,'rev-parse','--show-toplevel').decode().strip()==str(repository),'Select the Git repository root explicitly.')
+    need(Path(git(repository,'rev-parse','--show-toplevel').decode().strip()).resolve()==repository,'Select the Git repository root explicitly.')
     mode=request.get('mode');need(mode in {'working-tree','committed-range'},'Choose working-tree or committed-range explicitly; no comparison branch is inferred.')
     if mode=='committed-range':
         need(request.get('base') and request.get('head'),'Committed range requires explicit base and head.')
@@ -44,14 +44,21 @@ def select_source(repository,request):
     index_hash=None;index_diff='';status=''
     if mode=='working-tree':
         baseline=dict(content);content={};names=git(repository,'ls-files','--cached','--others','--exclude-standard','-z').split(b'\0')
-        index_hash=hashlib.sha256(git(repository,'ls-files','--stage','-z')).hexdigest()
+        index_entries=git(repository,'ls-files','--stage','-z');index_hash=hashlib.sha256(index_entries).hexdigest()
+        indexed={}
+        for entry in filter(None,index_entries.split(b'\0')):
+            header,rawname=entry.split(b'\t',1);permissions,oid,stage=header.decode().split()
+            need(stage=='0','Unmerged index entries require resolution before selected review.')
+            indexed[rawname.decode('utf-8')]=(git(repository,'cat-file','blob',oid),permissions)
+        track_modes=git(repository,'config','--bool','--default=true','--get','core.filemode').strip()==b'true'
         for raw in filter(None,names):
             name=raw.decode('utf-8');relative=_path(name);target=repository/relative
             need(not target.is_symlink() and all(not p.is_symlink() for p in target.parents if p!=repository.parent),'Review inputs cannot escape through symlinks.')
             if not target.exists():continue
             need(target.is_file() and target.resolve().is_relative_to(repository),'Regular selected input required.')
             need(target.stat().st_size<=MAX_SOURCE_BYTES,'Selected file exceeds the supported bound.')
-            content[name]=(target.read_bytes(),'100755' if os.access(target,os.X_OK) else '100644')
+            file_mode=('100755' if target.stat().st_mode & stat.S_IXUSR else '100644') if track_modes else indexed.get(name,(b'','100644'))[1]
+            content[name]=(target.read_bytes(),file_mode)
         changed={name for name in set(baseline)|set(content) if baseline.get(name)!=content.get(name)}
         def difference(before,after):
             rows=[]
@@ -61,11 +68,6 @@ def select_source(repository,request):
                 rows.extend(difflib.unified_diff(old.decode('utf-8','replace').splitlines(True),new.decode('utf-8','replace').splitlines(True),fromfile='a/'+name,tofile='b/'+name))
             return ''.join(rows)
         diff=difference(baseline,content)
-        indexed={}
-        for entry in filter(None,git(repository,'ls-files','--stage','-z').split(b'\0')):
-            header,rawname=entry.split(b'\t',1);permissions,oid,stage=header.decode().split()
-            need(stage=='0','Unmerged index entries require resolution before selected review.')
-            indexed[rawname.decode('utf-8')]=(git(repository,'cat-file','blob',oid),permissions)
         index_diff=difference(baseline,indexed)
         status=json.dumps({'staged':sorted(n for n in set(baseline)|set(indexed) if baseline.get(n)!=indexed.get(n)),
             'working':sorted(n for n in set(indexed)|set(content) if indexed.get(n)!=content.get(n))},sort_keys=True)
