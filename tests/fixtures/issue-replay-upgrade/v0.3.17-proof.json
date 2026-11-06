@@ -1,0 +1,594 @@
+{
+  "events": [
+    {
+      "kind": "fixture",
+      "operation_id": "fixture-0",
+      "payload": {
+        "approval": {
+          "confirmed": true,
+          "content_hash": "fd227abbd43742d75d894e14d0fb7d43ca92db697fef00e858e607593c563629"
+        },
+        "plan": {
+          "spec_hash": "fd227abbd43742d75d894e14d0fb7d43ca92db697fef00e858e607593c563629",
+          "work_items": [
+            {
+              "acceptance_criteria": [
+                {
+                  "kind": "code-test",
+                  "text": "test one"
+                }
+              ],
+              "dependencies": [],
+              "id": "W1",
+              "kind": "code",
+              "requirement_ids": [
+                "R1"
+              ]
+            }
+          ]
+        },
+        "plan_validation": {
+          "spec_hash": "fd227abbd43742d75d894e14d0fb7d43ca92db697fef00e858e607593c563629",
+          "valid": true
+        },
+        "spec": {
+          "mode": "new",
+          "requirements": [
+            {
+              "acceptance_criteria": [
+                "one"
+              ],
+              "id": "R1",
+              "provenance": {
+                "kind": "authored"
+              },
+              "text": "One"
+            }
+          ]
+        }
+      },
+      "schema_version": 1,
+      "sequence": 1
+    },
+    {
+      "kind": "domain.issues.snapshot",
+      "operation_id": "fixture-1",
+      "payload": {
+        "request": {
+          "snapshot": {
+            "complete": true,
+            "expected_pages": 1,
+            "issues": [
+              {
+                "id": "i"
+              }
+            ],
+            "pages": [
+              1
+            ],
+            "repo_id": "app"
+          }
+        }
+      },
+      "schema_version": 1,
+      "sequence": 2
+    },
+    {
+      "kind": "domain.issues.group",
+      "operation_id": "fixture-2",
+      "payload": {
+        "request": {
+          "groups": [
+            {
+              "id": "g",
+              "issue_ids": [
+                "i"
+              ],
+              "requirement_ids": {
+                "i": [
+                  "R1"
+                ]
+              }
+            }
+          ],
+          "snapshot_hash": "4db33afa23918ed71d19e5173c1f83a01c2dfcd04a16d0784e0a937e50832ed1"
+        }
+      },
+      "schema_version": 1,
+      "sequence": 3
+    },
+    {
+      "kind": "domain.issues.start",
+      "operation_id": "fixture-3",
+      "payload": {
+        "request": {
+          "group_id": "g",
+          "intent": "build",
+          "snapshot_hash": "4db33afa23918ed71d19e5173c1f83a01c2dfcd04a16d0784e0a937e50832ed1"
+        }
+      },
+      "schema_version": 1,
+      "sequence": 4
+    },
+    {
+      "kind": "run.attempt.issued",
+      "operation_id": "fixture-4",
+      "payload": {
+        "attempt": {
+          "item_id": "W1",
+          "result": null,
+          "state_version": 1,
+          "status": "active",
+          "token": "owned-token"
+        },
+        "run_id": "6792512fb7a42c01a1a64504"
+      },
+      "schema_version": 1,
+      "sequence": 5
+    },
+    {
+      "kind": "verification.recorded",
+      "operation_id": "fixture-5",
+      "payload": {
+        "proof": {
+          "argv": [
+            "owned-fixture-test"
+          ],
+          "exit_code": 1,
+          "finished_at": "owned-fixture",
+          "id": "owned-fixture",
+          "item_id": "W1",
+          "kind": "code",
+          "passed": true,
+          "phase": "RED",
+          "repo_id": "owned-fixture",
+          "repository_head": "owned-fixture",
+          "run_id": "6792512fb7a42c01a1a64504",
+          "started_at": "owned-fixture",
+          "stderr_ref": "owned-fixture",
+          "stdout_ref": "owned-fixture",
+          "target_outcomes": {
+            "test_x": "failed"
+          },
+          "test_hashes": {
+            "test.py": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "token": "owned-token",
+          "worktree_digest": "owned-fixture"
+        },
+        "run_id": "6792512fb7a42c01a1a64504"
+      },
+      "schema_version": 1,
+      "sequence": 6
+    }
+  ],
+  "expected": {
+    "data": {
+      "approval": {
+        "confirmed": true,
+        "content_hash": "fd227abbd43742d75d894e14d0fb7d43ca92db697fef00e858e607593c563629"
+      },
+      "domain_receipts": {
+        "fixture-1": {
+          "complete": true,
+          "snapshot_hash": "4db33afa23918ed71d19e5173c1f83a01c2dfcd04a16d0784e0a937e50832ed1"
+        },
+        "fixture-2": {
+          "revision": 1,
+          "snapshot_hash": "4db33afa23918ed71d19e5173c1f83a01c2dfcd04a16d0784e0a937e50832ed1"
+        },
+        "fixture-3": {
+          "group_id": "g",
+          "group_revision": 1,
+          "intent": "build",
+          "issue_ids": [
+            "i"
+          ],
+          "requirement_ids": {
+            "i": [
+              "R1"
+            ]
+          },
+          "run_id": "6792512fb7a42c01a1a64504",
+          "snapshot_hash": "4db33afa23918ed71d19e5173c1f83a01c2dfcd04a16d0784e0a937e50832ed1"
+        }
+      },
+      "group_revisions": [
+        {
+          "groups": [
+            {
+              "id": "g",
+              "issue_ids": [
+                "i"
+              ],
+              "requirement_ids": {
+                "i": [
+                  "R1"
+                ]
+              }
+            }
+          ],
+          "revision": 1,
+          "snapshot_hash": "4db33afa23918ed71d19e5173c1f83a01c2dfcd04a16d0784e0a937e50832ed1"
+        }
+      ],
+      "groups": [
+        {
+          "id": "g",
+          "issue_ids": [
+            "i"
+          ],
+          "requirement_ids": {
+            "i": [
+              "R1"
+            ]
+          }
+        }
+      ],
+      "issue_runs": {
+        "6792512fb7a42c01a1a64504": {
+          "group_id": "g",
+          "group_revision": 1,
+          "intent": "build",
+          "issue_ids": [
+            "i"
+          ],
+          "requirement_ids": {
+            "i": [
+              "R1"
+            ]
+          },
+          "run_id": "6792512fb7a42c01a1a64504",
+          "snapshot_hash": "4db33afa23918ed71d19e5173c1f83a01c2dfcd04a16d0784e0a937e50832ed1"
+        }
+      },
+      "issues": {
+        "i": {
+          "fingerprint": "db8d54e18bf855dd76322682fa1becabb3af75c182ba0f5f0cb36fca78cd5591",
+          "id": "i",
+          "original": {
+            "id": "i"
+          }
+        }
+      },
+      "plan": {
+        "spec_hash": "fd227abbd43742d75d894e14d0fb7d43ca92db697fef00e858e607593c563629",
+        "work_items": [
+          {
+            "acceptance_criteria": [
+              {
+                "kind": "code-test",
+                "text": "test one"
+              }
+            ],
+            "dependencies": [],
+            "id": "W1",
+            "kind": "code",
+            "requirement_ids": [
+              "R1"
+            ]
+          }
+        ]
+      },
+      "plan_validation": {
+        "spec_hash": "fd227abbd43742d75d894e14d0fb7d43ca92db697fef00e858e607593c563629",
+        "valid": true
+      },
+      "runs": {
+        "6792512fb7a42c01a1a64504": {
+          "active_attempt": {
+            "item_id": "W1",
+            "result": null,
+            "state_version": 1,
+            "status": "active",
+            "token": "owned-token"
+          },
+          "artifacts": {},
+          "authorization_scope": {},
+          "available_gates": [
+            "context",
+            "specification",
+            "planning",
+            "build",
+            "review",
+            "acceptance"
+          ],
+          "context": {},
+          "governing_digest": null,
+          "host_protocol_version": 1,
+          "id": "6792512fb7a42c01a1a64504",
+          "issue_group_id": "g",
+          "issue_scope": {
+            "group_id": "g",
+            "group_revision": 1,
+            "intent": "build",
+            "issue_ids": [
+              "i"
+            ],
+            "requirement_ids": {
+              "i": [
+                "R1"
+              ]
+            },
+            "run_id": "6792512fb7a42c01a1a64504",
+            "snapshot_hash": "4db33afa23918ed71d19e5173c1f83a01c2dfcd04a16d0784e0a937e50832ed1"
+          },
+          "items": {
+            "W1": {
+              "attempts": [
+                {
+                  "item_id": "W1",
+                  "result": null,
+                  "state_version": 1,
+                  "status": "active",
+                  "token": "owned-token"
+                }
+              ],
+              "status": "pending"
+            }
+          },
+          "plan": {
+            "spec_hash": "fd227abbd43742d75d894e14d0fb7d43ca92db697fef00e858e607593c563629",
+            "work_items": [
+              {
+                "acceptance_criteria": [
+                  {
+                    "kind": "code-test",
+                    "text": "test one"
+                  }
+                ],
+                "dependencies": [],
+                "id": "W1",
+                "kind": "code",
+                "requirement_ids": [
+                  "R1"
+                ]
+              }
+            ]
+          },
+          "repair_cycles": [],
+          "repair_policy": {
+            "enabled": false
+          },
+          "repositories": {},
+          "state_version": 1,
+          "status": "active",
+          "unavailable_gates": [
+            "hardening",
+            "delivery"
+          ],
+          "unresolved_findings": [],
+          "verification_proofs": {
+            "owned-fixture": {
+              "argv": [
+                "owned-fixture-test"
+              ],
+              "exit_code": 1,
+              "finished_at": "owned-fixture",
+              "id": "owned-fixture",
+              "item_id": "W1",
+              "kind": "code",
+              "passed": true,
+              "phase": "RED",
+              "repo_id": "owned-fixture",
+              "repository_head": "owned-fixture",
+              "run_id": "6792512fb7a42c01a1a64504",
+              "started_at": "owned-fixture",
+              "stderr_ref": "owned-fixture",
+              "stdout_ref": "owned-fixture",
+              "target_outcomes": {
+                "test_x": "failed"
+              },
+              "test_hashes": {
+                "test.py": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              },
+              "token": "owned-token",
+              "worktree_digest": "owned-fixture"
+            }
+          },
+          "verifier_proofs": {}
+        }
+      },
+      "snapshot_hash": "4db33afa23918ed71d19e5173c1f83a01c2dfcd04a16d0784e0a937e50832ed1",
+      "snapshot_valid": true,
+      "snapshots": {
+        "4db33afa23918ed71d19e5173c1f83a01c2dfcd04a16d0784e0a937e50832ed1": {
+          "complete": true,
+          "expected_pages": 1,
+          "issues": [
+            {
+              "id": "i"
+            }
+          ],
+          "pages": [
+            1
+          ],
+          "repo_id": "app"
+        }
+      },
+      "spec": {
+        "mode": "new",
+        "requirements": [
+          {
+            "acceptance_criteria": [
+              "one"
+            ],
+            "id": "R1",
+            "provenance": {
+              "kind": "authored"
+            },
+            "text": "One"
+          }
+        ]
+      }
+    },
+    "operations": {
+      "fixture-0": {
+        "kind": "fixture",
+        "operation_id": "fixture-0",
+        "payload": {
+          "approval": {
+            "confirmed": true,
+            "content_hash": "fd227abbd43742d75d894e14d0fb7d43ca92db697fef00e858e607593c563629"
+          },
+          "plan": {
+            "spec_hash": "fd227abbd43742d75d894e14d0fb7d43ca92db697fef00e858e607593c563629",
+            "work_items": [
+              {
+                "acceptance_criteria": [
+                  {
+                    "kind": "code-test",
+                    "text": "test one"
+                  }
+                ],
+                "dependencies": [],
+                "id": "W1",
+                "kind": "code",
+                "requirement_ids": [
+                  "R1"
+                ]
+              }
+            ]
+          },
+          "plan_validation": {
+            "spec_hash": "fd227abbd43742d75d894e14d0fb7d43ca92db697fef00e858e607593c563629",
+            "valid": true
+          },
+          "spec": {
+            "mode": "new",
+            "requirements": [
+              {
+                "acceptance_criteria": [
+                  "one"
+                ],
+                "id": "R1",
+                "provenance": {
+                  "kind": "authored"
+                },
+                "text": "One"
+              }
+            ]
+          }
+        },
+        "schema_version": 1,
+        "sequence": 1
+      },
+      "fixture-1": {
+        "kind": "domain.issues.snapshot",
+        "operation_id": "fixture-1",
+        "payload": {
+          "request": {
+            "snapshot": {
+              "complete": true,
+              "expected_pages": 1,
+              "issues": [
+                {
+                  "id": "i"
+                }
+              ],
+              "pages": [
+                1
+              ],
+              "repo_id": "app"
+            }
+          }
+        },
+        "schema_version": 1,
+        "sequence": 2
+      },
+      "fixture-2": {
+        "kind": "domain.issues.group",
+        "operation_id": "fixture-2",
+        "payload": {
+          "request": {
+            "groups": [
+              {
+                "id": "g",
+                "issue_ids": [
+                  "i"
+                ],
+                "requirement_ids": {
+                  "i": [
+                    "R1"
+                  ]
+                }
+              }
+            ],
+            "snapshot_hash": "4db33afa23918ed71d19e5173c1f83a01c2dfcd04a16d0784e0a937e50832ed1"
+          }
+        },
+        "schema_version": 1,
+        "sequence": 3
+      },
+      "fixture-3": {
+        "kind": "domain.issues.start",
+        "operation_id": "fixture-3",
+        "payload": {
+          "request": {
+            "group_id": "g",
+            "intent": "build",
+            "snapshot_hash": "4db33afa23918ed71d19e5173c1f83a01c2dfcd04a16d0784e0a937e50832ed1"
+          }
+        },
+        "schema_version": 1,
+        "sequence": 4
+      },
+      "fixture-4": {
+        "kind": "run.attempt.issued",
+        "operation_id": "fixture-4",
+        "payload": {
+          "attempt": {
+            "item_id": "W1",
+            "result": null,
+            "state_version": 1,
+            "status": "active",
+            "token": "owned-token"
+          },
+          "run_id": "6792512fb7a42c01a1a64504"
+        },
+        "schema_version": 1,
+        "sequence": 5
+      },
+      "fixture-5": {
+        "kind": "verification.recorded",
+        "operation_id": "fixture-5",
+        "payload": {
+          "proof": {
+            "argv": [
+              "owned-fixture-test"
+            ],
+            "exit_code": 1,
+            "finished_at": "owned-fixture",
+            "id": "owned-fixture",
+            "item_id": "W1",
+            "kind": "code",
+            "passed": true,
+            "phase": "RED",
+            "repo_id": "owned-fixture",
+            "repository_head": "owned-fixture",
+            "run_id": "6792512fb7a42c01a1a64504",
+            "started_at": "owned-fixture",
+            "stderr_ref": "owned-fixture",
+            "stdout_ref": "owned-fixture",
+            "target_outcomes": {
+              "test_x": "failed"
+            },
+            "test_hashes": {
+              "test.py": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "token": "owned-token",
+            "worktree_digest": "owned-fixture"
+          },
+          "run_id": "6792512fb7a42c01a1a64504"
+        },
+        "schema_version": 1,
+        "sequence": 6
+      }
+    },
+    "recovery": {
+      "ignored_temporary_files": []
+    },
+    "schema_version": 1,
+    "version": 6
+  }
+}

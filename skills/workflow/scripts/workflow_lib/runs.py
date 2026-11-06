@@ -14,6 +14,12 @@ UNAVAILABLE_GATES = ["hardening", "delivery"]
 
 
 def start_run(state: dict, run_id: str, plan: dict) -> dict:
+    from .issue_run_contracts import current_run_contract
+    return {**historical_run_base(state, run_id, plan),
+            **{k: v for k, v in current_run_contract().items() if k != 'schema_version'}}
+
+
+def historical_run_base(state: dict, run_id: str, plan: dict) -> dict:
     if state.get("context") and (state.get("resolved_context") is None
             or state.get("resolved_context_source_hash") != context_sources_hash(state["context"])):
         raise WorkflowError("CONTEXT_NOT_RESOLVED", "resolve the changed context before starting a run")
@@ -34,12 +40,9 @@ def start_run(state: dict, run_id: str, plan: dict) -> dict:
     validate_plan({**specification, "approval": approval}, plan)
     if run_id in state.get("runs", {}):
         raise WorkflowError("RUN_ALREADY_EXISTS", f"run {run_id} already exists")
-    from .review_policy import new_review_policy
     return {
         "id": run_id,
         "status": "active",
-        "review_policy": new_review_policy(),
-        "enforcement": {"protocol": "devflow.python-enforcement/v1", "policy_version": 1},
         "plan": deepcopy(plan),
         "governing_digest": governing_digest,
         "repositories": deepcopy(state.get("repositories", {})),

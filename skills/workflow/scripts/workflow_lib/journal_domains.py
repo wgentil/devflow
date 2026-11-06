@@ -446,8 +446,8 @@ def _reduce(data, kind, req, version, *, metrics_source_hash=None):
         links = data.setdefault('issue_runs', {})
         require(link['run_id'] not in links, 'linked issue run already exists')
         if req['intent'] == 'build':
-            from .runs import start_run
-            run = start_run(data, link['run_id'], data.get('plan', {}))
+            from .issue_run_contracts import historical_issue_run, selected_contract
+            run = historical_issue_run(data, link['run_id'], data.get('plan', {}), selected_contract(req))
             run['issue_group_id'] = req['group_id']
             planned = {r for i in run['plan']['work_items'] for r in i['requirement_ids']}
             require(all(set(ids).issubset(planned) for ids in scope.values()), 'issue scope is outside the run plan')

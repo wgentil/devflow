@@ -35,6 +35,13 @@ def _empty() -> dict:
 
 
 def _apply_event(state: dict, event: dict, *, metrics_source_hash=None) -> None:
+    """Materialize original facts under an explicit historical policy context."""
+    from .issue_run_contracts import issue_event_context
+    with issue_event_context(event):
+        return _apply_event_body(state, event, metrics_source_hash=metrics_source_hash)
+
+
+def _apply_event_body(state: dict, event: dict, *, metrics_source_hash=None) -> None:
     """Materialize generic patches and compact run deltas from journal events."""
     from .action_policy import enforcement_version
     kind, payload = event["kind"], deepcopy(event["payload"])
@@ -796,6 +803,7 @@ def _read_journal(root: Path) -> tuple[dict, list[str]]:
         try:
             _apply_event(state, event)
         except WorkflowError as exc:
+            if exc.code == 'ISSUE_POLICY_SELECTION_REQUIRED': raise
             raise WorkflowError("CORRUPT_STATE", f"event {path.name} is invalid: {exc.message}") from exc
         state["version"] = expected
         state["operations"][operation_id] = event
@@ -914,6 +922,9 @@ def _transact_once(root: Path, expected_version: int, operation_id: str, event: 
 
 
 def _guard_enforcement_transaction(state: dict, event: dict, root=None) -> None:
+    if event['kind']=='domain.issues.start' and event['payload'].get('request',{}).get('intent')=='build':
+        from .issue_run_contracts import validate_run_contract
+        validate_run_contract(event['payload']['request'].get('run_contract'))
     if event['kind']=='run.started':
         from .review_policy import require_review_policy
         require_review_policy(event['payload'].get('run',{}))

@@ -1,0 +1,21 @@
+{
+  "generator": "generate.py",
+  "cases": {
+    "v0.3.17-proof.json": {
+      "source_commit": "c01ef548ec7419d72341ff7d2c96a0b64d4cf0be",
+      "sha256": "cbe42d5d4aab5ddf6a283a0afdab6bcf05afad76cbba14b55b7d7dbbe2daf1e5"
+    },
+    "v0.3.17-plain.json": {
+      "source_commit": "c01ef548ec7419d72341ff7d2c96a0b64d4cf0be",
+      "sha256": "ea8064f0d7dcd64615c40789c8d6efa7a753499d23c9347391bb6d86f1e49b3a"
+    },
+    "v0.3.18-start.json": {
+      "source_commit": "24806733928d41d3cf0a1cc7eefbda95d4738039",
+      "sha256": "e43d9985d598108b8025f47eb271c58a8ec18daf7a52b46bde652b330d625793"
+    },
+    "v0.3.18-question.json": {
+      "source_commit": "24806733928d41d3cf0a1cc7eefbda95d4738039",
+      "sha256": "1b07c702adaff7028b94bf2af1fb98cdde7dfee4c785fd7f43f40d6b952173f7"
+    }
+  }
+}

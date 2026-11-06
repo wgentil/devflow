@@ -1,0 +1,343 @@
+{
+  "events": [
+    {
+      "kind": "fixture",
+      "operation_id": "fixture-0",
+      "payload": {
+        "approval": {
+          "confirmed": true,
+          "content_hash": "fd227abbd43742d75d894e14d0fb7d43ca92db697fef00e858e607593c563629"
+        },
+        "plan": {
+          "spec_hash": "fd227abbd43742d75d894e14d0fb7d43ca92db697fef00e858e607593c563629",
+          "work_items": [
+            {
+              "acceptance_criteria": [
+                {
+                  "kind": "code-test",
+                  "text": "test one"
+                }
+              ],
+              "dependencies": [],
+              "id": "W1",
+              "kind": "code",
+              "requirement_ids": [
+                "R1"
+              ]
+            }
+          ]
+        },
+        "plan_validation": {
+          "spec_hash": "fd227abbd43742d75d894e14d0fb7d43ca92db697fef00e858e607593c563629",
+          "valid": true
+        },
+        "spec": {
+          "mode": "new",
+          "requirements": [
+            {
+              "acceptance_criteria": [
+                "one"
+              ],
+              "id": "R1",
+              "provenance": {
+                "kind": "authored"
+              },
+              "text": "One"
+            }
+          ]
+        }
+      },
+      "schema_version": 1,
+      "sequence": 1
+    },
+    {
+      "kind": "run.started",
+      "operation_id": "fixture-1",
+      "payload": {
+        "run": {
+          "active_attempt": null,
+          "artifacts": {},
+          "authorization_scope": {},
+          "available_gates": [
+            "context",
+            "specification",
+            "planning",
+            "build",
+            "review",
+            "acceptance"
+          ],
+          "context": {},
+          "governing_digest": null,
+          "host_protocol_version": 1,
+          "id": "plain",
+          "items": {
+            "W1": {
+              "attempts": [],
+              "status": "pending"
+            }
+          },
+          "plan": {
+            "spec_hash": "fd227abbd43742d75d894e14d0fb7d43ca92db697fef00e858e607593c563629",
+            "work_items": [
+              {
+                "acceptance_criteria": [
+                  {
+                    "kind": "code-test",
+                    "text": "test one"
+                  }
+                ],
+                "dependencies": [],
+                "id": "W1",
+                "kind": "code",
+                "requirement_ids": [
+                  "R1"
+                ]
+              }
+            ]
+          },
+          "repair_cycles": [],
+          "repair_policy": {
+            "enabled": false
+          },
+          "repositories": {},
+          "state_version": 0,
+          "status": "active",
+          "unavailable_gates": [
+            "hardening",
+            "delivery"
+          ],
+          "unresolved_findings": [],
+          "verification_proofs": {},
+          "verifier_proofs": {}
+        }
+      },
+      "schema_version": 1,
+      "sequence": 2
+    }
+  ],
+  "expected": {
+    "data": {
+      "approval": {
+        "confirmed": true,
+        "content_hash": "fd227abbd43742d75d894e14d0fb7d43ca92db697fef00e858e607593c563629"
+      },
+      "plan": {
+        "spec_hash": "fd227abbd43742d75d894e14d0fb7d43ca92db697fef00e858e607593c563629",
+        "work_items": [
+          {
+            "acceptance_criteria": [
+              {
+                "kind": "code-test",
+                "text": "test one"
+              }
+            ],
+            "dependencies": [],
+            "id": "W1",
+            "kind": "code",
+            "requirement_ids": [
+              "R1"
+            ]
+          }
+        ]
+      },
+      "plan_validation": {
+        "spec_hash": "fd227abbd43742d75d894e14d0fb7d43ca92db697fef00e858e607593c563629",
+        "valid": true
+      },
+      "runs": {
+        "plain": {
+          "active_attempt": null,
+          "artifacts": {},
+          "authorization_scope": {},
+          "available_gates": [
+            "context",
+            "specification",
+            "planning",
+            "build",
+            "review",
+            "acceptance"
+          ],
+          "context": {},
+          "governing_digest": null,
+          "host_protocol_version": 1,
+          "id": "plain",
+          "items": {
+            "W1": {
+              "attempts": [],
+              "status": "pending"
+            }
+          },
+          "plan": {
+            "spec_hash": "fd227abbd43742d75d894e14d0fb7d43ca92db697fef00e858e607593c563629",
+            "work_items": [
+              {
+                "acceptance_criteria": [
+                  {
+                    "kind": "code-test",
+                    "text": "test one"
+                  }
+                ],
+                "dependencies": [],
+                "id": "W1",
+                "kind": "code",
+                "requirement_ids": [
+                  "R1"
+                ]
+              }
+            ]
+          },
+          "repair_cycles": [],
+          "repair_policy": {
+            "enabled": false
+          },
+          "repositories": {},
+          "state_version": 0,
+          "status": "active",
+          "unavailable_gates": [
+            "hardening",
+            "delivery"
+          ],
+          "unresolved_findings": [],
+          "verification_proofs": {},
+          "verifier_proofs": {}
+        }
+      },
+      "spec": {
+        "mode": "new",
+        "requirements": [
+          {
+            "acceptance_criteria": [
+              "one"
+            ],
+            "id": "R1",
+            "provenance": {
+              "kind": "authored"
+            },
+            "text": "One"
+          }
+        ]
+      }
+    },
+    "operations": {
+      "fixture-0": {
+        "kind": "fixture",
+        "operation_id": "fixture-0",
+        "payload": {
+          "approval": {
+            "confirmed": true,
+            "content_hash": "fd227abbd43742d75d894e14d0fb7d43ca92db697fef00e858e607593c563629"
+          },
+          "plan": {
+            "spec_hash": "fd227abbd43742d75d894e14d0fb7d43ca92db697fef00e858e607593c563629",
+            "work_items": [
+              {
+                "acceptance_criteria": [
+                  {
+                    "kind": "code-test",
+                    "text": "test one"
+                  }
+                ],
+                "dependencies": [],
+                "id": "W1",
+                "kind": "code",
+                "requirement_ids": [
+                  "R1"
+                ]
+              }
+            ]
+          },
+          "plan_validation": {
+            "spec_hash": "fd227abbd43742d75d894e14d0fb7d43ca92db697fef00e858e607593c563629",
+            "valid": true
+          },
+          "spec": {
+            "mode": "new",
+            "requirements": [
+              {
+                "acceptance_criteria": [
+                  "one"
+                ],
+                "id": "R1",
+                "provenance": {
+                  "kind": "authored"
+                },
+                "text": "One"
+              }
+            ]
+          }
+        },
+        "schema_version": 1,
+        "sequence": 1
+      },
+      "fixture-1": {
+        "kind": "run.started",
+        "operation_id": "fixture-1",
+        "payload": {
+          "run": {
+            "active_attempt": null,
+            "artifacts": {},
+            "authorization_scope": {},
+            "available_gates": [
+              "context",
+              "specification",
+              "planning",
+              "build",
+              "review",
+              "acceptance"
+            ],
+            "context": {},
+            "governing_digest": null,
+            "host_protocol_version": 1,
+            "id": "plain",
+            "items": {
+              "W1": {
+                "attempts": [],
+                "status": "pending"
+              }
+            },
+            "plan": {
+              "spec_hash": "fd227abbd43742d75d894e14d0fb7d43ca92db697fef00e858e607593c563629",
+              "work_items": [
+                {
+                  "acceptance_criteria": [
+                    {
+                      "kind": "code-test",
+                      "text": "test one"
+                    }
+                  ],
+                  "dependencies": [],
+                  "id": "W1",
+                  "kind": "code",
+                  "requirement_ids": [
+                    "R1"
+                  ]
+                }
+              ]
+            },
+            "repair_cycles": [],
+            "repair_policy": {
+              "enabled": false
+            },
+            "repositories": {},
+            "state_version": 0,
+            "status": "active",
+            "unavailable_gates": [
+              "hardening",
+              "delivery"
+            ],
+            "unresolved_findings": [],
+            "verification_proofs": {},
+            "verifier_proofs": {}
+          }
+        },
+        "schema_version": 1,
+        "sequence": 2
+      }
+    },
+    "recovery": {
+      "ignored_temporary_files": []
+    },
+    "schema_version": 1,
+    "version": 2
+  }
+}
