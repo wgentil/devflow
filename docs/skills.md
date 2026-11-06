@@ -125,7 +125,7 @@ companion work.
 
 The development [adversarial review policy](reference/adversarial-review.md) extends
 workflow/review-work. Policy selection and risk records are implemented first;
-complete specialist orchestration and bounded repair remain in progress.
+specialist dispatch and explicit bounded repair are implemented; missing eligible native mappings still block execution.
 
 Current-policy [test-quality assessment and owned challenge examples](reference/adversarial-review.md#test-quality-assessment) extend build and review guidance.
 
@@ -137,3 +137,5 @@ Review work also retains [canonical finding lineage](reference/adversarial-revie
 The review-work skill supports [standalone selected Git scope](reference/adversarial-review.md#standalone-selected-scope-review) without initializing workflow state; report-only remains the default.
 
 Workflow and review-work share [bounded next-action state](reference/adversarial-review.md#bounded-orchestration-state); legacy repair stays one-shot until explicit policy selection.
+
+Workflow, review-work and build-work document [live bounded execution and additive regression inputs](reference/adversarial-review.md#bounded-live-execution).

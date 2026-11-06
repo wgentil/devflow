@@ -13,6 +13,12 @@ def apply_enforcement(subject: dict, action: str, record: dict) -> dict:
         raise WorkflowError('ENFORCEMENT_REQUIRED', 'Adopt the current enforcement contract first.')
     if subject.get('status') in {'complete', 'delivered', 'discarded'}:
         raise WorkflowError('SCOPE_TERMINAL', 'Terminal scopes cannot authorize new mutations.')
+    if action=='session-editable-scope':
+        from .session_repair import reduce_repair
+        return reduce_repair(subject,record)
+    if action=='test-extension':
+        from .test_extensions import record_extension
+        return record_extension(subject,record)
     if action.startswith('orchestration-'):
         from .review_orchestration import apply_orchestration
         return apply_orchestration(subject,action.removeprefix('orchestration-'),record)
@@ -139,6 +145,13 @@ def apply_enforcement(subject: dict, action: str, record: dict) -> dict:
         from .document_units import digest
         if not record.get('snapshots') or record.get('source_identity') != digest(record['snapshots']):
             raise WorkflowError('SOURCE_OBSERVATION_REQUIRED', 'Bound source observation required.')
+        if subject.get('editable_source'):
+            selection=record.get('selection',{})
+            if (selection.get('repository')!=subject['standalone_scope']['repository'] or selection.get('mode')!='working-tree'
+                or selection.get('selection_hash')!=digest({k:v for k,v in selection.items() if k!='selection_hash'})
+                or record['snapshots'].get('repo-1',{}).get('selection_hash')!=selection['selection_hash']):
+                raise WorkflowError('SOURCE_OBSERVATION_REQUIRED','Renew actual editable working-tree selection without replacing repository identity.')
+            updated['standalone_scope']=deepcopy(selection)
         updated['source_identity'] = record['source_identity']
         updated['source_observation'] = deepcopy(record)
         return updated

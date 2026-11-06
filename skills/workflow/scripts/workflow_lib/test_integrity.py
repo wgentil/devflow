@@ -43,10 +43,18 @@ def validate_test_pair(red: dict, green: dict, contract: dict, *, require_review
 
 
 def verification_integrity_contract(subject: dict, item: dict, input_hashes: dict, targets: list[str], argv: list[str], report_format: str, input_bindings: dict | None = None, protection_receipts: dict | None = None) -> dict:
+    from .test_extensions import current_extension
+    extension=current_extension(subject,item) if subject.get('test_extensions',{}).get(item['id']) else None
     declared = item.get('verification_inputs')
+    required_targets=list(item.get('verification_target_ids',[]))
+    if extension:
+        declared=list(declared or [])+list(extension['input_bindings'])
+        required_targets+=extension['target_ids']
+        if not input_bindings or any(input_bindings.get(name)!=binding for name,binding in extension['input_bindings'].items()):
+            raise WorkflowError('TEST_INTEGRITY_BLOCKED','Additional regression inputs changed; preserve their locked bytes/identity across RED/GREEN.')
     if not isinstance(declared, list) or not declared or set(declared) != set(input_hashes):
         raise WorkflowError('TEST_INTEGRITY_BLOCKED', 'Approved item must declare all verification inputs.')
-    if set(item.get('verification_target_ids', [])) != set(targets):
+    if set(required_targets) != set(targets):
         raise WorkflowError('TEST_INTEGRITY_BLOCKED', 'Targets differ from the approved item contract.')
     if not isinstance(input_bindings, dict) or set(input_bindings) != set(input_hashes) or any(
             binding.get('sha256') != input_hashes[name] for name,binding in input_bindings.items()):
@@ -56,7 +64,7 @@ def verification_integrity_contract(subject: dict, item: dict, input_hashes: dic
         raise WorkflowError('TEST_INTEGRITY_BLOCKED', 'Approved specification and requirement authority required before runtime capture.')
     from .clarifications import clarification_binding
     from .document_units import digest
-    return {'schema_version': 2, 'targets': sorted(set(targets)), 'input_hashes': input_hashes,
+    return {**({'test_extension_hash':extension['extension_hash']} if extension else {}),'schema_version': 2, 'targets': sorted(set(targets)), 'input_hashes': input_hashes,
             'tool': list(argv), 'report_format': report_format, 'input_bindings': input_bindings,
             'oracle_authority': [{'spec_hash': subject['plan']['spec_hash'], 'requirement_id': rid} for rid in authority],
             'clarification_binding': clarification_binding(subject, {'item_id': item['id']}),

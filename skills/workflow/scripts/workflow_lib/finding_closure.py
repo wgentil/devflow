@@ -45,6 +45,8 @@ def _validate_one(subject: dict, request: dict, *, check_perspective=True) -> di
                if r.get('review_id') == request.get('review_id')]
     _require(len(reviews) == 1, 'Exactly one recorded independent review required.')
     review = reviews[0]
+    _require(finding.get('provenance',{}).get('review_id') != review.get('review_id'),
+             'A report cannot resolve its own newly originated finding; require a later current assessment.')
     implementers = set(subject.get('implementer_actors', [])) | {subject.get('actors', {}).get('implementer')}
     _require(review.get('actor_id') and review['actor_id'] not in implementers
              and review.get('invocation_ref') and review.get('fresh') is not False

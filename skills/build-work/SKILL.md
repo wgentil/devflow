@@ -57,4 +57,4 @@ See [canonical guidance](../../docs/reference/governing-inputs.md#governing-docu
 
 See [canonical guidance](../../docs/reference/governing-inputs.md#governing-input-reassessment).
 
-[Enforcement scope](../../docs/reference/python-enforcement.md).
+[Bounded repair](../../docs/reference/adversarial-review.md#bounded-live-execution).

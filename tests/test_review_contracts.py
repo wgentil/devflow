@@ -186,7 +186,7 @@ class ContractTests(unittest.TestCase):
         subject=self.subject();subject['repositories']={'repo':{'location':str(repo)}};subject['source_identity']=source_observation(subject)['source_identity']
         subject['active_attempt']={'token':'t','item_id':'W1','state_version':1};subject['governing_digest']='g'
         inv={'paths':[],'governing_digest':'g'};subject['protected_inventories']={'repo':{'inventory':inv,'baseline':snapshot_protected(repo,inv)}}
-        store.transact(root,0,'seed',{'kind':'fixture','payload':{'runs':{'r':subject}}})
+        store.transact(root,0,'seed',{'kind':'fixture','payload':{'repositories':subject['repositories'],'runs':{'r':subject}}})
         script="""import os,sys,subprocess
 from pathlib import Path
 sys.path.insert(0,sys.argv[1])

@@ -29,7 +29,8 @@ def adversarial_bindings(subject,scope):
     return {'schema_version':1,'inputs':review_bindings(subject,scope),
         'assessment_hash':assessment(subject,scope)['assessment_hash'],'proofs':proofs,
         'checks_hash':digest({'config':subject.get('hardening_config',{}),'proofs':subject.get('hardening_proofs',{})}),
-        'challenges_hash':digest(subject.get('test_challenges',{}))}
+        'challenges_hash':digest(subject.get('test_challenges',{})),
+        **({'test_extensions_hash':digest(subject['test_extensions'])} if subject.get('test_extensions') else {})}
 
 
 def normalized_findings(review):
@@ -305,6 +306,7 @@ def review_material(subject,scope):
         if not ids or value.get('scope',{}).get('item_id') in ids or value.get('scope',{}).get('role') in {'branch','session'}}
     return {'finding_index':deepcopy(subject.get('finding_index',{})),
         'verification_proofs':proofs,'implementation_contracts':contracts,
+        'test_extensions':{key:deepcopy(value) for key,value in subject.get('test_extensions',{}).items() if not ids or key in ids},
         'fix_rationales':{key:deepcopy(value) for key,value in subject.get('fix_rationales',{}).items()
             if not ids or not value.get('scope',{}).get('item_id') or value['scope']['item_id'] in ids},
         'configured_checks':deepcopy(subject.get('hardening_config',{})),

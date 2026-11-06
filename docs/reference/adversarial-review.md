@@ -3,7 +3,7 @@
 The approved [implementation plan](../superpowers/plans/2026-11-05-adversarial-review-repair.md)
 extends the merged [Python enforcement foundation](python-enforcement.md).
 This branch is in implementation: policy/risk and implementation-contract prerequisites are available;
-workflow specialist dispatch, selected-scope coverage gates and standalone review sessions are implemented; shared bounded repair is still being integrated.
+workflow specialist dispatch, selected-scope coverage gates and standalone review sessions are implemented; explicit bounded repair is implemented; outcome summaries and final integration assessment remain in progress.
 
 New workflow runs declare `devflow.adversarial-review/v1` with shared enforcement.
 Existing stored runs retain their original contract. Explicit adoption requires
@@ -326,8 +326,8 @@ required-check facts. Aliases, new operation IDs, receipt timestamps, unrelated
 source changes, waivers/rejections/deferrals and regressing checks do not count as
 improvement. A fully assessed cycle may retain unresolved rework; it cannot claim
 successful completion. Required final workflow stages and exact PR-head checks
-remain independent. The thin live driver is the next integration step; status and
-hooks do not secretly execute this state machine.
+remain independent. The explicit bounded driver executes these steps; status and hooks do not
+secretly run it.
 
 Optional developer configuration uses `repair configure` with a wrapper containing
 `policy`, `now_ms`, and `authorization`; ordinary legacy policy JSON retains its
@@ -336,5 +336,52 @@ Subsequent shared transitions are `begin-cycle`, `claim-action`, `record-action`
 `finish-cycle`, `block`, `clear-blocker`, and `extend`, prefixed `orchestration-` in
 session events or `domain.repair.orchestration-` in workflow journals. Workflow
 `repair status`, host/resume views and session `review next` expose descriptors.
-Legacy `repair next` does not run an upgraded loop; it requests the explicit bounded
-driver. [Policy shape](../examples/review-orchestration.json) is illustrative only.
+Legacy `repair next` does not run an upgraded loop; it requests `repair run`. [Policy shape](../examples/review-orchestration.json) is illustrative only.
+
+
+## Bounded live execution
+
+For an explicitly selected orchestration policy, `repair run` advances at most
+1–100 actions per call. The persisted attempt, elapsed, spending and no-progress
+limits also apply. Supply the actual implementer, separate specialist identities,
+verifier argv/input paths/targets, rationale evidence and workflow repository
+base/head manifests. Findings never supply executable commands. Missing native
+eligibility or configuration returns a blocker or host handoff; the driver does
+not invent a worker, model receipt, passing proof or delivery decision.
+
+An actual relevant RED precedes implementation. Known failed GREEN assertion
+results can start bounded rework while preserving the original baseline and
+contract. Setup/import errors and unexplained failures stay blocked. Fresh GREEN,
+cheap configured checks, full packages and actual independent required reports
+precede constituent closure. Current active item candidates can receive oracle
+review before their proof-bound passing item result. Branch, acceptance,
+integration and selected exact-head PR gates remain separate.
+
+Known failed steps retain a blocker. An explicit request with `resume: true`
+retries against current inputs without refunding limits. An uncertain launch has
+`executed: null`; it is never reported as zero work. Repeating an operation returns
+its retained result. Unknown workers require actual worker reconciliation first;
+`repair recover` then observes the original driver absent under its exclusive
+lease and requires exact user worker-stop attestation. A retained actual verifier
+proof or completed worker may be recovered without rerunning it. Missing results
+remain unproven. Competing drivers share one subject lease in both workflow store
+formats and standalone SQLite.
+
+Standalone review remains report-only until an actual fix request authorizes an
+exact editable working-tree proposal. `review repair-proposal` captures source,
+original intent and governing/test protection preimages for a named implementer;
+`review authorize-repair` binds actual user-message authorization to that complete
+proposal hash. Changed scope requires a fresh proposal. This preserves existing
+budgets, findings and elapsed clocks. `review next --execute` advances one driver
+action when orchestration is selected; otherwise it retains standalone specialist
+execution. Review never counts as workflow acceptance.
+
+`build extend-tests` admits supplemental regression input files and target IDs for
+a selected workflow item or standalone contract. It captures actual file/link
+bindings, preserves every original input/target and locks earlier additions.
+Renew the current attempt/answers binding after retry; changes to approved intent
+still use clarification/amendment. Added test metadata alone does not invent a
+business-rule question. Supplemental bytes, contracts and review packages must
+remain current. Original protected files still require their existing change
+process. A report cannot close a finding it originated; later independent
+assessment is required. [Developer command examples](../developer-cli.md#bounded-review-and-repair).

@@ -61,7 +61,7 @@ def prepare_review(run: dict, role: str, repo_heads: dict,
             seen.add(finding['id'])
     if item_id is not None:
         item = run.get('items',{}).get(item_id,{})
-        if role != 'item' or item.get('status') != 'complete' or not item.get('attempts'):
+        if role != 'item' or not item_review_candidate(run,item_id) or not item.get('attempts'):
             raise ValueError('Explicit item review requires a completed item with recorded attempt.')
     scope_request = input_paths
     if scope_request is not None:
@@ -315,7 +315,7 @@ def validate_item_review_scope(run: dict, package: dict, report: dict) -> None:
     item_id = package.get('item_id')
     item = run.get('items',{}).get(item_id,{})
     if (package.get('role') != 'item' or report.get('item_id') != item_id
-            or item.get('status') != 'complete' or not item.get('attempts')
+            or not item_review_candidate(run,item_id) or not item.get('attempts')
             or item['attempts'][-1].get('token') != package.get('item_attempt_token')
             or package.get('governing_digest') != run.get('governing_digest')):
         raise ValueError('Item review must match the completed item, current attempt and governing inputs.')
@@ -344,3 +344,12 @@ def validate_review_contract(run,review):
     for field in ('closure_dispositions','test_oracles','protected_dispositions','finding_equivalences','finding_partitions','finding_dispositions'):
         if not isinstance(review.get(field,[]),list) or any(not isinstance(v,dict) for v in review.get(field,[])):
             raise ValueError(field+' must be an array of records')
+
+
+def item_review_candidate(run,item_id):
+    item=run.get('items',{}).get(item_id,{})
+    if item.get('status')=='complete':return True
+    from .review_policy import review_version
+    active=run.get('active_attempt') or {};attempts=item.get('attempts',[])
+    return (review_version(run)==1 and bool(attempts) and active.get('item_id')==item_id and
+        active.get('token')==attempts[-1].get('token') and active.get('status')=='active')

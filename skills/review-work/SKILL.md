@@ -38,7 +38,7 @@ flowchart LR
 
 For item reviews, pass `--item ID`; explicit complete [input scopes](REFERENCE.md#scoped-item-review-liveness) can isolate unrelated work; valid request-changes reopens only that item for retry and fresh verification.
 
-Outside a workflow, select an explicit Git range/working tree and external output; default to report only. [Standalone review](../../docs/reference/adversarial-review.md#standalone-selected-scope-review).
+For bounded fixes follow the linked driver contract. Outside a workflow, select an explicit Git range/working tree and external output; default to report only. [Standalone review](../../docs/reference/adversarial-review.md#standalone-selected-scope-review).
 
 ## Documentation
 
@@ -60,4 +60,4 @@ See [canonical guidance](../../docs/reference/governing-inputs.md#governing-docu
 
 See [canonical guidance](../../docs/reference/governing-inputs.md#governing-input-reassessment).
 
-[Review policy](../../docs/reference/adversarial-review.md).
+[Bounded repair](../../docs/reference/adversarial-review.md#bounded-live-execution).

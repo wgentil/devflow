@@ -359,3 +359,22 @@ flowchart LR
 ```
 
 Opted-in [repair orchestration descriptors](../../docs/reference/adversarial-review.md#bounded-orchestration-state) also appear in standalone next/status output. Actual questions, limits, verification and independent coverage remain authoritative; a descriptor never means a worker ran.
+
+
+## Explicit bounded repair and regression renewal
+
+Follow the [live driver contract](../../docs/reference/adversarial-review.md#bounded-live-execution)
+for authorized bounded fixes, additive locked regression inputs, actual RED/GREEN,
+independent rereview and observed recovery. Creation/status never starts a loop.
+
+```mermaid
+flowchart LR
+    Scope[Explicit scope and finite authorization] --> Red[Actual locked RED]
+    Red --> Fix[Actual correction]
+    Fix --> Green[Linked GREEN and cheap checks]
+    Green --> Review[Independent required assessments]
+    Review --> Close[Original constituent closure]
+    Green -->|Known assertion remains| Bounds[Retained limits and no-progress guard]
+    Bounds --> Red
+    Fix -->|Uncertain| Recover[Observed recovery without replacement]
+```

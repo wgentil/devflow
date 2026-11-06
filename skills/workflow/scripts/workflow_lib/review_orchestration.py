@@ -60,8 +60,10 @@ def progress_signature(subject):
 def input_binding(subject):
     material={k:subject.get(k) for k in ('source_identity','review_policy','review_contract_hash','plan','items',
         'clarifications','implementation_contracts','fix_rationales','verification_proofs','verifier_proofs',
-        'hardening_config','hardening_proofs','review_packages','reviews','unresolved_findings','finding_index',
+        'hardening_config','hardening_proofs','test_extensions','verification_failures','review_packages','reviews','unresolved_findings','finding_index',
         'effects','effect_policy','native_invocations','model_receipts','model_overrides','active_attempt','review_orchestration')}
+    from .stored_records import package_metadata
+    material['review_packages']={key:package_metadata(value).get('package_hash') for key,value in subject.get('review_packages',{}).items()}
     material['review_orchestration']={k:v for k,v in selected(subject).items() if k!='blocker'}
     return digest(material)
 
@@ -92,16 +94,22 @@ def _proofs(subject,scope,phase,worker=None):
     rows=[];item=scope.get('item_id');attempts=subject.get('items',{}).get(item,{}).get('attempts',[]) if item else []
     for proof in subject.get('verification_proofs',{}).values():
         if proof.get('phase')!=phase or proof.get('passed') is not True or proof.get('fresh') is False:continue
+        extension=subject.get('test_extensions',{}).get(item or 'session')
+        if extension and proof.get('integrity',{}).get('contract',{}).get('test_extension_hash')!=extension.get('extension_hash'):continue
         if item and (proof.get('item_id')!=item or not attempts or proof.get('token')!=attempts[-1].get('token')):continue
         if subject.get('review_contract_hash') and proof.get('contract_hash')!=subject['review_contract_hash']:continue
         if phase=='RED':
             if worker:
                 if proof.get('id') not in worker.get('baseline_proof_ids',[]):continue
-            elif proof.get('source_identity')!=subject.get('source_identity'):continue
-            integrity=proof.get('integrity',{});targets=integrity.get('contract',{}).get('targets',[])
+            elif proof.get('source_identity')!=subject.get('source_identity') and proof.get('id') not in ((_active_cycle(subject) or {}).get('carried_baseline_ids',[])):continue
+            integrity=proof.get('integrity',{});contract=integrity.get('contract',{});targets=contract.get('targets',[])
+            from .clarifications import clarification_binding
+            if contract.get('clarification_binding')!=clarification_binding(subject,{'item_id':item} if item else {}):continue
+            if item and contract.get('spec_hash')!=subject.get('plan',{}).get('spec_hash'):continue
+            if not item and contract.get('session_contract_hash')!=subject.get('review_contract_hash'):continue
             if not targets or not any(integrity.get('outcomes',{}).get(t)=='failed' and integrity.get('classification',{}).get(t)=='assertion' for t in targets):continue
         elif (proof.get('source_identity')!=subject.get('source_identity') or not worker or
-                proof.get('red_proof_id') not in worker.get('baseline_proof_ids',[])):continue
+                not any(rid in subject.get('verification_proofs',{}) and (proof.get('red_proof_id')==rid or (proof.get('integrity',{}).get('baseline_source') and proof.get('integrity',{}).get('baseline_source')==subject['verification_proofs'][rid].get('source_identity') and proof.get('integrity',{}).get('contract')==subject['verification_proofs'][rid].get('integrity',{}).get('contract'))) for rid in worker.get('baseline_proof_ids',[]))):continue
         rows.append(proof)
     return rows
 
@@ -121,11 +129,11 @@ def orchestration_next(subject:dict,now_ms:int)->dict:
     legacy=sum(r.get('estimated_cost',0) for r in subject.get('repair_cycles',[]))
     if max(shared,legacy)>policy['max_estimated_cost']:return out('blocked','SPEND_LIMIT')
     cycle=_active_cycle(subject);cycles=state.get('cycles',[])
-    if not cycle and len(cycles)+len(subject.get('repair_cycles',[]))>=policy['max_attempts']:return out('blocked','ATTEMPT_LIMIT')
+    if scope['finding_ids'] and not cycle and len(cycles)+len(subject.get('repair_cycles',[]))>=policy['max_attempts']:return out('blocked','ATTEMPT_LIMIT')
     recent=cycles[-policy['no_progress_window']:]
-    if not cycle and len(recent)==policy['no_progress_window'] and all(c.get('status')=='recorded' and not c.get('made_progress',c.get('before_progress')!=c.get('after_progress')) for c in recent):return out('blocked','NO_PROGRESS')
+    if scope['finding_ids'] and not cycle and len(recent)==policy['no_progress_window'] and all(c.get('status')=='recorded' and not c.get('made_progress',c.get('before_progress')!=c.get('after_progress')) for c in recent):return out('blocked','NO_PROGRESS')
     active={key:row for key,row in {**effects,**subject.get('active_executions',{}),**subject.get('executions',{})}.items() if row.get('status') not in TERMINAL}
-    if cycle and any(a.get('status')=='claimed' for a in cycle.get('actions',[])):
+    if any(a.get('status')=='claimed' for a in (cycle.get('actions',[]) if cycle else state.get('final_actions',[]))):
         return out('reconcile','ORCHESTRATION_ACTION_UNCERTAIN',required=['original action completion or observed recovery'])
     if active:return out('reconcile','ACTIVE_OR_UNCERTAIN_EFFECT',invocation_ids=sorted(active),required=['original worker stopped/reconciled or actual completion'])
     from .clarifications import clarification_blockers,current_questions
@@ -187,6 +195,8 @@ def orchestration_next(subject:dict,now_ms:int)->dict:
         missing=coverage.get('missing_perspectives',[])
         return out('review','INDEPENDENT_REVIEW_REQUIRED',perspective=missing[0] if missing else None,required=coverage.get('reason_codes',[]))
     if findings:return out('close-findings','INDEPENDENT_FINDING_CLOSURE_REQUIRED',required=['each original current proof, independent disposition and required perspectives'])
+    if scope.get('item_id') and subject.get('active_attempt') and subject['active_attempt'].get('item_id')==scope['item_id']:
+        return out('complete-attempt','INDEPENDENT_ITEM_PROOF_ACCEPTED',required=['existing run.result with actual accepted verifier proof'])
     if cycle:return out('finish-cycle','PROGRESS_EVALUATION_REQUIRED')
     if scope['role']=='session':return out('complete','CURRENT_SESSION_COVERAGE_COMPLETE')
     from .gates import gate_status
@@ -220,6 +230,38 @@ def apply_orchestration(subject:dict,action:str,record:dict)->dict:
             updated['review_orchestration']['policy']=deepcopy(policy)
         return updated
     state=updated.get('review_orchestration');need(state,'Explicit policy required.')
+    if action=='recover-driver':
+        operations=state.get('driver_operations',{});row=operations.get(record.get('operation_id'),{})
+        need(row.get('status')=='claimed' and row.get('request_hash')==record.get('request_hash'),'Recover the original outstanding driver claim only.')
+        from .enforcement_recovery import validate_tool_observation
+        validate_tool_observation({'id':record['operation_id'],'owner_pid':row['owner_pid']},record.get('observation',{}))
+        need(not any(e.get('status') not in TERMINAL for e in {**subject.get('effects',{}),**subject.get('active_executions',{}),**subject.get('executions',{})}.values()),'Reconcile each actual native/tool worker before driver recovery.')
+        actions=[a for c in state.get('cycles',[]) for a in c.get('actions',[])]+state.get('final_actions',[])
+        action_row=next((a for a in actions if a.get('action_id')==record['operation_id']),None)
+        ref=record.get('result_ref')
+        if action_row and action_row['status']=='claimed':
+            if ref:
+                _require_result(subject,action_row,ref)
+                action_row.update(status='recorded',result_ref=ref,record_hash=digest(record),recovered=True)
+            else:action_row.update(status='reconciled',recovery=deepcopy(record['observation']))
+        row.update(status='completed' if ref else 'reconciled',recovery=deepcopy(record['observation']),
+            result={'advanced':bool(ref),'executed':bool(ref),'result_ref':ref,'recovered':True})
+        return updated
+    if action in {'driver-claim','driver-finish'}:
+        identifier=record.get('operation_id');operations=state.setdefault('driver_operations',{})
+        need(isinstance(identifier,str) and identifier,'Explicit driver operation required.')
+        previous=operations.get(identifier)
+        if action=='driver-claim':
+            if previous:
+                need(previous.get('request_hash')==record.get('request_hash'),'Driver operation belongs to another request.')
+                return updated
+            need(record.get('input_hash')==input_binding(subject) and type(record.get('owner_pid')) is int and record['owner_pid']>0,'Exact current driver predecessor and actual owner required.')
+            operations[identifier]={**deepcopy(record),'status':'claimed'}
+        else:
+            need(previous and previous.get('status')=='claimed' and previous.get('request_hash')==record.get('request_hash'),'Exact outstanding driver request required.')
+            need(isinstance(record.get('result'),dict),'Retain the actual bounded action result.')
+            previous.update(status='completed',result=deepcopy(record['result']))
+        return updated
     if action=='block':
         need(record.get('input_hash')==input_binding(subject) and isinstance(record.get('reason_code'),str) and record['reason_code']
              and isinstance(record.get('required_evidence'),list) and record.get('evidence_refs'),'Current actual preflight blocker and evidence required.')
@@ -236,12 +278,42 @@ def apply_orchestration(subject:dict,action:str,record:dict)->dict:
             return updated
         next_=orchestration_next(subject,record.get('now_ms'))
         need(not _active_cycle(subject) and record.get('cycle_id') and next_['kind'] not in {'blocked','ask-user','reconcile','complete'} and next_['input_hash']==record.get('input_hash'),'Exact current eligible predecessor required.')
-        state['cycles'].append({'cycle_id':record['cycle_id'],'status':'active','started_ms':record['now_ms'],
+        from .finding_closure import finding_hash
+        hashes={f['id']:finding_hash(f) for f in subject.get('unresolved_findings',[]) if f['id'] in next_['scope']['finding_ids']}
+        previous=state['cycles'][-1] if state['cycles'] else {}
+        carried=previous.get('baseline_proof_ids',[]) if previous.get('outcome')=='rework' and previous.get('finding_hashes')==hashes else []
+        state['cycles'].append({'finding_hashes':hashes,'carried_baseline_ids':carried,'cycle_id':record['cycle_id'],'status':'active','started_ms':record['now_ms'],
             'claim_hash':digest(record),'scope':deepcopy(next_['scope']),'before_progress':progress_signature(subject),'before_facts':progress_facts(subject),'actions':[]})
         return updated
+    if action=='end-rework':
+        cycle=_active_cycle(updated);need(cycle and cycle['cycle_id']==record.get('cycle_id'),'Current failed repair cycle required.')
+        action_row=next((a for a in cycle['actions'] if a['action_id']==record.get('action_id')),None)
+        failure=record.get('failure',{});worker=_worker(subject,cycle)
+        need(action_row and action_row['kind']=='verify' and action_row.get('phase')=='GREEN' and action_row['status']=='failed' and worker,'Only a real failed corrected verification can end a rework cycle.')
+        execution=subject.get('executions',{}).get(failure.get('execution_id'),{})
+        stored=(execution.get('result',{}) if execution.get('status')=='failed' else subject.get('verification_failures',{}).get(failure.get('execution_id'),{}).get('result',{}))
+        integrity=failure.get('integrity',{});targets=integrity.get('contract',{}).get('targets',[])
+        need(stored.get('integrity')==integrity and stored.get('passed') is False and failure.get('source_identity')==subject.get('source_identity')
+             and type(integrity.get('exit_code')) is int and integrity['exit_code']!=0 and targets
+             and all(integrity.get('outcomes',{}).get(t) in {'failed','passed'} for t in targets)
+             and any(integrity['outcomes'][t]=='failed' for t in targets)
+             and all(integrity['classification'].get(t)=='assertion' for t in targets if integrity['outcomes'][t]=='failed'),
+             'Actual relevant assertion failure required; missing tools/setup/imports/unknown phases cannot authorize automatic rework.')
+        baselines=_proofs(subject,cycle['scope'],'RED',worker)
+        need(any(p.get('integrity',{}).get('contract')==integrity['contract'] for p in baselines),'Preserve the original actual regression contract and current authority/answers.')
+        facts=progress_facts(subject)
+        cycle.update(status='recorded',outcome='rework',finished_ms=record['now_ms'],after_progress=progress_signature(subject),after_facts=facts,
+            made_progress=progress_improved(cycle.get('before_facts',{}),facts),failure=deepcopy(failure),baseline_proof_ids=worker['baseline_proof_ids'])
+        return updated
+    if action=='fail-action':
+        cycle=_active_cycle(updated);actions=cycle['actions'] if cycle else state.get('final_actions',[])
+        row=next((a for a in actions if a.get('action_id')==record.get('action_id')),None)
+        need(row and row['status']=='claimed' and not any(e.get('status') not in TERMINAL for e in {**subject.get('effects',{}),**subject.get('active_executions',{}),**subject.get('executions',{})}.values()),'Only known ended/non-dispatched work can fail an action; uncertainty requires recovery.')
+        row.update(status='failed',reason_code=record.get('reason_code'))
+        return updated
     if action in {'claim-action','record-action'}:
-        cycle=_active_cycle(updated);need(cycle and cycle['cycle_id']==record.get('cycle_id'),'Current cycle identity required.')
-        actions=cycle['actions'];existing=next((r for r in actions if r['action_id']==record.get('action_id')),None)
+        cycle=_active_cycle(updated);need((cycle and cycle['cycle_id']==record.get('cycle_id')) or (not cycle and record.get('cycle_id')=='final'),'Current cycle/final-validation identity required.')
+        actions=cycle['actions'] if cycle else state.setdefault('final_actions',[]);existing=next((r for r in actions if r['action_id']==record.get('action_id')),None)
         if action=='claim-action':
             if existing:
                 need(existing['claim_hash']==digest(record),'Action belongs to another predecessor.')
@@ -313,6 +385,28 @@ def _require_result(subject,action,ref):
     elif kind=='rationale':
         from .implementation_contracts import rationale_current
         need(all(rationale_current(subject,fid) for fid in scope['finding_ids']),'Current rationale required for every selected finding.')
+    elif kind=='complete-attempt':
+        item=subject.get('items',{}).get(scope.get('item_id'),{})
+        need(item.get('status')=='complete' and item.get('attempts') and item['attempts'][-1].get('result',{}).get('verifier_proof_id')==ref,'Actual existing item result transition required.')
     elif kind=='retry-item':
         need(subject.get('active_attempt',{}).get('item_id')==scope.get('item_id'),'Actual existing retry/attempt transition required.')
     else:raise WorkflowError('ORCHESTRATION_BLOCKED','Unsupported recorded action kind.')
+
+
+def remaining_seconds(subject,now_ms):
+    state=selected(subject);policy=state.get('policy',{})
+    if not state or policy.get('enabled') is not True:return None
+    need(policy.get('protocol')==PROTOCOL and policy.get('schema_version')==1 and
+         policy.get('effect_policy_hash')==digest(subject.get('effect_policy',{})),'Current supported orchestration/shared-budget binding required.')
+    remaining=policy['max_elapsed_ms']-(now_ms-state['started_ms'])
+    need(now_ms>=state['started_ms'] and remaining>0,'Orchestration elapsed limit reached before effect.')
+    return remaining/1000
+
+
+def allow_reservation(subject,cost,now_ms):
+    remaining=remaining_seconds(subject,now_ms)
+    if remaining is None:return
+    need(type(cost) in (int,float) and math.isfinite(cost) and cost>=0,'Known finite cost required before actual dispatch.')
+    spent=sum(max(row.get('estimated_cost',0),row.get('observed_cost',0)) for row in subject.get('effects',{}).values())
+    legacy=sum(row.get('estimated_cost',0) for row in subject.get('repair_cycles',[]))
+    need(max(spent,legacy)+cost<=selected(subject)['policy']['max_estimated_cost'],'Orchestration spending limit reached before actual reservation.')

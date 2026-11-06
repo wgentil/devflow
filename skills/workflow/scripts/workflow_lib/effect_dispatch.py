@@ -14,7 +14,7 @@ def binding_owner(binding: dict) -> dict:
 
 
 def reserve_dispatch(root: Path, run_id: str, effect_id: str, exclusive_scope: str,
-                     estimated_cost: float | None, operation_id: str, action_scope: dict, *, owner_binding: dict | None = None, effect_kind: str = 'work', client_request_hash: str | None = None) -> dict:
+                     estimated_cost: float | None, operation_id: str, action_scope: dict, *, owner_binding: dict | None = None, effect_kind: str = 'work', client_request_hash: str | None = None, expected_source_identity: str | None = None) -> dict:
     root = Path(root)
     claim_id = operation_id + ':enforcement-claim'
     if operation_lookup(root, claim_id):
@@ -26,7 +26,13 @@ def reserve_dispatch(root: Path, run_id: str, effect_id: str, exclusive_scope: s
     if not subject: raise WorkflowError('RUN_UNAVAILABLE', 'Known run required.')
     if effect_id in subject.get('effects', {}):
         raise WorkflowError('EFFECT_ALREADY_CLAIMED', 'Effect identity already has a reservation; reconcile before replacement.')
+    from .enforcement_live import assert_registered_repositories
+    assert_registered_repositories(subject,state['data'])
+    from .review_orchestration import allow_reservation
+    allow_reservation(subject,estimated_cost,int(time.time()*1000))
     observation = source_observation(subject)
+    if expected_source_identity is not None and observation['source_identity']!=expected_source_identity:
+        raise WorkflowError('SOURCE_BINDING_STALE','Source changed before this exact bound action reservation.')
     request = {'run_id': run_id, 'record': {'effect_id': effect_id, 'scope': exclusive_scope,
         'estimated_cost': estimated_cost, 'owner_pid':os.getpid(), 'now_ms': int(time.time()*1000),
         'action_scope': action_scope, 'effect_kind': effect_kind, **observation,

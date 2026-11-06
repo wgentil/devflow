@@ -11,6 +11,7 @@ from .action_policy import require_action, subject_decision
 from .clarifications import clarification_binding,current_questions
 from .test_integrity import parse_test_evidence, validate_test_pair
 from .protection_receipts import validate_receipts
+from .test_extensions import session_verification
 
 
 SESSION_EXECUTION=ContextVar('devflow_session_execution',default=None)
@@ -75,11 +76,15 @@ def reduce_session(subject, action, record):
              and execution.get('protection_receipts')==proof.get('protection_receipts'), 'Current exact session execution, source, protection and user decisions required.')
         observation=proof.get('source_observation',{})
         need(observation.get('source_identity')==digest(observation.get('snapshots',{}))==proof.get('source_identity'),'Bound executed source required.')
-        verification=subject['review_contract']['request'].get('verification',{})
+        verification=session_verification(subject)
         need(contract.get('tool')==verification.get('argv') and contract.get('targets')==sorted(set(verification.get('target_ids',[])))
              and set(contract.get('input_hashes',{}))==set(verification.get('input_paths',[]))
              and contract.get('oracle_authority')==verification.get('authority_refs')
              and contract.get('session_contract_hash')==subject['review_contract_hash'],'Declared standalone verification contract required.')
+        from .test_extensions import current_extension,session_item
+        extension=current_extension(subject,session_item(subject))
+        need(not extension or all(contract.get('input_bindings',{}).get(name)==value for name,value in extension['input_bindings'].items()),'Supplemental regression inputs changed.')
+        need(not extension or contract.get('test_extension_hash')==extension['extension_hash'],'Current supplemental test contract required.')
         validate_receipts(subject,proof.get('protection_receipts'))
         need(contract.get('protection_context_hash')==digest(proof['protection_receipts']),'Protected test context must match execution.')
         integrity=proof['integrity'];targets=contract['targets']
@@ -221,21 +226,21 @@ def _live(subject, *, diagnostic=False):
     return protection
 
 
-def capture(path,phase,operation_id,timeout=300):
+def capture(path,phase,operation_id,timeout=300,*,expected_source_identity=None):
     marker=SESSION_EXECUTION.set({'path':str(Path(path).resolve()),'id':operation_id,'mode':'execution'})
-    try:return _capture(path,phase,operation_id,timeout)
+    try:return _capture(path,phase,operation_id,timeout,expected_source_identity=expected_source_identity)
     finally:SESSION_EXECUTION.reset(marker)
 
 
-def _capture(path,phase,operation_id,timeout=300):
+def _capture(path,phase,operation_id,timeout=300,*,expected_source_identity=None):
     from .review_sessions import read_session
     from .enforcement_live import source_observation,assert_protection_current
     from .test_inputs import capture_input_bindings
     from .native_models import run_bounded
     from .storage_objects import put_object
     path=Path(path);state=read_session(path);subject=state['subject']
-    verification=subject['review_contract']['request'].get('verification',{})
-    client_hash=digest({'phase':phase,'timeout':timeout,'contract_hash':subject['review_contract_hash']})
+    verification=session_verification(subject)
+    client_hash=digest({'phase':phase,'timeout':timeout,'contract_hash':subject['review_contract_hash'],**({'expected_source_identity':expected_source_identity} if expected_source_identity is not None else {})})
     prior=subject.get('executions',{}).get(operation_id)
     if prior:
         need(prior.get('client_request_hash')==client_hash,'Operation belongs to another execution request.')
@@ -246,14 +251,19 @@ def _capture(path,phase,operation_id,timeout=300):
     need(verification.get('authority_refs') and verification.get('input_paths') and verification.get('target_ids') and verification.get('argv'),'Declare verification inputs, targets, tool and authority in the review contract.')
     need(all(isinstance(verification.get(k),list) and verification[k] and all(isinstance(v,str) and v for v in verification[k]) for k in ('input_paths','target_ids','argv','authority_refs')),'Verification lists must contain explicit nonempty strings.')
     repo=Path(subject['repositories'][verification['repo_id']]['location']);inputs=capture_input_bindings(repo,verification['input_paths'])
+    from .test_extensions import current_extension,session_item
+    extension=current_extension(subject,session_item(subject))
+    need(not extension or all(inputs.get(name)==value for name,value in extension['input_bindings'].items()),'Supplemental regression inputs changed.')
     protection=assert_protection_current(subject);observation=source_observation(subject)
+    need(expected_source_identity is None or observation['source_identity']==expected_source_identity,'Source changed before the bound verification action.')
     contract={'schema_version':2,'targets':sorted(set(verification['target_ids'])),'input_hashes':{k:v['sha256'] for k,v in inputs.items()},
         'input_bindings':inputs,'tool':verification['argv'],'report_format':verification.get('report_format','json'),
         'oracle_authority':verification['authority_refs'],'session_contract_hash':subject['review_contract_hash'],
         'clarification_binding':clarification_binding(subject,{}),'protection_context_hash':digest(protection)}
+    if extension:contract['test_extension_hash']=extension['extension_hash']
     _commit(path,state,operation_id+':reserve','execution-claim',{'id':operation_id,'owner_pid':os.getpid(),'client_request_hash':client_hash,
         'contract_hash':subject['review_contract_hash'],'clarification_binding':clarification_binding(subject,{}),'source_observation':observation,'verification_contract':contract,'protection_receipts':protection})
-    state=read_session(path);ended=False
+    state=read_session(path);ended=False;proof=None
     try:
         # Observe files, then take the final decision snapshot immediately before spawn.
         need(source_observation(subject)==observation and capture_input_bindings(repo,verification['input_paths'])==inputs
@@ -263,6 +273,9 @@ def _capture(path,phase,operation_id,timeout=300):
         need(latest['review_contract_hash']==subject['review_contract_hash']
              and clarification_binding(latest,{})==contract['clarification_binding']
              and latest.get('executions',{}).get(operation_id,{}).get('status')=='launching','Launch contract or decisions changed.')
+        from .review_orchestration import remaining_seconds
+        remaining=remaining_seconds(latest,int(time.time()*1000))
+        if remaining is not None:timeout=min(timeout,remaining)
         result=run_bounded(verification['argv'],repo,timeout);ended=True
         logs=path.with_name(path.name+'.artifacts')
         need(not any(logs.resolve().is_relative_to(Path(r['location']).resolve()) for r in subject['repositories'].values()),'Evidence artifacts must remain outside reviewed scope.')
@@ -284,7 +297,8 @@ def _capture(path,phase,operation_id,timeout=300):
     except BaseException:
         current=read_session(path)
         if current['subject'].get('executions',{}).get(operation_id,{}).get('status')=='launching':
-            _commit(path,current,operation_id+':failed','execution-finish',{'id':operation_id,'status':'failed' if ended else 'uncertain'})
+            _commit(path,current,operation_id+':failed','execution-finish',{'id':operation_id,'status':'failed' if ended else 'uncertain',
+                **({'result':{**proof,'passed':False,'valid_proof':False,'integrity':{**proof['integrity'],'passed':False}}} if ended and proof else {})})
         raise
 
 

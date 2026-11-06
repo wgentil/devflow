@@ -209,7 +209,7 @@ Reviewers use separate invocations and distinct actors, excluding every actor wh
 implemented the run. Item reviews allow four correction waves; branch/acceptance
 allow one, then independent adjudication is needed. Recording request-changes or
 block completes the assessment, but leaves advancement blocked. Feedback goes to
-the current implementer. Optional bounded repair is manual by default and starts
+the current implementer. Legacy bounded repair is manual by default and starts
 only with `repair next` after explicit policy configuration. It claims one cycle,
 launches the attached implementer, reruns failed configured hardening gates and
 records remaining failures. Attempt, elapsed-time, cost and no-progress limits
@@ -217,8 +217,7 @@ stop further dispatch. Missing cost estimates or model eligibility block dispatc
 Interrupted claims require reconciliation and never replay a second worker.
 Terminal worker failures or gate-runner errors journal an abort and remaining
 failures; an active native worker still needs reconciliation.
-Review findings and item proofs still require agent-led rework. Hooks never launch
-repair, and independent review must be renewed after source changes.
+For explicitly selected orchestration, the [bounded driver](reference/adversarial-review.md#bounded-live-execution) also handles review findings, linked item proofs and independent rereview through actual producers. Hooks never launch repair, and independent review must be renewed after source changes.
 
 For improvement work, select a run and explicitly enable its redacted trace.
 The agent can show its stage, evidence IDs, repair fingerprints, model observations
@@ -651,4 +650,4 @@ mappings still block automatic specialist work. See [current review scope](refer
 
 Finding grouping uses evidence in existing independent reviews, retains every original obligation and never resets limits. [Finding lineage](reference/adversarial-review.md#finding-lineage-and-dispositions) describes atomic member closure and distinct resolved/rejected/deferred/waived outcomes; diagnostics cannot authorize current-policy resolution or rejection.
 
-An explicit [bounded orchestration policy](reference/adversarial-review.md#bounded-orchestration-state) now exposes shared workflow/session next actions and actual clarification text. It preserves clocks, spending and original obligations. Configuration/status do not run a loop; live bounded execution remains in integration.
+An explicit [bounded orchestration policy](reference/adversarial-review.md#bounded-orchestration-state) now exposes shared workflow/session next actions and actual clarification text. It preserves clocks, spending and original obligations. Configuration/status do not run a loop. Explicit [bounded execution](reference/adversarial-review.md#bounded-live-execution) now runs authorized steps through actual tools and independent native reviewers. Ask the agent to fix the selected findings within finite limits; missing eligibility or business authority remains blocked. Standalone review stays report-only until the fix request is bound to its exact editable scope.

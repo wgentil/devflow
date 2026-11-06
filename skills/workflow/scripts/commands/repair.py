@@ -13,6 +13,16 @@ from workflow_lib.store import WorkflowError
 def register_commands(parser):
     group = parser.add_parser('repair')
     commands = group.add_subparsers(dest='repair_command', required=True)
+    for name in ('run', 'recover'):
+        action = commands.add_parser(name)
+        scope = action.add_mutually_exclusive_group(required=True)
+        scope.add_argument('--root')
+        scope.add_argument('--session')
+        action.add_argument('--run-id')
+        action.add_argument('--input', required=True)
+        action.add_argument('--operation-id', required=True)
+        if name == 'run':
+            action.add_argument('--max-actions', type=int, required=True)
     for name in ('configure', 'next', 'status', 'stop'):
         action = commands.add_parser(name)
         add_journal_options(action)
@@ -27,6 +37,22 @@ def register_commands(parser):
 
 
 def dispatch(parsed):
+    if parsed.repair_command in {'run', 'recover'}:
+        from workflow_lib.review_driver import run_orchestration, recover_orchestration
+        request = json.loads(Path(parsed.input).read_text(encoding='utf-8'))
+        if not isinstance(request, dict):
+            raise WorkflowError('REVIEW_DRIVER_BLOCKED', 'A scoped object request is required.')
+        session = bool(parsed.session)
+        if session and parsed.run_id or not session and not parsed.run_id:
+            raise WorkflowError('REVIEW_DRIVER_BLOCKED', 'Select a standalone session or a root with its actual run ID.')
+        selection = {'session': True} if session else {'run_id': parsed.run_id}
+        if any(request.get(k, v) != v for k, v in selection.items()) or ('run_id' in request if session else 'session' in request):
+            raise WorkflowError('REVIEW_DRIVER_BLOCKED', 'Request scope differs from CLI selection.')
+        request.update(selection)
+        location = Path(parsed.session if session else parsed.root).expanduser().resolve()
+        if parsed.repair_command == 'recover':
+            return recover_orchestration(location, request, parsed.operation_id)
+        return run_orchestration(location, request, parsed.operation_id, parsed.max_actions)
     if not parsed.root:
         raise WorkflowError('CONTROL_ROOT_REQUIRED', 'repair requires --root')
     root = Path(parsed.root)

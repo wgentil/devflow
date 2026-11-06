@@ -495,8 +495,8 @@ Current-policy stages use [shared report and coverage gates](../../docs/referenc
 Each actual perspective inspects the full required artifact; source, model,
 questions and proof bindings must remain current. Important findings cannot be
 erased by a later pass. Independent whole-scope code review confirms risk, while
-requirement acceptance remains a distinct stage. Standalone orchestration and
-bounded automatic repair remain separate implementation work.
+requirement acceptance remains a distinct stage. Standalone selected-scope review and explicit bounded repair use the same
+evidence gates.
 
 ```mermaid
 flowchart LR
@@ -515,7 +515,7 @@ shared model budget hash. `repair status` and resume/host views then return a pu
 next action, including actual pending question text. A worker exit does not bypass
 RED/GREEN, configured checks, current packages, independent review or original
 finding closure. Waiting retains elapsed limits. Bookkeeping does not launch work;
-the live bounded driver is still being integrated.
+use the explicit [bounded driver](../../docs/reference/adversarial-review.md#bounded-live-execution) to execute authorized steps.
 
 ```mermaid
 flowchart LR

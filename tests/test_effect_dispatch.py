@@ -17,7 +17,7 @@ class EffectDispatchTests(unittest.TestCase):
         initialize(root)
         subject={'id':'r','state_version':0,'enforcement':{'protocol':'devflow.python-enforcement/v1', 'policy_version':1},'repositories':{'app':{'location':str(repo)}},
                  'effect_policy':{'max_attempts':1,'max_estimated_cost':1,'max_elapsed_ms':100000}}
-        store.transact(root,0,'seed',{'kind':'fixture','payload':{'runs':{'r':subject}}})
+        store.transact(root,0,'seed',{'kind':'fixture','payload':{'repositories':subject['repositories'],'runs':{'r':subject}}})
         return root,repo
     def test_claim_observes_current_source_and_retry_does_not_launch_again(self):
         from workflow_lib.effect_dispatch import reserve_dispatch

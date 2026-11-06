@@ -45,6 +45,10 @@ def reduce_tool(subject,action,record):
     elif action=='tool-finish':
         claimed=updated.get('active_executions',{}).get(scope,{})
         if claimed.get('id')!=record.get('id'):raise WorkflowError('TOOL_EXECUTION_ACTIVE','Finish must bind this active execution.')
+        result=record.get('result',{})
+        if record.get('started') is True and record.get('ended') is True and result.get('phase')=='GREEN' and result.get('passed') is False and result.get('integrity'):
+            updated.setdefault('verification_failures',{})[record['id']]={'id':record['id'],'item_id':scope,'token':claimed.get('token'),
+                'source_identity':claimed['source_observation']['source_identity'],'result':deepcopy(result)}
         if record.get('uncertain'):
             updated['active_executions'][scope]['status']='uncertain'
         else:del updated['active_executions'][scope]
@@ -54,7 +58,9 @@ def reduce_tool(subject,action,record):
 def before_command():
     context=CURRENT_TOOL.get()
     if context:
-        current=read_current(context['root'],run_id=context['run_id'])['data']['runs'][context['run_id']]
+        state=read_current(context['root'],run_id=context['run_id']);current=state['data']['runs'][context['run_id']]
+        from .enforcement_live import assert_registered_repositories
+        assert_registered_repositories(current,state['data'])
         proof_context(current)
 
 
@@ -87,6 +93,8 @@ def execution(root,run_id,token,operation_id=None,client_hash=None,authorization
     from .enforcement_live import source_observation,assert_protection_current
     from .clarifications import clarification_binding
     root=Path(root);state=read_current(root,run_id=run_id);run=state['data']['runs'][run_id]
+    from .enforcement_live import assert_registered_repositories
+    assert_registered_repositories(run,state['data'])
     active=run.get('active_attempt')
     if gate_id is None and (not active or active['token']!=token):raise WorkflowError('ATTEMPT_TOKEN_INVALID','Current tool attempt required.')
     identifier=operation_id or 'tool:'+uuid.uuid4().hex
@@ -111,7 +119,8 @@ def execution(root,run_id,token,operation_id=None,client_hash=None,authorization
         current=read_current(root,run_id=run_id)
         result=holder['result']
         record={'id':identifier,'item_id':context['item_id'],'client_hash':client_hash,
-            'uncertain':holder['started'] and not holder['ended']}
+            'uncertain':holder['started'] and not holder['ended'],'started':holder['started'],'ended':holder['ended'],
+            **({'result':deepcopy(result)} if result else {})}
         if result.get('passed') and result.get('id'):record['proof_id']=result['id']
         elif not result.get('passed'):record['failure']=result.get('failure','TOOL_FAILED')
         transact(root,current['version'],identifier+':tool-finish',{'kind':'domain.enforcement.tool-finish','payload':{'request':{'run_id':run_id,'record':record}}})

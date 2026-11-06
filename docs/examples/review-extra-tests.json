@@ -1,0 +1,5 @@
+{
+  "input_paths": ["tests/regression_boundary.py"],
+  "target_ids": ["retention-boundary"],
+  "reason": "Cover the independently specified retention boundary while preserving original assertions."
+}

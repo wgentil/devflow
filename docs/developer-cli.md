@@ -862,3 +862,29 @@ original lease. This command never kills or replaces workers. Full behavior and
 limits: [standalone review](reference/adversarial-review.md#standalone-selected-scope-review).
 
 For current-policy bounded repair, `repair configure --root … --run-id … --input … --operation-id …` accepts the [orchestration wrapper](examples/review-orchestration.json). Authorize its exact real policy hash and shared effect-policy hash; placeholders do not authorize work. `repair status` returns a nonexecuting descriptor; legacy `repair next` requests the explicit live driver for upgraded policies. [State transitions](reference/adversarial-review.md#bounded-orchestration-state) preserve legacy meanings.
+
+
+## Bounded review and repair
+
+These are optional developer commands. Plugin users ask their agent to review or
+fix the selected scope with finite limits; no shell setup is required.
+
+```text
+repair run --root /absolute/control --run-id RUN --input driver.json --operation-id repair-1 --max-actions 30
+repair run --session /absolute/review.sqlite3 --input driver.json --operation-id repair-1 --max-actions 30
+review next --session /absolute/review.sqlite3 --execute --input driver.json --operation-id step-1
+repair recover --session /absolute/review.sqlite3 --input recovery.json --operation-id recovery-1
+review repair-proposal --session /absolute/review.sqlite3 --input scope.json --operation-id proposal-1
+review authorize-repair --session /absolute/review.sqlite3 --input authorized-proposal.json --operation-id scope-authorization-1
+build extend-tests --root /absolute/control --run-id RUN --item ITEM --input extra-tests.json --operation-id extra-tests-1
+build extend-tests --session /absolute/review.sqlite3 --input extra-tests.json --operation-id extra-tests-1
+```
+
+`driver.json` uses the [bounded driver inputs](reference/adversarial-review.md#bounded-live-execution).
+The selected orchestration/effect policies must already be explicitly authorized.
+Use fresh operation IDs for new requests and the original ID for exact retry.
+A scope proposal input names `implementer_actor` and `protection_paths`; its
+returned complete proposal needs actual user authorization before submission.
+`recovery.json` names `original_operation_id` and the exact
+`worker_stop_confirmation`; reconcile underlying model/tool workers first.
+Supplemental test input is [illustrated here](examples/review-extra-tests.json).

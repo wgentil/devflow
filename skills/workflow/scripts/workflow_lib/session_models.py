@@ -31,17 +31,30 @@ def guard(path,subject,action,record):
         need(active.get('mode')=='dispatch' and owner==os.getpid(),'Native output belongs to its real coordinator.')
 
 
+def transport_scope(subject,record):
+    if record.get('purpose','review')=='review':
+        from .review_dispatch import specialist_scope
+        return specialist_scope(subject,{'role':'session-reviewer','perspective':record.get('perspective')})
+    from .review_policy import review_bindings
+    need(subject.get('repair_authorization') and record.get('actor_id')==subject.get('actors',{}).get('implementer'),'Actual scoped repair authorization and implementing actor required.')
+    ids=record.get('finding_ids');known={f['id'] for f in subject.get('unresolved_findings',[]) if f.get('status','open') not in {'resolved','waived','rejected','deferred'}}
+    need(isinstance(ids,list) and ids and set(ids).issubset(known),'Select actual unresolved original findings.')
+    return {'role':'implementation','bindings_hash':digest(review_bindings(subject,{'role':'session'})),
+        'finding_ids':sorted(ids),'rationale_hash':digest(subject.get('fix_rationales',{})),
+        'authorization_hash':digest(subject['repair_authorization'])}
+
+
 def reduce_model(subject,action,record):
     from .review_dispatch import specialist_scope
     from .effect_claims import claim_effect,transition_effect
     identifier=record['invocation_id'];updated=deepcopy(subject);rows=updated.setdefault('native_invocations',{})
     if action=='session-model-claim':
-        need(identifier not in rows and record.get('scope')==specialist_scope(subject,{'role':'session-reviewer','perspective':record.get('perspective')}),'Exact current specialist scope and fresh identity required.')
+        need(identifier not in rows and record.get('scope')==transport_scope(subject,record),'Exact current specialist scope and fresh identity required.')
         request=record['claim'];need(request.get('effect_id')==identifier and request.get('owner_pid')==record.get('owner_pid'),'Exact actual effect owner required.')
         updated=claim_effect(updated,request);rows=updated.setdefault('native_invocations',{})
         rows[identifier]={**deepcopy(record),'status':'claimed'}
     elif action=='session-model-launch':
-        row=rows.get(identifier,{});need(row.get('status')=='claimed' and row['scope']==specialist_scope(subject,{'role':'session-reviewer','perspective':row['perspective']}),'Scope changed before actual model launch.')
+        row=rows.get(identifier,{});need(row.get('status')=='claimed' and row['scope']==transport_scope(subject,row),'Scope changed before actual model launch.')
         decision=record.get('decision',{});need(decision.get('status')=='allow' and decision.get('dispatch') is True and decision.get('capability_validated') is True,'Actual eligible model decision required.')
         updated=transition_effect(updated,{'effect_id':identifier,'status':'launching','now_ms':record['now_ms']})
         updated['native_invocations'][identifier].update(status='launching',decision=deepcopy(decision),package_hash=record['package_hash'],diagnostic=record['diagnostic'],started_ms=record['now_ms'],policy_revision=len(subject.get('model_overrides',[])))
@@ -61,7 +74,7 @@ def reduce_model(subject,action,record):
         decision=deepcopy(row.get('decision',{}));receipt={**decision,'status':'block','reason_code':result.get('reason_code','SESSION_MODEL_INCOMPLETE'),
             'dispatch':row.get('status')=='launching','invocation_id':identifier,'invocation_ref':result.get('invocation_ref'),
             'policy_revision':row.get('policy_revision',len(subject.get('model_overrides',[]))),'review_sequence':row.get('review_sequence'),
-            'diagnostic':row.get('diagnostic',True),'scope':{'role':'session-reviewer','actor_id':row['actor_id'],
+            'diagnostic':row.get('diagnostic',True),'scope':{'role':'implementer' if row.get('purpose')=='repair' else 'session-reviewer','actor_id':row['actor_id'],'session_id':subject['id'],
                 'perspective':row['perspective'],'package_hash':row.get('package_hash'),'review_scope':row['scope']},
             'started_ms':row.get('started_ms'),'finished_ms':record['now_ms'],
             **{k:deepcopy(result[k]) for k in ('observed','observation_source','usage','output_ref','review_report_hash') if k in result}}
@@ -90,7 +103,7 @@ def reduce_model(subject,action,record):
     return updated
 
 
-def dispatch(path,request,operation_id):
+def dispatch(path,request,operation_id,*,purpose='review'):
     from .native_runtime import _native_lease,policy
     from .review_dispatch import specialist_scope,select_review_route
     from .implementation_contracts import review_prerequisites
@@ -100,10 +113,10 @@ def dispatch(path,request,operation_id):
     from .effect_claims import validate_active_dispatch
     path=Path(path).resolve();identifier=operation_id
     need(isinstance(identifier,str) and identifier and isinstance(request,dict),'Explicit operation ID and request required.')
-    need(not set(request)-{'perspective','host','actor_id','estimated_cost','diagnostic','timeout_seconds','prompt','preferences'},'Session review accepts only bounded read-only specialist settings.')
+    need(not set(request)-{'perspective','host','actor_id','estimated_cost','diagnostic','timeout_seconds','prompt','preferences','finding_ids','expected_source_identity'},'Session review accepts only bounded read-only specialist settings.')
     need(request.get('host') in {'codex','claude'} and request.get('actor_id'),'Actual independent actor and supported host required.')
     from .review_policy import bounded
-    bounded(request);session_preferences(subject=read_session(path)['subject'],request=request)
+    bounded(request);session_preferences(subject=read_session(path)['subject'],request=request,stage='implementation' if purpose=='repair' else 'review')
     need('prompt' not in request or isinstance(request['prompt'],str) and request['prompt'].strip(),'Prompt must be a nonempty string.')
     timeout=request.get('timeout_seconds',300);need(type(timeout) in (int,float) and 1<=timeout<=3600,'Finite native timeout from 1 to 3600 seconds required.')
     lease=path.with_name(path.name+'.leases')/hashlib.sha256(identifier.encode()).hexdigest();lease.parent.mkdir(parents=True,exist_ok=True)
@@ -113,43 +126,56 @@ def dispatch(path,request,operation_id):
         with _native_lease(lease):
             state=read_session(path);subject=state['subject'];prior=subject.get('native_invocations',{}).get(identifier)
             if prior:
+                need(prior.get('purpose','review')==purpose,'An invocation cannot change execution purpose.')
                 need(prior.get('request_hash')==digest(request),'Session operation belongs to different exact settings.')
                 if prior.get('receipt'):return finalize_receipt(path,identifier,replayed=True)
                 raise WorkflowError('SESSION_MODEL_UNCERTAIN','Observe/reconcile the original stopped worker; do not relaunch.')
-            scope=specialist_scope(subject,{'role':'session-reviewer','perspective':request['perspective']})
-            prerequisites=review_prerequisites(subject,{'role':'session',**({'diagnostic':True} if request.get('diagnostic') is True else {})})
+            scope=transport_scope(subject,{**request,'purpose':purpose})
+            from .implementation_contracts import implementation_prerequisites
+            prerequisites=(implementation_prerequisites(subject,{'role':'session'}) if purpose=='repair' else review_prerequisites(subject,{'role':'session',**({'diagnostic':True} if request.get('diagnostic') is True else {})}))
             if prerequisites['status']!='allow':return {'status':'block','reason_code':'REVIEW_PREREQUISITES_REQUIRED','prerequisites':prerequisites}
-            _live(subject,diagnostic=True)
+            _live(subject,diagnostic=purpose=='review')
+            need(request.get('expected_source_identity',subject['source_identity'])==subject['source_identity'],'Source changed before this bound action.')
             package=prepare(path,identifier+':package');state=read_session(path);subject=state['subject']
             artifact=publish_review_input(path.with_name(path.name+'.artifacts'),package)
-            claim={'effect_id':identifier,'scope':'review:session:'+request['perspective']+':'+package['package_hash'],
-                'action_scope':{'purpose':'review'},'actor_id':request['actor_id'],'owner_pid':os.getpid(),
+            from .review_orchestration import allow_reservation
+            allow_reservation(subject,request.get('estimated_cost'),now())
+            claim={'effect_id':identifier,'scope':('implementation:session' if purpose=='repair' else 'review:session:'+request['perspective']+':'+package['package_hash']),
+                'action_scope':({'purpose':'repair','role':'session','finding_ids':request['finding_ids']} if purpose=='repair' else {'purpose':'review'}),'actor_id':request['actor_id'],'owner_pid':os.getpid(),
                 'source_identity':subject['source_identity'],'estimated_cost':request.get('estimated_cost'),'now_ms':now()}
             _commit(path,state,identifier+':claim','session-model-claim',{'invocation_id':identifier,'owner_pid':os.getpid(),
-                'scope':scope,'perspective':request['perspective'],'actor_id':request['actor_id'],'request_hash':digest(request),'claim':claim})
+                'scope':scope,'purpose':purpose,'stage':'implementation' if purpose=='repair' else 'review','finding_ids':request.get('finding_ids',[]),'perspective':request.get('perspective'),'actor_id':request['actor_id'],'request_hash':digest(request),'claim':claim})
             launched=False
             try:
                 backend=(CodexBackend if request['host']=='codex' else ClaudeBackend)(subject['repositories']['repo-1']['location'])
-                context=backend.discover();preferences={**session_preferences(subject,request),
-                    'host':request['host'],'stage':'review','perspective':request['perspective'],'assessment':scope['assessment'],'mode':'strict'}
-                decision=select_review_route(policy(),preferences,context.get('capabilities',{}),context.get('discovery',{}),None)
+                context=backend.discover();preferences={**session_preferences(subject,request,stage='implementation' if purpose=='repair' else 'review'),
+                    'host':request['host'],'stage':'implementation' if purpose=='repair' else 'review','mode':'strict',
+                    **({'perspective':request['perspective'],'assessment':scope['assessment']} if purpose=='review' else {})}
+                from .model_policy import resolve_profile
+                resolver=select_review_route if purpose=='review' else resolve_profile
+                decision=resolver(policy(),preferences,context.get('capabilities',{}),context.get('discovery',{}),None)
                 need(decision.get('status')=='allow' and decision.get('capability_validated') is True,'No actual eligible model is available under current specialist settings.')
                 state=read_session(path);latest=state['subject'];_live(latest,diagnostic=True)
-                need(specialist_scope(latest,{'role':'session-reviewer','perspective':request['perspective']})==scope,'Policy, source, contract or questions changed before model launch.')
+                need(transport_scope(latest,{**request,'purpose':purpose})==scope,'Policy, source, contract or questions changed before model launch.')
                 _commit(path,state,identifier+':launch','session-model-launch',{'invocation_id':identifier,'decision':decision,
                     'package_hash':package['package_hash'],'diagnostic':request.get('diagnostic') is True,'now_ms':now()});launched=True
                 state=read_session(path);latest=state['subject'];_live(latest,diagnostic=True)
                 need(len(latest.get('model_overrides',[]))==latest['native_invocations'][identifier]['policy_revision'],'Model preferences changed before invocation.')
                 validate_active_dispatch(latest,identifier,{'source_identity':latest['source_identity'],'now_ms':now()})
-                need(specialist_scope(latest,{'role':'session-reviewer','perspective':request['perspective']})==scope,'Scope changed immediately before invocation.')
-                prereq=review_prerequisites(latest,{'role':'session',**({'diagnostic':True} if request.get('diagnostic') is True else {})})
+                need(transport_scope(latest,{**request,'purpose':purpose})==scope,'Scope changed immediately before invocation.')
+                prereq=(implementation_prerequisites(latest,{'role':'session'}) if purpose=='repair' else review_prerequisites(latest,{'role':'session',**({'diagnostic':True} if request.get('diagnostic') is True else {})}))
                 need(prereq['status']=='allow','Prerequisites changed before actual invocation.')
                 remaining=(latest['effect_policy']['max_elapsed_ms']-(now()-latest['effects_started_ms']))/1000
+                from .review_orchestration import remaining_seconds
+                loop_remaining=remaining_seconds(latest,now())
+                if loop_remaining is not None:remaining=min(remaining,loop_remaining)
                 need(remaining>0,'Elapsed budget exhausted before invocation.')
-                prompt=specialist_prompt(request.get('prompt','Review only the selected source and report actual evidence.'))+'\n'+json.dumps({'review_input':artifact,'perspective':request['perspective'],'limitations':subject.get('limitations',[])},separators=(',',':'))
+                task=request.get('prompt','Fix only the selected findings using current intent and recorded rationale; preserve locked inputs and ask about business uncertainty.' if purpose=='repair' else 'Review only the selected source and report actual evidence.')
+                prompt=(specialist_prompt(task) if purpose=='review' else task)+'\n'+json.dumps({'review_input':artifact,'perspective':request.get('perspective'),'finding_ids':request.get('finding_ids',[]),'limitations':subject.get('limitations',[])},separators=(',',':'))
                 need(len(prompt.encode())<=20000,'Known specialist prompt exceeds budget; use bound artifacts.')
-                result=backend.invoke(decision['resolved'],prompt,request['actor_id'],'read-only',min(timeout,remaining))
-                output=result.pop('output','');result['review_report_hash']=seal_actual_report(output)
+                result=backend.invoke(decision['resolved'],prompt,request['actor_id'],'workspace-write' if purpose=='repair' else 'read-only',min(timeout,remaining))
+                output=result.pop('output','')
+                if purpose=='review':result['review_report_hash']=seal_actual_report(output)
                 result['output_ref']=put_object(path.with_name(path.name+'.artifacts'),'session-model-output',output.encode())
             except (WorkflowError,OSError,ValueError) as exc:
                 result={'status':'interrupted','reason_code':getattr(exc,'code','SESSION_MODEL_FAILED')}
@@ -169,6 +195,7 @@ def finalize_receipt(path,identifier,*,replayed=False):
     from .session_evidence import record_review
     subject=read_session(path)['subject'];receipt=subject['model_receipts'][identifier]
     response={**receipt,'replayed':replayed}
+    if subject['native_invocations'][identifier].get('purpose')=='repair':return {**response,'report_status':'not-applicable'}
     if not receipt.get('review_report_hash'):return {**response,'report_status':'unavailable'}
     try:
         raw=read_object(Path(path).with_name(Path(path).name+'.artifacts'),receipt['output_ref'],max_bytes=2*1024*1024)
@@ -183,10 +210,10 @@ def finalize_receipt(path,identifier,*,replayed=False):
         return {**response,'report_status':'recorded','review_id':recorded['review_id'],'verdict':recorded['verdict']}
     except (WorkflowError,ValueError,KeyError) as exc:
         return {**response,'model_status':receipt['status'],'status':'block','report_status':'blocked',
-            'report_reason_code':getattr(exc,'code','SESSION_REPORT_INVALID'),'next_action':'inspect-actual-output-and-renew-required-evidence'}
+            'report_reason_code':getattr(exc,'code','SESSION_REPORT_INVALID'),'report_message':str(exc)[:2048],'next_action':'inspect-actual-output-and-renew-required-evidence'}
 
 
-def session_preferences(subject,request):
+def session_preferences(subject,request,stage='review'):
     import math
     from .model_policy import effective_preferences,PREFERENCE_KEYS
     values=request.get('preferences',{})
@@ -198,8 +225,19 @@ def session_preferences(subject,request):
     need('max_cost' not in values or type(values['max_cost']) in (int,float) and math.isfinite(values['max_cost']) and values['max_cost']>=0,'Model cost cap must be finite.')
     if 'estimated_tokens' in values:
         tokens=values['estimated_tokens'];need(isinstance(tokens,dict) and set(tokens)=={'input','output'} and all(type(v) is int and v>=0 for v in tokens.values()),'Explicit finite input/output token estimate required.')
-    base=effective_preferences(subject,'review',request.get('host'));merged={**base,**values,'mode':'strict'}
+    base=effective_preferences(subject,stage,request.get('host'));merged={**base,**values,'mode':'strict'}
     if base.get('allowed_models') is not None and values.get('allowed_models') is not None:
         merged['allowed_models']=[m for m in values['allowed_models'] if m in base['allowed_models']]
     if base.get('max_cost') is not None and values.get('max_cost') is not None:merged['max_cost']=min(base['max_cost'],values['max_cost'])
     return merged
+
+
+def dispatch_implementation(path,request,operation_id):
+    from .native_runtime import policy
+    subject=read_session(path)['subject']
+    need(subject.get('editable_source') is True and subject.get('repair_authorization') and request.get('actor_id')==subject.get('actors',{}).get('implementer'),
+        'Explicit actual editable-scope repair authorization required; report-only snapshots cannot launch writers.')
+    if operation_id in subject.get('native_invocations',{}):return dispatch(path,request,operation_id,purpose='repair')
+    host=request.get('host');profile=policy().get('stages',{}).get('implementation')
+    if not policy().get('hosts',{}).get(host,{}).get(profile):return {'status':'block','reason_code':'NO_VALIDATED_PERMITTED_MODEL'}
+    return dispatch(path,request,operation_id,purpose='repair')

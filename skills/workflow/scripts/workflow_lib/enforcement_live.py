@@ -41,3 +41,12 @@ def assert_protection_current(subject: dict) -> dict:
     if enforcement_version(subject) is None:return {}
     from .protection_receipts import make_receipts
     return make_receipts(subject, protection_observations(subject), live=True)
+
+
+def assert_registered_repositories(subject:dict,data:dict)->None:
+    """Execution cannot silently switch the run's declared physical source."""
+    if enforcement_version(subject) is None:return
+    for key,row in subject.get('repositories',{}).items():
+        current=data.get('repositories',{}).get(key,{})
+        if not current.get('location') or Path(current['location']).resolve()!=Path(row['location']).resolve():
+            raise WorkflowError('REPOSITORY_BINDING_CHANGED','Registered repository location differs from this bound run; explicitly reconcile scope before execution.')

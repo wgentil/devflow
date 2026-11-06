@@ -109,3 +109,13 @@ class ClosureTests(unittest.TestCase):
         with self.assertRaises(WorkflowError):waive_finding(subject,'f',auth)
         with self.assertRaises(WorkflowError):_apply_event({'data':{'runs':{'r':subject}}},{'kind':'finding.waived',
             'payload':{'run_id':'r','finding_id':'f','authorization':auth}})
+
+    def test_report_cannot_resolve_a_finding_it_originated(self):
+        from workflow_lib.finding_closure import finding_hash
+        from workflow_lib.review_enforcement import review_bindings
+        subject=self.fixture();finding=subject['unresolved_findings'][0]
+        finding['provenance']={'review_id':'rev'}
+        subject['corrections']['f']['finding_hash']=finding_hash(finding)
+        subject['reviews']['branch'][0]['closure_dispositions'][0]['finding_hash']=finding_hash(finding)
+        subject['review_packages']['pkg']['enforcement_bindings']=review_bindings(subject,'branch')
+        with self.assertRaises(WorkflowError):self.validate(subject)

@@ -232,11 +232,19 @@ def invoke(root,request,operation_id):
         if enforcement_version(run) is not None:
             from .effect_dispatch import reserve_dispatch
             action_scope = {'item_id': run['active_attempt']['item_id']} if run.get('active_attempt') and stage == 'implementation' else ({'item_id': binding['item_id']} if binding.get('item_id') else {})
+            if request.get('repair_scope') is not None:
+                repair=request['repair_scope']
+                if stage!='implementation' or binding['role']!='implementer' or not isinstance(repair,dict) or set(repair)!={'finding_ids'}:
+                    raise WorkflowError('NATIVE_ACCESS_DENIED','Repair purpose must select actual findings under the active implementation scope.')
+                ids=repair['finding_ids'];known={f['id']:f for f in run.get('unresolved_findings',[])}
+                if not isinstance(ids,list) or not ids or any(fid not in known or known[fid].get('item_id') not in {None,action_scope.get('item_id')} for fid in ids):
+                    raise WorkflowError('NATIVE_ACCESS_DENIED','Repair findings must belong to this actual item scope.')
+                action_scope.update(purpose='repair',finding_ids=ids)
             exclusive_scope = 'implementation' if stage == 'implementation' else 'review:' + binding['role'] + ':' + str(binding.get('package_hash', ''))
             host_token = HOST_CONTEXT.set({'binding_id': binding['binding_id'], 'revision': binding['revision'], 'release': binding['release']})
             try:
                 enforcement_effect = reserve_dispatch(root, binding['run_id'], identifier, exclusive_scope,
-                    request.get('estimated_cost'), operation_id, action_scope, owner_binding=binding)
+                    request.get('estimated_cost'), operation_id, action_scope, owner_binding=binding,expected_source_identity=request.get('expected_source_identity'))
             finally: HOST_CONTEXT.reset(host_token)
             authoritative = read_context_state(root, binding_id=binding['binding_id'])
             data = authoritative['data']; run = data['runs'][binding['run_id']]
@@ -387,6 +395,9 @@ def invoke(root,request,operation_id):
                 if remaining_ms <= 0:
                     raise WorkflowError('EFFECT_BLOCKED', 'Elapsed dispatch budget exhausted before invocation.')
                 timeout_seconds = min(timeout_seconds, remaining_ms / 1000)
+            from .review_orchestration import remaining_seconds
+            loop_remaining=remaining_seconds(latest,int(time.time()*1000))
+            if loop_remaining is not None:timeout_seconds=min(timeout_seconds,loop_remaining)
             if specialist:
                 current_scope=invocation_scope(binding,latest,stage,{})
                 if current_scope!=start['expected_scope']:

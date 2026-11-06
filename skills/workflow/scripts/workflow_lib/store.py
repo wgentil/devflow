@@ -884,7 +884,8 @@ def _transact_once(root: Path, expected_version: int, operation_id: str, event: 
             return {"state": state, "event": previous, "replayed": True}
         if expected_version != state["version"]:
             raise WorkflowError("STALE_STATE", f"expected state version {expected_version}, current version is {state['version']}")
-        _guard_enforcement_transaction(state, event)
+        if event['kind'].startswith('domain.repair.orchestration-'):_guard_enforcement_transaction(state,event,root)
+        else:_guard_enforcement_transaction(state,event)
         if precommit is not None:precommit(state)
         _guard_spec_approval(state, event)
         committed = {
@@ -912,7 +913,7 @@ def _transact_once(root: Path, expected_version: int, operation_id: str, event: 
         return {"state": state, "event": committed, "replayed": False}
 
 
-def _guard_enforcement_transaction(state: dict, event: dict) -> None:
+def _guard_enforcement_transaction(state: dict, event: dict, root=None) -> None:
     if event['kind']=='run.started':
         from .review_policy import require_review_policy
         require_review_policy(event['payload'].get('run',{}))
@@ -942,6 +943,12 @@ def _guard_enforcement_transaction(state: dict, event: dict) -> None:
             raise WorkflowError('WORKER_RECONCILIATION_REQUIRED','Actual absent coordinator and adapter-held native recovery lease required.')
     if enforcement_version(run) is not None:
         kind=event['kind'];record=request.get('record',{})
+        if kind.startswith('domain.repair.orchestration-'):
+            from .review_driver import guard as driver_guard
+            driver_guard(Path(root) if root is not None else Path('.'),run,kind.removeprefix('domain.repair.orchestration-'),record)
+        if kind=='domain.enforcement.test-extension':
+            from .test_extensions import guard_extension
+            guard_extension(run,record)
         if kind.startswith('domain.enforcement.'):
             from .finding_index import guard_live_finding
             guard_live_finding(run,kind.removeprefix('domain.enforcement.'),record)

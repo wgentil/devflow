@@ -304,3 +304,5 @@ can refresh its own established perspective for correction with a new actual
 invocation; changing independent stage/perspective identity remains prohibited.
 
 With an explicitly selected [review orchestration policy](reference/adversarial-review.md#bounded-orchestration-state), host briefs/resume views expose the current deterministic next action and actual pending question. This metadata does not start a hook loop or satisfy verification.
+
+The [bounded review driver](reference/adversarial-review.md#bounded-live-execution) uses actual native/session producers and current scope. It never substitutes host instructions for an executed receipt. Unknown launches retain their claims and require observed recovery; actual implementation and independent specialist roles retain their separate model policies.

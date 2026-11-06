@@ -90,18 +90,25 @@ def record_implementation_contract(subject, record):
     behaviors = record.get('behaviors')
     need(isinstance(behaviors, list) and behaviors and all(isinstance(b, dict) and b.get('id') and b.get('text') for b in behaviors),
          'Describe explicit observable behaviors.')
+    for behavior in behaviors:
+        need(not set(behavior)-{'id','text','authority_refs','target_ids','incorrect_behaviors'},'Behavior metadata must use known fields; do not hide unapproved intent in extra fields.')
+        for key in ('target_ids','incorrect_behaviors'):
+            need(key not in behavior or isinstance(behavior[key],list) and all(isinstance(v,str) and v for v in behavior[key]),'Test selections must be explicit string arrays.')
     for field in ('invariants','non_goals','interfaces'):
         need(isinstance(record.get(field), list) and all(isinstance(v, str) and v.strip() for v in record[field]),
              'Record invariants, boundaries/non-goals and interfaces, using explicit lists.')
     for check in record.get('checks', []):
         need(isinstance(check, str) and check in subject.get('hardening_config', {}), 'Reference configured check IDs; do not import commands.')
     intent = {k: deepcopy(record[k]) for k in ('behaviors','invariants','non_goals','interfaces')}
+    intent['behaviors']=[{k:v for k,v in b.items() if k not in {'target_ids','incorrect_behaviors'}} for b in intent['behaviors']]
     intent_hash = digest(intent)
     authority = authority_refs(subject, scope)
     if not all(_refs(b.get('authority_refs')) and set(b['authority_refs']).issubset(authority) for b in behaviors):
         return _question(subject, record, intent_hash)
     prior = subject.get('implementation_contracts', {}).get(scope_key(scope))
-    if prior and prior['intent_hash'] != intent_hash:
+    previous_intent={k:deepcopy(prior[k]) for k in ('behaviors','invariants','non_goals','interfaces')} if prior else None
+    if previous_intent:previous_intent['behaviors']=[{k:v for k,v in b.items() if k not in {'target_ids','incorrect_behaviors'}} for b in previous_intent['behaviors']]
+    if prior and digest(previous_intent) != intent_hash:
         decision = record.get('intent_decision', {})
         question = subject.get('clarifications', {}).get(decision.get('question_id'), {})
         decision_ref = 'question:' + str(question.get('id')) + ':' + str(question.get('version'))

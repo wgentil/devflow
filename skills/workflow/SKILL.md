@@ -11,7 +11,7 @@ Inspect read-only; mutations recheck inputs and record drift. Follow journal gat
 
 Follow [maintenance guidance](GUIDE.md#control-state-maintenance) for requested maintenance: inspect without live approval repair; apply only an authorized exact plan and preserve history.
 
-Read [shared invariants](../../docs/reference/workflow-invariants.md) and the declared stage sections before work. The harness runs helpers and guides the user. For delegated work read [task routing](../../docs/reference/task-routing.md#task-decisions); use the actual stage and preserve user constraints.
+Read [shared invariants](../../docs/reference/workflow-invariants.md) and stage sections. The harness runs helpers and guides the user. For delegated work read [task routing](../../docs/reference/task-routing.md#task-decisions); use the actual stage and preserve user constraints.
 
 ```mermaid
 flowchart LR
@@ -20,7 +20,7 @@ flowchart LR
     Mode -->|Change| Checks[Live checks and shared invariants]
     Checks --> Prep{Required context ready?}
     Prep -->|Blocked| Context[Explain phase and resolve preparation]
-    Prep -->|Ready| Work[Stage responsibility]
+    Prep -->|Ready| Work[Stage or bounded repair]
     Work --> Result{Worker outcome}
     Result -->|Complete scoped report| Evidence[Current coverage and next gate]
     Result -->|Stale completed proof| Reverify[Reverify with fresh token and GREEN]
@@ -72,4 +72,4 @@ See [governing guidance](../../docs/reference/governing-inputs.md).
 
 See [governing guidance](../../docs/reference/governing-inputs.md).
 
-[Review/repair](../../docs/reference/adversarial-review.md).
+[Bounded repair](../../docs/reference/adversarial-review.md#bounded-live-execution).

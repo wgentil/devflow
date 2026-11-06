@@ -10,6 +10,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import time
 import uuid
 import xml.etree.ElementTree as ET
 
@@ -71,7 +72,7 @@ def repository_fingerprint(location: Path) -> dict:
 
 
 def _report(stdout: str, stderr: str = "", report_format: str = "json", red_proof_id: str | None = None,
-                     red_run_id: str | None = None, operation_id: str | None = None) -> dict:
+                     red_run_id: str | None = None, operation_id: str | None = None, expected_source_identity: str | None = None) -> dict:
     if report_format == "unittest":
         import re
         result = {}
@@ -123,7 +124,7 @@ def _report(stdout: str, stderr: str = "", report_format: str = "json", red_proo
 def capture_evidence(root: Path, run_id: str, token: str, phase: str, command: list[str],
                      test_paths: list[str], target_ids: list[str], timeout: int,
                      report_format: str = "json", red_proof_id: str | None = None,
-                     red_run_id: str | None = None, operation_id: str | None = None) -> dict:
+                     red_run_id: str | None = None, operation_id: str | None = None, expected_source_identity: str | None = None) -> dict:
     if phase not in {"RED", "GREEN"} or not isinstance(command, list) or not command or any(not isinstance(arg, str) for arg in command):
         raise WorkflowError("INVALID_EVIDENCE_REQUEST", "phase and argv are invalid")
     if (type(timeout) is not int or timeout <= 0 or not isinstance(test_paths, list)
@@ -133,7 +134,9 @@ def capture_evidence(root: Path, run_id: str, token: str, phase: str, command: l
         raise WorkflowError("INVALID_EVIDENCE_REQUEST", "timeout, test paths, and target IDs are required")
     root = Path(root).expanduser().resolve()
     from .tool_execution import cached,execution,CURRENT_TOOL
-    client_hash=__import__('hashlib').sha256(__import__('json').dumps([run_id,token,phase,command,test_paths,target_ids,timeout,report_format,red_proof_id,red_run_id],sort_keys=True).encode()).hexdigest()
+    client_material=[run_id,token,phase,command,test_paths,target_ids,timeout,report_format,red_proof_id,red_run_id]
+    if expected_source_identity is not None:client_material.append({'expected_source_identity':expected_source_identity})
+    client_hash=__import__('hashlib').sha256(__import__('json').dumps(client_material,sort_keys=True).encode()).hexdigest()
     if operation_id and CURRENT_TOOL.get() is None:
         previous=cached(root,run_id,operation_id,client_hash)
         if previous:return previous
@@ -141,7 +144,7 @@ def capture_evidence(root: Path, run_id: str, token: str, phase: str, command: l
     run = state["data"].get("runs", {}).get(run_id)
     if run and enforcement_version(run) is not None and CURRENT_TOOL.get() is None:
         with execution(root,run_id,token,operation_id,client_hash) as tool:
-            result=capture_evidence(root,run_id,token,phase,command,test_paths,target_ids,timeout,report_format,red_proof_id,red_run_id,operation_id)
+            result=capture_evidence(root,run_id,token,phase,command,test_paths,target_ids,timeout,report_format,red_proof_id,red_run_id,operation_id,expected_source_identity)
             tool['result']=result
             return result
     active = run.get("active_attempt") if run else None
@@ -188,11 +191,16 @@ def capture_evidence(root: Path, run_id: str, token: str, phase: str, command: l
     if integrity_contract is not None:
         from .enforcement_live import source_observation
         before_observation = source_observation({**run, 'repositories': run.get('repositories') or {repo_id: repository}})
+    if expected_source_identity is not None and (not before_observation or before_observation['source_identity']!=expected_source_identity):
+        raise WorkflowError('SOURCE_BINDING_STALE','Source changed before this bound verification action.')
     started = _now()
     try:
         from .tool_execution import started as mark_tool_started,ended as mark_tool_ended
         from .tool_execution import before_command
         before_command()
+        from .review_orchestration import remaining_seconds
+        remaining=remaining_seconds(read_current(root,run_id=run_id)['data']['runs'][run_id],int(time.time()*1000))
+        if remaining is not None:timeout=min(timeout,remaining)
         mark_tool_started()
         completed = subprocess.run(command, cwd=repo, capture_output=True,
                                    timeout=timeout, check=False)
@@ -245,7 +253,14 @@ def capture_evidence(root: Path, run_id: str, token: str, phase: str, command: l
         failure = None if passed else ("LOCKED_TESTS_CHANGED" if before_tests != after_tests or red and not same_baseline
                                        else "RED_PROOF_REQUIRED" if not same_baseline else "TARGETS_NOT_GREEN")
     if not passed:
-        return {"passed": False, "failure": failure, "exit_code": exit_code,
+        failed_integrity={}
+        if integrity_contract is not None:
+            from .test_integrity import parse_test_evidence
+            failed_integrity={**parse_test_evidence(stdout,stderr,report_format),'contract':integrity_contract,'passed':False,
+                'source_identity':before_observation['source_identity'],'exit_code':exit_code,
+                'stdout_ref':_blob(root,stdout_raw),'stderr_ref':_blob(root,stderr_raw)}
+        return {"passed": False, "failure": failure, "exit_code": exit_code,'phase':phase,
+                **({'integrity':failed_integrity} if failed_integrity else {}),
                 "target_outcomes": target_outcomes, "test_counts": test_counts, "started_at": started, "finished_at": finished,
                 "stdout_ref": _blob(root, stdout_raw), "stderr_ref": _blob(root, stderr_raw)}
     proof = {"id": uuid.uuid4().hex, "kind": work_item["kind"], "phase": phase, "run_id": run_id,

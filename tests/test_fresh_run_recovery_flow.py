@@ -1,4 +1,4 @@
-"""Offline real-Git/CLI lifecycle; reviewer seats are fixtures, not live host reviews."""
+"""Historical real-Git/CLI lifecycle; current-policy execution is covered in driver tests."""
 import importlib.util
 import json
 import os
@@ -9,6 +9,7 @@ import tempfile
 import unittest
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'skills/workflow/scripts'))
+from control_store_fixtures import historical_run
 from workflow_lib.specs import content_hash
 from workflow_lib.store import transact,read_state,WorkflowError
 from workflow_lib.evidence import _report,capture_evidence
@@ -64,7 +65,7 @@ class FreshRunRecoveryFlowTests(unittest.TestCase):
             '--actor-id',role+'-reviewer','--invocation-ref','fixture://'+pkg['package_hash'],'--tool-available','--report-json',json.dumps(report))
         return pkg['package_hash']
     def test_one_run_three_items_review_fix_and_final_delivery_without_file_swapping(self):
-        self.run_cli('start','--actor-id','implementer')
+        historical_run(self.control,'flow','implementer')
         red={}
         for index in range(1,4):
             item=f'W{index}';token=self.run_cli('next','--item',item)['attempt_id'];red[item]=self.verify(item,token,'red')
@@ -117,7 +118,7 @@ class FreshRunRecoveryFlowTests(unittest.TestCase):
         prior=json.loads((examples/'prior-findings.json').read_text(encoding='utf-8'))
         self.assertEqual(prior[0]['severity'],'important');self.assertEqual(prior[0]['item_id'],'W1')
     def test_import_failure_without_target_results_is_not_red(self):
-        self.run_cli('start','--actor-id','implementer');token=self.run_cli('next','--item','W1')['attempt_id']
+        historical_run(self.control,'flow','implementer');token=self.run_cli('next','--item','W1')['attempt_id']
         result=capture_evidence(self.control,'flow',token,'RED',[sys.executable,'-c','raise ImportError("fixture")'],
             ['tests/W1.py'],['W1.target'],10)
         self.assertFalse(result['passed']);self.assertNotIn('id',result)

@@ -52,7 +52,7 @@ class StoredRecordTests(unittest.TestCase):
             sqlite_store.initialize_store(root)
             package = self.package('branch')
             store.transact(root, 0, 'run', {'kind': 'run.started', 'payload': {'run': {
-                'id': 'r', 'status': 'active', 'review_packages': {package['package_hash']: package}}}})
+                'id': 'r', 'status': 'active', 'review_policy': __import__('workflow_lib.review_policy',fromlist=['new_review_policy']).new_review_policy(), 'enforcement': {'protocol':'devflow.python-enforcement/v1','policy_version':1}, 'review_packages': {package['package_hash']: package}}}})
             with sqlite_store.connection(root) as conn:
                 row = conn.execute("SELECT codec,payload FROM entities WHERE space=? AND key='r'",
                                    (sqlite_store._space(('runs',)),)).fetchone()

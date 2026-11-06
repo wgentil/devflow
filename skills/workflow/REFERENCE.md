@@ -159,4 +159,3 @@ unambiguous; ask a concise selection question for multiple runs. Initialization
 never approves specs or creates a run without its ordinary prerequisites.
 
 For stale completed code, use [reverification](../build-work/REFERENCE.md#reverify-completed-work).
-

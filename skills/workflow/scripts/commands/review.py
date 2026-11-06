@@ -25,13 +25,13 @@ def register_commands(parser: argparse.ArgumentParser) -> None:
         action.add_argument('--input',required=True)
         action.add_argument('--operation-id',required=name not in {'prerequisites','coverage'})
         action.add_argument('--expected-version',type=int)
-    for name in ('start','status','next','report','recover'):
+    for name in ('start','status','next','report','recover','repair-proposal','authorize-repair'):
         action=actions.add_parser(name)
         action.add_argument('--session',required=True)
         if name=='start':
             action.add_argument('--repository',required=True)
             action.add_argument('--input',required=True)
-        if name=='recover':
+        if name in {'recover','repair-proposal','authorize-repair'}:
             action.add_argument('--input',required=True)
             action.add_argument('--operation-id',required=True)
         if name=='next':
@@ -78,10 +78,15 @@ def register_commands(parser: argparse.ArgumentParser) -> None:
 
 
 def dispatch(parsed: argparse.Namespace) -> dict:
-    if parsed.review_command in {'start','status','next','report','recover'}:
+    if parsed.review_command in {'start','status','next','report','recover','repair-proposal','authorize-repair'}:
         from workflow_lib.standalone_reviews import start_standalone,standalone_status
         path=Path(parsed.session).expanduser().resolve()
         if parsed.review_command=='start':return start_standalone(Path(parsed.repository),json.loads(Path(parsed.input).read_text(encoding='utf-8')),path)
+        if parsed.review_command in {'repair-proposal','authorize-repair'}:
+            from workflow_lib.session_repair import prepare_repair,authorize_repair
+            request=json.loads(Path(parsed.input).read_text(encoding='utf-8'))
+            if parsed.review_command=='repair-proposal':return prepare_repair(path,request)
+            return authorize_repair(path,request,parsed.operation_id)
         if parsed.review_command=='recover':
             from workflow_lib.enforcement_recovery import reconcile_session_model
             request=json.loads(Path(parsed.input).read_text(encoding='utf-8'))
@@ -89,8 +94,15 @@ def dispatch(parsed: argparse.Namespace) -> dict:
         if parsed.review_command=='next':
             if parsed.execute:
                 if not parsed.operation_id or not parsed.input:raise WorkflowError('OPERATION_ID_REQUIRED','Execution needs an explicit operation ID and input request.')
+                from workflow_lib.review_sessions import read_session
+                request=json.loads(Path(parsed.input).read_text(encoding='utf-8'))
+                if read_session(path)['subject'].get('review_orchestration'):
+                    from workflow_lib.review_driver import advance_orchestration
+                    if not isinstance(request,dict) or 'run_id' in request or request.get('session',True) is not True:
+                        raise WorkflowError('REVIEW_DRIVER_BLOCKED','Request must select this standalone session.')
+                    return advance_orchestration(path,{**request,'session':True},parsed.operation_id)
                 from workflow_lib.review_dispatch import dispatch_session_review
-                return dispatch_session_review(path,json.loads(Path(parsed.input).read_text(encoding='utf-8')),parsed.operation_id)
+                return dispatch_session_review(path,request,parsed.operation_id)
             return standalone_status(path)['next_action']
         return standalone_status(path)
     root = Path(parsed.root).expanduser().resolve()

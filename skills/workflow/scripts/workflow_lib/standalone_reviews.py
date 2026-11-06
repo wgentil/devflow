@@ -176,6 +176,9 @@ def standalone_status(path:Path)->dict:
 
 def snapshot_observation(subject):
     """Hash owned selected files directly; never invoke project Git filters/hooks."""
+    if subject.get('editable_source'):
+        selection,_=select_source(Path(subject['standalone_scope']['repository']),{'mode':'working-tree'})
+        return _files_observation(selection)
     snapshots={}
     for key,row in subject['repositories'].items():
         root=Path(row['location']).resolve();files={}
@@ -190,3 +193,9 @@ def snapshot_observation(subject):
                     'mode':'100755' if os.access(target,os.X_OK) else '100644'}
         snapshots[key]={'selection_hash':subject['standalone_scope']['selection_hash'],'files':files}
     return {'snapshots':snapshots,'source_identity':digest(snapshots)}
+
+
+def _files_observation(selection):
+    files={name:{k:value[k] for k in ('sha256','mode')} for name,value in selection['files'].items()}
+    snapshots={'repo-1':{'selection_hash':selection['selection_hash'],'files':files}}
+    return {'snapshots':snapshots,'source_identity':digest(snapshots),'selection':selection}

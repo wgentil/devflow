@@ -1,3 +1,4 @@
+"""Historical governing/handoff flow; current-policy live execution has separate fixtures."""
 import json, subprocess, sys, tempfile, unittest
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'skills/workflow/scripts'))
@@ -57,7 +58,8 @@ class RepositoryEvidenceFlowTests(unittest.TestCase):
    call('document','approve','--root',root,'--proposal-hash',proposal['proposal_hash'],'--actor-id','human-policy')
    self.assertIn('validation',call('plan','validate','--root',root,'--file',plan_file,'--operation-id','plan-approved'))
    self.assertEqual(read_state(root)['data']['governing_input_receipt']['applicable_rule_ids'],['CODE-1'])
-   call('run','start','--root',root,'--run-id','run-1','--operation-id','run-start')
+   from control_store_fixtures import historical_run
+   historical_run(root,'run-1')
    first=call('run','next','--root',root,'--run-id','run-1','--operation-id','first-attempt')
    call('run','abandon','--root',root,'--run-id','run-1','--attempt-id',first['attempt_id'],'--operation-id','abandon-first')
    release=source('release.json',call('version'))
@@ -82,7 +84,7 @@ class RepositoryEvidenceFlowTests(unittest.TestCase):
    self.assertEqual(call('run','next','--root',root,'--run-id','run-1','--operation-id','old-run',expected=2)['error'],'RUN_GOVERNING_INPUTS_STALE')
    self.assertEqual(call('host','handoff-prepare','--root',root,'--file',source('handoff.json',handoff),'--operation-id','old-handoff',expected=2)['error'],'RUN_GOVERNING_INPUTS_STALE')
    self.assertEqual(read_state(root)['data']['runs']['run-1'],original_run)
-   call('run','start','--root',root,'--run-id','run-2','--operation-id','fresh-run')
+   historical_run(root,'run-2')
    call('run','next','--root',root,'--run-id','run-2','--operation-id','fresh-attempt')
    self.assertIsNotNone(read_state(root)['data']['runs']['run-2']['active_attempt'])
 class FullFlowTests(unittest.TestCase):

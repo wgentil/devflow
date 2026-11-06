@@ -1,3 +1,4 @@
+"""Historical lifecycle coverage; current-policy execution lives in driver tests."""
 import json
 import os
 import subprocess
@@ -134,7 +135,8 @@ class FoundationFlowTests(unittest.TestCase):
                 "unresolved_findings": [{"id": "F-1", "severity": "minor"}],
             },
         })
-        started = self.cli("run", "start", "--root", self.control, "--run-id", "flow-1")
+        from control_store_fixtures import historical_run
+        started = historical_run(self.control,"flow-1")
         self.assertNotIn("operations", started)
 
         first = self.cli("run", "next", "--root", self.control, "--run-id", "flow-1")
@@ -239,7 +241,8 @@ class FoundationFlowTests(unittest.TestCase):
         current = read_state(self.control)
         transact(self.control, current["version"], "seed-plan", {"kind": "plan.validated", "payload": {
             "plan": work_plan, "plan_validation": validation}})
-        self.cli("run", "start", "--root", self.control, "--run-id", "replay")
+        from control_store_fixtures import historical_run
+        historical_run(self.control,"replay")
         first = self.cli("run", "next", "--root", self.control, "--run-id", "replay", "--operation-id", "same-op")
         self.cli("run", "abandon", "--root", self.control, "--run-id", "replay", "--attempt-id", first["attempt_id"])
 

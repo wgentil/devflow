@@ -16,6 +16,14 @@ from workflow_lib.verifiers import record_typed_proof, verify_eval_set, verify_i
 def register_commands(parser: argparse.ArgumentParser) -> None:
     build = parser.add_parser("build")
     subcommands = build.add_subparsers(dest="build_command", required=True)
+    extend = subcommands.add_parser('extend-tests')
+    scope = extend.add_mutually_exclusive_group(required=True)
+    scope.add_argument('--root')
+    scope.add_argument('--session')
+    extend.add_argument('--run-id')
+    extend.add_argument('--item')
+    extend.add_argument('--input', required=True)
+    extend.add_argument('--operation-id', required=True)
     validation_plan = subcommands.add_parser('validation-plan')
     validation_plan.add_argument('--root', required=True)
     validation_plan.add_argument('--config', required=True)
@@ -92,6 +100,18 @@ def register_commands(parser: argparse.ArgumentParser) -> None:
 
 
 def dispatch(parsed: argparse.Namespace) -> dict:
+    if parsed.build_command == 'extend-tests':
+        from workflow_lib.test_extensions import admit_extension
+        request=json.loads(Path(parsed.input).read_text(encoding='utf-8'))
+        if not isinstance(request,dict) or set(request)-{'input_paths','target_ids','reason'}:
+            raise WorkflowError('TEST_EXTENSION_BLOCKED','Declare only additive inputs, targets and their purpose.')
+        if parsed.session:
+            if parsed.run_id or parsed.item:raise WorkflowError('TEST_EXTENSION_BLOCKED','Standalone selection cannot invent a workflow item.')
+            selection={'session':True};location=parsed.session
+        else:
+            if not parsed.run_id or not parsed.item:raise WorkflowError('TEST_EXTENSION_BLOCKED','Select the actual workflow run and item.')
+            selection={'run_id':parsed.run_id,'item_id':parsed.item};location=parsed.root
+        return admit_extension(Path(location).expanduser().resolve(),{**request,**selection},parsed.operation_id)
     result = _dispatch(parsed)
     if parsed.build_command == 'verify' and result.get('passed') is True and result.get('id'):
         result = {**result,'proof_id':result['id']}

@@ -120,6 +120,14 @@ def transact_session(path: Path, expected_version: int, operation_id: str, event
         guard_execution_event(path,state['subject'],event['action'],event['record'])
         from .session_models import guard
         guard(path,state['subject'],event['action'],event['record'])
+        from .session_repair import guard as scope_guard
+        scope_guard(path,state['subject'],event['action'],event['record'])
+        if event['action'].startswith('orchestration-'):
+            from .review_driver import guard as driver_guard
+            driver_guard(path,state['subject'],event['action'].removeprefix('orchestration-'),event['record'])
+        if event['action']=='test-extension':
+            from .test_extensions import guard_extension
+            guard_extension(state['subject'],event['record'])
         from .finding_index import guard_live_finding
         guard_live_finding(state['subject'],event['action'],event['record'])
         subject = apply_enforcement(state['subject'], event['action'], event['record'])

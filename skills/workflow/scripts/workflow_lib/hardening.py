@@ -15,8 +15,17 @@ def verify_gate(root:Path,run_id:str,gate_id:str,command:list[str],contract:dict
  except Exception: return {'passed':False,'failure':'REPOSITORY_NOT_REGISTERED','run_id':run_id,'gate_id':gate_id}
  from .tool_execution import before_command,started,ended
  before_command()
+ timeout=900
+ from .tool_execution import CURRENT_TOOL
+ context=CURRENT_TOOL.get()
+ if context:
+  from .storage_access import read_current
+  from .review_orchestration import remaining_seconds
+  import time
+  remaining=remaining_seconds(read_current(context['root'],run_id=context['run_id'])['data']['runs'][context['run_id']],int(time.time()*1000))
+  if remaining is not None:timeout=min(timeout,remaining)
  try:
-  started();result=subprocess.run(command,cwd=root,capture_output=True,timeout=900,check=False);ended()
+  started();result=subprocess.run(command,cwd=root,capture_output=True,timeout=timeout,check=False);ended()
  except (OSError,subprocess.TimeoutExpired): return {'passed':False,'failure':'COMMAND_UNAVAILABLE'}
  digest=hashlib.sha256(result.stdout+result.stderr).hexdigest()
  try: after=repository_fingerprint(root)
