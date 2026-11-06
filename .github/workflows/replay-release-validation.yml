@@ -1,0 +1,23 @@
+name: Replay release validation
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  macos-minimum:
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Fetch frozen compatibility baselines
+        run: git fetch --depth=1 origin refs/tags/v0.3.15:refs/tags/v0.3.15 refs/tags/v0.3.17:refs/tags/v0.3.17 refs/tags/v0.3.18:refs/tags/v0.3.18
+      - name: Challenge fixture and replay compatibility
+        run: python scripts/run_platform_tests.py --pattern 'test_test_challenges.py' --pattern 'test_issue*.py' --pattern 'test_package.py' --pattern 'test_releases.py' --pattern 'test_documentation.py' --output replay-release-report.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: replay-release-macos-311
+          path: replay-release-report.json
