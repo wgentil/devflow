@@ -27,7 +27,7 @@ print(json.dumps({'schema':'devflow-test-report-v2','tests':[{'id':'retention','
 raise SystemExit(0 if outcome=='passed' else 1)
 """.replace('ASSERTION',assertion)
         (repo/'check.py').write_text(script)
-        for args in (['init','-q'],['config','user.name','Owned'],['config','user.email','owned@example.invalid'],['add','.'],['commit','-qm','Owned fixture']):subprocess.run(['git',*args],cwd=repo,check=True)
+        for args in (['init','-q'],['config','gc.auto','0'],['config','maintenance.auto','false'],['config','user.name','Owned'],['config','user.email','owned@example.invalid'],['add','.'],['commit','-qm','Owned fixture']):subprocess.run(['git',*args],cwd=repo,check=True)
         paths=['behavior.py','check.py','oracle.json']
         req={'schema_version':1,'source_paths':['behavior.py'],'input_paths':['check.py','oracle.json'],
             'input_hashes':{p:hashlib.sha256((repo/p).read_bytes()).hexdigest() for p in paths},
