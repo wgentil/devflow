@@ -2,8 +2,7 @@
 
 The approved [implementation plan](../superpowers/plans/2026-11-05-adversarial-review-repair.md)
 extends the merged [Python enforcement foundation](python-enforcement.md).
-This branch is in implementation: policy/risk and implementation-contract prerequisites are available;
-workflow specialist dispatch, selected-scope coverage gates and standalone review sessions are implemented; explicit bounded repair is implemented; local outcome summaries are implemented; final integration assessment remains in progress.
+This repository implements policy/risk, implementation-contract prerequisites, specialist dispatch, selected-scope coverage gates, standalone review, explicit bounded repair and local outcome summaries. Final validation and independent assessment are recorded with the change; installed older releases retain their shipped capabilities.
 
 New workflow runs declare `devflow.adversarial-review/v1` with shared enforcement.
 Existing stored runs retain their original contract. Explicit adoption requires
@@ -427,3 +426,5 @@ its separate fresh exact-head/status checks remain required. No cross-package or
 cross-head inheritance is added. Existing exact invocation retries return their
 original receipt without relaunch; a returned historical receipt alone is not a
 current pass. Final integration/acceptance gates remain independent.
+
+Current-policy material answers must name a changed authority hash and its actual approval; an earlier approval of the question’s original contract is insufficient. No-progress stop records survive explicit resume and policy extensions, so summary counts do not disappear when a blocker clears.

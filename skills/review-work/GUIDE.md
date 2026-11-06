@@ -200,16 +200,15 @@ Pass `--prior-findings-json` an array like [prior-findings.json](../../docs/exam
 
 Explicitly adopted runs apply versioned clarification checks at affected action
 boundaries. Preserve actual user-answer provenance and renew stale preparation;
-read-only assessments remain possible. The enforcement foundation is opt-in; specialist orchestration and automatic
-repair belong to the companion implementation; see [current scope and developer contracts](../../docs/reference/python-enforcement.md).
+read-only assessments remain possible. New runs select shared enforcement; historical runs require explicit adoption. Specialist review and bounded repair use these foundations; see [current scope and developer contracts](../../docs/reference/python-enforcement.md).
 
 Packages include recorded scoped questions/answers and actual pending execution
 proofs. Independent closure dispositions must map applicable current proofs to
-all consolidated obligations. A completed diagnostic assessment can resolve one
+all consolidated obligations. A completed independent assessment can resolve one
 finding while others remain open; affected unresolved business questions still
 block closure and cannot be waived. Required perspectives use distinct actors
 and invocations with exact finding-contract bindings. Standalone assessed reports
-are separate from explicitly authorized verified repair; neither supplies specialist orchestration.
+retain separate explicit repair authorization and workflow acceptance gates.
 
 ```mermaid
 flowchart LR
@@ -234,7 +233,7 @@ New runs select the risk-based review contract; historical runs need explicit
 quiescent adoption. Unknown risk requires all substantive perspectives and cited
 exemptions cannot be inferred from filenames. Recording risk does not dispatch a
 reviewer or prove coverage; [current implementation scope](../../docs/reference/adversarial-review.md)
-distinguishes available records from remaining orchestration.
+describes explicit dispatch, bounded execution and remaining limitations.
 
 ```mermaid
 flowchart LR

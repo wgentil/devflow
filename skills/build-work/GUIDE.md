@@ -134,8 +134,7 @@ non-success labels likewise never complete work. No proof is selected implicitly
 
 Explicitly adopted runs apply versioned clarification checks at affected action
 boundaries. Preserve actual user-answer provenance and renew stale preparation;
-read-only assessments remain possible. The enforcement foundation is opt-in; specialist orchestration and automatic
-repair belong to the companion implementation; see [current scope and developer contracts](../../docs/reference/python-enforcement.md).
+read-only assessments remain possible. New runs select shared enforcement; historical runs require explicit adoption. Specialist review and bounded repair use these foundations; see [current scope and developer contracts](../../docs/reference/python-enforcement.md).
 
 Adopted code verification requires declared governing protection inventories.
 Capture binds compact protected-content receipts before and after execution;

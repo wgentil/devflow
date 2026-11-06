@@ -3,9 +3,7 @@
 This is an opt-in development foundation for the approved Python enforcement
 contract. Existing runs retain their original behavior unless explicitly adopted.
 The [implementation plan](../superpowers/plans/2026-11-04-python-enforcement.md)
-tracks the foundation. The companion adds specialist and standalone review; shared
-bounded automatic repair remains in integration. Standalone execution, review and
-completion primitives are available here.
+tracks the foundation. The [review companion](adversarial-review.md) implements specialist/standalone review and explicit bounded repair through these shared records. Standalone execution, review and completion primitives are available here.
 
 ## Action boundaries and compatibility
 
@@ -251,3 +249,5 @@ Native reconciliation live transactions require the adapter-held recovery lease
 and repeat OS coordinator absence checks; historical reducers make no live reads.
 
 The companion now adds [standalone selected-scope native review](adversarial-review.md#standalone-selected-scope-review); primitive manifests retain compatibility. Read-only defaults, exact source identity and independent output remain enforced.
+
+Current review-policy material answers require an actually changed approved authority hash. An older approval of the question’s original contract cannot authorize a new material change. Explicit later escaped-defect/reuse bookkeeping may append metadata after completion; it never reopens execution or delivery authority.

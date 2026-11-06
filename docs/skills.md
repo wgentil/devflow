@@ -119,8 +119,7 @@ understand formats or command names.
 
 The [Python enforcement foundation](reference/python-enforcement.md) is an
 opt-in helper extension covering workflow and standalone enforcement primitives.
-It is not a separate skill; specialist orchestration and automatic repair remain
-companion work.
+It is not a separate skill; the [review companion](reference/adversarial-review.md) uses it for specialist dispatch and explicit bounded repair.
 
 
 The development [adversarial review policy](reference/adversarial-review.md) extends

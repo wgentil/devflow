@@ -101,6 +101,8 @@ def clarification_blockers(subject: dict, scope: dict) -> list[dict]:
         if answer.get('material'):
             approval_key = 'contract_approval' if authority_key == 'contract_hash' else 'spec_approval'
             valid = valid and subject.get(approval_key, {}).get('content_hash') == answer.get(authority_key)
+            if subject.get('review_policy'):
+                valid = valid and answer.get(authority_key) != row.get(authority_key)
         if not valid:
             blockers.append({'id': row['id'], 'version': row['version'], 'reason_code': 'CLARIFICATION_REQUIRED'})
     return blockers

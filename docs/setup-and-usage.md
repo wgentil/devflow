@@ -623,7 +623,7 @@ The current development branch includes the Python clarification/enforcement
 foundation. New runs select it; existing runs are not silently upgraded. It includes scoped user
 questions, proof/closure protection, durable work and probe budgets, recovery and
 standalone execution/review/completion primitives. Standalone specialist review is
-now available; bounded automatic repair remains companion work. See the [foundation status and developer contracts](reference/python-enforcement.md)
+available together with explicitly authorized bounded repair. See the [foundation status and developer contracts](reference/python-enforcement.md)
 for implemented boundaries and limitations. Normal plugin onboarding
 and the existing workflow remain the supported path.
 

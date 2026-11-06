@@ -123,7 +123,7 @@ def summarize_review(subject:dict)->dict:
             'model_usage':unknown_usage,'model_invocations':unknown_invocations,'escaped_defect_reports':0 if escapes else 1},
         'known_subtotals':{'summed_invocation_ms':known_time,'observed_cost':known_observed,'estimated_reserved_cost':known_estimated},
         'repair_cycles':len(cycles),'no_progress_cycles':sum(c.get('status')=='recorded' and c.get('made_progress') is False for c in cycles),
-        'no_progress_stops':int(orchestration.get('blocker',{}).get('reason_code')=='NO_PROGRESS' or any(c.get('reason_code')=='NO_PROGRESS' for c in cycles)),
+        'no_progress_stops':sum(c.get('reason_code')=='NO_PROGRESS' for c in subject.get('repair_cycles',[]))+len(orchestration.get('stop_records',{}))+(int(orchestration.get('blocker',{}).get('reason_code')=='NO_PROGRESS') if not orchestration.get('stop_records') else 0),
         'blocking_questions':pending,'review_reuses':len(subject.get('review_reuse_records',{})),
         'model_attempt_receipts':len(receipts),'model_invocations':sum(completed(r) for r in receipts.values()),
         'review_invocations':sum(completed(r) for r in review_receipts.values()),'confirmed_actionable_findings':confirmed,

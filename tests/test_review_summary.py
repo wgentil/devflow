@@ -106,3 +106,15 @@ class ReviewSummaryTests(unittest.TestCase):
         result=summarize_review({'id':'fixture','model_receipts':{'blocked':{'dispatch':False,'status':'block','scope':{'role':'branch-reviewer'}}}})
         self.assertEqual(result['model_invocations'],0)
         self.assertEqual(result['model_attempt_receipts'],1)
+
+    def test_no_progress_stop_counts_survive_explicit_resume(self):
+        from test_review_orchestration import OrchestrationTests
+        from workflow_lib.review_orchestration import apply_orchestration,input_binding
+        from workflow_lib.review_summary import summarize_review
+        subject=OrchestrationTests().configure()
+        for number in (1,2):
+            subject=apply_orchestration(subject,'block',{'input_hash':input_binding(subject),'reason_code':'NO_PROGRESS',
+                'required_evidence':['Explicit authorized extension or amended scope.'],'evidence_refs':['fixture:actual-stop-'+str(number)]})
+            self.assertEqual(summarize_review(subject)['no_progress_stops'],number)
+            subject=apply_orchestration(subject,'clear-blocker',{'input_hash':input_binding(subject)})
+            self.assertEqual(summarize_review(subject)['no_progress_stops'],number)

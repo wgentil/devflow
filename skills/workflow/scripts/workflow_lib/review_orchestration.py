@@ -266,6 +266,10 @@ def apply_orchestration(subject:dict,action:str,record:dict)->dict:
         need(record.get('input_hash')==input_binding(subject) and isinstance(record.get('reason_code'),str) and record['reason_code']
              and isinstance(record.get('required_evidence'),list) and record.get('evidence_refs'),'Current actual preflight blocker and evidence required.')
         state['blocker']=deepcopy(record)
+        if record['reason_code']=='NO_PROGRESS':
+            identity=digest({'reason_code':record['reason_code'],'evidence_refs':record['evidence_refs']})
+            state.setdefault('stop_records',{})[identity]=deepcopy(record)
+            state['blocker']['input_hash']=input_binding(updated)
         return updated
     if action=='clear-blocker':
         need(record.get('input_hash')==input_binding(subject),'Explicit retry must bind the current predecessor; it cannot refund limits.')
