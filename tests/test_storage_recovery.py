@@ -172,8 +172,10 @@ class StorageRecoveryTests(unittest.TestCase):
             store.transact(root, 0, 'one', {'kind': 'note', 'payload': {'x': 1}})
             plan = maintenance.compaction_plan(root)
             self.crash(root, 'activated', plan['plan_hash'])
+            from workflow_lib.review_policy import new_review_policy
             store.transact(root, 1, 'new', {'kind': 'run.started', 'payload': {'run': {
-                'id': 'new', 'status': 'discarded', 'active_attempt': None}}})
+                'id': 'new', 'status': 'discarded', 'active_attempt': None,
+                'review_policy':new_review_policy(),'enforcement':{'protocol':'devflow.python-enforcement/v1','policy_version':1}}}})
             archive_run(root, 'new')
             with self.assertRaises(store.WorkflowError): maintenance.resume_compaction(root)
             self.assertEqual(store.read_state(root)['version'], 2)
