@@ -1,0 +1,14 @@
+test_audit_returns_invalid_result_for_broken_recovery_metadata (test_issue_replay_review_corrections.ReviewCorrectionTests.test_audit_returns_invalid_result_for_broken_recovery_metadata) ... ok
+test_full_audit_rejects_recovery_logical_operation_collision (test_issue_replay_review_corrections.ReviewCorrectionTests.test_full_audit_rejects_recovery_logical_operation_collision) ... ok
+test_full_audit_rejects_recovery_physical_operation_collision (test_issue_replay_review_corrections.ReviewCorrectionTests.test_full_audit_rejects_recovery_physical_operation_collision) ... ok
+test_malformed_start_request_is_typed_during_inspection_and_replay (test_issue_replay_review_corrections.ReviewCorrectionTests.test_malformed_start_request_is_typed_during_inspection_and_replay) ... ok
+test_nonobject_cli_input_returns_json_error (test_issue_replay_review_corrections.ReviewCorrectionTests.test_nonobject_cli_input_returns_json_error) ... ok
+test_post_link_retry_syncs_source_directory_before_success (test_issue_replay_review_corrections.ReviewCorrectionTests.test_post_link_retry_syncs_source_directory_before_success) ... ok
+test_scalar_and_null_cli_recovery_inputs_are_typed (test_issue_replay_review_corrections.ReviewCorrectionTests.test_scalar_and_null_cli_recovery_inputs_are_typed) ... ok
+test_stale_prefix_returns_specific_invalid_audit_result (test_issue_replay_review_corrections.ReviewCorrectionTests.test_stale_prefix_returns_specific_invalid_audit_result) ... ok
+test_v2_audit_detects_recovery_namespace_collisions (test_issue_replay_review_corrections.ReviewCorrectionTests.test_v2_audit_detects_recovery_namespace_collisions) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 1.626s
+
+OK

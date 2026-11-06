@@ -25,6 +25,8 @@ def dispatch(parsed):
         if not parsed.input or not getattr(parsed, 'operation_id_explicit', False):
             raise WorkflowError('OPERATION_ID_REQUIRED', 'Recovery requires input and explicit operation ID.')
         request = json.loads(Path(parsed.input).read_text(encoding='utf-8'))
+        if not isinstance(request, dict):
+            raise WorkflowError('INVALID_INPUT', 'Issue request must be an object.')
         if request.get('operation_id') != parsed.operation_id:
             raise WorkflowError('OPERATION_CONFLICT', 'Recovery input and command operation IDs must match.')
         action = validate_replay_recovery if parsed.operation == 'replay-recovery-validate' else apply_replay_recovery
@@ -37,6 +39,8 @@ def dispatch(parsed):
     if not parsed.input:
         raise WorkflowError('INVALID_INPUT', '--input is required')
     request = json.loads(Path(parsed.input).read_text(encoding='utf-8'))
+    if not isinstance(request, dict):
+        raise WorkflowError('INVALID_INPUT', 'Issue request must be an object.')
     if parsed.operation == 'validate-snapshot':
         return validate_snapshot(request['snapshot'])
     if parsed.operation == 'start' and request.get('intent') == 'build':

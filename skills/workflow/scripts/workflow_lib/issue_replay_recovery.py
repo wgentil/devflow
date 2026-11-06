@@ -92,10 +92,14 @@ def _check_prefix(anchor, events, raw_hashes):
 
 
 def _starts(events):
-    return {digest(event): event for event in events
-        if event['kind'] == 'domain.issues.start'
-        and event['payload'].get('request', {}).get('intent') == 'build'
-        and 'run_contract' not in event['payload']['request']}
+    result = {}
+    for event in events:
+        if event['kind'] != 'domain.issues.start': continue
+        request = event['payload'].get('request')
+        if not isinstance(request, dict): fail('Original issue-start request must be an object.')
+        if request.get('intent') == 'build' and 'run_contract' not in request:
+            result[digest(event)] = event
+    return result
 
 
 def _request(request):
@@ -136,6 +140,7 @@ def load_selections(root, events=None, raw_hashes=None):
     if not files: return {}
     if events is None: events, raw_hashes = raw_history(root)
     starts = _starts(events); selected = {}
+    logical_operations = {event['operation_id'] for event in events}
     for file in files:
         file = confined_path(root, file.relative_to(Path(root)).as_posix())
         record = _read_json(file)
@@ -145,6 +150,10 @@ def load_selections(root, events=None, raw_hashes=None):
         if not isinstance(body, dict) or set(body) != {'schema_version','request','validation'} or type(body['schema_version']) is not int or body['schema_version'] != 1:
             fail('Unknown recovery manifest schema.')
         request = body['request']; choices = _request(request)
+        from .storage_audit import paths as maintenance_paths
+        if (request['operation_id'] in logical_operations
+                or any(path.exists() for path in maintenance_paths(root, request['operation_id']))):
+            fail('Recovery operation collides with logical or maintenance history.', 'OPERATION_CONFLICT')
         if file.stem != hashlib.sha256(request['operation_id'].encode()).hexdigest(): fail('Recovery operation filename differs.')
         _check_prefix(request['inspection'], events, raw_hashes)
         expected = {'schema_version': 1, 'request_hash': digest(request), 'replay_head': request['inspection']['head'],
@@ -185,6 +194,7 @@ def publish_manifest(root, request, validation):
         with os.fdopen(fd, 'wb') as stream: stream.write(raw); stream.flush(); os.fsync(stream.fileno())
         os.link(temporary, file)  # Atomic no-replacement publication.
         sync_directory(directory)
+        sync_directory(Path(root).resolve())
     finally: Path(temporary).unlink(missing_ok=True)
 
 
@@ -239,6 +249,9 @@ def apply_replay_recovery(root, request):
             load_selections(root)
             record = _read_json(file)['body']
             if record != manifest_body(original, supplied): fail('Recovery operation has different input.', 'OPERATION_CONFLICT')
+            # Resume the durability phase after an interruption following the link.
+            sync_directory(file.parent)
+            sync_directory(root)
             return {'completed': True, 'replayed': True, 'validation': record['validation']}
         actual = _validated_copy(root, original)
         if supplied != actual: fail('Validation receipt does not match the exact recovery request.')

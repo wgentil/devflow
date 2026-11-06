@@ -427,8 +427,11 @@ def _resume_initialization(root, intent):
 
 def verify_store(root, *, full=False):
     from .issue_replay_recovery import historical_context
-    with historical_context(root):
-        return _verify_store(root, full=full)
+    try:
+        with historical_context(root):
+            return _verify_store(root, full=full)
+    except (WorkflowError,OSError,ValueError,TypeError,KeyError) as exc:
+        return {'valid':False,'errors':[str(exc)],'error_code':getattr(exc,'code','STORAGE_VERIFY_FAILED'),'full':full}
 
 
 def _verify_store(root, *, full=False):

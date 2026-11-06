@@ -65,8 +65,13 @@ def selected_contract(request):
 @contextmanager
 def issue_event_context(event):
     from .document_units import digest
-    request = event.get('payload', {}).get('request', {})
-    if event.get('kind') != 'domain.issues.start' or request.get('intent') != 'build' or 'run_contract' in request:
+    if event.get('kind') != 'domain.issues.start':
+        yield; return
+    payload = event.get('payload')
+    request = payload.get('request') if isinstance(payload, dict) else None
+    if not isinstance(request, dict):
+        raise WorkflowError('INVALID_EVENT', 'Issue-start request must be an object.')
+    if request.get('intent') != 'build' or 'run_contract' in request:
         yield; return
     choice = REPLAY_SELECTIONS.get().get(digest(event))
     if choice not in ('legacy', 'v0.3.18'):

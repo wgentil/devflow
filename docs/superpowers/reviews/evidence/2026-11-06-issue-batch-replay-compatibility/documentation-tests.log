@@ -1,0 +1,12 @@
+test_checker_rejects_broken_links_routes_and_unicode_overflow (test_documentation.DocumentationTests.test_checker_rejects_broken_links_routes_and_unicode_overflow) ... ok
+test_discovery_history_and_required_dependency_exceptions (test_documentation.DocumentationTests.test_discovery_history_and_required_dependency_exceptions) ... ok
+test_duplicate_json_ids_rejected (test_documentation.DocumentationTests.test_duplicate_json_ids_rejected) ... ok
+test_invalid_version_dependencies_routes_and_budgets (test_documentation.DocumentationTests.test_invalid_version_dependencies_routes_and_budgets) ... ok
+test_policy_validation_and_stable_navigation (test_documentation.DocumentationTests.test_policy_validation_and_stable_navigation) ... ok
+test_routing_sections_are_mandatory_and_independently_loadable (test_documentation.DocumentationTests.test_routing_sections_are_mandatory_and_independently_loadable) ... ok
+test_shipped_entry_budgets_and_complete_initial_read_routes (test_documentation.DocumentationTests.test_shipped_entry_budgets_and_complete_initial_read_routes) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 3.671s
+
+OK

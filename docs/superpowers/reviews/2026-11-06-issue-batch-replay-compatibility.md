@@ -83,3 +83,21 @@ No production Bandpick root, real user recovery decision, authenticated host
 workflow, provider/model probe or native Windows execution was exercised. Fixture
 confirmations are synthetic. Unknown original policy remains unresolved. No
 version bump, release publication or issue closure is part of this branch.
+
+## Independent review and correction pass
+
+One fresh read-only whole-branch review found four Important issues and no
+Critical/Minor issues. The [review record](evidence/2026-11-06-issue-batch-replay-compatibility/independent-review.md)
+retains all findings and scope exclusions. All were accepted after reproduction:
+publication/retry now sync both the manifest directory and its parent; full audit
+checks recovery operation IDs against logical and completed/pending maintenance
+history; malformed input/start shapes produce typed errors; verifier context
+failures retain the established invalid-result shape and specific error codes.
+Nine regression cases failed before correction and pass afterward, including both
+storage formats for namespace auditing. All 47 issue-related tests pass.
+
+The first broad diagnostic run found two stale generated-documentation-report
+failures. Regeneration resolves them, with all seven documentation tests passing
+and no budget violations. That run was interrupted when review changes made it
+unsuitable as stable-source acceptance; its partial log is retained. A clean
+complete run now verifies the corrected source. No second review is claimed.

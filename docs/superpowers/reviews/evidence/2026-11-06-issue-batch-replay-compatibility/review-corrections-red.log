@@ -1,0 +1,263 @@
+test_audit_returns_invalid_result_for_broken_recovery_metadata (test_issue_replay_review_corrections.ReviewCorrectionTests.test_audit_returns_invalid_result_for_broken_recovery_metadata) ... ERROR
+test_full_audit_rejects_recovery_logical_operation_collision (test_issue_replay_review_corrections.ReviewCorrectionTests.test_full_audit_rejects_recovery_logical_operation_collision) ... FAIL
+test_full_audit_rejects_recovery_physical_operation_collision (test_issue_replay_review_corrections.ReviewCorrectionTests.test_full_audit_rejects_recovery_physical_operation_collision) ... FAIL
+test_malformed_start_request_is_typed_during_inspection_and_replay (test_issue_replay_review_corrections.ReviewCorrectionTests.test_malformed_start_request_is_typed_during_inspection_and_replay) ... 
+  test_malformed_start_request_is_typed_during_inspection_and_replay (test_issue_replay_review_corrections.ReviewCorrectionTests.test_malformed_start_request_is_typed_during_inspection_and_replay) (value=[], operation='inspect_replay_recovery') ... ERROR
+  test_malformed_start_request_is_typed_during_inspection_and_replay (test_issue_replay_review_corrections.ReviewCorrectionTests.test_malformed_start_request_is_typed_during_inspection_and_replay) (value=[], operation='read_state') ... ERROR
+  test_malformed_start_request_is_typed_during_inspection_and_replay (test_issue_replay_review_corrections.ReviewCorrectionTests.test_malformed_start_request_is_typed_during_inspection_and_replay) (value=None, operation='inspect_replay_recovery') ... ERROR
+  test_malformed_start_request_is_typed_during_inspection_and_replay (test_issue_replay_review_corrections.ReviewCorrectionTests.test_malformed_start_request_is_typed_during_inspection_and_replay) (value=None, operation='read_state') ... ERROR
+  test_malformed_start_request_is_typed_during_inspection_and_replay (test_issue_replay_review_corrections.ReviewCorrectionTests.test_malformed_start_request_is_typed_during_inspection_and_replay) (value=7, operation='inspect_replay_recovery') ... ERROR
+  test_malformed_start_request_is_typed_during_inspection_and_replay (test_issue_replay_review_corrections.ReviewCorrectionTests.test_malformed_start_request_is_typed_during_inspection_and_replay) (value=7, operation='read_state') ... ERROR
+test_nonobject_cli_input_returns_json_error (test_issue_replay_review_corrections.ReviewCorrectionTests.test_nonobject_cli_input_returns_json_error) ... FAIL
+test_post_link_retry_syncs_source_directory_before_success (test_issue_replay_review_corrections.ReviewCorrectionTests.test_post_link_retry_syncs_source_directory_before_success) ... FAIL
+test_scalar_and_null_cli_recovery_inputs_are_typed (test_issue_replay_review_corrections.ReviewCorrectionTests.test_scalar_and_null_cli_recovery_inputs_are_typed) ... FAIL
+test_stale_prefix_returns_specific_invalid_audit_result (test_issue_replay_review_corrections.ReviewCorrectionTests.test_stale_prefix_returns_specific_invalid_audit_result) ... ERROR
+test_v2_audit_detects_recovery_namespace_collisions (test_issue_replay_review_corrections.ReviewCorrectionTests.test_v2_audit_detects_recovery_namespace_collisions) ... FAIL
+
+======================================================================
+ERROR: test_audit_returns_invalid_result_for_broken_recovery_metadata (test_issue_replay_review_corrections.ReviewCorrectionTests.test_audit_returns_invalid_result_for_broken_recovery_metadata)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_review_corrections.py", line 40, in test_audit_returns_invalid_result_for_broken_recovery_metadata
+    result=maintenance.verify_store(self.root,full=True)
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/storage_maintenance.py", line 430, in verify_store
+    with historical_context(root):
+         ~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 141, in __enter__
+    return next(self.gen)
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/issue_replay_recovery.py", line 163, in historical_context
+    selected = load_selections(Path(root))
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/issue_replay_recovery.py", line 143, in load_selections
+    fail('Recovery manifest checksum is invalid.')
+    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/issue_replay_recovery.py", line 23, in fail
+    raise WorkflowError(code, message)
+workflow_lib.store.WorkflowError: Recovery manifest checksum is invalid.
+
+======================================================================
+ERROR: test_malformed_start_request_is_typed_during_inspection_and_replay (test_issue_replay_review_corrections.ReviewCorrectionTests.test_malformed_start_request_is_typed_during_inspection_and_replay) (value=[], operation='inspect_replay_recovery')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_review_corrections.py", line 50, in test_malformed_start_request_is_typed_during_inspection_and_replay
+    with self.subTest(value=malformed,operation=operation.__name__),self.assertRaises(store.WorkflowError):operation(self.root)
+                                                                                                           ~~~~~~~~~^^^^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/issue_replay_recovery.py", line 173, in inspect_replay_recovery
+    for key, event in _starts(events).items() if key not in chosen]}
+                      ~~~~~~~^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/issue_replay_recovery.py", line 97, in _starts
+    and event['payload'].get('request', {}).get('intent') == 'build'
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'get'
+
+======================================================================
+ERROR: test_malformed_start_request_is_typed_during_inspection_and_replay (test_issue_replay_review_corrections.ReviewCorrectionTests.test_malformed_start_request_is_typed_during_inspection_and_replay) (value=[], operation='read_state')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_review_corrections.py", line 50, in test_malformed_start_request_is_typed_during_inspection_and_replay
+    with self.subTest(value=malformed,operation=operation.__name__),self.assertRaises(store.WorkflowError):operation(self.root)
+                                                                                                           ~~~~~~~~~^^^^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/store.py", line 828, in read_state
+    state, ignored = _read_journal(Path(root))
+                     ~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/store.py", line 781, in _read_journal
+    return _read_journal_body(root)
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/store.py", line 810, in _read_journal_body
+    _apply_event(state, event)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/store.py", line 40, in _apply_event
+    with issue_event_context(event):
+         ~~~~~~~~~~~~~~~~~~~^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 141, in __enter__
+    return next(self.gen)
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/issue_run_contracts.py", line 69, in issue_event_context
+    if event.get('kind') != 'domain.issues.start' or request.get('intent') != 'build' or 'run_contract' in request:
+                                                     ^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'get'
+
+======================================================================
+ERROR: test_malformed_start_request_is_typed_during_inspection_and_replay (test_issue_replay_review_corrections.ReviewCorrectionTests.test_malformed_start_request_is_typed_during_inspection_and_replay) (value=None, operation='inspect_replay_recovery')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_review_corrections.py", line 50, in test_malformed_start_request_is_typed_during_inspection_and_replay
+    with self.subTest(value=malformed,operation=operation.__name__),self.assertRaises(store.WorkflowError):operation(self.root)
+                                                                                                           ~~~~~~~~~^^^^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/issue_replay_recovery.py", line 173, in inspect_replay_recovery
+    for key, event in _starts(events).items() if key not in chosen]}
+                      ~~~~~~~^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/issue_replay_recovery.py", line 97, in _starts
+    and event['payload'].get('request', {}).get('intent') == 'build'
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'get'
+
+======================================================================
+ERROR: test_malformed_start_request_is_typed_during_inspection_and_replay (test_issue_replay_review_corrections.ReviewCorrectionTests.test_malformed_start_request_is_typed_during_inspection_and_replay) (value=None, operation='read_state')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_review_corrections.py", line 50, in test_malformed_start_request_is_typed_during_inspection_and_replay
+    with self.subTest(value=malformed,operation=operation.__name__),self.assertRaises(store.WorkflowError):operation(self.root)
+                                                                                                           ~~~~~~~~~^^^^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/store.py", line 828, in read_state
+    state, ignored = _read_journal(Path(root))
+                     ~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/store.py", line 781, in _read_journal
+    return _read_journal_body(root)
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/store.py", line 810, in _read_journal_body
+    _apply_event(state, event)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/store.py", line 40, in _apply_event
+    with issue_event_context(event):
+         ~~~~~~~~~~~~~~~~~~~^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 141, in __enter__
+    return next(self.gen)
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/issue_run_contracts.py", line 69, in issue_event_context
+    if event.get('kind') != 'domain.issues.start' or request.get('intent') != 'build' or 'run_contract' in request:
+                                                     ^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'get'
+
+======================================================================
+ERROR: test_malformed_start_request_is_typed_during_inspection_and_replay (test_issue_replay_review_corrections.ReviewCorrectionTests.test_malformed_start_request_is_typed_during_inspection_and_replay) (value=7, operation='inspect_replay_recovery')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_review_corrections.py", line 50, in test_malformed_start_request_is_typed_during_inspection_and_replay
+    with self.subTest(value=malformed,operation=operation.__name__),self.assertRaises(store.WorkflowError):operation(self.root)
+                                                                                                           ~~~~~~~~~^^^^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/issue_replay_recovery.py", line 173, in inspect_replay_recovery
+    for key, event in _starts(events).items() if key not in chosen]}
+                      ~~~~~~~^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/issue_replay_recovery.py", line 97, in _starts
+    and event['payload'].get('request', {}).get('intent') == 'build'
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'int' object has no attribute 'get'
+
+======================================================================
+ERROR: test_malformed_start_request_is_typed_during_inspection_and_replay (test_issue_replay_review_corrections.ReviewCorrectionTests.test_malformed_start_request_is_typed_during_inspection_and_replay) (value=7, operation='read_state')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_review_corrections.py", line 50, in test_malformed_start_request_is_typed_during_inspection_and_replay
+    with self.subTest(value=malformed,operation=operation.__name__),self.assertRaises(store.WorkflowError):operation(self.root)
+                                                                                                           ~~~~~~~~~^^^^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/store.py", line 828, in read_state
+    state, ignored = _read_journal(Path(root))
+                     ~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/store.py", line 781, in _read_journal
+    return _read_journal_body(root)
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/store.py", line 810, in _read_journal_body
+    _apply_event(state, event)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/store.py", line 40, in _apply_event
+    with issue_event_context(event):
+         ~~~~~~~~~~~~~~~~~~~^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 141, in __enter__
+    return next(self.gen)
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/issue_run_contracts.py", line 69, in issue_event_context
+    if event.get('kind') != 'domain.issues.start' or request.get('intent') != 'build' or 'run_contract' in request:
+                                                     ^^^^^^^^^^^
+AttributeError: 'int' object has no attribute 'get'
+
+======================================================================
+ERROR: test_stale_prefix_returns_specific_invalid_audit_result (test_issue_replay_review_corrections.ReviewCorrectionTests.test_stale_prefix_returns_specific_invalid_audit_result)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_review_corrections.py", line 96, in test_stale_prefix_returns_specific_invalid_audit_result
+    result=maintenance.verify_store(self.root,full=True)
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/storage_maintenance.py", line 430, in verify_store
+    with historical_context(root):
+         ~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 141, in __enter__
+    return next(self.gen)
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/issue_replay_recovery.py", line 163, in historical_context
+    selected = load_selections(Path(root))
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/issue_replay_recovery.py", line 149, in load_selections
+    _check_prefix(request['inspection'], events, raw_hashes)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/issue_replay_recovery.py", line 91, in _check_prefix
+    fail('Original event bytes changed or disappeared.', 'ISSUE_RECOVERY_STALE')
+    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/workflow_lib/issue_replay_recovery.py", line 23, in fail
+    raise WorkflowError(code, message)
+workflow_lib.store.WorkflowError: Original event bytes changed or disappeared.
+
+======================================================================
+FAIL: test_full_audit_rejects_recovery_logical_operation_collision (test_issue_replay_review_corrections.ReviewCorrectionTests.test_full_audit_rejects_recovery_logical_operation_collision)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_review_corrections.py", line 68, in test_full_audit_rejects_recovery_logical_operation_collision
+    self.assertFalse(result['valid'])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+AssertionError: True is not false
+
+======================================================================
+FAIL: test_full_audit_rejects_recovery_physical_operation_collision (test_issue_replay_review_corrections.ReviewCorrectionTests.test_full_audit_rejects_recovery_physical_operation_collision)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_review_corrections.py", line 81, in test_full_audit_rejects_recovery_physical_operation_collision
+    self.assertFalse(result['valid'])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+AssertionError: True is not false
+
+======================================================================
+FAIL: test_nonobject_cli_input_returns_json_error (test_issue_replay_review_corrections.ReviewCorrectionTests.test_nonobject_cli_input_returns_json_error)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_review_corrections.py", line 58, in test_nonobject_cli_input_returns_json_error
+    self.assertEqual(result.returncode,2,result.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 2 : Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/run.py", line 845, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/run.py", line 819, in main
+    result = dispatch_command_group(parsed)
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/commands/__init__.py", line 27, in dispatch
+    return module.dispatch(parsed)
+           ~~~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/commands/issues.py", line 42, in dispatch
+    if parsed.operation == 'start' and request.get('intent') == 'build':
+                                       ^^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'get'
+
+
+======================================================================
+FAIL: test_post_link_retry_syncs_source_directory_before_success (test_issue_replay_review_corrections.ReviewCorrectionTests.test_post_link_retry_syncs_source_directory_before_success)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_review_corrections.py", line 34, in test_post_link_retry_syncs_source_directory_before_success
+    self.assertIn(source_dir,synced_paths)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: PosixPath('/private/var/folders/8p/jfk_drpj5q909tgqwwgbbks80000gn/T/tmpofc2qr8o/control é東京/replay-recovery') not found in []
+
+======================================================================
+FAIL: test_scalar_and_null_cli_recovery_inputs_are_typed (test_issue_replay_review_corrections.ReviewCorrectionTests.test_scalar_and_null_cli_recovery_inputs_are_typed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_review_corrections.py", line 90, in test_scalar_and_null_cli_recovery_inputs_are_typed
+    self.assertEqual(result.returncode,2,result.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 1 != 2 : Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/run.py", line 845, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/run.py", line 819, in main
+    result = dispatch_command_group(parsed)
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/commands/__init__.py", line 27, in dispatch
+    return module.dispatch(parsed)
+           ~~~~~~~~~~~~~~~^^^^^^^^
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/skills/workflow/scripts/commands/issues.py", line 28, in dispatch
+    if request.get('operation_id') != parsed.operation_id:
+       ^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'get'
+
+
+======================================================================
+FAIL: test_v2_audit_detects_recovery_namespace_collisions (test_issue_replay_review_corrections.ReviewCorrectionTests.test_v2_audit_detects_recovery_namespace_collisions)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_issue_replay_review_corrections.py", line 116, in test_v2_audit_detects_recovery_namespace_collisions
+    self.assertFalse(maintenance.verify_store(self.root,full=True)['valid'])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not false
+
+----------------------------------------------------------------------
+Ran 9 tests in 1.043s
+
+FAILED (failures=6, errors=8)
