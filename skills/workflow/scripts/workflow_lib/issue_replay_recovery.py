@@ -82,7 +82,7 @@ def _check_prefix(anchor, events, raw_hashes):
     if not isinstance(anchor, dict) or set(anchor) != {'schema_version','head','stream_digest','raw_hashes'}:
         fail('Exact inspected history binding required.')
     head = anchor['head']
-    if type(head) is not int or head < 1 or head > len(events) or anchor['schema_version'] != 1:
+    if type(head) is not int or head < 1 or head > len(events) or type(anchor['schema_version']) is not int or anchor['schema_version'] != 1:
         fail('Inspected history no longer exists.', 'ISSUE_RECOVERY_STALE')
     if digest(events[:head]) != anchor['stream_digest'] or not isinstance(anchor['raw_hashes'], dict):
         fail('Inspected history prefix changed.', 'ISSUE_RECOVERY_STALE')
@@ -142,7 +142,7 @@ def load_selections(root, events=None, raw_hashes=None):
         if not isinstance(record, dict) or set(record) != {'body','sha256'} or digest(record['body']) != record['sha256']:
             fail('Recovery manifest checksum is invalid.')
         body = record['body']
-        if set(body) != {'schema_version','request','validation'} or body['schema_version'] != 1:
+        if not isinstance(body, dict) or set(body) != {'schema_version','request','validation'} or type(body['schema_version']) is not int or body['schema_version'] != 1:
             fail('Unknown recovery manifest schema.')
         request = body['request']; choices = _request(request)
         if file.stem != hashlib.sha256(request['operation_id'].encode()).hexdigest(): fail('Recovery operation filename differs.')
@@ -194,7 +194,8 @@ def _validated_copy(root, request):
     if binding(events, hashes) != request['inspection']: fail('Recovery inspection is stale.', 'ISSUE_RECOVERY_STALE')
     previous = load_selections(root, events, hashes)
     if set(choices) != set(_starts(events)) - set(previous): fail('Choose every unresolved start exactly once.')
-    if any(event['operation_id'] == request['operation_id'] for event in events):
+    from .storage_audit import operation_reserved
+    if operation_reserved(root, request['operation_id']) or any(event['operation_id'] == request['operation_id'] for event in events):
         fail('Recovery operation belongs to logical history.', 'OPERATION_CONFLICT')
     validation = {'schema_version': 1, 'request_hash': digest(request), 'replay_head': len(events),
                   'selections': choices, 'status': 'validated'}
@@ -243,3 +244,18 @@ def apply_replay_recovery(root, request):
         if supplied != actual: fail('Validation receipt does not match the exact recovery request.')
         publish_manifest(root, original, actual)
         return {'completed': True, 'replayed': False, 'validation': actual}
+
+
+def recovery_operation_reserved(root, operation_id):
+    path = confined_path(root, 'replay-recovery/' + hashlib.sha256(operation_id.encode()).hexdigest() + '.json')
+    if not path.exists(): return None
+    record = _read_json(path)
+    if (not isinstance(record, dict) or set(record) != {'body','sha256'}
+            or not isinstance(record['body'], dict) or digest(record['body']) != record['sha256']):
+        fail('Recovery manifest checksum is invalid.')
+    body = record['body']
+    if set(body) != {'schema_version','request','validation'} or type(body['schema_version']) is not int or body['schema_version'] != 1:
+        fail('Recovery manifest schema is invalid.')
+    _request(body['request'])
+    if body['request']['operation_id'] != operation_id: fail('Recovery operation identity differs.')
+    return {'kind':'issue-replay-recovery','operation_id':operation_id,'request_hash':digest(body['request'])}

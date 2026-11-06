@@ -27,6 +27,9 @@ def read_record(path):
     except (ValueError,TypeError,KeyError) as exc:raise WorkflowError('MAINTENANCE_AUDIT_INVALID','Physical maintenance audit is invalid; preserve it for recovery.') from exc
 
 def operation_reserved(root,operation_id):
+    from .issue_replay_recovery import recovery_operation_reserved
+    recovery = recovery_operation_reserved(root, operation_id)
+    if recovery is not None: return recovery
     for path in paths(root,operation_id):
         if path.exists():
             record=read_record(path)

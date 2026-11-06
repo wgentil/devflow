@@ -345,3 +345,17 @@ under root coordination after discovery/configuration observation. Changed input
 blocks dispatch and requires fresh preparation; reading a newer state alone does
 not authorize the older rendered payload. Public JSON cannot supply this internal
 prepared object. Completed invocation retries keep their original receipt behavior.
+
+## Issue-start replay recovery authority
+
+Unstamped issue-build starts need an explicit per-start policy decision before
+full replay. Immutable `replay-recovery/` manifests bind user confirmation to
+the exact original history prefix and raw legacy-event hashes. They are recovery
+authority, not a cache or replacement journal. Keep them with backups and copies.
+The complete replay/audit path verifies them; normal scoped v2 reads do not scan
+history to rediscover decisions. Conversion staging copies this authority before
+its full replay check. Later normal appends preserve the anchored prefix.
+
+No history compaction or GC is performed by policy recovery. Existing active-work
+maintenance blockers still apply. Recovery cannot change an already materialized
+v2 policy: the complete copy replay must match its authoritative projection.

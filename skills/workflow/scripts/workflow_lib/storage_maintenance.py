@@ -188,6 +188,10 @@ def _stage_legacy(root, intent):
             sql._set_meta(conn,'head',source['version']); sql._set_meta(conn,'head_hash',plan['head_hash'])
             sql._set_meta(conn,'dependency_head',source['version']);sql._set_meta(conn,'generation',1)
             _archive_runs(conn,stage);archive_events(conn,stage);_commit_record(conn,plan,1)
+    # Policy decisions are recovery authority for the unchanged historical events.
+    for relative, source_file in source_files(backup):
+        if relative.startswith('replay-recovery/'):
+            _copy_file(source_file, confined_path(stage, relative, create_parents=True))
     report = verify_store(stage,full=True)
     if not report['valid']: raise WorkflowError('MAINTENANCE_VERIFICATION_FAILED',str(report['errors']))
     layout = detect_layout(stage)

@@ -121,3 +121,11 @@ operation can take longer because it includes maintenance.
 See [storage contracts](control-storage.md) for physical formats and integrity
 boundaries. Backups and archives retain potentially sensitive project evidence;
 keep them within the same access boundary as the original control root.
+
+### Keep issue replay decisions with history
+
+For roots affected by issue-start policy ambiguity, inspect and explicitly
+confirm replay recovery before maintenance that requires complete replay. Retain
+`replay-recovery/` with the original history. Backups include its checksummed
+files, and legacy conversion carries them into staging before validation. Their
+absence, alteration or a changed original event prefix blocks full audit.

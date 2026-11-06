@@ -123,3 +123,69 @@ class RecoveryTests(unittest.TestCase):
         outside = Path(self.tmp) / 'outside'; outside.mkdir()
         (self.root / 'replay-recovery').symlink_to(outside, target_is_directory=True)
         with self.assertRaises(store.WorkflowError): self.api().inspect_replay_recovery(self.root)
+
+    def test_recovery_operation_reserves_logical_namespace(self):
+        self.recover()
+        with self.assertRaises(store.WorkflowError) as caught:
+            store.transact(self.root,6,'recover-one',{'kind':'note','payload':{}})
+        self.assertEqual(caught.exception.code,'OPERATION_CONFLICT')
+
+    def test_physical_operation_cannot_be_reused_for_recovery(self):
+        from workflow_lib.storage_audit import write_record, paths
+        req=self.request()
+        request={'fixture':'owned'}
+        from workflow_lib.document_units import digest
+        write_record(paths(self.root,'recover-one')[0],{'audit_version':1,'operation_id':'recover-one',
+            'actor_id':'fixture-owner','kind':'backup','request':request,
+            'request_hash':digest({'kind':'backup','request':request,'actor_id':'fixture-owner'}),
+            'result':{'completed':True}})
+        with self.assertRaises(store.WorkflowError) as caught:
+            self.api().validate_replay_recovery(self.root,req)
+        self.assertEqual(caught.exception.code,'OPERATION_CONFLICT')
+
+    def test_malformed_manifest_is_a_typed_error(self):
+        from workflow_lib.document_units import digest
+        self.recover();manifest=next((self.root/'replay-recovery').glob('*.json'))
+        original=json.loads(manifest.read_text())
+        for body in ([], {'schema_version':True,'request':original['body']['request'],'validation':original['body']['validation']}):
+            manifest.write_text(json.dumps({'body':body,'sha256':digest(body)}))
+            with self.assertRaises(store.WorkflowError): self.api().inspect_replay_recovery(self.root)
+
+    def test_public_cli_inspects_validates_applies_and_retries(self):
+        import subprocess
+        entry=Path(__file__).resolve().parents[1]/'skills/workflow/scripts/run.py'
+        req=self.request();input_=Path(self.tmp)/'request.json'
+        def cli(action,data=None,expected=0):
+            args=[sys.executable,str(entry),'issues','replay-recovery-'+action,'--root',str(self.root)]
+            if data is not None:
+                input_.write_text(json.dumps(data));args+=['--input',str(input_),'--operation-id','recover-one']
+            result=subprocess.run(args,capture_output=True,text=True)
+            self.assertEqual(result.returncode,expected,result.stdout+result.stderr)
+            return json.loads(result.stdout)
+        self.assertEqual(len(cli('inspect')['unresolved']),1)
+        receipt=cli('validate',req)
+        applied={**req,'validation':receipt}
+        self.assertTrue(cli('apply',applied)['completed'])
+        self.assertTrue(cli('apply',applied)['replayed'])
+        self.root=Path(self.tmp)/'modern-control'
+        self.seed('v0.3.18-question.json')
+        wrong=self.request('legacy')
+        self.assertEqual(cli('validate',wrong,expected=2)['error'],'ISSUE_RECOVERY_INVALID')
+        req=self.request('v0.3.18');receipt=cli('validate',req)
+        self.assertTrue(cli('apply',{**req,'validation':receipt})['completed'])
+
+
+    def test_explicit_adoption_is_not_retroactive_recovery(self):
+        self.recover()
+        original=store.read_state(self.root)
+        run=next(iter(original['data']['runs'].values()))
+        self.assertNotIn('enforcement',run)
+        store.transact(self.root,6,'abandon',{'kind':'run.attempt.abandoned',
+            'payload':{'run_id':run['id'],'token':'owned-token'}})
+        current=store.read_state(self.root)['data']['runs'][run['id']]
+        store.transact(self.root,7,'adopt',{'kind':'domain.enforcement.adopt','payload':{'request':{
+            'run_id':run['id'],'authorization':{'approved':True,'actor_id':'fixture-owner',
+                'run_id':run['id'],'state_version':current['state_version']}}}})
+        updated=store.read_state(self.root)['data']['runs'][run['id']]
+        self.assertEqual(updated['enforcement']['policy_version'],1)
+        self.assertFalse(next(iter(updated['verification_proofs'].values()))['passed'])

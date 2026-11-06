@@ -200,7 +200,8 @@ sql._decode=selected
         args.operation_id='group'
         commit(args,'domain.issues.group',{'snapshot_hash':result['snapshot_hash'],
             'groups':[{'id':'g','issue_ids':['issue'],'requirement_ids':{'issue':['R1']}}]})
-        request={'snapshot_hash':result['snapshot_hash'],'group_id':'g','intent':'build'}
+        from workflow_lib.issue_run_contracts import current_run_contract
+        request={'snapshot_hash':result['snapshot_hash'],'group_id':'g','intent':'build','run_contract':current_run_contract()}
         before=store.read_state(self.root);preview=deepcopy(before)
         store._apply_event(preview,{'kind':'domain.issues.start','payload':{'request':request},
             'sequence':before['version']+1,'operation_id':'preview'})
