@@ -428,3 +428,5 @@ original receipt without relaunch; a returned historical receipt alone is not a
 current pass. Final integration/acceptance gates remain independent.
 
 Current-policy material answers must name a changed authority hash and its actual approval; an earlier approval of the question’s original contract is insufficient. No-progress stop records survive explicit resume and policy extensions, so summary counts do not disappear when a blocker clears.
+
+Current-policy standalone review artifacts include the complete original user review contract and its exact hash, alongside derived implementation contracts. Reviewers can compare the asserted oracle with actual user intent. Missing or altered original-authority bodies invalidate the package; a recomputed package hash cannot substitute controller-authored intent. Historical pre-policy packages retain their original contract.

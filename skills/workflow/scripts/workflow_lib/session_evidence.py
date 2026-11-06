@@ -34,6 +34,9 @@ def package_current(subject, package):
         return False
     from .review_policy import review_version
     if review_version(subject) is not None:
+        if (package.get('review_contract')!=subject.get('review_contract')
+                or package.get('review_contract_hash')!=subject.get('review_contract_hash')
+                or digest(package.get('review_contract'))!=subject.get('review_contract_hash')):return False
         from .adversarial_reviews import adversarial_bindings
         if package.get('adversarial_bindings')!=adversarial_bindings(subject,{'role':'session'}):return False
     bound=package.get('context',{});current=context(subject)
@@ -312,6 +315,8 @@ def prepare(path,operation_id):
     if review_version(subject) is not None:
         from .adversarial_reviews import adversarial_bindings
         from .adversarial_reviews import assessment
+        package['review_contract']=deepcopy(subject['review_contract'])
+        package['review_contract_hash']=subject['review_contract_hash']
         package['adversarial_bindings']=adversarial_bindings(subject,{'role':'session'})
         package['review_inputs']=subject['review_contract']['request'].get('review_inputs',[])
         package['review_requirements']=assessment(subject,{'role':'session'})

@@ -6,8 +6,12 @@ Baseline: `a3a271a7e78f621b10e5dc611f2692052944779c`.
 Branch: `feat/adversarial-review-repair` in its isolated worktree.
 
 Implementation assessment below is supported by changed code and owned tests.
-Final whole-suite verification and the single independent whole-branch review
-are pending at this checkpoint. Implementation rulings are retained in the
+The first frozen whole-suite run passed 1,241 tests with zero failures/errors
+and six platform skips in 658.106 seconds at commit `84f1b8a`. An additional
+standalone original-authority binding regression was then confirmed and fixed;
+the two authority regressions passed, and 50 related standalone/session/public
+integration/summary/documentation checks passed in 52.203 seconds. The single
+independent review and final current-head full suite are pending. Implementation rulings are retained in the
 [decision record](2026-11-05-adversarial-review-repair-decisions.md). Controlled model transports and user-message
 approvals in tests are explicitly fixtures, not paid-provider or human observations.
 
@@ -18,7 +22,7 @@ approvals in tests are explicitly fixtures, not paid-provider or human observati
 - R5: MET — Live producer guards, exact operation replay, observed recovery and shared budgets prevent fabricated/double execution; historical replay is read-only. Evidence: `skills/workflow/scripts/workflow_lib/review_driver.py:66`, `skills/workflow/scripts/workflow_lib/store.py:916`, `tests/test_adversarial_integration.py:64`.
 - R6: MET — Primary setup, skill entry/guide/diagram, references, metadata, developer/native/host guides and examples updated together. Evidence: `docs/setup-and-usage.md:620`, `docs/skills.md:120`, `skills/review-work/GUIDE.md:364`.
 - R7: MET — External exact Git selected-scope sessions require no workflow setup; default review remains separate from exact authorized repair and workflow acceptance. Evidence: `skills/workflow/scripts/workflow_lib/standalone_reviews.py:98`, `skills/workflow/scripts/workflow_lib/session_repair.py:19`, `tests/test_adversarial_integration.py:47`.
-- R8: MET — Independent oracle/assertion mapping, actual relevant regression discrimination and locked supplemental inputs reject unsupported proof. Evidence: `skills/workflow/scripts/workflow_lib/test_challenges.py:98`, `skills/workflow/scripts/workflow_lib/test_extensions.py:40`, `tests/test_review_driver.py:208`.
+- R8: MET — Independent oracle/assertion mapping, actual relevant regression discrimination and locked supplemental inputs reject unsupported proof. Evidence: `skills/workflow/scripts/workflow_lib/test_challenges.py:98`, `skills/workflow/scripts/workflow_lib/session_evidence.py:23`, `skills/workflow/scripts/workflow_lib/test_extensions.py:40`, `tests/test_review_driver.py:208`.
 - R9: MET — Derived intent, cause/fix rationale, neighboring-behavior evidence and configured cheap prerequisites precede accepted review; final gates remain separate. Evidence: `skills/workflow/scripts/workflow_lib/implementation_contracts.py:79`, `skills/workflow/scripts/workflow_lib/review_driver.py:124`.
 - R10: MET — Canonical obligations and budget lineage survive grouping; reuse retains exact original bindings/receipt with no cross-package or PR-head inheritance. Evidence: `skills/workflow/scripts/workflow_lib/finding_index.py:115`, `skills/workflow/scripts/workflow_lib/review_summary.py:14`.
 - R11: MET — Deterministic local counts distinguish actual/estimated/unknown usage, overlapping wall/summed time, retained no-progress stops and explicit later escaped reports. Evidence: `skills/workflow/scripts/workflow_lib/review_summary.py:34`, `skills/workflow/scripts/workflow_lib/review_summary.py:62`, `tests/test_review_summary.py:17`.
