@@ -914,3 +914,19 @@ instead of `finding_id` and binds the current actual failed proof, scope, source
 contract, observed failure, evidence, cause, correction and explanation. It cannot
 supply a new command or edit scope. Follow the
 [shared safeguards](reference/adversarial-review.md#final-dispatch-and-repair-safeguards).
+
+
+## Maintainer platform and release diagnostics
+
+These commands are optional maintainer checks, not plugin-user setup. The platform
+runner normally completes every selected test and retains later failures. Explicit
+`--failfast` stops after the first failure/error, retains its traceback and nonzero
+exit, and records `metadata.failfast: true`. Failed partial reports never prove
+complete coverage; successful full-profile acceptance still requires all tests.
+
+See the [runnable command examples](examples/platform-validation.md). The manual
+`Targeted release validation` Actions workflow uses Windows/Python 3.11. Its
+`focused` profile writes an integration report before storage-scale checks; `full`
+runs the entire suite with fail-fast evidence and a 90-minute CI ceiling. It uses
+static commands and read-only repository permission. It does not dispatch models,
+modify production roots, or replace the ordinary matrix's other platform cells.

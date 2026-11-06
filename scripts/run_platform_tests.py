@@ -38,13 +38,13 @@ def sqlite_metadata():
         return {'status':'UNAVAILABLE','reason':str(exc)}
 
 
-def run_suite(start_dir: Path, patterns: list[str], report_path: Path) -> dict:
+def run_suite(start_dir: Path, patterns: list[str], report_path: Path, *, failfast: bool = False) -> dict:
     started = time.monotonic()
     suite = unittest.TestSuite()
     loader = unittest.TestLoader()
     for pattern in patterns:
         suite.addTests(loader.discover(str(start_dir.resolve()), pattern=pattern))
-    result = unittest.TextTestRunner(verbosity=2, failfast=False).run(suite)
+    result = unittest.TextTestRunner(verbosity=2, failfast=failfast).run(suite)
     git = subprocess.run(['git', '--version'], capture_output=True, encoding='utf-8', check=False)
     def traces(rows):
         limit=65536
@@ -64,7 +64,7 @@ def run_suite(start_dir: Path, patterns: list[str], report_path: Path) -> dict:
             'filesystem_encoding': sys.getfilesystemencoding(), 'stdout_encoding': sys.stdout.encoding,
             'stderr_encoding': sys.stderr.encoding, 'utf8_mode': sys.flags.utf8_mode,
             'PYTHONUTF8': os.environ.get('PYTHONUTF8'), 'PYTHONIOENCODING': os.environ.get('PYTHONIOENCODING'),
-            'git_sha': os.environ.get('GITHUB_SHA'), 'patterns': patterns, 'sqlite':sqlite_metadata()}}
+            'git_sha': os.environ.get('GITHUB_SHA'), 'patterns': patterns, 'failfast': failfast, 'sqlite':sqlite_metadata()}}
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     return report
@@ -74,9 +74,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--pattern', action='append')
+    parser.add_argument('--failfast', action='store_true', help='Stop after the first failure/error; failed partial reports never establish complete coverage.')
     parser.add_argument('--start-dir', type=Path, default=ROOT / 'tests')
     args = parser.parse_args()
-    report = run_suite(args.start_dir, args.pattern or ['test_*.py'], args.output)
+    report = run_suite(args.start_dir, args.pattern or ['test_*.py'], args.output, failfast=args.failfast)
     write_utf8(json.dumps({'success': report['success'], 'tests_run': report['tests_run'],
                            'failures': report['failures'], 'errors': report['errors']}) + '\n')
     return 0 if report['success'] else 1

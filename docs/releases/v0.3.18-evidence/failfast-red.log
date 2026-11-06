@@ -1,0 +1,14 @@
+F
+======================================================================
+FAIL: test_explicit_failfast_keeps_failure_evidence_without_executing_later_test (test_platform_test_runner.PlatformRunnerTests.test_explicit_failfast_keeps_failure_evidence_without_executing_later_test)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/6f51/devflow/tests/test_platform_test_runner.py", line 76, in test_explicit_failfast_keeps_failure_evidence_without_executing_later_test
+    self.assertEqual(result.returncode,1,result.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 2 != 1 : b'usage: run_platform_tests.py [-h] --output OUTPUT [--pattern PATTERN]\n                             [--start-dir START_DIR]\nrun_platform_tests.py: error: unrecognized arguments: --failfast\n'
+
+----------------------------------------------------------------------
+Ran 1 test in 0.079s
+
+FAILED (failures=1)

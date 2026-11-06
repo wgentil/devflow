@@ -29,7 +29,7 @@ jobs:
         run: python scripts/run_platform_tests.py --pattern test_storage_scale.py --output focused-scale-report.json
       - name: Complete minimum-Python Windows suite
         if: inputs.profile == 'full'
-        run: python scripts/run_platform_tests.py --output platform-report.json
+        run: python scripts/run_platform_tests.py --failfast --output platform-report.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:

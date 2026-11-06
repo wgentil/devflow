@@ -66,3 +66,16 @@ class Cases(unittest.TestCase):
             self.assertTrue(sqlite['version'])
             self.assertTrue(sqlite['compile_options'])
             self.assertEqual(sqlite['durability'],{'journal_mode':'wal','synchronous':2,'foreign_keys':1,'busy_timeout':1000})
+
+    def test_explicit_failfast_keeps_failure_evidence_without_executing_later_test(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);marker=root/'later';report_path=root/'report.json'
+            (root/'test_failfast_fixture.py').write_text('import unittest\nfrom pathlib import Path\nclass Cases(unittest.TestCase):\n def test_a_failure(self): self.fail("observed first failure")\n def test_b_later(self): Path('+repr(str(marker))+').write_text("ran")\n',encoding='utf-8')
+            result=subprocess.run([sys.executable,str(ROOT/'scripts/run_platform_tests.py'),
+                '--start-dir',str(root),'--output',str(report_path),'--failfast'],capture_output=True,timeout=20)
+            self.assertEqual(result.returncode,1,result.stderr)
+            report=json.loads(report_path.read_text(encoding='utf-8'))
+            self.assertFalse(report['success']);self.assertEqual(report['tests_run'],1)
+            self.assertEqual(len(report['failures']),1);self.assertFalse(marker.exists())
+            self.assertIn('observed first failure',report['failure_traces'][0]['traceback'])
+            self.assertTrue(report['metadata']['failfast'])
