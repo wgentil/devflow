@@ -188,3 +188,7 @@ flowchart LR
     RED --> GREEN[Corrected GREEN]
     GREEN --> Review[Independent test-quality judgment]
 ```
+
+Passing test review also requires registered independent oracle approval for
+actual current RED/GREEN; unchanged source does not establish a corrected defect.
+Selected current proof/contract material is retained in the full review artifact.

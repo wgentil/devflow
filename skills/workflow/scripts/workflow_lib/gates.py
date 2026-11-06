@@ -110,6 +110,19 @@ def _review_current(run: dict, review: dict, live: bool) -> bool:
             effective[candidate.get('perspective')]=candidate
     if (not any(r.get('review_id')==review.get('review_id') for r in effective.values())
             or any(r.get('verdict')!='pass' for r in effective.values())):return False
+    from .review_policy import review_version
+    if review_version(run) is not None:
+        from .adversarial_reviews import review_coverage,adversarial_bindings,logical_scope
+        if review.get('role') in {'item','branch','pr'}:
+            coverage=review_coverage(run,review['role'],review.get('item_id'))
+            if not coverage['complete'] or not all(_review_snapshot_current(run,r,live) for r in coverage['effective'].values()):return False
+        else:
+            from .stored_records import require_package
+            package=require_package(run.get('review_packages',{}).get(review.get('package_hash')))
+            if not package:return False
+            from .adversarial_reviews import validate_acceptance_review
+            try:validate_acceptance_review(run,package,review)
+            except Exception:return False
     try:
         if review.get('role') in {'item','branch'}:
             from .stored_records import require_package
@@ -121,6 +134,19 @@ def _review_current(run: dict, review: dict, live: bool) -> bool:
         return True
     except Exception:
         return False
+
+
+
+def _coverage_current(run,role,item_id,live):
+    from .adversarial_reviews import review_coverage
+    coverage=review_coverage(run,role,item_id)
+    if not coverage['complete']:return False
+    seen=set()
+    for report in coverage['effective'].values():
+        if report.get('package_hash') in seen:continue
+        seen.add(report.get('package_hash'))
+        if not _review_snapshot_current(run,report,live):return False
+    return True
 
 
 def gate_status(run: dict, live: bool = True) -> dict:
@@ -147,12 +173,15 @@ def gate_status(run: dict, live: bool = True) -> dict:
     if unverified:
         stage = "implementation"
     else:
-        reviewed = {review.get("item_id") for review in run.get("reviews", {}).get("item", [])
-                    if _review_current(run, review, live)}
+        from .review_policy import review_version
+        current_policy=review_version(run) is not None
+        reviewed = ({item['id'] for item in items if _coverage_current(run,'item',item['id'],live)} if current_policy else
+                    {review.get("item_id") for review in run.get("reviews", {}).get("item", []) if _review_current(run, review, live)})
         unreviewed = [item["id"] for item in items if item["id"] not in reviewed]
         stage = "item-review" if unreviewed else "branch-review"
-        if not unreviewed and any(_review_current(run, review, live)
-                                  for review in run.get("reviews", {}).get("branch", [])):
+        branch_ready=(_coverage_current(run,'branch',None,live) if current_policy else
+                      any(_review_current(run,review,live) for review in run.get('reviews',{}).get('branch',[]))) if not unreviewed else False
+        if not unreviewed and branch_ready:
             stage = "acceptance"
             accepted = run.get("acceptances", [])
             if accepted and accepted[-1].get("complete") is True and accepted[-1].get("fresh", True) and (enforcement_version(run) is None or any(

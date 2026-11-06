@@ -140,7 +140,8 @@ class FullPrCommandFlowTests(unittest.TestCase):
                 'status': 'verified', 'receipt': {'verified': True, 'ruleset_id': 2,
                     'owner': 'o', 'repo': 'r', 'base': 'main', 'context': 'devflow/pr-review',
                     'bypass_actors': []}}}}},
-            {'kind': 'run.started', 'payload': {'run': run}},
+            # Historical PR command I/O fixture; current-policy coverage has its own producer tests.
+            {'kind':'fixture','payload':{'runs':{run['id']:run}}},
         ]):
             transact(self.root, i, f'seed-{i}', event)
         self.comments = []

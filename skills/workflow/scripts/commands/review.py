@@ -18,12 +18,12 @@ from workflow_lib.store import WorkflowError, transact
 def register_commands(parser: argparse.ArgumentParser) -> None:
     review = parser.add_parser("review")
     actions = review.add_subparsers(dest="review_command", required=True)
-    for name in ('adopt','assess-risk','contract','rationale','prerequisites','dispatch'):
+    for name in ('adopt','assess-risk','contract','rationale','prerequisites','dispatch','coverage'):
         action=actions.add_parser(name)
         action.add_argument('--root',required=True)
         action.add_argument('--run-id',required=True)
         action.add_argument('--input',required=True)
-        action.add_argument('--operation-id',required=name!='prerequisites')
+        action.add_argument('--operation-id',required=name not in {'prerequisites','coverage'})
         action.add_argument('--expected-version',type=int)
     package = actions.add_parser("package")
     package.add_argument("--root", required=True)
@@ -48,6 +48,7 @@ def register_commands(parser: argparse.ArgumentParser) -> None:
     record.add_argument("--report-json", required=True)
     record.add_argument("--tool-available", action="store_true")
     record.add_argument("--operation-id")
+    record.add_argument("--model-invocation-id")
     human = actions.add_parser('pr-human-decision')
     human.add_argument('--root', required=True)
     human.add_argument('--run-id', required=True)
@@ -65,6 +66,13 @@ def register_commands(parser: argparse.ArgumentParser) -> None:
 
 def dispatch(parsed: argparse.Namespace) -> dict:
     root = Path(parsed.root).expanduser().resolve()
+    if parsed.review_command=='coverage':
+        from workflow_lib.adversarial_reviews import review_coverage
+        scope=json.loads(Path(parsed.input).read_text(encoding='utf-8'))
+        state=read_current(root,run_id=parsed.run_id)
+        result=review_coverage(state['data']['runs'][parsed.run_id],scope['role'],scope.get('item_id'))
+        effective=result.pop('effective',{})
+        return {**result,'effective_reviews':{p:{k:r.get(k) for k in ('review_id','package_hash','verdict','actor_id','invocation_ref','model_invocation_id')} for p,r in effective.items()}}
     if parsed.review_command=='dispatch':
         from workflow_lib.review_dispatch import dispatch_workflow_review
         request=json.loads(Path(parsed.input).read_text(encoding='utf-8'))
@@ -129,7 +137,7 @@ def dispatch(parsed: argparse.Namespace) -> dict:
     if parsed.review_command == "record":
         reviewer = {"role": run.get("review_packages", {}).get(parsed.package_hash, {}).get("role"),
                     "actor_id": parsed.actor_id, "invocation_ref": parsed.invocation_ref,
-                    "tool_available": parsed.tool_available}
+                    "tool_available": parsed.tool_available, "model_invocation_id": getattr(parsed,'model_invocation_id',None)}
         report = json.loads(parsed.report_json)
         operation_id = (parsed.operation_id if getattr(parsed, "operation_id_explicit", False)
                         else "review-record:" + parsed.package_hash + ":" + parsed.actor_id + ":" +

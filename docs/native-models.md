@@ -237,3 +237,8 @@ actual receipts bind perspective, exact package and current policy/risk/source.
 Known prelaunch failures retain their reservation cost and record non-dispatch;
 uncertain invocations require stopped-worker reconciliation. See [specialist
 dispatch](reference/adversarial-review.md#actual-specialist-dispatch).
+
+Specialist transports seal actual structured review output and retain a monotonic
+review sequence. An unrecorded newer output blocks stale coverage. Complete
+package artifacts carry proof/intent/check material and the output contract;
+interactive worker envelopes carry that structured report under `review`.

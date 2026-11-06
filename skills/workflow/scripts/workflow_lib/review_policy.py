@@ -118,6 +118,14 @@ def review_requirements(subject: dict, scope: dict, risk: dict) -> dict:
             required.update({'code', 'test'})
             for p in ('code', 'test'):
                 exemptions.pop(p, None)
+    escalation_refs=[]
+    for row in subject.get('review_risk_escalations',[]):
+        if isinstance(row,dict) and row.get('scope')==scope and row.get('bindings')==bindings:
+            extra=row.get('required_perspectives')
+            if not isinstance(extra,list) or not extra or any(p not in PERSPECTIVES for p in extra):extra=list(PERSPECTIVES)
+            required.update(extra);required.update({'code','test'});lightweight=False
+            for p in required:exemptions.pop(p,None)
+            escalation_refs.append(row.get('review_id'))
     if scope.get('role') == 'acceptance':
         required = set()
         exemptions = {}
@@ -125,7 +133,7 @@ def review_requirements(subject: dict, scope: dict, risk: dict) -> dict:
     result = {**base, 'status': 'allow', 'bindings': bindings,
               'risk_status': 'current' if current else 'unknown',
               'required_perspectives': [p for p in PERSPECTIVES if p in required],
-              'exemptions': exemptions, 'lightweight': lightweight}
+              'exemptions': exemptions, 'lightweight': lightweight,'escalation_refs':escalation_refs}
     result['assessment_hash'] = digest({'result': result, 'risk': risk})
     return result
 

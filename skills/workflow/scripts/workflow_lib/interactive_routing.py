@@ -48,6 +48,9 @@ def prepare_delegation(root: Path, request: dict, host_context: dict | None = No
     if path not in {'interactive-nonfork', 'interactive-fork'}:
         raise WorkflowError('INTERACTIVE_PATH_INVALID', 'Interactive execution path required.')
     full_view = host_brief(data, binding, control_root=root, max_bytes=request.get('context_max_bytes', 20000), stage_override=stage,preparation_consumer=preparation_consumer)
+    if scope.get('perspective'):
+        from .adversarial_reviews import specialist_prompt
+        prompt=specialist_prompt(prompt,interactive=True)
     worker_input = invocation_context(binding, stage, full_view, worker_task_prompt(prompt, facts, scope), request.get('context_max_bytes', 20000))
     context = deepcopy(host_context or {})
     pref = preferences(data, binding, stage)
@@ -171,6 +174,7 @@ def dispatch_delegation(root: Path, request: dict, operation_id: str, bridge=Non
             'operation_id': operation_id, 'policy_revision': fresh['policy_revision'], 'expected_scope': fresh['scope'],
             'launcher_pid': os.getpid(), 'replacement_of': request.get('replacement_of'),
             'replacement_authorization': request.get('replacement_authorization')}
+        if fresh['scope'].get('perspective'):start['diagnostic']=request.get('diagnostic') is True
         if fresh['decision']['routing'].get('escalation_index') and not fresh['decision']['routing'].get('retry_of'):
             predecessor=request['predecessor_invocation_id']
             if request.get('replacement_of',predecessor)!=predecessor:
@@ -202,6 +206,10 @@ def dispatch_delegation(root: Path, request: dict, operation_id: str, bridge=Non
             'run_id':binding['run_id'],'invocation_id':identifier,'stage':request['stage'],
             'configuration_bytes':fresh['known_payload']['configuration_bytes'],'turn_bytes':fresh['known_payload']['turn_bytes'],
             'runtime_usage':explicit_runtime_usage(result.get('usage')),'helper_calls':1,'context_mode':'full'})
+        from .review_policy import review_version
+        if review_version(run)==1 and request['stage']=='review':
+            from .adversarial_reviews import seal_actual_report
+            result['review_report_hash']=seal_actual_report(result.get('output',''))
         result['output_ref'] = _blob(root, result.pop('output', ''))
         if result.get('observation_source') not in {'host-effective-configuration', 'host-invocation-metadata'}:
             result.update(observed=None, observation_source=None)

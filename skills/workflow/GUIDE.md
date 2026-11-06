@@ -488,3 +488,20 @@ flowchart LR
     Required --> Confirm[Independent branch confirmation remains required]
     All --> Confirm
 ```
+
+## Selected-policy review coverage
+
+Current-policy stages use [shared report and coverage gates](../../docs/reference/adversarial-review.md#content-bound-reports-and-effective-coverage).
+Each actual perspective inspects the full required artifact; source, model,
+questions and proof bindings must remain current. Important findings cannot be
+erased by a later pass. Independent whole-scope code review confirms risk, while
+requirement acceptance remains a distinct stage. Standalone orchestration and
+bounded automatic repair remain separate implementation work.
+
+```mermaid
+flowchart LR
+    Item[Current item coverage] --> Branch[Whole-scope coverage and risk confirmation]
+    Branch --> Acceptance[Independent requirement acceptance]
+    Acceptance --> PR[Exact-head PR coverage when selected]
+    PR --> Delivery[Existing authorized delivery decision]
+```

@@ -31,6 +31,10 @@ def context(subject):
 def package_current(subject, package):
     if not isinstance(package,dict) or package.get('session_id')!=subject['id']:
         return False
+    from .review_policy import review_version
+    if review_version(subject) is not None:
+        from .adversarial_reviews import adversarial_bindings
+        if package.get('adversarial_bindings')!=adversarial_bindings(subject,{'role':'session'}):return False
     bound=package.get('context',{});current=context(subject)
     # New findings are review output; packaged input obligations must remain exact.
     return ({k:v for k,v in bound.items() if k!='findings'}=={k:v for k,v in current.items() if k!='findings'}
@@ -100,8 +104,15 @@ def reduce_session(subject, action, record):
              and review['actor_id']!=subject.get('actors',{}).get('implementer')
              and review.get('verdict') in {'pass','request-changes','block'},'Current independent session assessment required.')
         need(not any(r.get('invocation_ref')==review['invocation_ref'] for rows in subject.get('reviews',{}).values() for r in rows),'Each assessment requires a fresh actual invocation.')
+        from .review_policy import review_version
+        if review_version(subject) is not None:
+            from .adversarial_reviews import validate_adversarial_review
+            review={**review,'role':'session','review_id':digest(review),'fresh':True,
+                'adversarial_bindings':package.get('adversarial_bindings')}
+            validate_adversarial_review(subject,package,review)
+        owns_oracles=review_version(subject) is None or review.get('perspective')=='test'
         approvals=[]
-        for oracle in review.get('test_oracles',[]):
+        for oracle in (review.get('test_oracles',[]) if owns_oracles else []):
             green=subject.get('verification_proofs',{}).get(oracle.get('green_proof_id'),{})
             red=subject.get('verification_proofs',{}).get(oracle.get('red_proof_id'),{})
             need(green.get('source_identity')==subject['source_identity'] and green.get('red_proof_id')==red.get('id'), 'Current actual linked pair required.')
@@ -111,8 +122,8 @@ def reduce_session(subject, action, record):
                  and oracle.get('failure_relevance'),'Independent actual oracle/failure relevance required.')
             approvals.append(green['id'])
         greens=[p['id'] for p in subject.get('verification_proofs',{}).values() if p['phase']=='GREEN' and p['source_identity']==subject['source_identity'] and p.get('fresh') is not False]
-        if review['verdict']=='pass' and greens:need(set(greens).issubset(approvals),'Passing assessment must independently assess current test oracles.')
-        if review['verdict']=='pass' and not greens:
+        if owns_oracles and review['verdict']=='pass' and greens:need(set(greens).issubset(approvals),'Passing assessment must independently assess current test oracles.')
+        if owns_oracles and review['verdict']=='pass' and not greens:
             need(not subject['review_contract']['request'].get('verification'),'Declared verification cannot be waived by a report.')
             applicable=review.get('execution_inapplicable',{})
             need(applicable.get('reason') and 'package:'+package['package_hash'] in applicable.get('evidence_refs',[]),'Explicit independent execution applicability required.')
@@ -126,7 +137,10 @@ def reduce_session(subject, action, record):
             updated.setdefault('verifier_proofs',{})[proof_id]={'passed':True,'fresh':True,'evidence_id':proof_id,
                 'source_identity':subject['source_identity'],'semantic_status':'reviewed','session_id':subject['id'],
                 'contract_hash':subject['review_contract_hash'],'review_id':review['review_id']}
-        for finding in review.get('findings',[]):
+        if review_version(subject) is not None:
+            from .adversarial_reviews import ingest_report_findings
+            updated=ingest_report_findings(updated,review)
+        for finding in ([] if review_version(subject) is not None else review.get('findings',[])):
             need(finding.get('id') and finding.get('severity') in {'critical','important','minor','info'},'Structured finding identity and severity required.')
             existing=next((f for f in updated.get('unresolved_findings',[]) if f['id']==finding['id']),None)
             normalized={**finding,'status':finding.get('status','open')}
@@ -142,6 +156,10 @@ def reduce_session(subject, action, record):
         updated['repair_authorization']=deepcopy(record);updated.setdefault('actors',{})['implementer']=record['implementer_actor']
         need(all(r['actor_id']!=record['implementer_actor'] for rows in subject.get('reviews',{}).values() for r in rows),'Repair actor must be distinct from reviewers.')
     elif action=='session-complete':
+        from .review_policy import review_version
+        if review_version(subject) is not None:
+            from .adversarial_reviews import review_coverage
+            need(review_coverage(subject,'session')['complete'],'Current independent specialist coverage required before session completion.')
         require_action(subject_decision(subject,'completion',{}))
         need(not any(e['status'] in {'launching','uncertain'} for e in subject.get('executions',{}).values()),'Stop/reconcile active execution first.')
         current=[r for r in subject.get('reviews',{}).get('session',[]) if r.get('fresh') is not False and package_current(subject,subject.get('review_packages',{}).get(r['package_hash']))]
@@ -274,6 +292,18 @@ def prepare(path,operation_id):
     state=_read(path);subject=state['subject'];protection=_live(subject,diagnostic=True)
     package={'schema_version':1,'role':'session','session_id':subject['id'],'source_identity':subject['source_identity'],
         'context':context(subject),'protection_observations':protection}
+    from .review_policy import review_version
+    if review_version(subject) is not None:
+        from .adversarial_reviews import adversarial_bindings
+        from .adversarial_reviews import assessment
+        package['adversarial_bindings']=adversarial_bindings(subject,{'role':'session'})
+        package['review_inputs']=subject['review_contract']['request'].get('review_inputs',[])
+        package['review_requirements']=assessment(subject,{'role':'session'})
+        from .adversarial_reviews import report_contract
+        package['report_contract']=report_contract()
+        from .adversarial_reviews import review_material
+        package.update(review_material(subject,{'role':'session'}))
+        package['risk_record']=subject.get('risk_assessments',{}).get(digest({'role':'session'}))
     package['package_hash']=digest(package)
     _commit(path,state,operation_id,'session-package',{'package':package},client={},kind='package');return package
 

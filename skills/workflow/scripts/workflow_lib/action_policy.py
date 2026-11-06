@@ -106,7 +106,7 @@ def subject_decision(subject: dict, action: str, scope: dict) -> dict:
         except WorkflowError:
             return evaluate_action(action, scope, {'policy_version':'unsupported-review-policy'})
         review_context = {'review_policy_hash':digest(subject['review_policy']),
-                          'risk_hash':digest(subject.get('risk_assessments', {})),
+                          'risk_hash':digest({'assessments':subject.get('risk_assessments', {}),'escalations':subject.get('review_risk_escalations',[])}),
                           'implementation_contract_hash':digest(subject.get('implementation_contracts', {}))}
     if selected is None:
         return evaluate_action(action, scope, {'policy_version': None})
@@ -155,12 +155,14 @@ def validate_authority_patch(data: dict, kind: str, payload: dict) -> None:
                 'repositories', 'governing_input_receipt', 'governing_reassessment_required',
                 'model_policy', 'routing_policy', 'document_approvals', 'document_proposals'}
     allowed = {
-        'context.layer.set': {'context', 'context_hash'},
+        'context.layer.set': {'context', 'context_hash', 'resolved_context'},
         'context.resolved': {'resolved_context', 'resolved_context_source_hash'},
         'context.resolution.recorded': {'resolved_context', 'resolved_context_source_hash'},
         'repo.registered': {'repositories'}, 'spec.stored': {'spec', 'spec_pair'},
         'spec.approved': {'approval', 'spec_approval_invalidated'},
         'plan.validated': {'plan', 'plan_validation'}, 'document.approved': {'approval'},
     }.get(kind, set())
+    if kind=='context.layer.set' and payload.get('resolved_context') is not None:
+        raise WorkflowError('ENFORCEMENT_TRANSITION_REQUIRED','Context edits may revoke resolution, never assert resolved authority.')
     if (set(payload) & reserved) - allowed:
         raise WorkflowError('ENFORCEMENT_TRANSITION_REQUIRED', 'Use the validated transition; generic patches cannot replace enforcement authority or history.')

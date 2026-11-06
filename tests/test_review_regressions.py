@@ -26,9 +26,21 @@ class ReviewRegressions(unittest.TestCase):
     cli = flow.FoundationFlowTests.cli
     put_json = flow.FoundationFlowTests.put_json
 
-    def start(self):
-        transact(self.control, 0, 'seed', {'kind': 'fixture', 'payload': fixture_state()})
-        self.cli('run', 'start', '--root', self.control, '--run-id', 'r')
+    def seed_historical_run(self, fixture=None):
+        # Explicit pre-policy metadata tests legacy resume/retry semantics.
+        # Current-policy starts/dispatch are covered by the adversarial suites.
+        from workflow_lib.runs import start_run
+        data=fixture or fixture_state();run=start_run(data,'r',data['plan'])
+        run.pop('review_policy',None);run.pop('enforcement',None)
+        data={**data,'runs':{**data.get('runs',{}),'r':run}}
+        current=read_state(self.control)
+        transact(self.control,current['version'],'historical-run-fixture',{'kind':'fixture','payload':data})
+
+    def start(self,current_policy=False):
+        if current_policy:
+            transact(self.control, 0, 'seed', {'kind': 'fixture', 'payload': fixture_state()})
+            self.cli('run', 'start', '--root', self.control, '--run-id', 'r')
+        else:self.seed_historical_run()
 
     def next(self, **kwargs):
         args = ['run', 'next', '--root', self.control, '--run-id', 'r']
@@ -75,7 +87,7 @@ class ReviewRegressions(unittest.TestCase):
         self.assertEqual(read_state(self.control)['data']['saved'], 'A')
 
     def test_changed_context_requires_resolution_before_new_run(self):
-        self.start()
+        self.start(current_policy=True)
         layer = self.put_json('layer.json', {'slices': {'architecture': {'status': 'answered', 'value': 'A'}}})
         self.cli('context', 'set', '--root', self.control, '--layer', 'org', '--file', layer)
         self.cli('context', 'resolve', '--root', self.control)
@@ -142,9 +154,7 @@ class ReviewRegressions(unittest.TestCase):
         rows = [json.loads(line) for line in (self.control / 'offload.jsonl').read_text(encoding='utf-8').splitlines()]
         self.assertEqual([row['operation_id'] for row in rows], ['B'])
         self.cli('context', 'resolve', '--root', self.control)
-        current = read_state(self.control)
-        transact(self.control, current['version'], 'seed', {'kind': 'fixture', 'payload': fixture_state()})
-        self.cli('run', 'start', '--root', self.control, '--run-id', 'r')
+        self.seed_historical_run()
         self.next()
         for _ in range(2):
             self.cli('run', 'brief', '--root', self.control, '--run-id', 'r')
@@ -164,8 +174,7 @@ class ReviewRegressions(unittest.TestCase):
     def test_concurrent_attempt_replay_rejects_a_different_requested_item(self):
         fixture = fixture_state()
         fixture['plan']['work_items'][1]['dependencies'] = []
-        transact(self.control, 0, 'seed', {'kind': 'fixture', 'payload': fixture})
-        self.cli('run', 'start', '--root', self.control, '--run-id', 'r')
+        self.seed_historical_run(fixture)
 
         def concurrent_issue(root, version, operation_id, event, **kwargs):
             run = read_state(root)['data']['runs']['r']

@@ -152,3 +152,10 @@ class ReviewPolicyTests(unittest.TestCase):
             retry=store.transact(root,0,'historical-start',event)
             self.assertTrue(retry['replayed']);self.assertEqual(retry['event'],first['event'])
             self.assertNotIn('review_policy',store.read_state(root)['data']['runs']['historical'])
+
+    def test_context_layer_may_revoke_but_cannot_forge_resolved_authority(self):
+        from workflow_lib.action_policy import validate_authority_patch
+        data={'enforcement_guard':{'protocol':'devflow.python-enforcement/v1','schema_version':1}}
+        validate_authority_patch(data,'context.layer.set',{'context':{'org':{'slices':{}}},'resolved_context':None})
+        with self.assertRaises(WorkflowError):
+            validate_authority_patch(data,'context.layer.set',{'context':{},'resolved_context':{'values':{'invented':True}}})

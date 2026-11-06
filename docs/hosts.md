@@ -297,3 +297,8 @@ Current-policy specialist bindings add `perspective` to exact review scope.
 In-process host bridges retain actual model/effort observations; prepared requests
 remain unexecuted. Requirements acceptance keeps its independent role. See
 [specialist dispatch and recovery](reference/adversarial-review.md#actual-specialist-dispatch).
+
+Current-policy assessment completion validates the same report bindings as the
+workflow. Diagnostic completion does not satisfy passing coverage. A reviewer
+can refresh its own established perspective for correction with a new actual
+invocation; changing independent stage/perspective identity remains prohibited.

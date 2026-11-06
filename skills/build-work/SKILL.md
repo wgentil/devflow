@@ -7,7 +7,7 @@ description: Record fresh, attempt-bound verification evidence for Devflow work 
 
 Implement the current eligible work item and record fresh attempt-bound evidence. For code, prove actual target RED then GREEN with unchanged locked test hashes. IaC needs plan/policy proof and explicit exact-scope apply authorization; agent configuration needs the recorded baseline/post evaluation.
 
-For current review-policy runs, derive the scoped [implementation contract](../../docs/reference/adversarial-review.md#derived-implementation-contracts-and-configured-checks) before dispatch; preserve real clarification text and labeled causal hypotheses.
+For current review-policy runs, derive the scoped [implementation contract](../../docs/reference/adversarial-review.md#derived-implementation-contracts-and-configured-checks) before dispatch; preserve real clarification text and labeled causal hypotheses. Current defect acceptance requires distinct baseline/corrected source and independent oracle approval.
 
 Read the matching verification/rework procedure before running checks. Focused validation plans never replace full required checks. Preserve original failure verdicts and raw evidence when a digest is unavailable. Changes require renewed evidence; completion needs `outcome: passed` and the current `verifier_proof_id`; a result alone does not complete an item.
 
@@ -20,7 +20,7 @@ flowchart LR
     Prep -->|Blocked| Context[Explain phase and resolve preparation]
     Prep -->|Ready| Contract[Derived intent and neighboring cases]
     Contract --> Source[Same-token RED or explicit qualified recorded RED]
-    Source --> Work[Fresh verification]
+    Source --> Work[Current bound verification]
     Work --> Result{Worker outcome}
     Result -->|Complete scoped report| Evidence[Current evidence and next gate]
     Result -->|Partial or blocked| Recover[Resolve missing facts or controls]

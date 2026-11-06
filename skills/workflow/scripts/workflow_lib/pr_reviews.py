@@ -106,6 +106,20 @@ def prepare_pr_review(run: dict, pr_snapshot: dict, repo: Path,
         from .enforcement_live import source_observation
         body['enforcement_bindings'] = review_bindings(run, 'pr', live=True)
         body['source_identity'] = source_observation(run)['source_identity']
+    from .review_policy import review_version
+    if review_version(run) is not None:
+        from .adversarial_reviews import adversarial_bindings
+        from .adversarial_reviews import assessment
+        body['adversarial_bindings']=adversarial_bindings(run,{'role':'pr'})
+        repo_id=next((rid for rid,row in run.get('repositories',{}).items() if Path(row['location']).resolve()==repo.resolve()),None)
+        if not repo_id:raise ValueError('PR repository must belong to the run.')
+        body['review_inputs']=[{'repo_id':repo_id,'path':name} for name in sorted(body['changed_files'])]
+        body['review_policy']=run['review_policy'];body['review_requirements']=assessment(run,{'role':'pr'})
+        from .adversarial_reviews import report_contract
+        body['report_contract']=report_contract('pr')
+        from .adversarial_reviews import review_material
+        body.update(review_material(run,{'role':'pr'}))
+        body['risk_record']=run.get('risk_assessments',{}).get(_hash({'role':'pr'}))
     body['package_hash'] = _hash(body)
     return body
 
@@ -284,7 +298,18 @@ def record_pr_review(run: dict, package_hash: str, reviewer: dict, report: dict)
             'actor_id': actor, 'invocation_ref': reviewer['invocation_ref'],
             'verdict': report['verdict'], 'findings': findings, 'blockers': blockers,
             'reviewed_files': sorted(report['reviewed_files'])}
+    from .review_policy import review_version
+    if review_version(run) is not None:
+        body['adversarial_bindings']=package.get('adversarial_bindings')
+        for key in ('perspective','test_quality','test_oracles','risk_confirmation','closure_dispositions','protected_dispositions','diagnostic','reviewed_inputs','review_input_ref'):
+            if key in report:body[key]=report[key]
+        body['model_invocation_id']=reviewer.get('model_invocation_id') or report.get('model_invocation_id')
     body['review_id'] = _hash(body)
+    if review_version(run) is not None:
+        from .adversarial_reviews import validate_adversarial_review
+        validate_adversarial_review(run,package,body)
+        from .oracle_acceptance import validate_oracle_acceptance
+        body['semantic_approvals']=validate_oracle_acceptance(run,package,body)
     return body
 
 

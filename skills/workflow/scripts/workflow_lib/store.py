@@ -435,7 +435,8 @@ def _apply_event(state: dict, event: dict, *, metrics_source_hash=None) -> None:
                      'invocation_ref': review['invocation_ref'], 'tool_available': True},
                     {'package_hash': package_hash, 'verdict': review['verdict'],
                      'reviewed_files': review.get('reviewed_files'),
-                     'findings': review.get('findings'), 'blockers': review.get('blockers', [])})
+                     'findings': review.get('findings'), 'blockers': review.get('blockers', []),
+                     **{k:review[k] for k in ('perspective','test_quality','test_oracles','risk_confirmation','closure_dispositions','protected_dispositions','diagnostic','model_invocation_id','reviewed_inputs','review_input_ref') if k in review}})
             except ValueError as exc:
                 raise WorkflowError('INVALID_EVENT', str(exc)) from exc
             if expected != review:
@@ -450,6 +451,13 @@ def _apply_event(state: dict, event: dict, *, metrics_source_hash=None) -> None:
                     or not isinstance(review.get('findings'),list)
                     or review.get('verdict') == 'request-changes' and not review['findings']):
                 raise WorkflowError('INVALID_EVENT','Versioned item review requires scoped findings and current attempt.')
+        from .review_policy import review_version
+        if review_version(run) is not None:
+            from .adversarial_reviews import validate_adversarial_review,adversarial_bindings,logical_scope
+            if review['role']!='acceptance':validate_adversarial_review(run,package,review)
+            else:
+                from .adversarial_reviews import validate_acceptance_review
+                validate_acceptance_review(run,package,review)
         if enforcement_version(run)==1:
             from .reviews import validate_review_contract
             try:validate_review_contract(run,review)
@@ -469,7 +477,7 @@ def _apply_event(state: dict, event: dict, *, metrics_source_hash=None) -> None:
             from .reverification import invalidate_item_reviews
             run['items'][review['item_id']]['status']='pending'
             invalidate_item_reviews(run,review['item_id'])
-        if enforcement_version(run) == 1 and review['role'] in {'item', 'branch'}:
+        if enforcement_version(run) == 1 and (review['role'] in {'item','branch'} or review_version(run) is not None and review['role']=='pr'):
             from .review_enforcement import review_bindings_current
             if not review_bindings_current(run, package, live=False):
                 raise WorkflowError('REVIEW_PACKAGE_STALE', 'Review policy, question or proof bindings changed.')
@@ -484,6 +492,9 @@ def _apply_event(state: dict, event: dict, *, metrics_source_hash=None) -> None:
                 verifier.update(semantic_status='reviewed', semantic_review_id=review['review_id'], semantic_approval=approval)
         run.setdefault("reviews", {}).setdefault(review["role"], []).append(review)
         run["review_ids"].append(review["review_id"])
+        if review_version(run) is not None and review['role']!='acceptance':
+            from .adversarial_reviews import ingest_report_findings
+            run.update(ingest_report_findings(run,review))
     elif kind == "review.adjudicated":
         run = data.setdefault("runs", {}).get(payload.get("run_id"))
         decision = payload.get("adjudication")

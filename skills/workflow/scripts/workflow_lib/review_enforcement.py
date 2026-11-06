@@ -44,4 +44,12 @@ def review_bindings_current(subject: dict, package: dict, *, live: bool) -> bool
     binding = package.get('enforcement_bindings')
     if not isinstance(binding, dict): return False
     current = review_bindings(subject, package.get('role'), package.get('item_id'), live=live)
+    from .review_policy import review_version
+    if review_version(subject)==1:
+        old=deepcopy(binding.get('logical',{}));now=deepcopy(current['logical'])
+        input_findings=old.pop('findings',{});current_findings=now.pop('findings',{})
+        if old!=now or any(current_findings.get(key)!=value for key,value in input_findings.items()):return False
+        # Newly reported findings are outputs. They block progression separately,
+        # but cannot retroactively change what the completed reviewer inspected.
+        return not live or binding.get('observed_inputs')==current.get('observed_inputs')
     return binding == current if live else binding.get('logical') == current['logical']

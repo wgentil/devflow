@@ -146,6 +146,11 @@ def complete_pr_delivery(run: dict, package: dict, verdict: dict, receipt: dict)
         raise ValueError('current independent PR verdict is not recorded')
     if run['reviews']['pr'][-1].get('review_id') != verdict.get('review_id'):
         raise ValueError('latest PR review must be the passing verdict')
+    from .review_policy import review_version
+    if review_version(run) is not None:
+        from .adversarial_reviews import review_coverage
+        if not review_coverage(run,'pr')['complete']:
+            raise ValueError('Current exact-head specialist coverage is incomplete or blocked.')
     return {'outcome': 'pull-request', 'manifest_hash': pending['manifest_hash'],
             'pr_id': package['pr_id'], 'pr_number': package['pr_number'],
             'url': pending.get('url'), 'head_sha': package['head_sha'],

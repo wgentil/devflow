@@ -111,6 +111,11 @@ def check_completion(state: dict, binding: dict, task_id: str, live: bool = True
         history=set(run.get('implementer_actors',[]))|{run.get('actors',{}).get('implementer')}
         if binding['actor_id'] in history:return _decision('block','REVIEWER_NOT_INDEPENDENT')
         review=next((r for r in reversed(run.get('reviews',{}).get(role,[])) if r.get('package_hash')==task['package_hash'] and r.get('actor_id')==binding['actor_id'] and r.get('invocation_ref') and r.get('fresh',True) and r.get('verdict') in ({'pass','changes-requested','human-decision-required','blocked'} if role=='pr' else {'pass','request-changes','block'}) and (role!='item' or r.get('item_id')==task.get('item_id'))),None)
+        from .review_policy import review_version
+        if review and review_version(run) is not None and role!='acceptance':
+            from .adversarial_reviews import validate_adversarial_review
+            try:validate_adversarial_review(run,package,review)
+            except WorkflowError as exc:return _decision('block','ASSESSMENT_INPUTS_INVALID',message=str(exc))
         return _decision('allow','ASSESSMENT_RECORDED',evidence_refs=[{'review_id':review.get('review_id'),'package_hash':task['package_hash']}]) if review else _decision('block','ASSESSMENT_REQUIRED')
     delivery=run.get('delivery',{})
     if run.get('status') != 'delivered' or not delivery.get('actual_result') or not delivery.get('manifest_hash'):

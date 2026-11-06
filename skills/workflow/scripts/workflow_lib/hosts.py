@@ -70,9 +70,11 @@ def apply_host_event(state: dict, kind: str, request: dict) -> dict:
                 and identifier not in run.get('native_invocations',{}), 'Only this unlaunched reservation may be aborted.')
         from .effect_claims import transition_effect
         run['effects']=transition_effect(run,{'effect_id':identifier,'status':'failed','now_ms':req['now_ms']})['effects']
+        run['review_dispatch_sequence']=run.get('review_dispatch_sequence',0)+1
         receipt={**deepcopy(req.get('failure',{})),'status':'block','dispatch':False,'reason_code':req.get('failure',{}).get('reason_code','SPECIALIST_NOT_DISPATCHED'),
             'scope':invocation_scope(binding,run,req['stage'],{}),'invocation_id':identifier,
             'request_hash':req['request_hash'],'review_request_hash':req.get('review_request_hash'),
+            'review_sequence':run['review_dispatch_sequence'],
             'operation_id':req['operation_id'],'invocation_ref':None,'observed':None}
         run.setdefault('model_receipts',{})[identifier]=receipt
         return deepcopy(receipt)
@@ -172,8 +174,16 @@ def apply_host_event(state: dict, kind: str, request: dict) -> dict:
             package = require_package(package)
             require(package and package.get('role') == role, 'Matching review package required.')
             require(req['actor_id'] not in history, 'Every implementing actor is excluded from independent review.')
-            require(req['actor_id'] not in {entry.get('actor_id') for entries in run.get('reviews', {}).values()
-                                            for entry in entries}, 'PR reviewer must differ from prior reviewers.')
+            from .review_policy import review_version,PERSPECTIVES
+            if review_version(run) is not None:
+                if role!='acceptance':require(req.get('perspective') in PERSPECTIVES,'Attach an explicit supported specialist perspective.')
+                require(not any(entry.get('actor_id')==req['actor_id'] and
+                    (entry.get('role')!=role or entry.get('perspective')!=req.get('perspective'))
+                    for entries in run.get('reviews',{}).values() for entry in entries),
+                    'A reviewer cannot change independent stage or perspective identity.')
+            else:
+                require(req['actor_id'] not in {entry.get('actor_id') for entries in run.get('reviews', {}).values()
+                                                for entry in entries}, 'PR reviewer must differ from prior reviewers.')
             if role == 'item': require(req.get('item_id') in run.get('items', {}), 'Planned item required.')
         if terminal_prior:
             terminal_prior['status']='detached';terminal_prior['revision']+=1
@@ -353,6 +363,9 @@ def apply_native_event(state,kind,req):
                 'now_ms': req.get('enforcement_transition_ms')})
             run['effects'] = transitioned['effects']
         record={**req,'scope':scope,'status':'running','retry_count':retry_count}
+        if scope.get('perspective'):
+            run['review_dispatch_sequence']=run.get('review_dispatch_sequence',0)+1
+            record['review_sequence']=run['review_dispatch_sequence']
         if 'routing' in decision:
             lineage['last_invocation_id'] = identifier
             run.setdefault('routing_lineages', {})[lineage['lineage_id']] = lineage
@@ -368,6 +381,10 @@ def apply_native_event(state,kind,req):
     receipt={**deepcopy(record['decision']),'invocation_id':identifier,'stage':record['stage'],'scope':deepcopy(record['scope']),'policy_revision':record['policy_revision'],'account_key':record.get('account_key'),
              'observed':result.get('observed'),'observation_source':result.get('observation_source'),
              'invocation_ref':result.get('invocation_ref'),'output_ref':result.get('output_ref'),'usage':result.get('usage')}
+    if record['scope'].get('perspective'):
+        receipt['review_report_hash']=result.get('review_report_hash')
+        receipt['diagnostic']=record.get('diagnostic') is True
+        receipt['review_sequence']=record['review_sequence']
     if result.get('worker_outcome') is not None:
         receipt['worker_outcome'] = deepcopy(result['worker_outcome'])
     if result['status']=='completed':

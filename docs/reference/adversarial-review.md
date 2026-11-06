@@ -3,7 +3,7 @@
 The approved [implementation plan](../superpowers/plans/2026-11-05-adversarial-review-repair.md)
 extends the merged [Python enforcement foundation](python-enforcement.md).
 This branch is in implementation: policy/risk and implementation-contract prerequisites are available;
-workflow specialist dispatch is implemented; complete coverage gates and bounded repair are still being integrated.
+workflow specialist dispatch and selected-scope coverage gates are implemented; standalone conversational orchestration and bounded repair are still being integrated.
 
 New workflow runs declare `devflow.adversarial-review/v1` with shared enforcement.
 Existing stored runs retain their original contract. Explicit adoption requires
@@ -64,8 +64,8 @@ the finding, current scope/source/contract, observed failure, evidence, cause
 Missing/stale contracts, unresolved questions, neighboring-case rationale, current
 GREEN and configured `pre_review: true` gate proofs block accepted review.
 Unconfigured syntax/type/lint checks are reported as unconfigured. A diagnostic
-scope may inspect missing prerequisites without claiming an accepted pass. Full
-specialist report enforcement remains pending the later integration tasks.
+scope may inspect missing prerequisites without claiming an accepted pass. Accepted specialist reports also enforce these prerequisites; diagnostic completion
+remains distinct from a passing assessment.
 
 Configured checks execute only their recorded argv, with a durable tool claim,
 live source/protection/question checks immediately before launch, and retained
@@ -138,5 +138,62 @@ Exact completed retries return historical facts without another backend call.
 An uncertain call blocks replacement until actual stopped-worker reconciliation.
 Known prelaunch failures release only their own unlaunched claim, retain the spent
 attempt and store a non-dispatched receipt; they do not fabricate a model call or
-refund budgets. Failures identify a resumable next action. The coverage gate
-integration is a separate subsequent implementation checkpoint.
+refund budgets. Failures identify a resumable next action. The same content-bound coverage predicates protect workflow, exact PR, host
+completion and selected-policy session gates.
+
+## Content-bound reports and effective coverage
+
+Each current-policy package binds policy, risk, source, questions, derived intent,
+raw execution and configured-check facts. Reviewers receive a mandatory immutable
+artifact with full repository snapshots/diffs, selected current proof and contract
+records, raw evidence references and a versioned `report_contract`. Prompts carry
+its exact reference rather than silently truncating the package. Raw report refs
+are relative to `review_input.evidence_root`. The context artifact limit is 32 MiB;
+unavailable/oversized required inputs block review. Review remains scoped to the
+explicit package; a standalone assessment cannot satisfy workflow acceptance.
+
+A passing report identifies its `review_input_ref` artifact ID and every exact
+`reviewed_inputs` row (`repo_id`, `path`). Whole and scoped packages include dirty
+tracked and untracked changes with repository identity. The controller binds stage,
+perspective, actor, invocation and package. Native and actual in-process host
+transports seal normalized structured report content; recording different content
+under a genuine model invocation is rejected. Interactive host workers put the
+review in the `review` field of their ordinary worker report. A non-JSON or
+incomplete output does not become an accepted judgment.
+
+Effective coverage uses the latest current assessment per perspective. One broad
+report cannot cover several independent perspectives; omitted roles, mismatched
+settings/actors/invocations, stale source/contract/policy/questions, failed checks
+or missing oracle approval block progression. A newer real review output awaiting
+a valid report also prevents an old pass from remaining effective. Diagnostic
+invocations cannot be relabeled as accepted passes. Pure journal replay performs
+these same checks without reading live files or invoking models; live gates add
+current repository/input liveness checks. Scope checks share package reads rather
+than repeating them for every perspective.
+
+The code perspective in the existing whole-scope branch, PR or session round
+confirms risk with exact `risk_confirmation.assessment_hash`, disposition
+`confirmed`, `conservative` or `raise`, reason and package evidence. A raise names
+additional required perspectives; it makes that bound scope substantive and
+requires strong code/test settings. It cannot reset spending or lower coverage.
+Positive lightweight item exemptions advance only to independent whole-scope risk
+confirmation. Requirement acceptance keeps its separate role and shared current
+prerequisites. Item, branch, acceptance and exact-head PR results remain distinct.
+
+Findings cite ID/severity, repository-relative evidence location, evidence refs,
+failure scenario, impact and requested correction or actual question. Critical
+and important findings remain durable obligations after a later passing report;
+only an authorized independent disposition can resolve them. Deferred minors need
+a visible reason. Reports cannot resolve/waive their own findings or replace an
+existing identity with another obligation. Newly reported findings are outputs;
+unchanged packaged input obligations remain valid, while changed/deleted inputs
+invalidate the assessment. Business questions become actual pending clarification
+records. A claimed corrected defect requires different bound baseline/correction
+source identities; unchanged source is not correction evidence.
+
+The read-only optional developer command `review coverage --root … --run-id …
+--input scope.json` returns missing perspectives, blockers, disagreements and
+compact effective review references. Scope contains `role` and optional `item_id`.
+`review record` accepts `--model-invocation-id` for the actual transport receipt.
+See [report shape](../examples/adversarial-report.json); its placeholder identities
+are illustrative and cannot serve as verification or approval evidence.

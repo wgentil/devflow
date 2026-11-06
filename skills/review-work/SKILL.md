@@ -5,7 +5,7 @@ description: Prepare content-bound review packages and record independent Devflo
 
 # review-work
 
-Arrange independent item, branch and acceptance reviews over exact current content-bound packages. Cover every changed file and approved requirement. Report cited findings and real actor/invocation identity; an implementer cannot self-approve.
+Arrange independent item, branch and acceptance reviews over exact current content-bound packages. Read the required full package artifact; echo its `review_input_ref` and exact `reviewed_inputs`. Cover every changed file and approved requirement. Report cited findings and real actor/invocation identity; an implementer cannot self-approve.
 
 For current-policy test review, require independent oracle authority, behavior-to-assertion mapping and actual relevant discrimination; see [test quality](../../docs/reference/adversarial-review.md#test-quality-assessment).
 
@@ -21,7 +21,8 @@ flowchart LR
     Checks --> Inputs[Complete scoped item inputs or whole-tree checks]
     Inputs --> Model[Actual scoped specialist receipt]
     Model --> Quality[Independent oracle and discrimination]
-    Quality --> Work[Stage responsibility]
+    Quality --> Coverage[Latest current independent perspectives]
+    Coverage --> Work[Stage responsibility]
     Work --> Result{Worker outcome}
     Result -->|Complete scoped report| Evidence[Current evidence and next gate]
     Result -->|Item request-changes| Retry[Reopen item and renew verification]

@@ -114,6 +114,9 @@ class ContextPreparationTests(unittest.TestCase):
         self.assertTrue(selected['required'])
         self.assertEqual([c['scope'] for c in selected['records']],[scope])
         self.assertEqual(selected['records'][0]['behaviors'][0]['text'],'Return scoped value 1.')
+        composed=prepared_context(self.f['root'],self.f['run'],{'run_id':'current'},['W1'],stage='implementation',prepared=p)
+        self.assertIn('task_view',composed)
+        p.release()
 
     def test_pending_question_text_survives_diagnostic_review_context(self):
         from workflow_lib.clarifications import record_question

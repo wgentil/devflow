@@ -620,8 +620,8 @@ conversion; historical context artifacts remain available.
 
 ## Python enforcement development status
 
-The current development branch includes an opt-in Python clarification/enforcement
-foundation. Existing runs are not silently upgraded. It includes scoped user
+The current development branch includes the Python clarification/enforcement
+foundation. New runs select it; existing runs are not silently upgraded. It includes scoped user
 questions, proof/closure protection, durable work and probe budgets, recovery and
 standalone execution/review/completion primitives. Standalone specialist
 orchestration and bounded automatic repair remain companion work. See the [foundation status and developer contracts](reference/python-enforcement.md)
@@ -640,5 +640,8 @@ implementation contract; configured prerequisite checks retain actual command
 evidence and stop on unresolved questions. Passing test-perspective records require
 independent oracle and actual assertion discrimination evidence. Optional owned
 challenges are diagnostic helpers; automatic admission is still pending. Workflow specialist dispatch now uses actual native or in-process host receipts.
-Complete coverage gates, standalone orchestration and bounded repair remain in
-implementation; missing eligible mappings still block automatic specialist work. See [current review scope](reference/adversarial-review.md).
+Content-bound coverage gates now enforce required independent perspectives across
+workflow and exact PR stages; diagnostics remain distinct from passes. Required
+review artifacts contain the complete scoped inputs. Standalone conversational
+orchestration and bounded repair remain in implementation; missing eligible
+mappings still block automatic specialist work. See [current review scope](reference/adversarial-review.md).

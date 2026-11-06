@@ -1,0 +1,14 @@
+{
+  "package_hash": "ACTUAL_PACKAGE_HASH",
+  "perspective": "code",
+  "verdict": "pass",
+  "findings": [],
+  "review_input_ref": "ACTUAL_REQUIRED_ARTIFACT_ID",
+  "reviewed_inputs": [{"repo_id": "app", "path": "src/retention.py"}],
+  "risk_confirmation": {
+    "assessment_hash": "ACTUAL_WHOLE_SCOPE_ASSESSMENT_HASH",
+    "disposition": "conservative",
+    "reason": "Unknown risk retains all required perspectives.",
+    "evidence_refs": ["package:ACTUAL_PACKAGE_HASH"]
+  }
+}

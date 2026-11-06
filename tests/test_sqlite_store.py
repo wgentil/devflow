@@ -147,7 +147,7 @@ class SQLiteStoreTests(unittest.TestCase):
                     old['operations'][event['operation_id']] = deepcopy(event)
                     token = store.HOST_CONTEXT.set(event.get('host_binding'))
                     try:
-                        if event['kind'] in {'domain.host.native-reconcile','run.started'}:
+                        if event['kind'] in {'domain.host.native-reconcile','domain.host.native-abort','run.started'}:
                             # Frozen historical streams exercise pure replay, not new live starts/OS observations.
 
                             with patch.object(store,'_guard_enforcement_transaction'):

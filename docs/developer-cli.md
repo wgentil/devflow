@@ -817,3 +817,8 @@ read-only `review prerequisites`; see [record fields and live check behavior](re
 `review dispatch --root … --run-id … --input … --operation-id …` invokes an
 actually attached specialist through existing native adapters. Input and recovery
 contracts are in [actual specialist dispatch](reference/adversarial-review.md#actual-specialist-dispatch).
+
+`review coverage --root … --run-id … --input scope.json` is read-only and emits
+compact current assessment references and missing perspectives. `review record`
+can bind `--model-invocation-id`; accepted content must match actual structured
+transport output and exact input coverage. See [report contract](reference/adversarial-review.md#content-bound-reports-and-effective-coverage).

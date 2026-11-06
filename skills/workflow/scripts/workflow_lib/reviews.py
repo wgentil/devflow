@@ -69,6 +69,7 @@ def prepare_review(run: dict, role: str, repo_heads: dict,
             raise ValueError('Scoped input paths require an explicit item and known repository IDs.')
         from .review_inputs import capture_review_inputs, item_scope_complete
     repositories = {}
+    review_inputs=[]
     input_paths = set()
     for repo_id, source in sorted(repo_heads.items()):
         if not isinstance(source, dict) or not all(isinstance(source.get(k), str) and source[k]
@@ -99,6 +100,13 @@ def prepare_review(run: dict, role: str, repo_heads: dict,
             input_paths.add(name)
         for record in commits:
             input_paths.update(record["files"])
+        from .review_policy import review_version
+        if review_version(run) is not None:
+            names=set(scoped['paths'] if scoped is not None else
+                [name for record in commits for name in record['files']]+untracked_names+
+                git_paths(repo,'diff','--name-only','HEAD'))
+            input_paths.update(names)
+            review_inputs.extend({'repo_id':repo_id,'path':name} for name in sorted(names))
         repositories[repo_id] = {"base": source["base"], "head": source["head"],
             "location": str(repo),
             "head_verified": _git(repo, "rev-parse", "HEAD").strip() == source["head"],
@@ -127,6 +135,21 @@ def prepare_review(run: dict, role: str, repo_heads: dict,
         body['source_identity'] = source_observation(run)['source_identity']
         from .review_enforcement import review_bindings
         body['enforcement_bindings'] = review_bindings(run, role, item_id, live=True)
+    from .review_policy import review_version
+    if review_version(run) is not None:
+        from .adversarial_reviews import adversarial_bindings,logical_scope
+        scope=logical_scope(role,item_id)
+        from .adversarial_reviews import assessment
+        from .document_units import digest
+        body['adversarial_bindings']=adversarial_bindings(run,scope)
+        body['review_inputs']=review_inputs
+        from .adversarial_reviews import report_contract
+        body['report_contract']=report_contract()
+        from .adversarial_reviews import review_material
+        body.update(review_material(run,scope))
+        body['review_policy']=deepcopy(run['review_policy'])
+        body['review_requirements']=assessment(run,scope)
+        body['risk_record']=deepcopy(run.get('risk_assessments',{}).get(digest(scope)))
     body = deepcopy(body)
     body["package_hash"] = hashlib.sha256(_canonical(body).encode()).hexdigest()
     return body
@@ -229,6 +252,18 @@ def record_review(run: dict, package_hash: str, reviewer: dict, report: dict) ->
     if package.get('schema_version') == 2:
         review['schema_version']=2
         review['item_attempt_token']=package['item_attempt_token']
+    from .review_policy import review_version
+    if review_version(run) is not None:
+        from .adversarial_reviews import validate_adversarial_review
+        review['adversarial_bindings']=deepcopy(package.get('adversarial_bindings'))
+        if reviewer.get('model_invocation_id') or report.get('model_invocation_id'):
+            review['model_invocation_id']=reviewer.get('model_invocation_id') or report['model_invocation_id']
+        for key in ('risk_confirmation','diagnostic','test_quality','reviewed_inputs','review_input_ref'):
+            if key in report:review[key]=deepcopy(report[key])
+        if role!='acceptance':validate_adversarial_review(run,package,review)
+        else:
+            from .adversarial_reviews import validate_acceptance_review
+            validate_acceptance_review(run,package,review)
     if enforcement_version(run) == 1:
         from .oracle_acceptance import validate_oracle_acceptance
         if 'test_quality' in report:review['test_quality']=deepcopy(report['test_quality'])

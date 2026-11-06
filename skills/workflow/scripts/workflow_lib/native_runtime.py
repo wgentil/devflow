@@ -262,6 +262,9 @@ def invoke(root,request,operation_id):
             if task_facts is not None:
                 from .routing_receipts import worker_task_prompt
                 prompt = worker_task_prompt(prompt,task_facts,invocation_scope(binding,run,stage,{}))
+            if specialist:
+                from .adversarial_reviews import specialist_prompt
+                prompt=specialist_prompt(prompt)
             native_input = invocation_context(binding, stage, full_view, prompt, context_limit)
             backend=(CodexBackend if binding['host']=='codex' else ClaudeBackend)(binding['project_dir'])
             context=discover(root,binding,request.get('refresh',False) or task_facts is not None,backend)
@@ -337,6 +340,7 @@ def invoke(root,request,operation_id):
                 decision['routing']['known_payload']=measured
             prompt = native_input['prompt']
             start={'binding_id':binding['binding_id'],'revision':binding['revision'],'invocation_id':identifier,'stage':stage,'decision':decision,'request_hash':request_hash,'operation_id':operation_id,'policy_revision':len(run.get('model_overrides',[])),'expected_scope':invocation_scope(binding,run,stage,{}),'launcher_pid':os.getpid(),'account_key':context['account_key'],'replacement_of':request.get('replacement_of'),'replacement_authorization':request.get('replacement_authorization')}
+            if specialist:start['diagnostic']=request.get('diagnostic') is True
             if request.get('review_request_hash'):start['review_request_hash']=request['review_request_hash']
             if task_facts is not None and request.get('predecessor_invocation_id'):
                 predecessor = request['predecessor_invocation_id']
@@ -402,6 +406,9 @@ def invoke(root,request,operation_id):
                 invocation_id=identifier, consumer_id=binding['session_id'],
                 configuration_bytes=len(native_input['configuration_text'].encode('utf-8')), turn_bytes=len(prompt.encode('utf-8')),
                 runtime_usage=explicit_runtime_usage(result.get('usage')))
+            if specialist:
+                from .adversarial_reviews import seal_actual_report
+                result['review_report_hash']=seal_actual_report(result.get('output',''))
             result['output_ref']=_blob(root,result.pop('output',''))
         except NativeError as exc:
             if context:invalidate(root,binding,context)

@@ -178,7 +178,7 @@ def prepared_context(root: Path, run: dict, envelope: dict, item_ids: list[str],
         _require(isinstance(prepared,PreparedContext),'An internal prepared context object is required.')
         _accept_run(prepared._state['data']['runs'][run['id']],run)
         _require(prepared.scope['stage']==normalize_stage(stage) and prepared.scope['attempt_id']==(run.get('active_attempt') or {}).get('token'),'Prepared task stage or attempt differs.')
-        _require(prepared.payload['envelope']=={**envelope,'preparation':prepared.payload['envelope']['preparation']}
+        _require(prepared.source_bindings.get('envelope_hash')==digest(envelope)
             and prepared.scope['run_id']==run['id'] and prepared.scope['item_ids']==item_ids
             and prepared.scope['context_max_bytes']==max_bytes and prepared.scope['representation']==representation and prepared.scope['output_mode']==output_mode,
             'Prepared scope differs from this context request.')

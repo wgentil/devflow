@@ -10,9 +10,13 @@ def _require(ok, message):
 
 
 def validate_oracle_acceptance(subject: dict, package: dict, review: dict) -> dict:
+    from .review_policy import review_version
+    if review_version(subject)==1 and review.get('role') in {'item','branch','pr'} and review.get('perspective')!='test':
+        return {} # The required independent test perspective owns oracle acceptance.
     oracles = review.get('test_oracles', [])
     _require(isinstance(oracles, list), 'Test oracle assessments must be an array.')
-    if review.get('role') not in {'item', 'branch'}:
+    supported={'item','branch'}|({'pr'} if review_version(subject)==1 else set())
+    if review.get('role') not in supported:
         _require(not oracles, 'Oracle approval belongs to independent item or branch review.')
         return {}
     implementers = set(subject.get('implementer_actors', [])) | {subject.get('actors', {}).get('implementer')}

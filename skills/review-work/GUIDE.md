@@ -294,3 +294,23 @@ flowchart LR
     Invoke --> Receipt[Resolved and observed model receipt]
     Invoke --> Recovery[Inspect uncertainty before replacement]
 ```
+
+## Current reports and coverage
+
+Read the complete required artifact and its `report_contract`, then record exact
+artifact/input coverage and actual invocation metadata. A reported pass must match
+the real transport output. The test perspective owns independent oracle approval;
+code confirms whole-scope risk in its existing round. Later blocked or pending
+assessments supersede earlier passes. [Coverage rules and report fields](../../docs/reference/adversarial-review.md#content-bound-reports-and-effective-coverage)
+apply at workflow, PR and host/session gates. Diagnostics finish assessment work
+without claiming a pass; unresolved important findings survive later reports.
+
+```mermaid
+flowchart LR
+    Artifact[Full content-bound package artifact] --> Separate[Independent actual perspectives]
+    Separate --> Sealed[Seal actual structured report content]
+    Sealed --> Latest[Latest current scope and input coverage]
+    Latest --> Gate{All required perspectives and prerequisites?}
+    Gate -->|Yes| Next[Next distinct workflow stage]
+    Gate -->|No| Block[Findings, clarification or concrete missing evidence]
+```

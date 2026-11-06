@@ -196,7 +196,7 @@ def _prepare_context(root:Path,run:dict,envelope:dict,item_ids:list[str],*,stage
                 _require(sql._meta(conn,'head')==state['version'],'Journal advanced during preparation.')
                 state={**state,'_storage':{key:sql._meta(conn,key) for key in ('root_id','layout_id','generation','head_hash')}}
     tail=None if state.get('_storage') else next((event for event in state['operations'].values() if event['sequence']==state['version']),None)
-    bindings={'run_hash':working_identity(root,actual),'locations':locations,'spec_pair':deepcopy(pair),'approval_hash':digest(data.get('approval')),
+    bindings={'envelope_hash':digest(envelope),'run_hash':working_identity(root,actual),'locations':locations,'spec_pair':deepcopy(pair),'approval_hash':digest(data.get('approval')),
         'storage_identity':deepcopy(state.get('_storage')),'governing_hash':digest(data.get('governing_input_receipt')),'files':files,'tail_hash':state.get('_storage',{}).get('head_hash') if state.get('_storage') else digest(tail) if tail else None}
     projected={'id':run['id'],'plan':{'work_items':deepcopy(chosen)}}
     scoped_envelope=deepcopy(envelope)
@@ -219,6 +219,14 @@ def _prepare_context(root:Path,run:dict,envelope:dict,item_ids:list[str],*,stage
             scoped_envelope['specialist']={'role':specialist['role'],'perspective':specialist['perspective'],
                 'scope_hash':digest(specialist),'assessment_hash':specialist['assessment_hash'],
                 'required_perspectives':specialist['assessment']['required_perspectives']}
+        if binding_id and binding.get('role')!='implementer':
+            from .stored_records import require_package
+            from .adversarial_reviews import publish_review_input
+            package=require_package(actual.get('review_packages',{}).get(binding.get('package_hash')))
+            _require(bool(package),'Current reviewer package is missing.','REVIEW_PACKAGE_STALE')
+            ref=publish_review_input(root,package)
+            scoped_envelope['review_input']=ref
+            files[ref['artifact_ref']]=_file_hash(Path(ref['artifact_ref']))
         selected = {}
         for selected_id in item_ids or [None]:
             selected_scope={'role':'item','item_id':selected_id} if selected_id else {'role':'branch'}

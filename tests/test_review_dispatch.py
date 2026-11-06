@@ -62,7 +62,7 @@ class ReviewDispatchTests(unittest.TestCase):
         scope={'actor_id':'independent','role':'item-reviewer','item_id':'W1','package_hash':'package','perspective':'security',
             'review_scope':self.api().specialist_scope(subject,binding)}
         selected={'provider':'openai','model':'small-sounding-preferred','effort':'high'}
-        receipt={'status':'allow','dispatch':True,'capability_validated':True,'validation_ref':'fixture:validated',
+        receipt={'policy_revision':0,'status':'allow','dispatch':True,'capability_validated':True,'validation_ref':'fixture:validated',
             'invocation_id':'actual-call','invocation_ref':'fixture:actual-invocation','scope':scope,'profile':'deep-reasoning',
             'resolved':selected,'observed':copy.deepcopy(selected),'observation_source':'host-effective-configuration'}
         subject['model_receipts']={'actual-call':receipt}
@@ -279,3 +279,53 @@ class ReviewDispatchTests(unittest.TestCase):
         self.assertEqual(result['scope']['perspective'],'security')
         self.assertEqual(result['observed']['effort'],'high')
         self.assertTrue(again['replayed']);self.assertEqual(len(bridge.spawns),1)
+
+    def test_actual_native_receipt_seals_real_report_content(self):
+        root,repo,request,backend=self.native_fixture();result=self.native_call(root,request,backend)
+        from workflow_lib.document_units import digest
+        self.assertEqual(result.get('review_report_hash'),digest({'verdict':'pass','findings':[]}))
+
+    def test_changed_model_preferences_stale_prior_specialist_eligibility(self):
+        subject,package,review=self.receipt_fixture()
+        subject['model_receipts']['actual-call']['policy_revision']=0
+        subject['model_overrides']=[{'allowed_models':['different-model']}]
+        with self.assertRaises(WorkflowError):self.api().validate_review_model(subject,package,review)
+
+    def test_specialist_receives_complete_content_bound_package_artifact(self):
+        import json
+        root,repo,request,backend=self.native_fixture();receipt=self.native_call(root,request,backend)
+        prompt=backend.invoke.call_args.args[1]
+        brief=json.loads(prompt.split('\nScoped authoritative brief:\n',1)[1].split('\nTask:\n',1)[0])
+        self.assertIn('review_input',brief,'A package hash alone does not give the reviewer the actual diff and obligations.')
+        ref=brief['review_input'];artifact=json.loads(Path(ref['artifact_ref']).read_text())
+        self.assertEqual(artifact['value']['package']['package_hash'],receipt['scope']['package_hash'])
+        self.assertTrue(ref['required']);self.assertIn('repositories',artifact['value']['package'])
+        self.assertIn('report_contract',artifact['value']['package'])
+        self.assertIn('verification_proofs',artifact['value']['package'])
+        self.assertIn('implementation_contracts',artifact['value']['package'])
+        self.assertIn('review_input_ref',prompt)
+
+    def test_package_lists_dirty_tracked_and_untracked_inputs_with_repository_identity(self):
+        from workflow_lib.store import read_state
+        from workflow_lib.reviews import prepare_review
+        import subprocess
+        root,repo,request,backend=self.native_fixture();subject=read_state(root)['data']['runs']['run']
+        (repo/'code.py').write_text('value=60\n');(repo/'new.py').write_text('new=True\n')
+        head=subprocess.run(['git','rev-parse','HEAD'],cwd=repo,check=True,capture_output=True,text=True).stdout.strip()
+        package=prepare_review(subject,'branch',{'repo':{'location':str(repo),'base':head,'head':head}})
+        self.assertEqual(package.get('review_inputs'),[{'repo_id':'repo','path':'code.py'},{'repo_id':'repo','path':'new.py'}])
+        self.assertIn('review_requirements',package)
+
+    def test_independent_risk_raise_requires_substantive_model_controls(self):
+        from workflow_lib.review_policy import record_risk,review_bindings,PERSPECTIVES
+        subject,package,review=self.receipt_fixture();scope={'role':'branch'}
+        risk={'schema_version':1,'bindings':review_bindings(subject,scope),'classification':'lightweight','triggers':[],
+            'scope_evidence_refs':['fixture:positive-scope'],'perspectives':{p:{'applicability':'not-applicable',
+                'reason':'Initial fixture assessment.','evidence_refs':['fixture:scope']} for p in PERSPECTIVES}}
+        subject=record_risk(subject,scope,risk)
+        subject['review_risk_escalations']=[{'scope':scope,'bindings':review_bindings(subject,scope),
+            'review_id':'actual-independent-review','required_perspectives':['security']}]
+        actual=self.api().specialist_scope(subject,{'role':'branch-reviewer','perspective':'test'})
+        self.assertFalse(actual['lightweight'])
+        result=self.select(perspective='test',assessment=actual['assessment'])
+        self.assertEqual(result['profile'],'deep-reasoning');self.assertEqual(result['resolved']['effort'],'high')

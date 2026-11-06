@@ -135,6 +135,7 @@ def validate_test_quality(subject:dict,package:dict,report:dict)->dict:
                      and green.get('token')==attempts[-1].get('token'), 'A behavior must use its own current item attempt proof.')
             integrity=green.get('integrity',{});verification=integrity.get('contract',{})
             validate_test_pair(red.get('integrity',{}),integrity,verification,require_review=False)
+            need(red['integrity']['source_identity']!=integrity['source_identity'],'Unchanged source does not demonstrate a corrected implementation defect.')
             need(all(a['target_id'] in verification['targets'] and a['input_path'] in verification['input_hashes'] for a in assertions),'Assertions must exist in the executed locked verifier inputs.')
             relevant=alternative.get('target_ids',[])
             need(relevant and set(relevant).issubset({a['target_id'] for a in assertions}) and any(

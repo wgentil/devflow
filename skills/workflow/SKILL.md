@@ -7,7 +7,7 @@ description: Guide a software project through scoped context, requirements, plan
 
 Guide requirements, verified work, review and delivery. Resolve this skill's bundled helper; check Python 3.11+ and capture `version`. Call `host init` in the actual working directory; retain its control root/repo ID. New roots use v2; legacy roots stay legacy. Offer guided document setup and the first-use ground interview; ask only unresolved material decisions. Never create a run before its ordinary prerequisites.
 
-Inspect read-only; mutations recheck inputs and record drift. Follow journal gate status and eligible attempts; preserve the active token. Coordinate distinct item, branch and acceptance reviewers, configured hardening and exact-head delivery. After recording delivery, ask once whether to update the [DevFlow Codex site](https://devflow-field-guide.waygent.chatgpt.site/); update it only if accepted.
+Inspect read-only; mutations recheck inputs and record drift. Follow journal gate status and eligible attempts; preserve the active token. Require distinct item/branch coverage and acceptance review, configured hardening and exact-head delivery. After recording delivery, ask once whether to update the [DevFlow Codex site](https://devflow-field-guide.waygent.chatgpt.site/); update it only if accepted.
 
 Follow [maintenance guidance](GUIDE.md#control-state-maintenance) for requested maintenance: inspect without live approval repair; apply only an authorized exact plan and preserve history.
 
@@ -22,7 +22,7 @@ flowchart LR
     Prep -->|Blocked| Context[Explain phase and resolve preparation]
     Prep -->|Ready| Work[Stage responsibility]
     Work --> Result{Worker outcome}
-    Result -->|Complete scoped report| Evidence[Current evidence and next gate]
+    Result -->|Complete scoped report| Evidence[Current coverage and next gate]
     Result -->|Stale completed proof| Reverify[Reverify with fresh token and GREEN]
     Result -->|Partial or blocked| Recover[Resolve missing facts or controls]
     Evidence -->|Terminal, opted-in idle v2| Compact[Best-effort compaction]
@@ -72,4 +72,4 @@ See [governing guidance](../../docs/reference/governing-inputs.md).
 
 See [governing guidance](../../docs/reference/governing-inputs.md).
 
-[Review policy](../../docs/reference/adversarial-review.md).
+[Review gates](../../docs/reference/adversarial-review.md).

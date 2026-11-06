@@ -73,6 +73,14 @@ def supplemental_domain_streams():
         'id':'r','effects':{'e':{'effect_id':'e','status':'uncertain','owner_pid':12345,'worker_ref':'worker',
             'claimed_at_ms':10,'history':[]}},'native_invocations':{}}}},
         {'binding_id':'b','revision':1,'invocation_id':'e','observation_id':'termination','observation':observation})
+    abort_binding={'binding_id':'b','revision':1,'role':'branch-reviewer','run_id':'r','actor_id':'fixture-reviewer',
+        'host':'codex','session_id':'fixture-session','package_hash':'p','status':'active'}
+    from workflow_lib.effect_dispatch import binding_owner
+    yield pair('domain.host.native-abort',{'host_bindings':{'b':abort_binding},'runs':{'r':{'id':'r','status':'active',
+        'effects':{'e':{'effect_id':'e','status':'claimed','claimed_at_ms':10,'owner_pid':12345,'history':[],
+            'owner_binding':binding_owner(abort_binding)}},'native_invocations':{}}}},
+        {'binding_id':'b','revision':1,'invocation_id':'e','stage':'review','now_ms':20,'request_hash':'fixture-request',
+            'review_request_hash':'fixture-review-request','operation_id':'fixture-abort'})
     yield pair('domain.enforcement.review-adopt', {'runs': {'r': {'id': 'r', 'state_version': 0,
         'status': 'active', 'active_attempt': None}}}, {'run_id': 'r', 'authorization': {
         'approved': True, 'actor_id': 'fixture-user', 'run_id': 'r', 'state_version': 0,

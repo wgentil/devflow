@@ -144,3 +144,9 @@ raise SystemExit(0 if outcome=='passed' else 1)
             subject,package,report=self.quality_fixture()
             subject['verification_proofs']['g'][field]=value
             with self.subTest(field=field),self.assertRaises(WorkflowError):self.api().validate_test_quality(subject,package,report)
+
+    def test_unchanged_source_cannot_be_claimed_as_a_corrected_defect(self):
+        subject,package,report=self.quality_fixture()
+        subject['verification_proofs']['r']['integrity']['source_identity']='after'
+        subject['verification_proofs']['g']['integrity']['baseline_source']='after'
+        with self.assertRaises(WorkflowError):self.api().validate_test_quality(subject,package,report)
