@@ -13,6 +13,17 @@ def apply_enforcement(subject: dict, action: str, record: dict) -> dict:
         raise WorkflowError('ENFORCEMENT_REQUIRED', 'Adopt the current enforcement contract first.')
     if subject.get('status') in {'complete', 'delivered', 'discarded'}:
         raise WorkflowError('SCOPE_TERMINAL', 'Terminal scopes cannot authorize new mutations.')
+    if action in {'consolidate-findings','split-findings','finding-disposition'}:
+        from .finding_index import consolidate_findings,split_findings,record_disposition
+        return {'consolidate-findings':consolidate_findings,'split-findings':split_findings,'finding-disposition':record_disposition}[action](subject,record)
+    if action=='close-canonical':
+        from .finding_index import validate_canonical_closure,index_findings
+        closure=validate_canonical_closure(subject,record)
+        updated=deepcopy(subject)
+        for fid,result in closure['members'].items():
+            target=next(f for f in updated['unresolved_findings'] if f['id']==fid)
+            target.update(status='resolved',resolution=result)
+        return index_findings(updated,[])
     if action in {'implementation-contract','fix-rationale'}:
         from .implementation_contracts import record_implementation_contract, record_fix_rationale
         return (record_implementation_contract if action=='implementation-contract' else record_fix_rationale)(subject,record)
@@ -157,5 +168,9 @@ def apply_enforcement(subject: dict, action: str, record: dict) -> dict:
         closure = validate_closure(subject, record)
         target = next(f for f in updated['unresolved_findings'] if f['id'] == record['finding_id'])
         target.update(status='resolved', resolution=closure)
+        from .review_policy import review_version
+        if subject.get('finding_index') or review_version(subject) is not None:
+            from .finding_index import index_findings
+            return index_findings(updated,[])
         return updated
     raise WorkflowError('INVALID_ENFORCEMENT_EVENT', 'Unsupported enforcement action.')

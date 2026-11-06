@@ -436,7 +436,7 @@ def _apply_event(state: dict, event: dict, *, metrics_source_hash=None) -> None:
                     {'package_hash': package_hash, 'verdict': review['verdict'],
                      'reviewed_files': review.get('reviewed_files'),
                      'findings': review.get('findings'), 'blockers': review.get('blockers', []),
-                     **{k:review[k] for k in ('perspective','test_quality','test_oracles','risk_confirmation','closure_dispositions','protected_dispositions','diagnostic','model_invocation_id','reviewed_inputs','review_input_ref') if k in review}})
+                     **{k:review[k] for k in ('perspective','test_quality','test_oracles','risk_confirmation','closure_dispositions','protected_dispositions','diagnostic','model_invocation_id','reviewed_inputs','review_input_ref','finding_equivalences','finding_partitions','finding_dispositions') if k in review}})
             except ValueError as exc:
                 raise WorkflowError('INVALID_EVENT', str(exc)) from exc
             if expected != review:
@@ -942,6 +942,9 @@ def _guard_enforcement_transaction(state: dict, event: dict) -> None:
             raise WorkflowError('WORKER_RECONCILIATION_REQUIRED','Actual absent coordinator and adapter-held native recovery lease required.')
     if enforcement_version(run) is not None:
         kind=event['kind'];record=request.get('record',{})
+        if kind.startswith('domain.enforcement.'):
+            from .finding_index import guard_live_finding
+            guard_live_finding(run,kind.removeprefix('domain.enforcement.'),record)
         if kind=='domain.enforcement.tool-reconcile':
             from .process_liveness import process_alive
             owner=run.get('active_executions',{}).get(record.get('item_id'),{})

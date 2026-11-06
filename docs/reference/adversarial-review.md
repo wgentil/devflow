@@ -197,3 +197,39 @@ compact effective review references. Scope contains `role` and optional `item_id
 `review record` accepts `--model-invocation-id` for the actual transport receipt.
 See [report shape](../examples/adversarial-report.json); its placeholder identities
 are illustrative and cannot serve as verification or approval evidence.
+
+
+## Finding lineage and dispositions
+
+The finding index keeps every original ID, finding hash, provenance, severity,
+affected item, required perspective and obligation. Similar text does not prove
+that reports describe the same failure. An existing independent report may supply
+`finding_equivalences` with exact current member hashes, the same observed failure
+and correction, reason and evidence refs. `finding_partitions` can separate a
+previous group while retaining every member. These are optional fields in an
+already-required review, not an additional model stage. Newly reported findings
+can be grouped by a later required report that has their exact admitted hashes.
+Unresolved reviewer disagreements or business questions prevent consolidation.
+
+The optional developer commands `enforcement consolidate-findings`,
+`split-findings`, `finding-disposition`, and `close-canonical` accept `--root`,
+`--operation-id`, and `--input`; the input contains `run_id` and `record`.
+Consolidation selects `review_id`, `equivalence_id`, `member_ids` and optionally an
+existing `canonical_id`. Splitting selects `review_id`, `partition_id` and
+`canonical_id`. A disposition selects `review_id`, `disposition_id`, `finding_id`.
+Canonical closure selects `canonical_id` and `member_closures`, each using the
+ordinary finding closure shape (`finding_id` plus actual `review_ids`). All members
+are validated before any status changes. Exact retries return recorded results.
+Live producers check actual source, protected inputs and current review packages;
+historical replay performs no filesystem or provider observations.
+
+Grouping does not close obligations or clear spending, cycles or no-progress
+history. Every item needs its own current applicable proof and each required
+perspective needs a distinct independent actual invocation. Current-policy
+resolution/rejection needs compliant model evidence and sealed non-diagnostic
+output, even when the report requests changes elsewhere. A rejected finding needs
+actual approved authority; only nonmandatory minor/info findings can be deferred
+without user waiver. Resolved, rejected, deferred and waived remain distinct.
+Only proof-backed independently resolved obligations enter verified repair
+progress. Waivers, new IDs, grouping and splitting never create verified progress.
+See the illustrative [lineage request](../examples/finding-lineage.json).

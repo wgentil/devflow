@@ -10,7 +10,7 @@ from workflow_lib.store import WorkflowError
 def register_commands(parser):
     group = parser.add_parser('enforcement')
     actions = group.add_subparsers(dest='enforcement_command', required=True)
-    for name in ('decide', 'adopt', 'question', 'answer', 'propose-fix', 'close-finding', 'configure-effects', 'extend-effects', 'claim', 'effect-transition', 'observe-source', 'protect-inventory', 'reconcile-tool', 'propose-protected-change', 'approve-protected-change'):
+    for name in ('decide', 'adopt', 'question', 'answer', 'propose-fix', 'close-finding', 'close-canonical', 'consolidate-findings', 'split-findings', 'finding-disposition', 'configure-effects', 'extend-effects', 'claim', 'effect-transition', 'observe-source', 'protect-inventory', 'reconcile-tool', 'propose-protected-change', 'approve-protected-change'):
         command = actions.add_parser(name)
         add_journal_options(command)
         command.add_argument('--input', required=True)
@@ -59,14 +59,14 @@ def dispatch(parsed):
     if parsed.enforcement_command=='reconcile-tool':
         from workflow_lib.enforcement_recovery import reconcile_tool
         return reconcile_tool(Path(parsed.root),request['run_id'],request['record']['execution_id'],request['record']['worker_stop_confirmation'],parsed.operation_id)
-    if parsed.enforcement_command == 'close-finding':
+    if parsed.enforcement_command in {'close-finding','close-canonical','consolidate-findings','split-findings','finding-disposition'}:
         if not parsed.root:
             raise WorkflowError('CONTROL_ROOT_REQUIRED', 'mutations require --root')
         if not getattr(parsed, 'operation_id_explicit', False):
             raise WorkflowError('OPERATION_ID_REQUIRED', 'mutations require --operation-id for safe retry')
         from workflow_lib.storage_access import operation_lookup
         if operation_lookup(Path(parsed.root), parsed.operation_id):
-            return commit(parsed, 'domain.enforcement.close-finding', request)
+            return commit(parsed, 'domain.enforcement.'+parsed.enforcement_command, request)
         state = read_current(Path(parsed.root), run_id=request['run_id'])
         if parsed.expected_version is not None and parsed.expected_version != state['version']:
             raise WorkflowError('STATE_VERSION_CONFLICT', 'Re-read current closure inputs before retrying.')
@@ -75,10 +75,14 @@ def dispatch(parsed):
         from workflow_lib.finding_closure import validate_closure
         from workflow_lib.enforcement_live import assert_source_current, assert_protection_current
         from workflow_lib.host_completion import package_current
-        closure=validate_closure(subject, request['record'])
+        from workflow_lib.finding_index import validate_canonical_closure
+        action=parsed.enforcement_command
+        closure=(validate_canonical_closure(subject,request['record']) if action=='close-canonical' else
+            validate_closure(subject,request['record']) if action=='close-finding' else {'review_ids':[request['record']['review_id']]})
         assert_source_current(subject)
         protection_receipts = assert_protection_current(subject)
-        candidate = subject.get('corrections', {}).get(request['record']['finding_id'], {})
+        member_ids=(list(closure['members']) if action=='close-canonical' else [request['record'].get('finding_id')])
+        candidate = {'proof_ids':[pid for fid in member_ids for pid in subject.get('corrections',{}).get(fid,{}).get('proof_ids',[])]}
         for proof_id in candidate.get('proof_ids', []):
             verifier = subject.get('verifier_proofs', {}).get(proof_id, {})
             evidence = subject.get('verification_proofs', {}).get(verifier.get('evidence_id'), {})

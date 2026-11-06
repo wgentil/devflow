@@ -103,6 +103,8 @@ def transact_session(path: Path, expected_version: int, operation_id: str, event
             raise WorkflowError('STATE_VERSION_CONFLICT', 'Re-read the session before issuing a new operation.')
         from .session_evidence import guard_execution_event
         guard_execution_event(path,state['subject'],event['action'],event['record'])
+        from .finding_index import guard_live_finding
+        guard_live_finding(state['subject'],event['action'],event['record'])
         subject = apply_enforcement(state['subject'], event['action'], event['record'])
         updated = {**state, 'version': expected_version+1, 'subject': subject}
         receipt = {'version': updated['version'], 'operation_id': operation_id, 'subject_hash': digest(subject), 'replayed': False}

@@ -108,6 +108,9 @@ def subject_decision(subject: dict, action: str, scope: dict) -> dict:
         review_context = {'review_policy_hash':digest(subject['review_policy']),
                           'risk_hash':digest({'assessments':subject.get('risk_assessments', {}),'escalations':subject.get('review_risk_escalations',[])}),
                           'implementation_contract_hash':digest(subject.get('implementation_contracts', {}))}
+    if review_selected is not None and action=='dispatch':
+        review_context.update(finding_index_hash=digest(subject.get('finding_index',{})),
+                              fix_rationale_hash=digest(subject.get('fix_rationales',{})))
     if selected is None:
         return evaluate_action(action, scope, {'policy_version': None})
     from .clarifications import clarification_blockers, clarification_binding

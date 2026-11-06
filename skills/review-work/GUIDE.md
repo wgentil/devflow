@@ -314,3 +314,23 @@ flowchart LR
     Gate -->|Yes| Next[Next distinct workflow stage]
     Gate -->|No| Block[Findings, clarification or concrete missing evidence]
 ```
+
+
+## Finding grouping and atomic closure
+
+Use [finding lineage and dispositions](../../docs/reference/adversarial-review.md#finding-lineage-and-dispositions)
+when existing review output establishes the same failure and correction. Keep all
+original IDs, item proofs and required perspectives; unresolved business questions
+need an answer before grouping. Grouping/splitting does not resolve a member or
+reset repair limits. `close-canonical` validates every member before changing any
+status. Diagnostic reports cannot authorize current-policy resolution/rejection.
+
+```mermaid
+flowchart LR
+    Originals[Original findings and hashes] --> Evidence[Existing independent report evidence]
+    Evidence --> Index[Canonical aliases retain every obligation]
+    Index --> Proof[Current proof and actual perspectives per member]
+    Proof --> Atomic{Every member valid?}
+    Atomic -->|Yes| Resolve[Atomically resolve members]
+    Atomic -->|No| Retain[Retain original obligations and budget]
+```

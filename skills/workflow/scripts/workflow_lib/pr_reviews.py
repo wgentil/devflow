@@ -301,7 +301,7 @@ def record_pr_review(run: dict, package_hash: str, reviewer: dict, report: dict)
     from .review_policy import review_version
     if review_version(run) is not None:
         body['adversarial_bindings']=package.get('adversarial_bindings')
-        for key in ('perspective','test_quality','test_oracles','risk_confirmation','closure_dispositions','protected_dispositions','diagnostic','reviewed_inputs','review_input_ref'):
+        for key in ('perspective','test_quality','test_oracles','risk_confirmation','closure_dispositions','protected_dispositions','diagnostic','reviewed_inputs','review_input_ref','finding_equivalences','finding_partitions','finding_dispositions'):
             if key in report:body[key]=report[key]
         body['model_invocation_id']=reviewer.get('model_invocation_id') or report.get('model_invocation_id')
     body['review_id'] = _hash(body)

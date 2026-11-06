@@ -258,7 +258,7 @@ def record_review(run: dict, package_hash: str, reviewer: dict, report: dict) ->
         review['adversarial_bindings']=deepcopy(package.get('adversarial_bindings'))
         if reviewer.get('model_invocation_id') or report.get('model_invocation_id'):
             review['model_invocation_id']=reviewer.get('model_invocation_id') or report['model_invocation_id']
-        for key in ('risk_confirmation','diagnostic','test_quality','reviewed_inputs','review_input_ref'):
+        for key in ('risk_confirmation','diagnostic','test_quality','reviewed_inputs','review_input_ref','finding_equivalences','finding_partitions','finding_dispositions'):
             if key in report:review[key]=deepcopy(report[key])
         if role!='acceptance':validate_adversarial_review(run,package,review)
         else:
@@ -341,6 +341,6 @@ def validate_review_contract(run,review):
     findings=review.get('findings')
     if not isinstance(findings,list) or any(not isinstance(f,dict) for f in findings):raise ValueError('Structured findings required.')
     if review.get('verdict')=='request-changes' and not findings:raise ValueError('request-changes requires findings.')
-    for field in ('closure_dispositions','test_oracles','protected_dispositions'):
+    for field in ('closure_dispositions','test_oracles','protected_dispositions','finding_equivalences','finding_partitions','finding_dispositions'):
         if not isinstance(review.get(field,[]),list) or any(not isinstance(v,dict) for v in review.get(field,[])):
             raise ValueError(field+' must be an array of records')

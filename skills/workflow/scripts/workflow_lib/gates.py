@@ -193,9 +193,11 @@ def gate_status(run: dict, live: bool = True) -> dict:
                for item in run.get('plan',{}).get('work_items',[]) if item['id'] in unverified
                and item.get('kind') == 'code' and run.get('items',{}).get(item['id'],{}).get('status') == 'complete']
     recovery = {'reverification_actions':actions} if actions else {}
+    from .review_policy import review_version
+    finding_disposed=({'waived','resolved','rejected','deferred'} if review_version(run) is not None else
+                      {'waived','resolved'} if enforcement_version(run) is not None else {'waived'})
     mandatory_blockers = [finding.get("id") for finding in run.get("unresolved_findings", [])
-                          if finding.get("mandatory") is True and finding.get("status") not in (
-                              {"waived", "resolved"} if enforcement_version(run) is not None else {"waived"})]
+                          if finding.get("mandatory") is True and finding.get("status") not in finding_disposed]
     if mandatory_blockers:
         return {"stage": stage, "can_advance": False, "blocking_findings": mandatory_blockers,
                 "unverified_items": unverified, **recovery}

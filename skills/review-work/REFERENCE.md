@@ -102,3 +102,5 @@ ancestor. Changed packaged inputs, history rewrite, plan/governing/attempt or
 artifact changes require a fresh package. Both host completion and review record
 use this same check. Diagnostics list up to 64 changed paths with omission count;
 old whole-tree packages can disclose unavailable per-path detail for legacy metadata.
+
+Finding metadata commands and atomic closure: [finding lineage](../../docs/reference/adversarial-review.md#finding-lineage-and-dispositions).

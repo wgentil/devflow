@@ -645,3 +645,5 @@ workflow and exact PR stages; diagnostics remain distinct from passes. Required
 review artifacts contain the complete scoped inputs. Standalone conversational
 orchestration and bounded repair remain in implementation; missing eligible
 mappings still block automatic specialist work. See [current review scope](reference/adversarial-review.md).
+
+Finding grouping uses evidence in existing independent reviews, retains every original obligation and never resets limits. [Finding lineage](reference/adversarial-review.md#finding-lineage-and-dispositions) describes atomic member closure and distinct resolved/rejected/deferred/waived outcomes; diagnostics cannot authorize current-policy resolution or rejection.

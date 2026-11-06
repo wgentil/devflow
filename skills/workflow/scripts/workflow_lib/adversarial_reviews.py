@@ -170,7 +170,7 @@ def review_coverage(subject:dict,role:str,item_id:str|None=None)->dict:
 
 
 REPORT_FIELDS=('verdict','findings','blockers','reviewed_files','test_oracles','test_quality',
-               'risk_confirmation','closure_dispositions','protected_dispositions','diagnostic','reviewed_inputs','review_input_ref')
+               'risk_confirmation','closure_dispositions','protected_dispositions','diagnostic','reviewed_inputs','review_input_ref','finding_equivalences','finding_partitions','finding_dispositions')
 
 def semantic_report_hash(report):
     bounded(report)
@@ -233,7 +233,8 @@ def ingest_report_findings(subject,review):
             if identifier not in updated.get('clarifications',{}):
                 updated=record_question(updated,{'id':identifier,'text':raw['question'],'scope':[item_id] if item_id else None,
                     'source_identity':updated['source_identity'],key:authority})
-    return updated
+    from .finding_index import index_findings
+    return index_findings(updated,[review])
 
 
 def validate_acceptance_review(subject,package,review):
@@ -267,6 +268,9 @@ def report_contract(role=None):
         'test_perspective':{'test_oracles':'Actual linked RED/GREEN IDs, locked input hashes, targets, independent authority and failure relevance.',
             'test_quality':{'contract_binding':'adversarial_bindings.inputs.contract_hash','limitations':'Explicit array.',
                 'behaviors':'Every contract behavior with id/item_id, authority_refs, independently justified oracle_kind/oracle_rationale, assertions (target_id/input_path/assertion_ref), and incorrect_behaviors (text/failure_relevance/red_proof_id/green_proof_id/target_ids).'}},
+        'finding_lineage':{'finding_equivalences':'id, member_ids, exact finding_hashes, source_identity, same_failure (trigger/observed/expected), same_correction, reason, evidence_refs.',
+            'finding_partitions':'id, canonical_id, groups covering every original member exactly once, exact finding_hashes, source_identity, reason, evidence_refs.',
+            'finding_dispositions':'id, finding_id, exact finding_hash, source_identity, disposition rejected/deferred, reason, evidence_refs and approved authority_refs for rejection; no model waiver or unproved resolution.'},
         'whole_scope_code':'risk_confirmation needs exact review_requirements.assessment_hash, disposition confirmed/conservative/raise, reason and package evidence; raising lists required_perspectives.',
         'limitations':'Unavailable or surviving required discrimination blocks pass. Missing business intent creates an actual question. Do not invent proof, decisions or execution.'}
     if role=='pr':
@@ -299,7 +303,8 @@ def review_material(subject,scope):
         if red in subject.get('verification_proofs',{}):proofs[red]=deepcopy(subject['verification_proofs'][red])
     contracts={key:deepcopy(value) for key,value in subject.get('implementation_contracts',{}).items()
         if not ids or value.get('scope',{}).get('item_id') in ids or value.get('scope',{}).get('role') in {'branch','session'}}
-    return {'verification_proofs':proofs,'implementation_contracts':contracts,
+    return {'finding_index':deepcopy(subject.get('finding_index',{})),
+        'verification_proofs':proofs,'implementation_contracts':contracts,
         'fix_rationales':{key:deepcopy(value) for key,value in subject.get('fix_rationales',{}).items()
             if not ids or not value.get('scope',{}).get('item_id') or value['scope']['item_id'] in ids},
         'configured_checks':deepcopy(subject.get('hardening_config',{})),

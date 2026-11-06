@@ -48,7 +48,7 @@ def _validate_one(subject: dict, request: dict, *, check_perspective=True) -> di
     implementers = set(subject.get('implementer_actors', [])) | {subject.get('actors', {}).get('implementer')}
     _require(review.get('actor_id') and review['actor_id'] not in implementers
              and review.get('invocation_ref') and review.get('fresh') is not False
-             and review.get('verdict') in {'pass', 'request-changes', 'block'}, 'Fresh completed independent assessment required.')
+             and review.get('verdict') in {'pass', 'request-changes', 'block', 'changes-requested', 'blocked', 'needs-clarification'}, 'Fresh completed independent assessment required.')
     from .stored_records import require_package
     from .review_enforcement import review_bindings_current
     package = require_package(subject.get('review_packages', {}).get(review.get('package_hash')))
@@ -57,6 +57,12 @@ def _validate_one(subject: dict, request: dict, *, check_perspective=True) -> di
         _require(package_current(subject,package),'Current standalone review package required.')
     else:_require(review_bindings_current(subject, package, live=False), 'Current review input and question bindings required.')
     _require(package.get('source_identity') == source, 'Review package must bind current corrected source.')
+    from .review_policy import review_version
+    if review_version(subject) is not None:
+        from .finding_index import _recorded_review
+        _recorded_review(subject,review['review_id'],diagnostic_allowed=False)
+        _require(review.get('role')!='item' or finding.get('item_id')==review.get('item_id'),
+                 'An item reviewer cannot resolve another item outside its actual package scope.')
     required_perspectives = set(finding.get('required_perspectives', []))
     if finding.get('required_perspective'): required_perspectives.add(finding['required_perspective'])
     _require(not check_perspective or not required_perspectives or (isinstance(review.get('perspective'),str) and required_perspectives.issubset({review['perspective']})),

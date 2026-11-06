@@ -1,0 +1,11 @@
+{
+  "run_id": "ACTUAL_RUN_ID",
+  "record": {
+    "review_id": "ACTUAL_RECORDED_REVIEW_ID",
+    "equivalence_id": "ACTUAL_RECORDED_EQUIVALENCE_ID",
+    "member_ids": [
+      "ACTUAL_ORIGINAL_ID_1",
+      "ACTUAL_ORIGINAL_ID_2"
+    ]
+  }
+}

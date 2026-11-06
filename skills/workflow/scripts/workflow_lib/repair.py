@@ -14,8 +14,9 @@ def _digest(value: dict) -> str:
 
 def failure_delta(run: dict) -> dict:
     """Return stable IDs for unresolved findings and failed or missing proof."""
-    findings = [row for row in run.get('unresolved_findings', [])
-                if row.get('status') not in {'resolved', 'waived'}]
+    from .review_policy import review_version
+    disposed={'resolved','waived','rejected','deferred'} if review_version(run) is not None else {'resolved','waived'}
+    findings = [row for row in run.get('unresolved_findings', []) if row.get('status') not in disposed]
     finding_ids = sorted({row['id'] for row in findings if isinstance(row.get('id'), str) and row['id']})
     item_ids = {row['item_id'] for row in findings
                 if isinstance(row.get('item_id'), str) and row['item_id']}
