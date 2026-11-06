@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "git_sha": "4a650ea3821c06f2d5686afcf1225cd2b19ecbde",
+  "descriptor": {
+    "plugin": "devflow",
+    "plugin_version": "0.3.18",
+    "state_schema_version": 1,
+    "supported_schemas": [
+      1
+    ],
+    "storage_format_version": 2,
+    "supported_storage_formats": [
+      1,
+      2
+    ],
+    "host_protocol_version": 1,
+    "release_id": "34972af96c13e659aacdf744a1e8cbc347d0f8ef0c8edcb8f8de99c8a4301215",
+    "fingerprint": "34972af96c13e659aacdf744a1e8cbc347d0f8ef0c8edcb8f8de99c8a4301215"
+  },
+  "gates": {
+    "codex_install": {
+      "status": "PASS",
+      "skill_count": 11,
+      "descriptor": {
+        "plugin": "devflow",
+        "plugin_version": "0.3.18",
+        "state_schema_version": 1,
+        "supported_schemas": [
+          1
+        ],
+        "storage_format_version": 2,
+        "supported_storage_formats": [
+          1,
+          2
+        ],
+        "host_protocol_version": 1,
+        "release_id": "34972af96c13e659aacdf744a1e8cbc347d0f8ef0c8edcb8f8de99c8a4301215",
+        "fingerprint": "34972af96c13e659aacdf744a1e8cbc347d0f8ef0c8edcb8f8de99c8a4301215"
+      }
+    },
+    "claude_install": {
+      "status": "PASS",
+      "skill_count": 11,
+      "descriptor": {
+        "plugin": "devflow",
+        "plugin_version": "0.3.18",
+        "state_schema_version": 1,
+        "supported_schemas": [
+          1
+        ],
+        "storage_format_version": 2,
+        "supported_storage_formats": [
+          1,
+          2
+        ],
+        "host_protocol_version": 1,
+        "release_id": "34972af96c13e659aacdf744a1e8cbc347d0f8ef0c8edcb8f8de99c8a4301215",
+        "fingerprint": "34972af96c13e659aacdf744a1e8cbc347d0f8ef0c8edcb8f8de99c8a4301215"
+      }
+    },
+    "codex_control_formats": {
+      "status": "PASS",
+      "storage_formats": [
+        1,
+        2
+      ],
+      "logical_schema": 1
+    },
+    "claude_control_formats": {
+      "status": "PASS",
+      "storage_formats": [
+        1,
+        2
+      ],
+      "logical_schema": 1
+    },
+    "codex_startup": {
+      "status": "PASS",
+      "version": "0.167.0"
+    },
+    "claude_startup": {
+      "status": "PASS",
+      "version": "2.1.318"
+    },
+    "codex_protocol": {
+      "status": "PASS",
+      "detail": "initialize/account-status completed; no model turn submitted"
+    },
+    "claude_hook_scripts": {
+      "status": "PASS",
+      "python_command": "python3",
+      "storage_formats": [
+        1,
+        2
+      ],
+      "live_event_dispatch": "NOT_RUN"
+    }
+  },
+  "authenticated_workflow": {
+    "status": "NOT_RUN",
+    "reason": "Startup checks do not execute signed-in model tasks or live session events."
+  },
+  "success": true
+}

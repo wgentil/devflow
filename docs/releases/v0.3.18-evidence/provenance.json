@@ -1,0 +1,352 @@
+{
+  "schema_version": 1,
+  "plugin_source": "0a8922de4b1533726b5ebbbe9d3729ce9fdf0f8f",
+  "maintainer_harness_source": "04dc92ce8b51ea7dff7ccab0da974d3869e716bf",
+  "descriptor": {
+    "plugin": "devflow",
+    "plugin_version": "0.3.18",
+    "state_schema_version": 1,
+    "supported_schemas": [
+      1
+    ],
+    "storage_format_version": 2,
+    "supported_storage_formats": [
+      1,
+      2
+    ],
+    "host_protocol_version": 1,
+    "release_id": "16909b124274b180698dc4b5784386e83cd8a367997120289043941d976ad6ab",
+    "fingerprint": "16909b124274b180698dc4b5784386e83cd8a367997120289043941d976ad6ab"
+  },
+  "matrix_run_id": 42253756305,
+  "matrix_successful_cells": 8,
+  "matrix_overall": "cancelled; not claimed green",
+  "complete_windows_minimum_run_id": 42265959519,
+  "complete_windows_minimum_success": true,
+  "focused_windows_minimum_run_id": 42264102700,
+  "required_cells_verified": 9,
+  "functional_assertions_unchanged": true,
+  "added_test": "maintainer failfast reporter regression",
+  "fingerprinted_plugin_files_identical": true,
+  "acceptance_reports": [
+    "local-platform.json",
+    "platform-ubuntu-latest-3.11.json",
+    "platform-ubuntu-latest-3.x.json",
+    "platform-macos-latest-3.11.json",
+    "platform-macos-latest-3.x.json",
+    "platform-windows-latest-3.11.json",
+    "platform-windows-latest-3.x.json",
+    "legacy-windows-3.11.json",
+    "legacy-windows-3.x.json",
+    "local-installed.json",
+    "github-installed.json",
+    "windows-installed.json"
+  ],
+  "historical_untraced_failure_cause": "unknown; retained; not reproduced in focused/full subsequent checks",
+  "authenticated_workflows": "NOT_RUN",
+  "user_agents_preserved": true,
+  "files": [
+    {
+      "file": "agents-preserved.json",
+      "bytes": 97,
+      "sha256": "1ffd14ddb7ad21332286dc94f66e74b07fc601566b36a542b19657357564c812"
+    },
+    {
+      "file": "candidate-identity.json",
+      "bytes": 344,
+      "sha256": "4bd5ab972b7cba694471d427b391dbc092b6cf38d9ec1d746bf77a3c4bf53eec"
+    },
+    {
+      "file": "corrected-ci-with-windows311-timeout.json",
+      "bytes": 16510,
+      "sha256": "4cb8e347f1ba2f7c1cecfcc2a66ecec8fc628a02001a140dbc8511d420861cde"
+    },
+    {
+      "file": "correction-focused.json",
+      "bytes": 2882,
+      "sha256": "01b33a481ad761b86d7ea70c66bb195df7dfb13d207a0d97d5df85b4b02e653e"
+    },
+    {
+      "file": "failfast-green.log",
+      "bytes": 101,
+      "sha256": "77209dd734c81cb898fd705f85179e1c906b92b03027dac3132e08cef9423360"
+    },
+    {
+      "file": "failfast-red.log",
+      "bytes": 1004,
+      "sha256": "a4d301bf394aac6b2a8f6268cc873a125702588f42594e34a16757f05f887a56"
+    },
+    {
+      "file": "final-documentation.json",
+      "bytes": 6595,
+      "sha256": "595bc74bc65208f99872f7fed7b7e69cf6194c188cd039af18c821ea7cf81dbb"
+    },
+    {
+      "file": "final-focused-platform.json",
+      "bytes": 2823,
+      "sha256": "1c80e02e6843caf5637189025c1c7614bcc5978388e8db85e496dc2de1b57fad"
+    },
+    {
+      "file": "final-windows311-ci-run.json",
+      "bytes": 2263,
+      "sha256": "bcaaec37544068ae89d5c8548cba5214196924d45a0907eb47177c08bcfc232d"
+    },
+    {
+      "file": "focused-platform.json",
+      "bytes": 2762,
+      "sha256": "9c16eb610eb4ec8bad44312c11cff7cfdae2703dfa696efe396927f707f96cc9"
+    },
+    {
+      "file": "focused-windows311-ci-run.json",
+      "bytes": 2060,
+      "sha256": "5cea5f333f617abf0a537b0812a14a8648d886a4ab4bf06dbda9510c75d9b94a"
+    },
+    {
+      "file": "github-installed.commands.json",
+      "bytes": 7665,
+      "sha256": "fd5d26be1c3ad160e53c612be918b55fd628f66770f06b884622bc7ad351c28d"
+    },
+    {
+      "file": "github-installed.hooks.log",
+      "bytes": 5193,
+      "sha256": "a6feb8a25aba501198619c9662345f84d4e1a291d25786ad466361b6768ae378"
+    },
+    {
+      "file": "github-installed.json",
+      "bytes": 2644,
+      "sha256": "adb5e275b894fda61d5716992796e26a684cc2c20be24e3c067288713091d626"
+    },
+    {
+      "file": "github-installed.source.json",
+      "bytes": 584,
+      "sha256": "2420e6a641499484da5263b5d50843619cf2f0133f8230fddf64b73c3d7336b5"
+    },
+    {
+      "file": "initial-candidate/candidate-identity.json",
+      "bytes": 344,
+      "sha256": "c2442e49df72cbf1f31a84edc8761ae4d254596c397b080b03bc612fcc5eb89a"
+    },
+    {
+      "file": "initial-candidate/github-installed.commands.json",
+      "bytes": 7666,
+      "sha256": "ef1f3206c7b1de1546db7cfdb4bad5d74859c31120f8f067df9817d180a11472"
+    },
+    {
+      "file": "initial-candidate/github-installed.hooks.log",
+      "bytes": 5193,
+      "sha256": "d0f6072f458df10e37efc6a1f768c31e52217997c6ad9c5f27e39eb6c5053ee2"
+    },
+    {
+      "file": "initial-candidate/github-installed.json",
+      "bytes": 2644,
+      "sha256": "fe68bc28925c380ebd6f3033d82a05ab32693493329a6ba3219c2b84bfe72f4b"
+    },
+    {
+      "file": "initial-candidate/github-installed.source.json",
+      "bytes": 584,
+      "sha256": "13ac3ef1e5c7113f69dfedf68f9e0286db8710f8838f9c2edfaa789872a07b3b"
+    },
+    {
+      "file": "initial-candidate/legacy-windows-3.11.json",
+      "bytes": 3239,
+      "sha256": "8fec55f252a8e2dc9d792744fba384e62585cc0532940712e2b15b12fe9386a4"
+    },
+    {
+      "file": "initial-candidate/legacy-windows-3.x.json",
+      "bytes": 3278,
+      "sha256": "d830f7efb3050c3721394a33147eee44e76c6e7c084eda1c4d386d657fa8729d"
+    },
+    {
+      "file": "initial-candidate/local-installed.commands.json",
+      "bytes": 7728,
+      "sha256": "06bc994ccf235df7695d9a58c91dd903195ee77cf42baa8e02bf89abe881603a"
+    },
+    {
+      "file": "initial-candidate/local-installed.hooks.log",
+      "bytes": 5193,
+      "sha256": "14a05c3100b4f05ad13f20b8565951554fcf1facc28da9a926e78ac49c600ebf"
+    },
+    {
+      "file": "initial-candidate/local-installed.json",
+      "bytes": 2644,
+      "sha256": "fe68bc28925c380ebd6f3033d82a05ab32693493329a6ba3219c2b84bfe72f4b"
+    },
+    {
+      "file": "initial-candidate/local-installed.source.json",
+      "bytes": 583,
+      "sha256": "dec4b1e26ab916effa3154ad039ae9989911a74624862517314bbf2e3a69f25f"
+    },
+    {
+      "file": "initial-candidate/local-platform.json",
+      "bytes": 3791,
+      "sha256": "8f5243694e04007ee1619df67acfe77d8d1128c42228a96d432b3d5da2b85a24"
+    },
+    {
+      "file": "initial-candidate/platform-macos-latest-3.11.json",
+      "bytes": 3625,
+      "sha256": "448c36fd1baeeb615d620fcd3702a1ee08da17d3ee5f651f54f8e8ace50edea2"
+    },
+    {
+      "file": "initial-candidate/platform-macos-latest-3.x.json",
+      "bytes": 3609,
+      "sha256": "502f6319319dbd8252ef1a4d6e56cbb3457a0e0c76b4f6fd19b30ba743dbf97c"
+    },
+    {
+      "file": "initial-candidate/platform-ubuntu-latest-3.11.json",
+      "bytes": 3964,
+      "sha256": "fab9fb224232bab0e94d5b041818402c5316ed9ff02bd8161b82e15b006b96f4"
+    },
+    {
+      "file": "initial-candidate/platform-ubuntu-latest-3.x.json",
+      "bytes": 3962,
+      "sha256": "95ea14f10781c9fbb03e9e7ecca392a5936352e94493139cff85d2c940a29f1d"
+    },
+    {
+      "file": "initial-candidate/windows-installed.hooks.log",
+      "bytes": 5239,
+      "sha256": "6b7af9e71a21ef139fe438cdb15ac420a9f198abfb0f542bbcd84560084ec970"
+    },
+    {
+      "file": "initial-candidate/windows-installed.json",
+      "bytes": 2786,
+      "sha256": "909e8bee0a0af5217596e438090e6b2d2c3d09d7b74caeef3bec45a7db82ca7f"
+    },
+    {
+      "file": "initial-ci-run.json",
+      "bytes": 16504,
+      "sha256": "2349ff7629f3ad9eceabd3ea5a1e03d13b4f15e1bc8a7e6783300b47ded4b9c6"
+    },
+    {
+      "file": "initial-documentation.json",
+      "bytes": 6595,
+      "sha256": "f626799c3f965758ab396e8adb7c3e37619cd6d4f2775c53f7653c5d59f98f4e"
+    },
+    {
+      "file": "initial-windows-3.11-failed.json",
+      "bytes": 96896,
+      "sha256": "323621a9df41042e31101314f65925bf64abed9ba7cf2aa9c80676df5df91b12"
+    },
+    {
+      "file": "initial-windows-3.x-failed.json",
+      "bytes": 121771,
+      "sha256": "6c414e33d5e23b154be83978d38ccc7f7f24f47d312892b01b2fa9fef99c620e"
+    },
+    {
+      "file": "legacy-windows-3.11.json",
+      "bytes": 3239,
+      "sha256": "0c33d391c702cada6551ebce262059834b74cafd09247d5be33e254dbd8dd75b"
+    },
+    {
+      "file": "legacy-windows-3.x.json",
+      "bytes": 3279,
+      "sha256": "97781b9f472d9069275c61049bf5791dd36db72e123f33a1a867ff8f48f03648"
+    },
+    {
+      "file": "local-installed.commands.json",
+      "bytes": 7728,
+      "sha256": "d6cfa04d951ac55b377aae95b05a5109fa9404c9bd529dab3e3f679763c52a12"
+    },
+    {
+      "file": "local-installed.hooks.log",
+      "bytes": 5193,
+      "sha256": "de2a6108de8e4d014de645fe1375fc004669d7b70aa448035b96ea808a348ecf"
+    },
+    {
+      "file": "local-installed.json",
+      "bytes": 2644,
+      "sha256": "adb5e275b894fda61d5716992796e26a684cc2c20be24e3c067288713091d626"
+    },
+    {
+      "file": "local-installed.source.json",
+      "bytes": 583,
+      "sha256": "6e82ff4928e23fd255d9a4d959da788a194ae7d82b45f71a5762c1023ec00f97"
+    },
+    {
+      "file": "local-platform.json",
+      "bytes": 3814,
+      "sha256": "71515c45f2644a71c3d645c0de9f7b1c5661052da3c80d4aaec159b3783f54f6"
+    },
+    {
+      "file": "path-parity-final.log",
+      "bytes": 100,
+      "sha256": "f7d99e5cad7ef3acec3e477830839757d2d0be51aa095fde85025c151dc75de2"
+    },
+    {
+      "file": "path-parity-green.log",
+      "bytes": 103,
+      "sha256": "e15dc9cbb56487e4efd3e7afbc15d89f7618cebc2c28a345367ac05826c41793"
+    },
+    {
+      "file": "path-parity-red.log",
+      "bytes": 2427,
+      "sha256": "07cd0e78f335351cc2c58f5178994379e48e35e8711de8ffb76f664c89ae82db"
+    },
+    {
+      "file": "platform-macos-latest-3.11.json",
+      "bytes": 3625,
+      "sha256": "8de58388796a215fa302ef18665898b26b18c0591c964224f909b408fce9af5c"
+    },
+    {
+      "file": "platform-macos-latest-3.x.json",
+      "bytes": 3610,
+      "sha256": "222ae71d6279812e302ab71233324bf5145049114af0922a2efa068e4c0ad243"
+    },
+    {
+      "file": "platform-ubuntu-latest-3.11.json",
+      "bytes": 3964,
+      "sha256": "e7ba898231912631dd75bb1a28b7f3be3526114529c1f6231a7326d3f0f366ac"
+    },
+    {
+      "file": "platform-ubuntu-latest-3.x.json",
+      "bytes": 3962,
+      "sha256": "df6d78f742284590d3f22cd251e6333f8e68c4bd7377bd0d1bd54f022a741b94"
+    },
+    {
+      "file": "platform-windows-latest-3.11.json",
+      "bytes": 3249,
+      "sha256": "c94ee8c0a201683414c400e9c49956260d5f9bdcf9b43fcd6b5f28c57e33bb18"
+    },
+    {
+      "file": "platform-windows-latest-3.x.json",
+      "bytes": 3262,
+      "sha256": "65a2f0b66a9001d0f6763b8151de6a52be610be651c4212640987d00490212b9"
+    },
+    {
+      "file": "published-notes.md",
+      "bytes": 2088,
+      "sha256": "fb6c1e31aea2cd846de1d0ab85c40df6f26bb5226323909b8013d2080d46747a"
+    },
+    {
+      "file": "version-red.log",
+      "bytes": 706,
+      "sha256": "ab214b1d923ab0742d1d2ced8edbaca0a7d7fc695cfb83bf94ceb16c659313bc"
+    },
+    {
+      "file": "windows-installed.hooks.log",
+      "bytes": 5239,
+      "sha256": "95f2117d4f43ddffb027599407e1b0746097350d751c0725e4ca1ccd570c2592"
+    },
+    {
+      "file": "windows-installed.json",
+      "bytes": 2786,
+      "sha256": "7ef58bc1f9586f07464cc63d215c425886a969f817dda61127d295cbb19d7957"
+    },
+    {
+      "file": "windows311-focused-review-report.json",
+      "bytes": 2559,
+      "sha256": "683bc884f46759e19182fa274548e9e2d1e19ec6cef368119989612ed2a0f89e"
+    },
+    {
+      "file": "windows311-focused-scale-report.json",
+      "bytes": 2549,
+      "sha256": "e723fdc6ebda25be4973c46cb4423eecd4d1bf57397be2301b6f98763482cdad"
+    },
+    {
+      "file": "windows311-timeout.log",
+      "bytes": 310896,
+      "sha256": "e238697e40df435dc746a4d8a62ade97885b5f3a4d9278a5ccb6a7f7957e5b27"
+    }
+  ],
+  "prepared_notes": "published-notes.md",
+  "notes_link_resolution": "relative repository links resolved to GitHub URLs"
+}

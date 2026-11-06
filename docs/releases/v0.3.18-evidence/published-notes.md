@@ -1,0 +1,31 @@
+# DevFlow v0.3.18
+
+This release adds Python enforcement foundations, standalone selected-scope
+review, risk-based independent code/test/architecture/security reviews and
+explicit bounded repair. Existing runs retain their historical policy until
+explicit adoption. Schema 1, storage formats 1/2, host protocol 1 and eleven
+skill roles remain unchanged.
+
+- Bind implementation intent, user decisions, protected test inputs and actual
+  execution evidence; unresolved business questions block dependent work.
+- Require eligible independent specialist invocations, full intact input artifacts
+  and current source-bound reports. Test review checks independent oracle authority,
+  actual assertions and relevant regression discrimination.
+- Repair finding-driven and explicitly mapped pre-review check failures within
+  finite budgets, using actual verification and independent rereview. Preserve
+  finding lineage, uncertain execution and observed recovery without duplicate work.
+- Review an explicit Git range or working tree outside a workflow. Default to
+  report only; source edits require separate exact scope authorization.
+- Summarize retained review outcomes and measured usage; reuse only exact valid
+  original assessments. Unknown costs and unreported escapes remain unknown.
+
+Native mappings remain explicit. Signed-in production workflows, automatic
+organization discovery and complete mutation-tool integration are not claimed.
+Non-code repair retains kind-specific handoffs; missing discrimination or tools
+cannot manufacture passing evidence. See the [setup guide](https://github.com/wgentil/devflow/blob/v0.3.18/docs/setup-and-usage.md)
+and [release validation](https://github.com/wgentil/devflow/blob/main/docs/releases/v0.3.18-validation.md).
+
+Release verification: 1,261 local tests passed. Successful actual evidence covers
+all nine platform/install cells; Windows/Python3.11 was verified separately after
+a timed-out matrix attempt. All three isolated installation sources pass eight
+checks. The validation report retains exact source boundaries, failures and limits.

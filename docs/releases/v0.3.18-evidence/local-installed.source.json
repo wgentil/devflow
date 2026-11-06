@@ -1,0 +1,21 @@
+{
+  "commit": "0a8922de4b1533726b5ebbbe9d3729ce9fdf0f8f",
+  "source": "local-installed",
+  "temporary_configurations_removed": true,
+  "descriptor": {
+    "plugin": "devflow",
+    "plugin_version": "0.3.18",
+    "state_schema_version": 1,
+    "supported_schemas": [
+      1
+    ],
+    "storage_format_version": 2,
+    "supported_storage_formats": [
+      1,
+      2
+    ],
+    "host_protocol_version": 1,
+    "release_id": "16909b124274b180698dc4b5784386e83cd8a367997120289043941d976ad6ab",
+    "fingerprint": "16909b124274b180698dc4b5784386e83cd8a367997120289043941d976ad6ab"
+  }
+}
