@@ -61,10 +61,10 @@ def _stop(process):
     process.wait(timeout=2)
 
 
-def run_bounded(argv, cwd, timeout=30):
+def run_bounded(argv, cwd, timeout=30, *, raw=False):
     """Bound bytes during capture, not after an unbounded communicate()."""
     if os.name == 'nt':
-        try: return bounded_capture(resolve_native_argv(argv), cwd, timeout, MAX_OUTPUT)
+        try: return bounded_capture(resolve_native_argv(argv), cwd, timeout, MAX_OUTPUT, raw=raw)
         except TimeoutError as exc: raise NativeError('network', str(exc)) from exc
         except ValueError as exc: raise NativeError('context', str(exc)) from exc
         except (OSError, RuntimeError) as exc: raise NativeError('unavailable', str(exc)) from exc
@@ -85,7 +85,7 @@ def run_bounded(argv, cwd, timeout=30):
         remaining=deadline-time.monotonic()
         if remaining<=0:raise NativeError('network','Native host timed out.')
         process.wait(timeout=remaining)
-        return subprocess.CompletedProcess(argv,process.returncode,buffers[process.stdout].decode('utf-8','replace'),buffers[process.stderr].decode('utf-8','replace'))
+        return subprocess.CompletedProcess(argv,process.returncode,bytes(buffers[process.stdout]) if raw else buffers[process.stdout].decode('utf-8','replace'),bytes(buffers[process.stderr]) if raw else buffers[process.stderr].decode('utf-8','replace'))
     finally:
         selector.close()
         try:_stop(process)

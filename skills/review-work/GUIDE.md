@@ -260,3 +260,20 @@ flowchart LR
     Checks --> Facts[Raw proof and neighboring behavior evidence]
     Rules --> Question[Ask about missing business authority]
 ```
+
+## Independent test quality
+
+The current-policy test perspective must map approved behavior to actual locked
+assertions and relevant incorrect alternatives. Read the [test-quality contract](../../docs/reference/adversarial-review.md#test-quality-assessment).
+A defect's real assertion RED then corrected GREEN can supply discrimination;
+a setup crash or always-passing assertion cannot. Optional challenges run only in
+owned copies with authorized commands and retained reports.
+
+```mermaid
+flowchart LR
+    Rule[Independent rule or actual decision] --> Assertion[Mapped locked assertions]
+    Assertion --> Wrong[Relevant incorrect behavior]
+    Wrong --> RED[Actual assertion RED]
+    RED --> GREEN[Corrected GREEN]
+    GREEN --> Review[Independent test-quality judgment]
+```

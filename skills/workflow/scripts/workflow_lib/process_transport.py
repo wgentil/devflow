@@ -217,7 +217,7 @@ def spawn(argv, cwd, *, stdin=subprocess.DEVNULL, stderr=subprocess.PIPE):
     return process
 
 
-def bounded_capture(argv: list[str], cwd: str | Path, timeout: float, limit: int) -> subprocess.CompletedProcess:
+def bounded_capture(argv: list[str], cwd: str | Path, timeout: float, limit: int, *, raw: bool=False) -> subprocess.CompletedProcess:
     process = spawn(argv, cwd)
     deadline = time.monotonic() + timeout
     buffers = [bytearray(), bytearray()]
@@ -249,7 +249,7 @@ def bounded_capture(argv: list[str], cwd: str | Path, timeout: float, limit: int
         if any(thread.is_alive() for thread in threads):
             raise TimeoutError('Native descendant kept an output pipe open')
         return subprocess.CompletedProcess(argv, process.returncode,
-            buffers[0].decode('utf-8', 'replace'), buffers[1].decode('utf-8', 'replace'))
+            bytes(buffers[0]) if raw else buffers[0].decode('utf-8', 'replace'), bytes(buffers[1]) if raw else buffers[1].decode('utf-8', 'replace'))
     finally:
         stop_tree(process)
 

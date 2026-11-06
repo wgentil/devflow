@@ -7,6 +7,8 @@ description: Prepare content-bound review packages and record independent Devflo
 
 Arrange independent item, branch and acceptance reviews over exact current content-bound packages. Cover every changed file and approved requirement. Report cited findings and real actor/invocation identity; an implementer cannot self-approve.
 
+For current-policy test review, require independent oracle authority, behavior-to-assertion mapping and actual relevant discrimination; see [test quality](../../docs/reference/adversarial-review.md#test-quality-assessment).
+
 Before recording a review, read the matching package/rework procedure. Rework invalidates affected packages/evidence. A UX report or failure digest is input, not proof or acceptance. Hosted PR review requires the full diff, exact head and confirmed required status; never merge implicitly.
 
 Read [shared invariants](../../docs/reference/workflow-invariants.md) and the declared stage sections before work. The harness runs helpers and guides the user. For delegated work read [task routing](../../docs/reference/task-routing.md#task-decisions); use the actual stage and preserve user constraints.
@@ -15,7 +17,8 @@ Read [shared invariants](../../docs/reference/workflow-invariants.md) and the de
 flowchart LR
     Scope[Current task and declared inputs] --> Checks[Live checks and shared invariants]
     Checks --> Inputs[Complete scoped item inputs or whole-tree checks]
-    Inputs --> Work[Stage responsibility]
+    Inputs --> Quality[Independent oracle and discrimination]
+    Quality --> Work[Stage responsibility]
     Work --> Result{Worker outcome}
     Result -->|Complete scoped report| Evidence[Current evidence and next gate]
     Result -->|Item request-changes| Retry[Reopen item and renew verification]

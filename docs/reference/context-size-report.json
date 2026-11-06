@@ -1,9 +1,9 @@
 {
-  "aggregate_entry_bytes": 26796,
+  "aggregate_entry_bytes": 27084,
   "baseline": {
     "aggregate_entry_bytes": 65937
   },
-  "duplicate_prose_bytes": 12892,
+  "duplicate_prose_bytes": 13618,
   "entry_bytes": {
     "skills/build-work/SKILL.md": 3461,
     "skills/ingest/SKILL.md": 2093,
@@ -11,7 +11,7 @@
     "skills/migrate/SKILL.md": 1707,
     "skills/plan-work/SKILL.md": 2419,
     "skills/project-context/SKILL.md": 2333,
-    "skills/review-work/SKILL.md": 2916,
+    "skills/review-work/SKILL.md": 3204,
     "skills/specify/SKILL.md": 2244,
     "skills/stats/SKILL.md": 1981,
     "skills/ux-reviewer/SKILL.md": 1872,
@@ -29,8 +29,8 @@
     "plan-work": 8870,
     "planning": 8870,
     "project-context": 6348,
-    "review": 9399,
-    "review-work": 9399,
+    "review": 9687,
+    "review-work": 9687,
     "specification": 9707,
     "specify": 9707,
     "stats": 7710,
@@ -151,7 +151,7 @@
     "skill.migrate#1e6f0adae858d8e7": 1707,
     "skill.plan-work#1e6f0adae858d8e7": 2419,
     "skill.project-context#1e6f0adae858d8e7": 2333,
-    "skill.review-work#1e6f0adae858d8e7": 2916,
+    "skill.review-work#1e6f0adae858d8e7": 3204,
     "skill.specify#1e6f0adae858d8e7": 2244,
     "skill.stats#1e6f0adae858d8e7": 1981,
     "skill.ux-reviewer#1e6f0adae858d8e7": 1872,

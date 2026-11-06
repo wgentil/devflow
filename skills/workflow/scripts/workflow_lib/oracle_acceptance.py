@@ -72,4 +72,8 @@ def validate_oracle_acceptance(subject: dict, package: dict, review: dict) -> di
                        and p.get('token') == attempts[-1].get('token') and p.get('phase') == 'GREEN'
                        and p.get('passed') is True and p.get('fresh') is not False]
             _require(current and current[-1]['id'] in accepted, 'Passing review must assess the current code proof, oracle and failure discrimination.')
+    from .review_policy import review_version
+    if review_version(subject)==1 and review.get('verdict')=='pass' and review.get('perspective')=='test':
+        from .test_challenges import validate_test_quality
+        validate_test_quality(subject,package,review)
     return accepted

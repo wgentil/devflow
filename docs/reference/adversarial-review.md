@@ -73,3 +73,33 @@ raw byte reports. They do not create synthetic work items or model invocations.
 A replayed or uncertain tool claim never authorizes another process. Reconcile
 stopped workers before retrying under a fresh identity; do not refund spent work.
 Selected contracts and causal rationales are mandatory bounded worker context.
+
+## Test-quality assessment
+
+A current-policy passing test perspective must include `test_quality`: exact
+`contract_binding`, explicit `limitations`, and one behavior record for each
+contract behavior (include `item_id` in branch assessments). Cite independent
+rule/decision authority, explain the oracle, map each assertion location and
+locked input path to executed targets, and describe plausible incorrect behavior
+with its actual relevant assertion RED and corrected GREEN proof IDs. Cover
+selected neighboring targets. An implementation-output snapshot is insufficient
+oracle authority. Setup/import failures, skips, missing targets or an unrelated
+assertion do not demonstrate discrimination. Existing actual defect regressions
+can supply this evidence; blanket mutation runs are not required.
+
+The optional developer helper `execute_challenge` executes caller-authorized
+verification in disposable copies of explicitly selected source and locked
+fixture/test/config inputs. Literal changes require an exact unique preimage;
+oracle mutation, escapes, symlinks, no-op changes and stale hashes are rejected.
+Baseline and wrong-variant reports retain bounded raw bytes; timeouts/unavailable
+reports and surviving relevant alternatives never count as detection. Output
+must be outside the reviewed checkout. This is supplementary diagnostic evidence,
+not an accepted workflow proof or command authorization. Test code remains trusted
+project code; the copy is not an operating-system sandbox. Automated orchestration
+and durable challenge admission are later integration work. See the owned runnable
+[challenge example](../examples/challenge_demo.py).
+
+Structural validation cannot prove that an English rule or test is correct.
+Independent reviewers must judge oracle authority, actual failure relevance,
+mocked boundaries and disclosed limitations; missing business intent requires the
+actual user answer rather than a guessed assertion.

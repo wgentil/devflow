@@ -116,6 +116,10 @@ def reduce_session(subject, action, record):
             need(not subject['review_contract']['request'].get('verification'),'Declared verification cannot be waived by a report.')
             applicable=review.get('execution_inapplicable',{})
             need(applicable.get('reason') and 'package:'+package['package_hash'] in applicable.get('evidence_refs',[]),'Explicit independent execution applicability required.')
+        from .review_policy import review_version
+        if review_version(subject)==1 and review.get('verdict')=='pass' and review.get('perspective')=='test':
+            from .test_challenges import validate_test_quality
+            validate_test_quality(subject,package,{**review,'role':'session'})
         review={**deepcopy(review),'role':'session','review_id':digest(review),'fresh':True}
         updated.setdefault('reviews',{}).setdefault('session',[]).append(review)
         for proof_id in approvals:

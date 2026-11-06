@@ -637,5 +637,7 @@ with current user authorization and stopped/reconciled workers. The harness must
 obtain actual governing protection scope and verification inputs; policy selection
 does not invent approvals. Current-policy worker dispatch also requires a derived
 implementation contract; configured prerequisite checks retain actual command
-evidence and stop on unresolved questions. Specialist coverage/dispatch and bounded repair are
+evidence and stop on unresolved questions. Passing test-perspective records require
+independent oracle and actual assertion discrimination evidence. Optional owned
+challenges are diagnostic helpers; automatic admission is still pending. Specialist coverage/dispatch and bounded repair are
 still being implemented. See [current review scope](reference/adversarial-review.md).

@@ -126,3 +126,5 @@ companion work.
 The development [adversarial review policy](reference/adversarial-review.md) extends
 workflow/review-work. Policy selection and risk records are implemented first;
 complete specialist orchestration and bounded repair remain in progress.
+
+Current-policy [test-quality assessment and owned challenge examples](reference/adversarial-review.md#test-quality-assessment) extend build and review guidance.

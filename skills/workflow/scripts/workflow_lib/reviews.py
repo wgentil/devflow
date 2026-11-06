@@ -231,6 +231,7 @@ def record_review(run: dict, package_hash: str, reviewer: dict, report: dict) ->
         review['item_attempt_token']=package['item_attempt_token']
     if enforcement_version(run) == 1:
         from .oracle_acceptance import validate_oracle_acceptance
+        if 'test_quality' in report:review['test_quality']=deepcopy(report['test_quality'])
         review['semantic_approvals'] = validate_oracle_acceptance(run, package, review)
         validate_review_contract(run,review)
     return review
