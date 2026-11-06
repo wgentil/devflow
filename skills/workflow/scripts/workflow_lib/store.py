@@ -776,6 +776,12 @@ def _valid_verification_event(payload: dict) -> bool:
 
 
 def _read_journal(root: Path) -> tuple[dict, list[str]]:
+    from .issue_replay_recovery import historical_context
+    with historical_context(root):
+        return _read_journal_body(root)
+
+
+def _read_journal_body(root: Path) -> tuple[dict, list[str]]:
     state = _empty()
     events = root / "events"
     if not events.exists():

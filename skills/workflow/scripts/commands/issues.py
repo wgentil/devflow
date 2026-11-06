@@ -9,12 +9,26 @@ from workflow_lib.store import WorkflowError
 
 def register_commands(parser):
     command = parser.add_parser('issues')
-    command.add_argument('operation', choices=['capture','snapshot','validate-snapshot','group','start','classify','authorize-write','enqueue','inspect'])
+    command.add_argument('operation', choices=['capture','snapshot','validate-snapshot','group','start','classify','authorize-write','enqueue','inspect','replay-recovery-inspect','replay-recovery-validate','replay-recovery-apply'])
     command.add_argument('--input')
     add_journal_options(command)
 
 
 def dispatch(parsed):
+    if parsed.operation.startswith('replay-recovery-'):
+        from workflow_lib.issue_replay_recovery import (inspect_replay_recovery,
+            validate_replay_recovery, apply_replay_recovery)
+        if not parsed.root:
+            raise WorkflowError('CONTROL_ROOT_REQUIRED', 'Recovery requires an explicit root.')
+        if parsed.operation == 'replay-recovery-inspect':
+            return inspect_replay_recovery(Path(parsed.root))
+        if not parsed.input or not getattr(parsed, 'operation_id_explicit', False):
+            raise WorkflowError('OPERATION_ID_REQUIRED', 'Recovery requires input and explicit operation ID.')
+        request = json.loads(Path(parsed.input).read_text(encoding='utf-8'))
+        if request.get('operation_id') != parsed.operation_id:
+            raise WorkflowError('OPERATION_CONFLICT', 'Recovery input and command operation IDs must match.')
+        action = validate_replay_recovery if parsed.operation == 'replay-recovery-validate' else apply_replay_recovery
+        return action(Path(parsed.root), request)
     if parsed.operation == 'inspect':
         if not parsed.root:
             raise WorkflowError('CONTROL_ROOT_REQUIRED', 'inspection requires --root')

@@ -78,3 +78,25 @@ retrying. Do not edit a human comment or fabricate delivery evidence.
 ## Host usage example
 
 Read [canonical guidance](../../docs/hosts.md). Stage routing is declared in this skill.
+
+## Recovering an unstamped issue-build history
+
+If opening an older control root reports `ISSUE_POLICY_SELECTION_REQUIRED`, ask
+DevFlow to inspect issue replay recovery. Inspection identifies each original
+start event without replaying its run or choosing a policy. Confirm **legacy**
+(pre-enforcement) or **v0.3.18** for each affected start, with the user-message
+reference that establishes the choice. Neither option is preselected.
+
+The helper validates the complete history on an owned disposable copy before
+publishing immutable recovery metadata. Original events and proofs are unchanged.
+A policy choice that conflicts with recorded evidence or stored v2 projections
+fails validation. Reinspect after concurrent work changes the source. Recovery
+is separate from adoption of new policy, compaction, or restarting a run.
+
+Developer operations are `issues replay-recovery-inspect`,
+`issues replay-recovery-validate`, and `issues replay-recovery-apply`.
+Validate/apply require input, an explicit actor, confirmation/provenance and a
+matching explicit operation ID. Apply binds the validation receipt and repeats
+copy validation under the control lock before publishing. Exact retries reuse
+the original decision; a different request cannot overwrite it. Use the unbound
+operator path; a host worker binding cannot authorize recovery.
