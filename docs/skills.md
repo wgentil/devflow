@@ -140,3 +140,7 @@ Workflow and review-work share [bounded next-action state](reference/adversarial
 Workflow, review-work and build-work document [live bounded execution and additive regression inputs](reference/adversarial-review.md#bounded-live-execution).
 
 Review-work, workflow and stats expose [deterministic local outcome summaries and conservative receipt reuse](reference/adversarial-review.md#reuse-and-local-outcomes).
+
+Specialist artifact integrity, correction rounds and mapped check repair are detailed
+in the [review safeguards](reference/adversarial-review.md#final-dispatch-and-repair-safeguards)
+and the workflow/review-work companion guides.

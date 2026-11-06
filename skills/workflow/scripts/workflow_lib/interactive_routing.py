@@ -143,6 +143,10 @@ def dispatch_delegation(root: Path, request: dict, operation_id: str, bridge=Non
             preparations.append(prepared);preparation_pins.callback(prepared.release)
         data = read_host(root,request=request)['data']
         prior = data['runs'][binding['run_id']].get('native_invocations', {}).get(identifier)
+        cached=data['runs'][binding['run_id']].get('model_receipts',{}).get(identifier,{})
+        if not prior and cached.get('dispatch') is False and cached.get('request_hash'):
+            if cached['request_hash']!=request_hash or cached.get('operation_id')!=operation_id:raise WorkflowError('OPERATION_CONFLICT','Preflight identity belongs to another exact request.')
+            return {**cached,'status':cached.get('preflight_status',cached['status']),'replayed':True}
         if prior:
             if prior.get('request_hash') != request_hash or prior.get('operation_id') != operation_id:
                 raise WorkflowError('OPERATION_CONFLICT', 'Invocation belongs to another request.')
@@ -160,45 +164,75 @@ def dispatch_delegation(root: Path, request: dict, operation_id: str, bridge=Non
                 enforcement_effect = reserve_dispatch(root, binding['run_id'], identifier, exclusive_scope,
                     request.get('estimated_cost'), operation_id, action_scope, owner_binding=binding)
             finally: HOST_CONTEXT.reset(token)
-        # Only an in-process embedding adapter can supply these facts. The
-        # portable CLI never imports bridge names or trusts serialized context.
-        prepared = prepare_delegation(root, request, bridge.capabilities(),preparation_consumer=retain)
-        if prepared['reason_code'] != 'READY': return prepared
-        fresh = prepare_delegation(root, request, bridge.capabilities(),preparation_consumer=retain)
-        if (fresh['reason_code'] != 'READY' or fresh['decision']['routing']['controls']['evidence_hash'] != prepared['decision']['routing']['controls']['evidence_hash']
-                or fresh['snapshot_hash'] != prepared['snapshot_hash'] or fresh['scope'] != prepared['scope'] or fresh['decision']['routing']['task_hash'] != prepared['decision']['routing']['task_hash']
-                or fresh['policy_revision'] != prepared['policy_revision']):
-            return {**fresh, 'reason_code': 'ROUTING_CONFIGURATION_CHANGED'}
-        start = {'binding_id': binding['binding_id'], 'revision': binding['revision'], 'invocation_id': identifier,
-            'stage': request['stage'], 'decision': fresh['decision'], 'request_hash': request_hash,
-            'operation_id': operation_id, 'policy_revision': fresh['policy_revision'], 'expected_scope': fresh['scope'],
-            'launcher_pid': os.getpid(), 'replacement_of': request.get('replacement_of'),
-            'replacement_authorization': request.get('replacement_authorization')}
-        if fresh['scope'].get('perspective'):start['diagnostic']=request.get('diagnostic') is True
-        if fresh['decision']['routing'].get('escalation_index') and not fresh['decision']['routing'].get('retry_of'):
-            predecessor=request['predecessor_invocation_id']
-            if request.get('replacement_of',predecessor)!=predecessor:
-                return {**fresh,'reason_code':'ESCALATION_PREDECESSOR_MISMATCH'}
-            auth=request['escalation_authorization']
-            start.update(replacement_of=predecessor,replacement_authorization={'approved':auth['approved'],'actor_id':auth['actor_id']})
-        if enforcement_effect is not None:
-            start['enforcement_effect_id'] = identifier
-            start['enforcement_transition_ms'] = int(time.time()*1000)
-        _commit(root, operation_id + ':native-start', 'native-start', start, binding,prepared=preparations[-1] if preparations else None)
+        def abort_preflight(failure):
+            if enforcement_effect is None:return failure
+            current=read_host(root,request=request)['data']['runs'][binding['run_id']]
+            if identifier in current.get('native_invocations',{}):return failure
+            details={**failure.get('decision',{}),'reason_code':failure.get('reason_code','INTERACTIVE_PREFLIGHT_FAILED'),
+                'preflight_status':'not-dispatched',**{k:failure[k] for k in ('message','known_payload') if k in failure}}
+            receipt=_commit(root,operation_id+':native-abort','native-abort',{
+                'binding_id':binding['binding_id'],'revision':binding['revision'],'invocation_id':identifier,
+                'stage':request['stage'],'now_ms':int(time.time()*1000),'request_hash':request_hash,
+                'operation_id':operation_id,'failure':details},binding)
+            return {**receipt,'status':'not-dispatched'}
+        try:
+            # Only an in-process embedding adapter can supply these facts. The
+            # portable CLI never imports bridge names or trusts serialized context.
+            prepared = prepare_delegation(root, request, bridge.capabilities(),preparation_consumer=retain)
+            if prepared['reason_code'] != 'READY': return abort_preflight(prepared)
+            fresh = prepare_delegation(root, request, bridge.capabilities(),preparation_consumer=retain)
+            if (fresh['reason_code'] != 'READY' or fresh['decision']['routing']['controls']['evidence_hash'] != prepared['decision']['routing']['controls']['evidence_hash']
+                    or fresh['snapshot_hash'] != prepared['snapshot_hash'] or fresh['scope'] != prepared['scope'] or fresh['decision']['routing']['task_hash'] != prepared['decision']['routing']['task_hash']
+                    or fresh['policy_revision'] != prepared['policy_revision']):
+                return abort_preflight({**fresh, 'reason_code': 'ROUTING_CONFIGURATION_CHANGED'})
+            start = {'binding_id': binding['binding_id'], 'revision': binding['revision'], 'invocation_id': identifier,
+                'stage': request['stage'], 'decision': fresh['decision'], 'request_hash': request_hash,
+                'operation_id': operation_id, 'policy_revision': fresh['policy_revision'], 'expected_scope': fresh['scope'],
+                'launcher_pid': os.getpid(), 'replacement_of': request.get('replacement_of'),
+                'replacement_authorization': request.get('replacement_authorization')}
+            if fresh['scope'].get('perspective'):start['diagnostic']=request.get('diagnostic') is True
+            if fresh['decision']['routing'].get('escalation_index') and not fresh['decision']['routing'].get('retry_of'):
+                predecessor=request['predecessor_invocation_id']
+                if request.get('replacement_of',predecessor)!=predecessor:
+                    return abort_preflight({**fresh,'reason_code':'ESCALATION_PREDECESSOR_MISMATCH'})
+                auth=request['escalation_authorization']
+                start.update(replacement_of=predecessor,replacement_authorization={'approved':auth['approved'],'actor_id':auth['actor_id']})
+            if enforcement_effect is not None:
+                start['enforcement_effect_id'] = identifier
+                start['enforcement_transition_ms'] = int(time.time()*1000)
+            _commit(root, operation_id + ':native-start', 'native-start', start, binding,prepared=preparations[-1] if preparations else None)
+        except Exception as exc:
+            abort_preflight({'reason_code':getattr(exc,'code','INTERACTIVE_PREFLIGHT_FAILED'),'message':str(exc)})
+            raise
+        spawned=False;review_package=None;input_before=None
         try:
             if enforcement_effect is not None:
                 from .effect_claims import validate_active_dispatch
                 from .enforcement_live import source_observation
                 current = read_host(root, request=request)['data']['runs'][binding['run_id']]
                 validate_active_dispatch(current, identifier, {**source_observation(current), 'now_ms': int(time.time()*1000)})
+            from .review_policy import review_version
+            if review_version(run)==1 and binding.get('package_hash'):
+                from .stored_records import require_package
+                from .adversarial_reviews import verify_review_input
+                review_package=require_package(current.get('review_packages',{}).get(binding['package_hash']))
+                input_before=verify_review_input(root,review_package)
+            spawned=True
             handle = bridge.spawn(fresh)
             result = bridge.collect(handle)
             if not isinstance(result, dict): raise ValueError('Malformed interactive result')
-        except Exception:
-            # A failed collect does not prove that a remote worker stopped.
-            return {'status': 'block', 'dispatch': True, 'reason_code': 'INTERACTIVE_RECONCILE_REQUIRED',
-                    'invocation_id': identifier, 'message': 'Confirm the worker stopped before reconciling or launching a replacement.'}
+        except Exception as exc:
+            if spawned:
+                # A failed spawn/collect does not prove that a remote worker stopped.
+                return {'status': 'block', 'dispatch': True, 'reason_code': 'INTERACTIVE_RECONCILE_REQUIRED',
+                        'invocation_id': identifier, 'message': 'Confirm the worker stopped before reconciling or launching a replacement.'}
+            result={'status':'interrupted','dispatch':False,'error_kind':'unavailable',
+                'reason_code':getattr(exc,'code','INTERACTIVE_PREFLIGHT_FAILED')}
+
         result['transport_completed'] = result.get('status') == 'completed' and bool(result.get('invocation_ref'))
+        if review_package and spawned:
+            try:result['review_input_validation']={'before':input_before,'after':verify_review_input(root,review_package)}
+            except WorkflowError as exc:result.update(status='interrupted',reason_code=exc.code,error_kind='unavailable')
         if result.get('status') != 'interrupted':
             result = project_worker_result(result,fresh['scope'])
         from .context_metrics import record_context_measurement, explicit_runtime_usage
@@ -207,7 +241,7 @@ def dispatch_delegation(root: Path, request: dict, operation_id: str, bridge=Non
             'configuration_bytes':fresh['known_payload']['configuration_bytes'],'turn_bytes':fresh['known_payload']['turn_bytes'],
             'runtime_usage':explicit_runtime_usage(result.get('usage')),'helper_calls':1,'context_mode':'full'})
         from .review_policy import review_version
-        if review_version(run)==1 and request['stage']=='review':
+        if review_version(run)==1 and request['stage']=='review' and result.get('status')=='completed':
             from .adversarial_reviews import seal_actual_report
             result['review_report_hash']=seal_actual_report(result.get('output',''))
         result['output_ref'] = _blob(root, result.pop('output', ''))

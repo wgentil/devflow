@@ -10,8 +10,11 @@ The first frozen whole-suite run passed 1,241 tests with zero failures/errors
 and six platform skips in 658.106 seconds at commit `84f1b8a`. An additional
 standalone original-authority binding regression was then confirmed and fixed;
 the two authority regressions passed, and 50 related standalone/session/public
-integration/summary/documentation checks passed in 52.203 seconds. The single
-independent review and final current-head full suite are pending. Implementation rulings are retained in the
+integration/summary/documentation checks passed in 52.203 seconds. The single independent whole-branch review completed at `b2dfc2b`. Its six
+Important findings and regraded M1/M2 were addressed in one native fix pass; M3
+was corrected under the repository documentation requirement. The 350-test focused
+suite and 37 final regression/test-quality/documentation tests passed. Final
+current-head full verification is pending. Implementation rulings are retained in the
 [decision record](2026-11-05-adversarial-review-repair-decisions.md). Controlled model transports and user-message
 approvals in tests are explicitly fixtures, not paid-provider or human observations.
 
@@ -58,3 +61,23 @@ silently fabricated; missing evidence is disclosed.
 The user's pre-existing `AGENTS.md` edit is preserved and excluded. No push,
 merge, PR, release, paid model probe, external message or production-root change
 is part of this branch's implementation authorization.
+
+
+## Independent review and single fix pass
+
+The [original independent report](evidence/2026-11-05-adversarial-review-repair/independent-review.md)
+is retained unchanged; its pre-fix rejection is historical, not a second review.
+I1/I2 now bind actual full artifact validation before/after workers and check
+standalone effective configuration before a turn. I3 retains explicitly deferred
+nonmandatory minor findings without reopening them. I4 counts source correction
+rounds across perspectives and excludes diagnostics. I5 retires known unlaunched
+interactive claims and preserves exact replay. I6 repairs actual failed mapped
+pre-review gates without inventing findings. M1 preserves unknown execution on
+replay; M2 uses measured shared native usage; M3 removes contradictory future-work
+statements. The final regression file exercises actual owned command effects,
+controlled transports and zero-launch assertions. No second reviewer was used.
+
+Still-failing cheap checks require actual diagnosis/explicit retry. Non-code
+repair retains its existing kind-specific handoff; typed evidence alone is not
+assertion-discrimination proof for the new policy. These limits do not bypass
+review or acceptance. No deferred Minor findings remain.

@@ -213,7 +213,7 @@ def invoke(root,request,operation_id):
             raise WorkflowError('REVIEW_MODEL_BLOCKED','Exact specialist perspective cannot be replaced by task classification.')
         if not static_route_available(policy(),{**preferences(data,binding,stage),'perspective':selected_scope['perspective'],'assessment':selected_scope['assessment']}):
             return {'status':'block','reason_code':'NO_VALIDATED_PERMITTED_MODEL'}
-    backend=None;context=None;started=False;result=None
+    backend=None;context=None;started=False;result=None;invoked=False;review_package=None;input_before=None
     lease=root/'native-invocations'/hashlib.sha256((binding['run_id']+':'+identifier).encode()).hexdigest();lease.parent.mkdir(parents=True,exist_ok=True)
     with _native_lease(lease) as lock,ExitStack() as preparation_pins:
         preparations=[]
@@ -234,12 +234,15 @@ def invoke(root,request,operation_id):
             action_scope = {'item_id': run['active_attempt']['item_id']} if run.get('active_attempt') and stage == 'implementation' else ({'item_id': binding['item_id']} if binding.get('item_id') else {})
             if request.get('repair_scope') is not None:
                 repair=request['repair_scope']
-                if stage!='implementation' or binding['role']!='implementer' or not isinstance(repair,dict) or set(repair)!={'finding_ids'}:
-                    raise WorkflowError('NATIVE_ACCESS_DENIED','Repair purpose must select actual findings under the active implementation scope.')
-                ids=repair['finding_ids'];known={f['id']:f for f in run.get('unresolved_findings',[])}
-                if not isinstance(ids,list) or not ids or any(fid not in known or known[fid].get('item_id') not in {None,action_scope.get('item_id')} for fid in ids):
-                    raise WorkflowError('NATIVE_ACCESS_DENIED','Repair findings must belong to this actual item scope.')
-                action_scope.update(purpose='repair',finding_ids=ids)
+                if stage!='implementation' or binding['role']!='implementer' or not isinstance(repair,dict) or set(repair)-{'finding_ids','gate_ids'}:
+                    raise WorkflowError('NATIVE_ACCESS_DENIED','Repair purpose must select actual findings/checks under the active implementation scope.')
+                ids=repair.get('finding_ids',[]);gates=repair.get('gate_ids',[]);known={f['id']:f for f in run.get('unresolved_findings',[])}
+                from .implementation_contracts import gate_failure_binding
+                if (not isinstance(ids,list) or not isinstance(gates,list) or not (ids or gates) or any(not isinstance(t,str) for t in ids+gates)
+                        or any(fid not in known or known[fid].get('item_id') not in {None,action_scope.get('item_id')} for fid in ids)
+                        or any(gate_failure_binding(run,g,action_scope) is None for g in gates)):
+                    raise WorkflowError('NATIVE_ACCESS_DENIED','Repair targets must be actual failed checks/findings mapped to this item scope.')
+                action_scope.update(purpose='repair',finding_ids=ids,**({'gate_ids':gates} if gates else {}))
             exclusive_scope = 'implementation' if stage == 'implementation' else 'review:' + binding['role'] + ':' + str(binding.get('package_hash', ''))
             host_token = HOST_CONTEXT.set({'binding_id': binding['binding_id'], 'revision': binding['revision'], 'release': binding['release']})
             try:
@@ -273,6 +276,10 @@ def invoke(root,request,operation_id):
             if specialist:
                 from .adversarial_reviews import specialist_prompt
                 prompt=specialist_prompt(prompt)
+            from .review_policy import review_version
+            if review_version(run)==1 and binding.get('package_hash'):
+                from .stored_records import require_package
+                review_package=require_package(run.get('review_packages',{}).get(binding['package_hash']))
             native_input = invocation_context(binding, stage, full_view, prompt, context_limit)
             backend=(CodexBackend if binding['host']=='codex' else ClaudeBackend)(binding['project_dir'])
             context=discover(root,binding,request.get('refresh',False) or task_facts is not None,backend)
@@ -406,7 +413,16 @@ def invoke(root,request,operation_id):
                 current_decision=resolve_workflow_review(live_data,binding,context,policy(),diagnostic=request.get('diagnostic') is True)
                 if current_decision.get('status') not in {'allow','pending-access'} or current_decision.get('resolved')!=decision.get('resolved'):
                     raise WorkflowError('REVIEW_MODEL_BLOCKED','Specialist eligibility or prerequisites changed before invocation.')
-            if result is None:result=backend.invoke(decision['resolved'],prompt,binding['actor_id'],access,timeout_seconds)
+            if result is None:
+                if review_package:
+                    from .adversarial_reviews import verify_review_input
+                    input_before=verify_review_input(root,review_package)
+                invoked=True
+                result=backend.invoke(decision['resolved'],prompt,binding['actor_id'],access,timeout_seconds)
+                if review_package:
+                    input_after=verify_review_input(root,review_package)
+                    result['review_input_validation']={'before':input_before,'after':input_after}
+            else:result['dispatch']=False
             # Backend completion is independent of the worker's semantic report.
             result['transport_completed'] = result.get('status') == 'completed' and bool(result.get('invocation_ref'))
             if task_facts is not None and result.get('status') == 'completed':
@@ -427,6 +443,16 @@ def invoke(root,request,operation_id):
                 failure={'status':'block','reason_code':exc.code,'error_kind':exc.error_kind,'message':str(exc)}
                 return abort_specialist(failure) if specialist else failure
             result={'status':'interrupted','error_kind':exc.error_kind,'reason_code':exc.code}
+        except WorkflowError as exc:
+            if started:
+                actual=result if isinstance(result,dict) else {}
+                failed={**actual,'status':'interrupted','error_kind':'unavailable','reason_code':exc.code}
+                if actual.get('status')=='completed' and actual.get('invocation_ref'):
+                    failed['transport_completed']=True
+                    failed['output_ref']=_blob(root,failed.pop('output',''))
+                if not invoked:failed['dispatch']=False
+                _commit(root,operation_id+':native-finish','native-finish',finish_request(failed),binding)
+            raise
         except BaseException:
             if started:
                 if backend:backend.close();backend=None

@@ -49,6 +49,9 @@ def validate_review_model(subject:dict,package:dict,review:dict)->dict:
     expected=specialist_scope(subject,{'role':str(package.get('role'))+'-reviewer','perspective':perspective,
         **({'item_id':package['item_id']} if package.get('item_id') else {})})
     need(receipt.get('policy_revision')==len(subject.get('model_overrides',[])),'Model preferences changed since this specialist invocation.')
+    from .adversarial_reviews import expected_review_input_validation
+    expected_input=expected_review_input_validation(package)
+    need(receipt.get('review_input_validation')=={'before':expected_input,'after':expected_input},'Actual review input must be verified before execution and before report admission.')
     need(receipt.get('status')=='allow' and receipt.get('dispatch') is True and receipt.get('capability_validated') is True
          and receipt.get('validation_ref') and receipt.get('invocation_ref')==review.get('invocation_ref')
          and bool(receipt.get('invocation_ref')),'Actual eligible completed specialist invocation required; advisory is not validated coverage.')

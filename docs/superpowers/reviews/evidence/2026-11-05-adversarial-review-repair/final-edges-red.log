@@ -1,0 +1,50 @@
+FFFFF
+======================================================================
+FAIL: test_direct_gate_cause_rejects_malformed_or_cross_repository_mapping (test_review_final_regressions.FinalReviewRegressions.test_direct_gate_cause_rejects_malformed_or_cross_repository_mapping) (mapping='W1')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/6f51/devflow/tests/test_review_final_regressions.py", line 193, in test_direct_gate_cause_rejects_malformed_or_cross_repository_mapping
+    with self.subTest(mapping=mapping):self.assertIsNone(gate_failure_binding(subject,'lint',{'item_id':'W1'}))
+                                       ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: '3c10071386817de9321122e99a494577397820d7fa3be415b410a4362d5abafd' is not None
+
+======================================================================
+FAIL: test_direct_gate_cause_rejects_malformed_or_cross_repository_mapping (test_review_final_regressions.FinalReviewRegressions.test_direct_gate_cause_rejects_malformed_or_cross_repository_mapping) (mapping=['W1', 'W1'])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/6f51/devflow/tests/test_review_final_regressions.py", line 193, in test_direct_gate_cause_rejects_malformed_or_cross_repository_mapping
+    with self.subTest(mapping=mapping):self.assertIsNone(gate_failure_binding(subject,'lint',{'item_id':'W1'}))
+                                       ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: '838eccd94d1f44ccad2a14eba070288f5e9c21c329e21c6c435a0986dc734de2' is not None
+
+======================================================================
+FAIL: test_direct_gate_cause_rejects_malformed_or_cross_repository_mapping (test_review_final_regressions.FinalReviewRegressions.test_direct_gate_cause_rejects_malformed_or_cross_repository_mapping) (mapping=['W1', 'W2'])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/6f51/devflow/tests/test_review_final_regressions.py", line 193, in test_direct_gate_cause_rejects_malformed_or_cross_repository_mapping
+    with self.subTest(mapping=mapping):self.assertIsNone(gate_failure_binding(subject,'lint',{'item_id':'W1'}))
+                                       ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'c4f07d69714a374d0d665864e480e2604ee39cee3b18f34f9e2a132f08f6f06c' is not None
+
+======================================================================
+FAIL: test_direct_gate_cause_rejects_malformed_or_cross_repository_mapping (test_review_final_regressions.FinalReviewRegressions.test_direct_gate_cause_rejects_malformed_or_cross_repository_mapping) (mapping=['W1', 'missing'])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/6f51/devflow/tests/test_review_final_regressions.py", line 193, in test_direct_gate_cause_rejects_malformed_or_cross_repository_mapping
+    with self.subTest(mapping=mapping):self.assertIsNone(gate_failure_binding(subject,'lint',{'item_id':'W1'}))
+                                       ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: '68c60db2ade0f57e5755cf3cae44a6600ca30a3c04635f3de4418dcae027e2fb' is not None
+
+======================================================================
+FAIL: test_interactive_artifact_rejection_before_spawn_is_known_nondispatch (test_review_final_regressions.FinalReviewRegressions.test_interactive_artifact_rejection_before_spawn_is_known_nondispatch)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/6f51/devflow/tests/test_review_final_regressions.py", line 211, in test_interactive_artifact_rejection_before_spawn_is_known_nondispatch
+    self.assertFalse(first['dispatch'],first)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: True is not false : {'status': 'block', 'dispatch': True, 'reason_code': 'INTERACTIVE_RECONCILE_REQUIRED', 'invocation_id': 'specialist', 'message': 'Confirm the worker stopped before reconciling or launching a replacement.'}
+
+----------------------------------------------------------------------
+Ran 2 tests in 2.123s
+
+FAILED (failures=5)

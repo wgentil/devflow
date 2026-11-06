@@ -207,20 +207,24 @@ def record_fix_rationale(subject, record):
     need(subject.get('status') == 'active' and record.get('source_identity') == subject.get('source_identity'), 'Current active source required for fix rationale.')
     contract = subject.get('implementation_contracts', {}).get(scope_key(record.get('scope', {})))
     need(contract_current(subject, contract) and record.get('contract_hash') == contract['contract_hash'], 'Bind the current implementation contract.')
+    gate_id=record.get('gate_id')
     finding = next((f for f in subject.get('unresolved_findings', []) if f.get('id') == record.get('finding_id')), None)
-    need(finding and record.get('observed_failure') and _refs(record.get('evidence_refs'))
-         and record.get('correction') and record.get('why'), 'Observed failure, evidence, correction and causal reason required.')
-    valid_evidence = {'finding:' + finding['id']} | {'verification:' + k for k in subject.get('verification_proofs', {})}
-    need(set(record['evidence_refs']).issubset(valid_evidence), 'Rationale evidence must resolve to recorded findings or execution.')
+    gate_hash=gate_failure_binding(subject,gate_id,record.get('scope',{})) if gate_id else None
+    need((gate_hash is not None and not record.get('finding_id') or finding is not None and not gate_id)
+         and record.get('observed_failure') and _refs(record.get('evidence_refs'))
+         and record.get('correction') and record.get('why'), 'Observed actual finding/check failure, evidence, correction and causal reason required.')
+    target='gate:'+gate_id if gate_id else finding['id']
+    valid_evidence = ({'gate:'+gate_id} if gate_id else {'finding:' + finding['id']}) | {'verification:' + k for k in subject.get('verification_proofs', {})}
+    need(set(record['evidence_refs']).issubset(valid_evidence), 'Rationale evidence must resolve to recorded findings, configured checks or execution.')
     cause = record.get('cause', {})
     need(cause.get('kind') in {'hypothesis','confirmed'} and isinstance(cause.get('text'), str) and cause['text'].strip(), 'Label the supported cause or hypothesis.')
     from .finding_closure import finding_hash
-    rationale = {**deepcopy(record), 'schema_version':1, 'finding_hash':finding_hash(finding)}
+    rationale = {**deepcopy(record), 'schema_version':1, **({'gate_failure_hash':gate_hash} if gate_id else {'finding_hash':finding_hash(finding)})}
     rationale['rationale_hash'] = digest(rationale)
     updated = deepcopy(subject)
-    prior = updated.setdefault('fix_rationales', {}).get(finding['id'])
+    prior = updated.setdefault('fix_rationales', {}).get(target)
     if prior:updated.setdefault('fix_rationale_history', []).append(deepcopy(prior))
-    updated['fix_rationales'][finding['id']] = rationale
+    updated['fix_rationales'][target] = rationale
     return updated
 
 
@@ -229,7 +233,28 @@ def rationale_current(subject, finding_id):
     contract = subject.get('implementation_contracts', {}).get(scope_key(rationale.get('scope', {})))
     finding = next((f for f in subject.get('unresolved_findings', []) if f.get('id') == finding_id), None)
     from .finding_closure import finding_hash
-    return bool(rationale and finding and rationale.get('source_identity') == subject.get('source_identity')
+    gate_id=rationale.get('gate_id')
+    target_current=(gate_id and finding_id=='gate:'+gate_id and rationale.get('gate_failure_hash')==gate_failure_binding(subject,gate_id,rationale.get('scope',{})) and rationale.get('gate_failure_hash') is not None) or (not gate_id and finding and rationale.get('finding_hash')==finding_hash(finding))
+    return bool(rationale and target_current and rationale.get('source_identity') == subject.get('source_identity')
                 and contract_current(subject, contract) and rationale.get('contract_hash') == contract['contract_hash']
-                and rationale.get('finding_hash') == finding_hash(finding)
                 and rationale.get('rationale_hash') == digest({k:v for k,v in rationale.items() if k != 'rationale_hash'}))
+
+
+def gate_item_ids(subject,gate_id):
+    config=subject.get('hardening_config',{}).get(gate_id,{})
+    ids=config.get('item_ids');known={i['id']:i for i in subject.get('plan',{}).get('work_items',[])}
+    if (not isinstance(ids,list) or not ids or any(not isinstance(i,str) for i in ids)
+            or len(ids)!=len(set(ids)) or any(i not in known or known[i].get('repo_id')!=config.get('repo_id') for i in ids)):return []
+    return ids
+
+
+def gate_failure_binding(subject,gate_id,scope):
+    config=subject.get('hardening_config',{}).get(gate_id,{})
+    proof=subject.get('hardening_proofs',{}).get(gate_id,{})
+    item=next((i for i in subject.get('plan',{}).get('work_items',[]) if i['id']==scope.get('item_id')),None)
+    if (gate_id not in subject.get('required_hardening_gates',[]) or config.get('pre_review') is not True
+            or not item or item.get('repo_id')!=config.get('repo_id') or item['id'] not in gate_item_ids(subject,gate_id)
+            or proof.get('passed') is not False or not proof.get('execution_id') or type(proof.get('exit_code')) is not int
+            or proof.get('failure') not in {'GATE_FAILED','FINDINGS_PRESENT'}
+            or proof.get('source_identity')!=subject.get('source_identity') or proof.get('config_hash')!=subject.get('hardening_config_hash')):return None
+    return digest({'gate_id':gate_id,'config':config,'proof':proof})

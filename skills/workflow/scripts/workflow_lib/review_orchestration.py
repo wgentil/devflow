@@ -25,12 +25,25 @@ def _scope(subject):
     if cycle:
         scope=deepcopy(cycle['scope']);scope['finding_ids']=[f['id'] for f in findings if not f.get('item_id') or f.get('item_id')==scope.get('item_id')]
         return scope
-    items=sorted({f['item_id'] for f in findings if f.get('item_id')})
+    gates=[];mapped={};unmapped=[]
+    for gate_id in subject.get('required_hardening_gates',[]):
+        config=subject.get('hardening_config',{}).get(gate_id,{})
+        proof=subject.get('hardening_proofs',{}).get(gate_id,{})
+        if config.get('pre_review') is not True:continue
+        if proof.get('passed') is True and proof.get('config_hash')==subject.get('hardening_config_hash') and proof.get('source_identity')==subject.get('source_identity'):continue
+        from .implementation_contracts import gate_item_ids
+        gates.append(gate_id);ids=gate_item_ids(subject,gate_id)
+        if not ids:
+            unmapped.append(gate_id)
+        else:mapped[gate_id]=ids
+    if unmapped:return {'role':'branch','finding_ids':[f['id'] for f in findings],'gate_ids':gates,'mapping_required':unmapped}
+    items=sorted({f['item_id'] for f in findings if f.get('item_id')}|{i for ids in mapped.values() for i in ids})
     if not items:
         items=[key for key,row in subject.get('items',{}).items() if row.get('status')!='complete']
     item=items[0] if items else None
     return {'role':'item' if item else 'branch',**({'item_id':item} if item else {}),
-        'finding_ids':[f['id'] for f in findings if not f.get('item_id') or f.get('item_id')==item]}
+        'finding_ids':[f['id'] for f in findings if not f.get('item_id') or f.get('item_id')==item],
+        **({'gate_ids':[g for g in gates if item in mapped.get(g,[])]} if gates else {})}
 
 
 def logical(scope):return {k:scope[k] for k in ('role','item_id') if k in scope}
@@ -129,9 +142,9 @@ def orchestration_next(subject:dict,now_ms:int)->dict:
     legacy=sum(r.get('estimated_cost',0) for r in subject.get('repair_cycles',[]))
     if max(shared,legacy)>policy['max_estimated_cost']:return out('blocked','SPEND_LIMIT')
     cycle=_active_cycle(subject);cycles=state.get('cycles',[])
-    if scope['finding_ids'] and not cycle and len(cycles)+len(subject.get('repair_cycles',[]))>=policy['max_attempts']:return out('blocked','ATTEMPT_LIMIT')
+    if (scope['finding_ids'] or scope.get('gate_ids')) and not cycle and len(cycles)+len(subject.get('repair_cycles',[]))>=policy['max_attempts']:return out('blocked','ATTEMPT_LIMIT')
     recent=cycles[-policy['no_progress_window']:]
-    if scope['finding_ids'] and not cycle and len(recent)==policy['no_progress_window'] and all(c.get('status')=='recorded' and not c.get('made_progress',c.get('before_progress')!=c.get('after_progress')) for c in recent):return out('blocked','NO_PROGRESS')
+    if (scope['finding_ids'] or scope.get('gate_ids')) and not cycle and len(recent)==policy['no_progress_window'] and all(c.get('status')=='recorded' and not c.get('made_progress',c.get('before_progress')!=c.get('after_progress')) for c in recent):return out('blocked','NO_PROGRESS')
     active={key:row for key,row in {**effects,**subject.get('active_executions',{}),**subject.get('executions',{})}.items() if row.get('status') not in TERMINAL}
     if any(a.get('status')=='claimed' for a in (cycle.get('actions',[]) if cycle else state.get('final_actions',[]))):
         return out('reconcile','ORCHESTRATION_ACTION_UNCERTAIN',required=['original action completion or observed recovery'])
@@ -143,16 +156,30 @@ def orchestration_next(subject:dict,now_ms:int)->dict:
     blocker=state.get('blocker',{})
     if blocker.get('input_hash')==input_binding(subject):return out('blocked',blocker['reason_code'],required=blocker.get('required_evidence',[]),evidence_refs=blocker.get('evidence_refs',[]))
     if subject.get('repair_human_decision_required'):return out('ask-user','MATERIAL_AMENDMENT_REQUIRED',required=['approved governing amendment and replanning'])
+    if scope.get('mapping_required'):return out('blocked','AFFECTED_ITEM_MAPPING_REQUIRED',required=['Declare actual affected item_ids for configured gates: '+', '.join(scope['mapping_required'])])
+    if scope.get('gate_ids') and scope.get('item_id'):
+        item=next(i for i in subject['plan']['work_items'] if i['id']==scope['item_id'])
+        if item.get('kind')!='code':return out('workflow-stage','KIND_SPECIFIC_REPAIR_REQUIRED',stage='build',required=['Use the existing '+item['kind']+' proof/authorization producer; code RED/GREEN is not substituted.'])
     from .implementation_contracts import implementation_prerequisites,rationale_current
     prerequisites=implementation_prerequisites(subject,logical(scope))
     if prerequisites['status']!='allow':return out('contract','IMPLEMENTATION_CONTRACT_MISSING_OR_STALE',required=prerequisites['reason_codes'])
-    findings=scope['finding_ids'];worker=_worker(subject,cycle)
-    if findings and not worker:
+    findings=scope['finding_ids'];gate_ids=scope.get('gate_ids',[]);worker=_worker(subject,cycle)
+    if gate_ids and not worker:
+        for gate_id in gate_ids:
+            proof=subject.get('hardening_proofs',{}).get(gate_id,{})
+            if (proof.get('config_hash')!=subject.get('hardening_config_hash') or proof.get('source_identity')!=subject.get('source_identity')
+                    or not proof.get('execution_id') or type(proof.get('exit_code')) is not int
+                    or proof.get('passed') is not True and proof.get('failure') not in {'GATE_FAILED','FINDINGS_PRESENT'}):
+                return out('observe-check','CONFIGURED_GATE_OBSERVATION_REQUIRED',gate_id=gate_id,required=['Actual current configured command outcome; missing/unavailable proof is not a repair finding.'])
+        if not findings and all(subject['hardening_proofs'][g].get('passed') is True for g in gate_ids):
+            return out('finish-cycle' if cycle else 'workflow-stage','CONFIGURED_GATES_ALREADY_PASS',stage='build')
+    if (findings or gate_ids) and not worker:
         if scope['role']=='branch':return out('blocked','AFFECTED_ITEM_MAPPING_REQUIRED',required=['actual affected work item mapping for global findings'])
         if scope.get('item_id') and subject.get('items',{}).get(scope['item_id'],{}).get('status')=='complete':return out('retry-item','AFFECTED_ITEM_RETRY_REQUIRED',required=['existing authorized item retry/invalidation transition'])
         reds=_proofs(subject,scope,'RED')
         if not reds:return out('verify','REGRESSION_BASELINE_REQUIRED',phase='RED',required=['explicit applicable verifier argv/targets','actual relevant assertion failure before implementation'])
-        if any(not rationale_current(subject,fid) for fid in findings):return out('rationale','FIX_RATIONALE_REQUIRED',required=['current observed failure/cause or hypothesis/correction rationale'])
+        targets=findings+['gate:'+g for g in gate_ids]
+        if any(not rationale_current(subject,fid) for fid in targets):return out('rationale','FIX_RATIONALE_REQUIRED',required=['current observed failure/cause or hypothesis/correction rationale'])
         return out('implement','REVIEW_DRIVEN_REPAIR_AVAILABLE',baseline_proof_ids=[p['id'] for p in reds],required=['independent actual implementer','eligible model and known finite cost','current declared repair authorization'])
     if worker:
         # A successful native receipt alone never establishes corrected behavior.
@@ -358,6 +385,7 @@ def _require_result(subject,action,ref):
              and receipt.get('invocation_ref') and receipt.get('scope',{}).get('actor_id')==subject.get('actors',{}).get('implementer'),
              'Only the actual completed implementer can finish implementation; verification still follows.')
         effect=subject.get('effects',{}).get(ref,{})
+        need(set(scope.get('gate_ids',[])).issubset(effect.get('action_scope',{}).get('gate_ids',[])),'Implementer must own these actual configured gate targets.')
         need(effect.get('source_identity')==action.get('source_identity') and effect.get('claimed_at_ms',-1)>=action.get('claimed_ms',0),
              'Worker reservation must follow this action on the same original source.')
         if scope.get('item_id'):
@@ -369,6 +397,12 @@ def _require_result(subject,action,ref):
         worker=_worker(subject,_active_cycle(subject))
         proofs=_proofs(subject,scope,action['phase'],worker)
         need(any(p.get('id')==ref for p in proofs),'Actual applicable current proof required; setup/import failure and unrelated evidence do not qualify.')
+    elif kind=='observe-check':
+        proof=subject.get('hardening_proofs',{}).get(action['gate_id'],{})
+        need(ref==action['gate_id'] and proof.get('execution_id')==action['action_id']+':effect'
+             and type(proof.get('exit_code')) is int and proof.get('source_identity')==subject.get('source_identity')
+             and proof.get('config_hash')==subject.get('hardening_config_hash')
+             and (proof.get('passed') is True or proof.get('failure') in {'GATE_FAILED','FINDINGS_PRESENT'}), 'Actual current configured check observation required; unavailable/setup evidence is not a repair baseline.')
     elif kind=='check':
         proof=subject.get('hardening_proofs',{}).get(action['gate_id'],{})
         need(ref==action['gate_id'] and proof.get('passed') is True and proof.get('source_identity')==subject.get('source_identity')
@@ -388,7 +422,7 @@ def _require_result(subject,action,ref):
         need(implementation_prerequisites(subject,logical(scope))['status']=='allow','Current derived contract required.')
     elif kind=='rationale':
         from .implementation_contracts import rationale_current
-        need(all(rationale_current(subject,fid) for fid in scope['finding_ids']),'Current rationale required for every selected finding.')
+        need(all(rationale_current(subject,fid) for fid in scope['finding_ids']+['gate:'+g for g in scope.get('gate_ids',[])]),'Current rationale required for every selected finding/check.')
     elif kind=='complete-attempt':
         item=subject.get('items',{}).get(scope.get('item_id'),{})
         need(item.get('status')=='complete' and item.get('attempts') and item['attempts'][-1].get('result',{}).get('verifier_proof_id')==ref,'Actual existing item result transition required.')

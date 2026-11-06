@@ -1,8 +1,9 @@
-# Implementation rulings
+# Implementation and final review rulings
 
 Approved plan: `docs/superpowers/plans/2026-11-05-adversarial-review-repair.md`.
 Each entry preserves the decision, rationale and cost if wrong from the execution ledger.
-Final independent review rulings/minors are pending.
+All six Important reviewer findings and regraded M1/M2 were addressed in one native fix pass.
+M3 was corrected under the user documentation requirement. No deferred Minor findings.
 
 1. Ruling: Implement Task5 model receipt/dispatch before completing Task4 coverage, as Task4 explicitly consumes it; Task7 completion covers standalone review, while Task9 supplies repair — prevents provisional compliance or repair claims — cost if wrong: larger integration checkpoints require careful dependency bookkeeping.
 
@@ -75,3 +76,33 @@ Final independent review rulings/minors are pending.
 35. Ruling: Retain deduplicated no-progress stop records across resume/extension rather than deriving their count solely from the current blocker — clearing a blocker must not erase outcome history or imply fewer failed cycles — cost if wrong: metadata history grows with distinct recorded stops, bounded by actual attempts and existing storage limits; it cannot refund budgets or create verified progress.
 
 36. Ruling: Current-policy standalone review artifacts must carry the complete actual original user contract as well as derived intent, with exact current equality/hash validation — independent oracle review cannot rely only on controller-derived behavior text and opaque authority IDs — cost if wrong: bounded artifact size increases by the original contract, and old current-policy artifacts need renewal; pre-policy packages retain their original behavior.
+
+37. Ruling: Regrade M1 to Important because a replayed outstanding operation must not assert definite nonexecution after actual process evidence exists — execution-state fields guide safe recovery and the public contract already uses unknown for uncertainty — cost if wrong: callers must handle executed:null consistently; no duplicate dispatch is enabled.
+
+38. Ruling: Regrade M2 to Important because the supported native backend retains measurable usage that the promised summary drops — R11 requires available actual measurements, and the existing shared normalizer provides their meaning — cost if wrong: supported aggregate token labels become more complete without inventing prices or absent measurements.
+
+39. Ruling: Correct M3 in the same change despite its Minor grade because the user AGENTS.md explicitly requires documentation to describe actual implemented behavior — contradictory future-work statements concern this exact feature and violate that instruction — cost if wrong: wording changes add no execution or tests beyond required documentation validation.
+
+40. Ruling: Production provider, signed-in host mappings and hidden context — retain CANNOT VERIFY; no paid probes were authorized — cost if wrong: production integration behavior remains unverified.
+
+41. Ruling: Native Windows runtime and paths — retain the six explicit platform skips and CANNOT VERIFY — cost if wrong: platform-specific failures may remain undiscovered.
+
+42. Ruling: Complete mutation tooling and automatic challenge admission — retain the approved supplementary diagnostic-only boundary and required real regression checks — cost if wrong: automatic challenge admission and broader mutation coverage are unavailable.
+
+43. Ruling: Automatic organization governing discovery — retain explicit governing evidence and disclosed missing inputs — cost if wrong: users must supply unresolved governing context.
+
+44. Ruling: Cross-package, cross-head and PR reuse — retain conservative renewal and exact PR-head/status gates — cost if wrong: some redundant review work remains.
+
+45. Ruling: Containment against malicious authorized project commands — retain the documented trusted-command boundary; no general OS sandbox is promised — cost if wrong: authorized commands can have their ordinary system effects.
+
+46. Ruling: Specialist routing for requirement acceptance — retain its independent existing acceptance contract as approved — cost if wrong: acceptance does not gain the four specialist seats.
+
+47. Ruling: Exhaustive large-repository resource behavior — retain bounded selected-scope reads and disclosed lack of exhaustive stress evidence — cost if wrong: extreme repository resource behavior remains unverified.
+
+48. Ruling: Universal speedup, defect-rate claims and unreported escapes — make no unsupported benefit or zero-escape claim; preserve unknowns — cost if wrong: no comparative improvement is established by this run.
+
+49. Ruling: Use one explicit same-repository item-mapping predicate for gate-driven scope and direct repair authorization — weaker direct admission must not bypass the orchestration scope guard — cost if wrong: malformed, duplicate or cross-repository mappings require correction before automatic repair.
+
+50. Ruling: Treat artifact rejection before the actual interactive spawn as known nondispatch, but keep spawn/collect exceptions uncertain — controller bookkeeping is not execution and a throwing spawn may already have created a worker — cost if wrong: uncertain launches still require observed reconciliation; known zero-launch failures do not strand claims or refund consumed allowances.
+
+51. Ruling: Keep still-failing cheap checks blocked for explicit current diagnosis/retry and preserve non-code kind-specific handoffs — neither missing tools nor a code verifier can establish a typed repair or authorize an unexplained new writer — cost if wrong: some repairs need another explicit user/agent step; no unsupported automatic recovery or typed proof equivalence is claimed.

@@ -52,3 +52,6 @@ readable; migration creates an unapproved visible candidate and preserves target
 See the [guide](../../skills/workflow/GUIDE.md#repository-specification-preflight) for recovery.
 
 
+
+For specialist input integrity, known nondispatch and uncertain-launch handling,
+follow the [dispatch safeguards](adversarial-review.md#final-dispatch-and-repair-safeguards).

@@ -66,18 +66,20 @@ def reduce_model(subject,action,record):
         if row['status']=='claimed':
             need(not completed and result.get('dispatch') is False,'Prelaunch failures must disclose no dispatch.')
             updated=transition_effect(updated,{'effect_id':identifier,'status':'failed','now_ms':record['now_ms']})
-        elif completed:
+        elif result.get('dispatch') is False:
+            updated=transition_effect(updated,{'effect_id':identifier,'status':'failed','now_ms':record['now_ms'],'dispatch_started':False})
+        elif completed or result.get('transport_completed') is True:
             updated=transition_effect(updated,{'effect_id':identifier,'status':'running','now_ms':record['now_ms'],'worker_ref':result['invocation_ref']})
             updated=transition_effect(updated,{'effect_id':identifier,'status':'completed','now_ms':record['now_ms']})
         else:updated=transition_effect(updated,{'effect_id':identifier,'status':'uncertain','now_ms':record['now_ms'],'worker_ref':result.get('invocation_ref') or identifier})
         row=updated['native_invocations'][identifier]
         decision=deepcopy(row.get('decision',{}));receipt={**decision,'status':'block','reason_code':result.get('reason_code','SESSION_MODEL_INCOMPLETE'),
-            'dispatch':row.get('status')=='launching','invocation_id':identifier,'invocation_ref':result.get('invocation_ref'),
+            'dispatch':row.get('status')=='launching' and result.get('dispatch') is not False,'transport_completed':completed or result.get('transport_completed') is True,'invocation_id':identifier,'invocation_ref':result.get('invocation_ref'),
             'policy_revision':row.get('policy_revision',len(subject.get('model_overrides',[]))),'review_sequence':row.get('review_sequence'),
             'diagnostic':row.get('diagnostic',True),'scope':{'role':'implementer' if row.get('purpose')=='repair' else 'session-reviewer','actor_id':row['actor_id'],'session_id':subject['id'],
                 'perspective':row['perspective'],'package_hash':row.get('package_hash'),'review_scope':row['scope']},
             'started_ms':row.get('started_ms'),'finished_ms':record['now_ms'],
-            **{k:deepcopy(result[k]) for k in ('observed','observation_source','usage','output_ref','review_report_hash') if k in result}}
+            **{k:deepcopy(result[k]) for k in ('observed','observation_source','usage','output_ref','review_report_hash','review_input_validation') if k in result}}
         if completed:
             from .model_policy import check_model_receipt
             receipt['status']='allow'
@@ -85,7 +87,7 @@ def reduce_model(subject,action,record):
             if receipt.get('observed',{}).get('provider')!=receipt.get('resolved',{}).get('provider'):
                 compliance={'status':'block','reason_code':'MODEL_SUBSTITUTED'}
             receipt.update(status=compliance['status'],reason_code=compliance.get('reason_code','SESSION_MODEL_COMPLETED'))
-        row.update(status='completed' if completed else 'failed' if result.get('dispatch') is False else 'uncertain',receipt=deepcopy(receipt))
+        row.update(status='completed' if completed or result.get('transport_completed') is True else 'failed' if result.get('dispatch') is False else 'uncertain',receipt=deepcopy(receipt))
         updated.setdefault('model_receipts',{})[identifier]=receipt
     elif action=='session-model-reconcile':
         from .enforcement_recovery import validate_tool_observation
@@ -108,7 +110,7 @@ def dispatch(path,request,operation_id,*,purpose='review'):
     from .review_dispatch import specialist_scope,select_review_route
     from .implementation_contracts import review_prerequisites
     from .session_evidence import prepare,_live
-    from .adversarial_reviews import publish_review_input,specialist_prompt,seal_actual_report
+    from .adversarial_reviews import publish_review_input,specialist_prompt,seal_actual_report,verify_review_input
     from .storage_objects import put_object
     from .effect_claims import validate_active_dispatch
     path=Path(path).resolve();identifier=operation_id
@@ -145,7 +147,7 @@ def dispatch(path,request,operation_id,*,purpose='review'):
                 'source_identity':subject['source_identity'],'estimated_cost':request.get('estimated_cost'),'now_ms':now()}
             _commit(path,state,identifier+':claim','session-model-claim',{'invocation_id':identifier,'owner_pid':os.getpid(),
                 'scope':scope,'purpose':purpose,'stage':'implementation' if purpose=='repair' else 'review','finding_ids':request.get('finding_ids',[]),'perspective':request.get('perspective'),'actor_id':request['actor_id'],'request_hash':digest(request),'claim':claim})
-            launched=False
+            launched=False;invoked=False;configuration={};result=None
             try:
                 backend=(CodexBackend if request['host']=='codex' else ClaudeBackend)(subject['repositories']['repo-1']['location'])
                 context=backend.discover();preferences={**session_preferences(subject,request,stage='implementation' if purpose=='repair' else 'review'),
@@ -159,6 +161,10 @@ def dispatch(path,request,operation_id,*,purpose='review'):
                 need(transport_scope(latest,{**request,'purpose':purpose})==scope,'Policy, source, contract or questions changed before model launch.')
                 _commit(path,state,identifier+':launch','session-model-launch',{'invocation_id':identifier,'decision':decision,
                     'package_hash':package['package_hash'],'diagnostic':request.get('diagnostic') is True,'now_ms':now()});launched=True
+                if request['host']=='codex':
+                    configuration=backend.configure(decision['resolved'],'DevFlow actor '+request['actor_id'],'workspace-write' if purpose=='repair' else 'read-only')
+                    if any(configuration.get('observed',{}).get(k)!=decision['resolved'].get(k) for k in ('provider','model','effort')):
+                        raise WorkflowError('MODEL_SUBSTITUTED','Configured model/effort/provider differs before turn execution.')
                 state=read_session(path);latest=state['subject'];_live(latest,diagnostic=True)
                 need(len(latest.get('model_overrides',[]))==latest['native_invocations'][identifier]['policy_revision'],'Model preferences changed before invocation.')
                 validate_active_dispatch(latest,identifier,{'source_identity':latest['source_identity'],'now_ms':now()})
@@ -173,13 +179,21 @@ def dispatch(path,request,operation_id,*,purpose='review'):
                 task=request.get('prompt','Fix only the selected findings using current intent and recorded rationale; preserve locked inputs and ask about business uncertainty.' if purpose=='repair' else 'Review only the selected source and report actual evidence.')
                 prompt=(specialist_prompt(task) if purpose=='review' else task)+'\n'+json.dumps({'review_input':artifact,'perspective':request.get('perspective'),'finding_ids':request.get('finding_ids',[]),'limitations':subject.get('limitations',[])},separators=(',',':'))
                 need(len(prompt.encode())<=20000,'Known specialist prompt exceeds budget; use bound artifacts.')
+                input_before=verify_review_input(path.with_name(path.name+'.artifacts'),package)
+                invoked=True
                 result=backend.invoke(decision['resolved'],prompt,request['actor_id'],'workspace-write' if purpose=='repair' else 'read-only',min(timeout,remaining))
+                input_after=verify_review_input(path.with_name(path.name+'.artifacts'),package)
+                result['review_input_validation']={'before':input_before,'after':input_after}
                 output=result.pop('output','')
                 if purpose=='review':result['review_report_hash']=seal_actual_report(output)
                 result['output_ref']=put_object(path.with_name(path.name+'.artifacts'),'session-model-output',output.encode())
             except (WorkflowError,OSError,ValueError) as exc:
-                result={'status':'interrupted','reason_code':getattr(exc,'code','SESSION_MODEL_FAILED')}
-                if not launched:result['dispatch']=False
+                actual=result if isinstance(result,dict) else {}
+                result={**configuration,**actual,'status':'interrupted','reason_code':getattr(exc,'code','SESSION_MODEL_FAILED')}
+                if actual.get('status')=='completed' and actual.get('invocation_ref'):
+                    result['transport_completed']=True
+                    result['output_ref']=put_object(path.with_name(path.name+'.artifacts'),'session-model-output',str(result.pop('output','')).encode())
+                if not invoked:result['dispatch']=False
             state=read_session(path)
             _commit(path,state,identifier+':finish','session-model-finish',{'invocation_id':identifier,'result':result,'now_ms':now()})
             receipt=read_session(path)['subject']['model_receipts'][identifier]

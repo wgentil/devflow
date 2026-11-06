@@ -118,3 +118,12 @@ class ReviewSummaryTests(unittest.TestCase):
             self.assertEqual(summarize_review(subject)['no_progress_stops'],number)
             subject=apply_orchestration(subject,'clear-blocker',{'input_hash':input_binding(subject)})
             self.assertEqual(summarize_review(subject)['no_progress_stops'],number)
+
+    def test_supported_native_nested_usage_is_measured_with_shared_normalizer(self):
+        from workflow_lib.review_summary import summarize_review
+        usage={'total':{'inputTokens':10,'cachedInputTokens':5,'outputTokens':2,'totalTokens':12}}
+        result=summarize_review({'id':'fixture','model_receipts':{'native':{'usage':usage}}})
+        self.assertEqual(result['observed_tokens'],{'input_tokens':10,'cached_tokens':5,'output_tokens':2,'total_tokens':12})
+        self.assertEqual(result['unknown_measurements']['model_usage'],0)
+        zeros=summarize_review({'id':'fixture','model_receipts':{'native':{'usage':{'input_tokens':0,'cached_input_tokens':0,'output_tokens':0}}}})
+        self.assertEqual(zeros['observed_tokens'],{'input_tokens':0,'cached_tokens':0,'output_tokens':0})

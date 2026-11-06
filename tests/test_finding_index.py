@@ -222,6 +222,8 @@ class FindingIndexTests(unittest.TestCase):
         disposition={'finding_id':'doc','finding_hash':finding_hash(finding),'source_identity':'after','obligations':['wording'],
             'disposition':'resolved','proof_ids':[],'execution_inapplicable':{'reason':'Prose wording only.','evidence_refs':['package:'+package['package_hash']]}}
         report['closure_dispositions']=[disposition]
+        from workflow_lib.adversarial_reviews import expected_review_input_validation
+        fact=expected_review_input_validation(package);model['review_input_validation']={'before':fact,'after':fact}
         model['review_report_hash']=semantic_report_hash(report)
         subject['reviews']={'branch':[report]}
         subject['corrections']={'doc':{'source_identity':'after','finding_hash':finding_hash(finding),'proof_ids':[],'rationale':'Correct the prose.'}}

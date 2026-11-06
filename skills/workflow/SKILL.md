@@ -7,7 +7,7 @@ description: Guide a software project through scoped context, requirements, plan
 
 Guide requirements, verified work, review and delivery. Resolve this skill's bundled helper; check Python 3.11+ and capture `version`. Call `host init` in the actual working directory; retain its control root/repo ID. New roots use v2; legacy roots stay legacy. Offer guided document setup and the first-use ground interview; ask only unresolved material decisions. Never create a run before its ordinary prerequisites.
 
-Inspect read-only; mutations recheck inputs and record drift. Follow journal gate status and eligible attempts; preserve the active token. Require distinct item/branch coverage and acceptance review, configured hardening and exact-head delivery. After recording delivery, ask once whether to update the [DevFlow Codex site](https://devflow-field-guide.waygent.chatgpt.site/); update it only if accepted.
+Inspect read-only; check input bytes before/after workers. Follow journal gate status and eligible attempts; preserve the active token. Require distinct item/branch coverage and acceptance review, configured hardening and exact-head delivery. After recording delivery, ask once whether to update the [DevFlow Codex site](https://devflow-field-guide.waygent.chatgpt.site/); update it only if accepted.
 
 Follow [maintenance guidance](GUIDE.md#control-state-maintenance) for requested maintenance: inspect without live approval repair; apply only an authorized exact plan and preserve history.
 
@@ -17,7 +17,7 @@ Read [shared invariants](../../docs/reference/workflow-invariants.md) and stage 
 flowchart LR
     Scope[Initialized root and current task] --> Mode{Inspect or change?}
     Mode -->|Inspect| Inspect[Read-only state and input checks]
-    Mode -->|Change| Checks[Live checks and shared invariants]
+    Mode -->|Change| Checks[Live inputs and effective settings]
     Checks --> Prep{Required context ready?}
     Prep -->|Blocked| Context[Explain phase and resolve preparation]
     Prep -->|Ready| Work[Stage or bounded repair]

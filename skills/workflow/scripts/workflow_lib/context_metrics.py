@@ -99,7 +99,7 @@ def explicit_runtime_usage(usage) -> dict:
     if not isinstance(value, dict):
         return {}
     aliases = {'inputTokens': 'input_tokens', 'outputTokens': 'output_tokens', 'cachedInputTokens': 'cached_tokens',
-               'totalTokens': 'total_tokens', 'cache_read_input_tokens': 'cached_tokens'}
+               'totalTokens': 'total_tokens', 'cache_read_input_tokens': 'cached_tokens', 'cached_input_tokens': 'cached_tokens'}
     return {aliases.get(k, k): v for k, v in value.items() if aliases.get(k, k) in {'input_tokens', 'output_tokens', 'cached_tokens', 'total_tokens'}
             and type(v) is int and v >= 0}
 

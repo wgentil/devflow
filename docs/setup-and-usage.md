@@ -644,12 +644,21 @@ workflow and exact PR stages; diagnostics remain distinct from passes. Required
 review artifacts contain the complete scoped inputs. Standalone selected-scope
 review is available without a project/spec/plan or workflow root. Ask for an explicit
 commit range or working tree and external session output. It defaults to report only;
-source edits and project command execution need separate authorization. Shared
-bounded repair remains in implementation; missing eligible
-mappings still block automatic specialist work. See [current review scope](reference/adversarial-review.md).
+source edits and project command execution need separate authorization. Explicit bounded repair is available after exact scope authorization; missing
+eligible mappings still block automatic specialist work. See [current review scope](reference/adversarial-review.md).
 
 Finding grouping uses evidence in existing independent reviews, retains every original obligation and never resets limits. [Finding lineage](reference/adversarial-review.md#finding-lineage-and-dispositions) describes atomic member closure and distinct resolved/rejected/deferred/waived outcomes; diagnostics cannot authorize current-policy resolution or rejection.
 
 An explicit [bounded orchestration policy](reference/adversarial-review.md#bounded-orchestration-state) now exposes shared workflow/session next actions and actual clarification text. It preserves clocks, spending and original obligations. Configuration/status do not run a loop. Explicit [bounded execution](reference/adversarial-review.md#bounded-live-execution) now runs authorized steps through actual tools and independent native reviewers. Ask the agent to fix the selected findings within finite limits; missing eligibility or business authority remains blocked. Standalone review stays report-only until the fix request is bound to its exact editable scope.
 
 Ask for a [local review summary](reference/adversarial-review.md#reuse-and-local-outcomes) to inspect findings, repair cycles, review timing and retained usage without model calls. Unknown costs and unreported escaped defects stay unknown. Explicit later defect reports link to the original review; they do not authorize repairs or reopen delivery.
+
+
+Current specialist dispatch checks full artifact bytes before and after the worker
+and checks effective model settings before a turn. Known unlaunched failures
+retain an exact-retry receipt without an active claim. Independent perspectives
+on the same source share a correction round. Explicitly deferred nonmandatory
+minor findings remain visible without blocking completion. A required pre-review
+check can initiate code repair when its affected item mapping is explicit;
+unknown scope, unavailable tools and kind-specific proof gaps require a handoff.
+See [dispatch and repair safeguards](reference/adversarial-review.md#final-dispatch-and-repair-safeguards).

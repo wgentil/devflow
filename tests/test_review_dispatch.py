@@ -65,14 +65,18 @@ class ReviewDispatchTests(unittest.TestCase):
         receipt={'policy_revision':0,'status':'allow','dispatch':True,'capability_validated':True,'validation_ref':'fixture:validated',
             'invocation_id':'actual-call','invocation_ref':'fixture:actual-invocation','scope':scope,'profile':'deep-reasoning',
             'resolved':selected,'observed':copy.deepcopy(selected),'observation_source':'host-effective-configuration'}
+        from workflow_lib.adversarial_reviews import expected_review_input_validation
+        fact=expected_review_input_validation(package)
+        receipt['review_input_validation']={'before':fact,'after':fact}
         subject['model_receipts']={'actual-call':receipt}
         review={'actor_id':'independent','perspective':'security','model_invocation_id':'actual-call','invocation_ref':'fixture:actual-invocation'}
         return subject,package,review
     def test_model_acceptance_requires_exact_actual_settings_identity_and_scope(self):
         self.assertEqual(self.api().validate_review_model(*self.receipt_fixture())['status'],'allow')
-        for case in ('model','effort','provider','validation','source','package','actor','perspective','invocation','prepared'):
+        for case in ('model','effort','provider','validation','source','package','actor','perspective','invocation','prepared','input-integrity'):
             subject,package,review=self.receipt_fixture();receipt=subject['model_receipts']['actual-call']
             if case in ('model','effort','provider'):receipt['observed'][case]='substituted'
+            if case=='input-integrity':receipt.pop('review_input_validation',None)
             if case=='validation':receipt['capability_validated']=False
             if case=='source':subject['source_identity']='changed'
             if case=='package':package['package_hash']='different'

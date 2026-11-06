@@ -120,8 +120,9 @@ def subject_decision(subject: dict, action: str, scope: dict) -> dict:
         from .implementation_contracts import implementation_prerequisites, rationale_current
         implementation = implementation_prerequisites(subject,scope)
         if scope.get('purpose')=='repair':
-            missing=[f for f in scope.get('finding_ids',[]) if not rationale_current(subject,f)]
-            if not scope.get('finding_ids') or missing:
+            targets=scope.get('finding_ids',[])+['gate:'+g for g in scope.get('gate_ids',[])]
+            missing=[f for f in targets if not rationale_current(subject,f)]
+            if not targets or missing:
                 implementation={**implementation,'status':'block',
                     'reason_codes':implementation['reason_codes']+['FIX_RATIONALE_REQUIRED']}
         blockers.extend({'id':'contract:'+code,'version':1,'reason_code':code}

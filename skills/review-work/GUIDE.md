@@ -394,3 +394,26 @@ flowchart LR
     Later[Explicit later report linked to original review] --> Escapes[Confirmed report count]
     Escapes --> Summary
 ```
+
+
+## Dispatch integrity and configured-check repair
+
+Follow the [dispatch and repair safeguards](../../docs/reference/adversarial-review.md#final-dispatch-and-repair-safeguards).
+Check full input bytes before/after workers and effective settings before a turn;
+retain actual execution separately from report acceptance. Explicit mapped failed
+pre-review checks can initiate code repair without inventing findings. Unknown
+scope and kind-specific proof gaps require a handoff. Deferred nonmandatory
+minor findings remain visible; independent perspectives share a source round.
+
+```mermaid
+flowchart LR
+    Configure[Configure actual model] --> Before[Validate effective settings and full input]
+    Before -->|Valid| Worker[Actual independent worker]
+    Before -->|Rejected| NoLaunch[Retain known nondispatch; no refund]
+    Worker --> After[Validate full input again]
+    After -->|Intact| Admit[Admit report under current gates]
+    After -->|Changed| Block[Retain actual work; reject assessment]
+    Gate[Actual failed pre-review check] --> Mapping{Explicit same-repository items?}
+    Mapping -->|Yes| Repair[Authorized code repair and independent review]
+    Mapping -->|No| Handoff[Require scope clarification]
+```

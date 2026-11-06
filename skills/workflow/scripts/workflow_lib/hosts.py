@@ -386,6 +386,9 @@ def apply_native_event(state,kind,req):
         receipt['review_report_hash']=result.get('review_report_hash')
         receipt['diagnostic']=record.get('diagnostic') is True
         receipt['review_sequence']=record['review_sequence']
+    if result.get('review_input_validation') is not None:receipt['review_input_validation']=deepcopy(result['review_input_validation'])
+    receipt['transport_completed']=result.get('transport_completed') is True or result.get('status')=='completed'
+    if result.get('dispatch') is False:receipt['dispatch']=False
     if result.get('worker_outcome') is not None:
         receipt['worker_outcome'] = deepcopy(result['worker_outcome'])
     if result['status']=='completed':
@@ -409,7 +412,9 @@ def apply_native_event(state,kind,req):
         from .effect_claims import transition_effect
         worker_ref = result.get('invocation_ref')
         now_ms = req.get('enforcement_transition_ms')
-        if (result['status'] == 'completed' or result.get('transport_completed') is True) and worker_ref:
+        if result.get('dispatch') is False:
+            transitioned=transition_effect(run,{'effect_id':identifier,'status':'failed','now_ms':now_ms,'dispatch_started':False})
+        elif (result['status'] == 'completed' or result.get('transport_completed') is True) and worker_ref:
             transitioned = transition_effect(run, {'effect_id': identifier, 'status': 'running',
                 'worker_ref': worker_ref, 'now_ms': now_ms})
             transitioned = transition_effect(transitioned, {'effect_id': identifier, 'status': 'completed',

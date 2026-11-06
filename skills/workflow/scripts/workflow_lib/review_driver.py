@@ -94,12 +94,13 @@ def _execute(adapter,request,action,operation):
     if kind=='rationale':
         from .implementation_contracts import scope_key
         contract=subject['implementation_contracts'][scope_key(scope)]
-        for fid in scope['finding_ids']:
+        targets=scope['finding_ids']+['gate:'+g for g in scope.get('gate_ids',[])]
+        for fid in targets:
             rationale=request.get('rationales',{}).get(fid)
             need(rationale,'Provide the actual observed failure, evidence and cause/hypothesis; the driver cannot invent it.')
-            record={**rationale,'scope':logical(scope),'source_identity':subject['source_identity'],'contract_hash':contract['contract_hash'],'finding_id':fid}
+            record={**rationale,'scope':logical(scope),'source_identity':subject['source_identity'],'contract_hash':contract['contract_hash'],**({'gate_id':fid.removeprefix('gate:')} if fid.startswith('gate:') else {'finding_id':fid})}
             adapter.event('fix-rationale',record,operation+':'+fid)
-        _,subject=adapter.read();return digest({fid:subject['fix_rationales'][fid]['rationale_hash'] for fid in scope['finding_ids']}),False
+        _,subject=adapter.read();return digest({fid:subject['fix_rationales'][fid]['rationale_hash'] for fid in targets}),False
     if kind=='retry-item':
         command='reverify' if subject['items'][item_id]['status']=='complete' else 'retry'
         adapter.cli('run',command,'--root',adapter.location,'--run-id',adapter.run_id,'--item',item_id,'--operation-id',operation)
@@ -133,11 +134,11 @@ def _execute(adapter,request,action,operation):
             from .native_runtime import invoke
             result=invoke(adapter.location,{**worker,'invocation_id':operation+':worker','stage':'implementation','access':'workspace-write',
                 'prompt':worker.get('prompt','Repair only the selected findings, preserving approved intent and locked tests; use the current contract and rationale.'),
-                'expected_source_identity':subject['source_identity'],'repair_scope':{'finding_ids':scope['finding_ids']}},operation+':worker')
+                'expected_source_identity':subject['source_identity'],'repair_scope':{'finding_ids':scope['finding_ids'],**({'gate_ids':scope['gate_ids']} if scope.get('gate_ids') else {})}},operation+':worker')
         need(result.get('status')=='allow' and result.get('dispatch') is True,'Actual implementer is blocked/uncertain; inspect retained native evidence and do not launch a replacement.')
         adapter.observe(operation+':source')
         return operation+':worker',True
-    if kind=='check':
+    if kind in {'check','observe-check'}:
         need(not adapter.session,'Standalone checks require explicit session verification targets; no workflow gates are invented.')
         from .repair_runtime import _run_gate
         _run_gate(adapter.location,adapter.run_id,action['gate_id'],operation)
@@ -238,7 +239,7 @@ def _advance(location,request,operation_id,request_hash):
             if previous:
                 need(previous['request_hash']==request_hash,'Driver identity belongs to a different exact request/action bound.')
                 if previous.get('status')=='completed':return {**previous['result'],'replayed':True,'next_action':orchestration_next(subject,now())}
-                return {'advanced':False,'executed':False,'kind':'reconcile','reason_code':'DRIVER_OPERATION_UNCERTAIN','replayed':True,'next_action':orchestration_next(subject,now())}
+                return {'advanced':False,'executed':None,'kind':'reconcile','reason_code':'DRIVER_OPERATION_UNCERTAIN','replayed':True,'next_action':orchestration_next(subject,now())}
             if request.get('resume') is True and orch.get('blocker'):
                 adapter.event('orchestration-clear-blocker',{'input_hash':input_binding(subject)},operation_id+':resume')
                 _,subject=adapter.read()
@@ -258,7 +259,7 @@ def _advance(location,request,operation_id,request_hash):
             adapter.live(subject)
             adapter.event('orchestration-driver-claim',{'operation_id':operation_id,'request_hash':request_hash,'owner_pid':os.getpid(),'input_hash':input_binding(subject)},operation_id+':driver-claim')
             _,subject=adapter.read();cycle=next((c for c in subject['review_orchestration']['cycles'] if c['status']=='active'),None)
-            if not cycle and action['scope']['finding_ids']:
+            if not cycle and (action['scope']['finding_ids'] or action['scope'].get('gate_ids')):
                 action=orchestration_next(subject,now())
                 adapter.event('orchestration-begin-cycle',{'cycle_id':operation_id+':cycle','now_ms':now(),'input_hash':action['input_hash']},operation_id+':begin')
                 _,subject=adapter.read();cycle=subject['review_orchestration']['cycles'][-1]

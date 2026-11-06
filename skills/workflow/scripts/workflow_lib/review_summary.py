@@ -100,7 +100,8 @@ def summarize_review(subject:dict)->dict:
     tokens={};unknown_usage=0
     for row in receipts.values():
         usage=row.get('usage')
-        measured={k:v for k,v in (usage.items() if isinstance(usage,dict) else []) if k in {'input_tokens','output_tokens','cached_tokens','cached_input_tokens'} and type(v) is int and v>=0}
+        from .context_metrics import explicit_runtime_usage
+        measured=explicit_runtime_usage(usage)
         if not measured:unknown_usage+=1
         for key,value in measured.items():tokens[key]=tokens.get(key,0)+value
     if not receipts:unknown_usage=1
@@ -108,7 +109,7 @@ def summarize_review(subject:dict)->dict:
     from .clarifications import clarification_blockers
     pending=len(clarification_blockers(subject,{}))
     escapes=subject.get('escaped_defect_reports',{})
-    completed=lambda row:row.get('dispatch') is True and row.get('status')=='allow' and bool(row.get('invocation_ref'))
+    completed=lambda row:row.get('dispatch') is True and (row.get('transport_completed') is True or row.get('status')=='allow') and bool(row.get('invocation_ref'))
     confirmed_reviews={r['review_id'] for r in reviews if completed(receipts.get(r.get('model_invocation_id'),{})) and receipts[r['model_invocation_id']].get('diagnostic') is False}
     confirmed=sum(any(f.get('status')=='resolved' or f.get('provenance',{}).get('review_id') in confirmed_reviews for f in rows) for rows in actionable)
     unknown_invocations=sum(row.get('dispatch') is not False and not completed(row) for row in receipts.values()) if receipts else 1

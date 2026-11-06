@@ -904,3 +904,13 @@ require exact input/operation identity. Reuse input names `id` and `review_id`;
 see the [illustrative later report](examples/review-escaped-defect.json). The caller
 must supply real original review IDs and actual user-message provenance. These
 records do not rerun reviewers, change coverage or authorize work.
+
+
+For gate-driven bounded code repair, configured required pre-review gates need
+explicit `item_ids` in the gate's repository. An illustrative mapping fragment is
+`{"pre_review":true,"repo_id":"ACTUAL_REPOSITORY_ID","item_ids":["ACTUAL_ITEM_ID"]}`;
+retain the existing real gate kind and argv. A cause record selects `gate_id`
+instead of `finding_id` and binds the current actual failed proof, scope, source,
+contract, observed failure, evidence, cause, correction and explanation. It cannot
+supply a new command or edit scope. Follow the
+[shared safeguards](reference/adversarial-review.md#final-dispatch-and-repair-safeguards).

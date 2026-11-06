@@ -261,7 +261,7 @@ print(json.dumps(review_driver.advance_orchestration(Path(SESSION),json.loads(Pa
         self.assertEqual(marker.read_text(),'x');self.assertEqual(sum(r.get('advanced') is True for r in responses),1)
         self.assertEqual(len(read_session(path)['subject']['verification_proofs']),1)
 
-    def owned_workflow(self,layout):
+    def owned_workflow(self,layout,*,gate_only=False,gate_mapping=True):
         import subprocess,time
         from workflow_lib import store,sqlite_store
         from control_store_fixtures import legacy_root
@@ -300,6 +300,12 @@ print(json.dumps(review_driver.advance_orchestration(Path(SESSION),json.loads(Pa
                 'target_ids':['retention'],'incorrect_behaviors':['Return sixty.']}],'invariants':['Preserve independent assertions.'],
             'interfaces':['VALUE'],'non_goals':['Changing the rule.'],'neighboring_disposition':{'applicability':'not-applicable',
                 'reason':'Single constant with no callers/storage in the owned fixture.','evidence_refs':['fixture:app.py']}}
+        if gate_only:
+            run['unresolved_findings']=[]
+            gate_script='import sys,runpy; from pathlib import Path; sys.dont_write_bytecode=True; p=Path('+repr(str(base/'gate-counter'))+'); p.write_text(p.read_text()+"x" if p.exists() else "x"); sys.exit(0 if runpy.run_path("app.py")["VALUE"]==30 else 1)'
+            gate={'repo_id':'repo','kind':'lint','pre_review':True,'command':[sys.executable,'-B','-c',gate_script],'contract':{'kind':'exit-status'}}
+            if gate_mapping:gate['item_ids']=['W1']
+            run.update(required_hardening_gates=['lint'],hardening_config={'lint':gate},hardening_config_hash=digest({'lint':gate}),hardening_proofs={})
         run=record_implementation_contract(run,contract)
         policy={'protocol':'devflow.review-orchestration/v1','schema_version':1,'enabled':True,'max_attempts':3,
             'max_elapsed_ms':120000,'max_estimated_cost':20,'no_progress_window':2,'effect_policy_hash':digest(run['effect_policy'])}
@@ -311,6 +317,10 @@ print(json.dumps(review_driver.advance_orchestration(Path(SESSION),json.loads(Pa
         request={'run_id':'run','verification':{'argv':[sys.executable,'test.py'],'input_paths':['test.py'],'target_ids':['retention']},
             'repositories':{'repo':{'location':str(repo.resolve()),'base':head,'head':head}},
             'implementer':{'binding_id':'writer','revision':1,'estimated_cost':1},'rationales':unused['rationales']}
+        if gate_only:
+            rationale=copy.deepcopy(unused['rationales']['retention-bug'])
+            rationale.update(observed_failure='The explicitly configured lint criterion rejects the current source.',evidence_refs=['gate:lint'])
+            request['rationales']={'gate:lint':rationale}
         return base,repo,root,request
     def workflow_baseline(self,layout):
         from workflow_lib.storage_access import read_current
@@ -386,6 +396,7 @@ review_driver.advance_orchestration(Path(SESSION),json.loads(Path(INPUT).read_te
         child=subprocess.run([sys.executable,str(helper)],capture_output=True,text=True,timeout=15)
         self.assertEqual(child.returncode,23,child.stdout+child.stderr)
         retry=self.api().advance_orchestration(path,request,'stopped');self.assertEqual(retry['kind'],'reconcile')
+        self.assertIsNone(retry['executed'],'A retained outstanding operation cannot claim definite nonexecution.')
         self.assertEqual(len(read_session(path)['subject']['verification_proofs']),1)
         with self.assertRaises(WorkflowError):self.api().recover_orchestration(path,{**request,'original_operation_id':'stopped','worker_stop_confirmation':{}},'bad-recovery')
         confirmation={'approved':True,'actor_id':'fixture-user','worker_ref':'stopped','reason':'Owned coordinator and all children stopped.',

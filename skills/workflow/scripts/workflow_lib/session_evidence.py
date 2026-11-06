@@ -177,7 +177,9 @@ def reduce_session(subject, action, record):
         need(independent_coverage(required,current),'Required perspectives need a distinct actual actor assignment.')
         if subject.get('repair_authorization'):
             need(all(r['verdict']=='pass' for r in current),'Authorized repair needs current passing reviews.')
-            need(not any(f.get('status') not in {'resolved','waived','duplicate'} for f in subject.get('unresolved_findings',[])),'Repair findings remain unresolved.')
+            from .finding_index import DISPOSED
+            allowed_dispositions=DISPOSED if review_version(subject) is not None else {'resolved','waived','duplicate'}
+            need(not any(f.get('status','open') not in allowed_dispositions for f in subject.get('unresolved_findings',[])),'Repair findings remain unresolved.')
             if subject['review_contract']['request'].get('verification'):
                 need(any(p.get('source_identity')==subject['source_identity'] and p.get('semantic_status')=='reviewed' and p.get('fresh') is not False for p in subject.get('verifier_proofs',{}).values()),'Current independently accepted repair proof required.')
         updated['status']='complete';updated['completion']={'outcome':'verified-repair' if subject.get('repair_authorization') else 'assessed',

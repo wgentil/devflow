@@ -208,12 +208,7 @@ def record_review(run: dict, package_hash: str, reviewer: dict, report: dict) ->
     for prior_role, entries in run.get("reviews", {}).items():
         if prior_role != role and any(entry.get("actor_id") == actor for entry in entries):
             raise ValueError("reviewer actor IDs must be distinct across review roles")
-    limits = {"item": 4, "branch": 1, "acceptance": 1}
-    corrections = sum(entry.get("verdict") == "request-changes"
-                      and (role != "item" or entry.get("item_id") == report.get("item_id"))
-                      for entry in reviews)
-    if report["verdict"] == "request-changes" and corrections >= limits[role]:
-        raise ValueError(f"{role} correction limit reached; adjudication is required")
+    require_correction_round(run,{**report,'role':role})
     item_id = report.get("item_id")
     if role == "item" and (not isinstance(item_id, str) or item_id not in
                             {item.get("id") for item in run.get("plan", {}).get("work_items", [])}):
@@ -333,11 +328,7 @@ def validate_review_contract(run,review):
             if prior.get('invocation_ref')==invocation:raise ValueError('Each assessment requires a fresh actual invocation.')
             if prior.get('actor_id')==actor and prior.get('perspective')!=perspective:
                 raise ValueError('Different perspectives require distinct actual actors.')
-    limit={'item':4,'branch':1,'acceptance':1}.get(role)
-    corrections=sum(prior.get('verdict')=='request-changes' and (role!='item' or prior.get('item_id')==review.get('item_id'))
-        for prior in run.get('reviews',{}).get(role,[]))
-    if limit is not None and review.get('verdict')=='request-changes' and corrections>=limit:
-        raise ValueError(f'{role} correction limit reached; adjudication is required')
+    require_correction_round(run,review)
     findings=review.get('findings')
     if not isinstance(findings,list) or any(not isinstance(f,dict) for f in findings):raise ValueError('Structured findings required.')
     if review.get('verdict')=='request-changes' and not findings:raise ValueError('request-changes requires findings.')
@@ -353,3 +344,23 @@ def item_review_candidate(run,item_id):
     active=run.get('active_attempt') or {};attempts=item.get('attempts',[])
     return (review_version(run)==1 and bool(attempts) and active.get('item_id')==item_id and
         active.get('token')==attempts[-1].get('token') and active.get('status')=='active')
+
+
+def require_correction_round(run,review):
+    """A source revision is one round; independent seats do not spend extra rounds."""
+    role=review.get('role');limit={'item':4,'branch':1,'acceptance':1}.get(role)
+    if limit is None or review.get('verdict')!='request-changes':return
+    previous=[r for r in run.get('reviews',{}).get(role,[]) if r.get('verdict')=='request-changes'
+        and (role!='item' or r.get('item_id')==review.get('item_id'))]
+    from .review_policy import review_version
+    if review_version(run) is None:
+        exhausted=len(previous)>=limit
+    else:
+        if review.get('diagnostic') is True:return
+        from .stored_records import package_metadata
+        def revision(row):
+            package=package_metadata(run.get('review_packages',{}).get(row.get('package_hash'),{}))
+            return package.get('source_identity') or row.get('package_hash') or row.get('invocation_ref')
+        rounds={revision(r) for r in previous if r.get('diagnostic') is not True}
+        exhausted=revision(review) not in rounds and len(rounds)>=limit
+    if exhausted:raise ValueError(f'{role} correction limit reached; adjudication is required')

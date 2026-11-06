@@ -86,9 +86,9 @@ def validate_adversarial_review(subject:dict,package:dict,review:dict)->dict:
         need(receipt.get('review_report_hash')==semantic_report_hash(review),'Recorded report differs from the actual independent reviewer output.')
         for finding in findings:
             need(finding['severity'] not in {'critical','important'},'Unresolved critical/important findings prevent a pass.')
-            if finding['severity']=='minor':
+            if finding['severity'] in {'minor','info'}:
                 disposition=finding.get('disposition',{})
-                need(disposition.get('status')=='deferred' and disposition.get('reason'),'Deferred minors require a visible disposition.')
+                need(finding.get('mandatory') is not True and disposition.get('status')=='deferred' and disposition.get('reason'),'Only nonmandatory minor/info findings with a visible deferral may accompany a pass.')
         if perspective=='test':
             from .test_challenges import validate_test_quality
             validate_test_quality(subject,package,review)
@@ -212,12 +212,17 @@ def ingest_report_findings(subject,review):
         need(not item_id or item_id in known,'Finding must reference a known affected item.')
         need(not review.get('item_id') or item_id==review['item_id'],'Item findings cannot move to another item.')
         definition=digest({k:v for k,v in raw.items() if k!='status'})
+        deferred=(review.get('verdict')=='pass' and review.get('diagnostic') is not True
+            and subject.get('model_receipts',{}).get(review.get('model_invocation_id'),{}).get('diagnostic') is False
+            and raw.get('severity') in {'minor','info'} and raw.get('mandatory') is not True
+            and raw.get('disposition',{}).get('status')=='deferred' and bool(raw.get('disposition',{}).get('reason')))
         existing=next((f for f in updated.get('unresolved_findings',[]) if f['id']==raw['id']),None)
         if existing:
             need(existing.get('definition_hash')==definition,'Finding IDs cannot replace another obligation; use a distinct ID and explicit equivalence evidence.')
             if existing.get('status')=='resolved':
                 existing.setdefault('resolution_history',[]).append(deepcopy(existing.get('resolution')))
                 existing.pop('resolution',None);existing.update(status='open',reopened_by=review['review_id'])
+            if deferred:existing.update(status='deferred',disposition_record={**deepcopy(raw['disposition']),'review_id':review['review_id'],'source_identity':subject['source_identity']})
             continue
         obligations=raw.get('obligations') or [raw['id']]
         need(isinstance(obligations,list) and all(isinstance(v,str) and v for v in obligations),'Every finding needs explicit constituent obligations.')
@@ -226,6 +231,7 @@ def ingest_report_findings(subject,review):
         finding={**raw,'status':'open','definition_hash':definition,'obligations':list(obligations),
             'required_perspectives':sorted(required),'mandatory':raw.get('severity') in {'critical','important'} or raw.get('mandatory') is True,
             'provenance':{k:review[k] for k in ('review_id','package_hash','actor_id','invocation_ref','role','perspective')}}
+        if deferred:finding.update(status='deferred',disposition_record={**deepcopy(raw['disposition']),'review_id':review['review_id'],'source_identity':subject['source_identity']})
         if item_id:finding['item_id']=item_id
         updated.setdefault('unresolved_findings',[]).append(finding)
         if raw.get('question'):
@@ -266,6 +272,7 @@ def report_contract(role=None):
         'verdicts':['pass','request-changes','block'],
         'input_coverage':'Echo the artifact ID as review_input_ref and every exact repo_id/path row from review_inputs.',
         'findings_required':['id','severity','path','line','evidence_refs','failure_scenario','impact','requested_correction OR question'],
+        'pass_findings':'Only nonmandatory minor/info findings with disposition status deferred and an explicit reason.',
         'test_perspective':{'test_oracles':'Actual linked RED/GREEN IDs, locked input hashes, targets, independent authority and failure relevance.',
             'test_quality':{'contract_binding':'adversarial_bindings.inputs.contract_hash','limitations':'Explicit array.',
                 'behaviors':'Every contract behavior with id/item_id, authority_refs, independently justified oracle_kind/oracle_rationale, assertions (target_id/input_path/assertion_ref), and incorrect_behaviors (text/failure_relevance/red_proof_id/green_proof_id/target_ids).'}},
@@ -312,3 +319,16 @@ def review_material(subject,scope):
         'configured_checks':deepcopy(subject.get('hardening_config',{})),
         'check_proofs':deepcopy(subject.get('hardening_proofs',{})),
         'review_risk_escalations':[deepcopy(row) for row in subject.get('review_risk_escalations',[]) if row.get('scope')==scope]}
+
+
+def expected_review_input_validation(package):
+    return {'artifact_id':review_input_id(package),'package_hash':package['package_hash'],'verified':True}
+
+
+def verify_review_input(root,package):
+    """Inspect existing bytes only; never repair/republish after consumption."""
+    from .context_artifacts import inspect_context_artifact
+    expected=expected_review_input_validation(package)
+    value=inspect_context_artifact(root,expected['artifact_id'])
+    need(value=={'package':package},'Published review input differs from the complete original package.')
+    return expected

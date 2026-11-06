@@ -246,3 +246,8 @@ interactive worker envelopes carry that structured report under `review`.
 Standalone [review sessions](reference/adversarial-review.md#standalone-selected-scope-review) use the same eligible native adapters with session-local claims, actual observed receipts and sealed output. No fabricated workflow binding is created; missing mappings remain blockers. Recovery observes the original coordinator and exact worker-stop attestation.
 
 The [bounded review driver](reference/adversarial-review.md#bounded-live-execution) uses actual native/session producers and current scope. It never substitutes host instructions for an executed receipt. Unknown launches retain their claims and require observed recovery; actual implementation and independent specialist roles retain their separate model policies.
+
+Specialist dispatch compares effective settings before a turn and verifies full
+input bytes before/after execution. Known unlaunched rejection is retained as
+nondispatch; uncertain launches require reconciliation. See
+[dispatch safeguards](reference/adversarial-review.md#final-dispatch-and-repair-safeguards).

@@ -86,6 +86,7 @@ class StandaloneReviewTests(unittest.TestCase):
         base,repo,path=self.model_fixture();fixture=ReviewDispatchTests()
         class Crash:
             def __init__(self,*args):pass
+            def configure(self,resolved,brief,access='read-only'):return {'observed':resolved,'observation_source':'host-effective-configuration','invocation_ref':'fixture:configured'}
             def discover(self):return {'capabilities':fixture.capabilities(),'discovery':fixture.discovery()}
             def invoke(self,*args):
                 result=subprocess.run([sys.executable,'-c',"from pathlib import Path; p=Path('"+str(base/'counter')+"'); p.write_text(p.read_text()+'x' if p.exists() else 'x'); raise SystemExit(23)"],capture_output=True)
@@ -125,6 +126,7 @@ class StandaloneReviewTests(unittest.TestCase):
         base,repo,path=self.model_fixture();fixture=ReviewDispatchTests();counter=base/'counter'
         class Transport:
             def __init__(self,*args):pass
+            def configure(self,resolved,brief,access='read-only'):return {'observed':resolved,'observation_source':'host-effective-configuration','invocation_ref':'fixture:configured'}
             def discover(self):return {'capabilities':fixture.capabilities(),'discovery':fixture.discovery()}
             def invoke(self,resolved,prompt,actor,access,timeout):
                 assert access=='read-only'
@@ -160,6 +162,7 @@ from workflow_lib.review_dispatch import dispatch_session_review
 fixture=ReviewDispatchTests()
 class Stop:
  def __init__(self,*args):pass
+ def configure(self,resolved,brief,access='read-only'):return {'observed':resolved,'observation_source':'host-effective-configuration','invocation_ref':'fixture:configured'}
  def discover(self):return {'capabilities':fixture.capabilities(),'discovery':fixture.discovery()}
  def invoke(self,*args):
   Path(MARKER).write_text('one')
@@ -227,6 +230,7 @@ with patch('workflow_lib.native_runtime.policy',return_value=fixture.policy()),p
         fixture=ReviewDispatchTests()
         class Prose:
             def __init__(self,*args):pass
+            def configure(self,resolved,brief,access='read-only'):return {'observed':resolved,'observation_source':'host-effective-configuration','invocation_ref':'fixture:configured'}
             def discover(self):return {'capabilities':fixture.capabilities(),'discovery':fixture.discovery()}
             def invoke(self,resolved,prompt,actor,access,timeout):
                 subject=read_session(path)['subject'];package=list(subject['review_packages'].values())[-1]
@@ -250,6 +254,7 @@ with patch('workflow_lib.native_runtime.policy',return_value=fixture.policy()),p
         base,repo,path=self.model_fixture();fixture=ReviewDispatchTests()
         class Restricted:
             def __init__(self,*args):pass
+            def configure(self,resolved,brief,access='read-only'):return {'observed':resolved,'observation_source':'host-effective-configuration','invocation_ref':'fixture:configured'}
             def discover(self):return {'capabilities':fixture.capabilities(),'discovery':fixture.discovery()}
             def invoke(self,*args):raise AssertionError('An explicitly excluded model was invoked.')
             def close(self):pass

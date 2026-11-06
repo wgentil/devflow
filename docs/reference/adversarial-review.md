@@ -282,8 +282,8 @@ results always return `workflow_acceptance: false`.
 After interruption, `review recover` requires OS-observed coordinator absence, the
 same exclusive lease and an exact user-message attestation identifying the stopped
 worker and all children. It records reconciliation without relaunch/refund.
-Report-only sessions cannot authorize writers. Bounded opted-in repair and editable
-scope renewal are subsequent integration work. Legacy primitive session manifests
+Report-only sessions cannot authorize writers. Explicit bounded repair requires a
+current editable-scope proposal and separate actual user authorization. Legacy primitive session manifests
 remain readable. [Optional developer commands](../developer-cli.md#standalone-review)
 and [start request](../examples/standalone-review.json) show the interface.
 
@@ -430,3 +430,42 @@ current pass. Final integration/acceptance gates remain independent.
 Current-policy material answers must name a changed authority hash and its actual approval; an earlier approval of the question’s original contract is insufficient. No-progress stop records survive explicit resume and policy extensions, so summary counts do not disappear when a blocker clears.
 
 Current-policy standalone review artifacts include the complete original user review contract and its exact hash, alongside derived implementation contracts. Reviewers can compare the asserted oracle with actual user intent. Missing or altered original-authority bodies invalidate the package; a recomputed package hash cannot substitute controller-authored intent. Historical pre-policy packages retain their original contract.
+
+
+## Final dispatch and repair safeguards
+
+Workflow, standalone and interactive specialists validate the exact published
+full-input artifact after configuration and immediately before dispatch, then
+again before report admission. Receipts retain both content-bound validation
+facts for pure replay. An acknowledgment alone cannot prove intact input; changed
+bytes block admission and are never silently republished after consumption.
+Known completed transport remains actual executed work even when its report is
+rejected. Standalone Codex configuration is compared with the selected provider,
+model and effort before a turn starts. Known unlaunched rejections terminate their
+claims without refund; exact retries return the retained failure. A failed spawn
+or collection still requires stopped-worker reconciliation when launch is uncertain.
+
+Independent perspectives assessing the same source consume one correction round,
+not one round per reviewer. Diagnostic reports consume no correction rounds;
+existing item, branch and acceptance limits remain in force. A passing report may
+retain a nonmandatory minor/informational finding only with an explicit deferred
+reason. It stays visible without becoming an open repair obligation. Mandatory,
+important and critical obligations cannot use this shortcut; deferral is not
+verified progress.
+
+Required configured `pre_review: true` gates can drive code-item repair even
+without review findings. Supply explicit `item_ids` naming existing items in the
+gate's repository; absent, duplicate, malformed or cross-repository mappings
+block automatic scope selection. The driver observes the actual configured
+command first. Only a current known failed command/report can bind a gate cause
+and rationale (`gate:<id>`), worker authorization and the actual RED/correction/
+GREEN/independent-review sequence. Missing tools, setup failures and unknown
+outcomes are blockers, not invented findings. A still-failing cheap check retains
+its blocker for explicit diagnosis/retry; it does not silently dispatch another
+writer. Non-code repair uses the existing kind-specific producer handoff; final
+workflow gates remain separate. Existing typed evidence alone does not satisfy
+the new test-quality requirement for actual assertion discrimination.
+
+Summaries use the shared native usage normalizer, including supported nested
+aggregate token fields and explicit zeros. Unknown executed state remains null
+on exact replay; it never becomes a false claim that no work occurred.

@@ -5,7 +5,7 @@ description: Prepare content-bound review packages and record independent Devflo
 
 # review-work
 
-Review exact current packages independently by item, branch and acceptance stage. Read the full required artifact; echo `review_input_ref` and exact `reviewed_inputs`. Cover changes and approved requirements; preserve cited original obligations. Implementers cannot self-approve.
+Review exact current packages independently by item, branch and acceptance stage. Validate full artifact bytes before/after dispatch; echo `review_input_ref` and exact `reviewed_inputs`. Cover changes and approved requirements; preserve cited original obligations. Implementers cannot self-approve.
 
 Current-policy test review requires independent oracle authority, behavior-to-assertion mapping and relevant discrimination; see [test quality](../../docs/reference/adversarial-review.md#test-quality-assessment).
 
@@ -19,7 +19,7 @@ Read [shared invariants](../../docs/reference/workflow-invariants.md) and declar
 flowchart LR
     Scope[Workflow package or explicit standalone Git scope] --> Checks[Live checks and shared invariants]
     Checks --> Inputs[Complete scoped item inputs or whole-tree checks]
-    Inputs --> Model[Actual scoped specialist receipt]
+    Inputs --> Model[Configured route and intact input]
     Model --> Quality[Independent oracle and discrimination]
     Quality --> Coverage[Latest current independent perspectives]
     Coverage --> Work[Stage responsibility]

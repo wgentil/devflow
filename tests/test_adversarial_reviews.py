@@ -53,6 +53,8 @@ class AdversarialReviewTests(unittest.TestCase):
             if perspective=='test':
                 from workflow_lib.oracle_acceptance import validate_oracle_acceptance
                 report['semantic_approvals']=validate_oracle_acceptance(subject,package,report)
+            fact=self.api().expected_review_input_validation(package)
+            subject['model_receipts'][invocation]['review_input_validation']={'before':fact,'after':fact}
             subject['model_receipts'][invocation]['review_report_hash']=self.api().semantic_report_hash(report)
             reports.append(report)
         return subject,package,reports
