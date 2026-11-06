@@ -11,7 +11,7 @@ Current-policy test review requires independent oracle authority, behavior-to-as
 
 Bind each specialist's actual independent invocation to its perspective/package and eligible configured route; retain requested/resolved/observed settings. Prepared requests and advisory candidates do not prove coverage.
 
-Read the matching package/rework procedure before recording. Rework invalidates affected evidence. UX reports/failure digests are inputs. Hosted PR review requires full diff, exact head and confirmed status; never merge implicitly.
+Read the package/rework procedure before recording. Rework invalidates affected evidence. UX reports/failure digests are inputs. Hosted PR review requires full diff, exact head and confirmed status; never merge implicitly.
 
 Read [shared invariants](../../docs/reference/workflow-invariants.md) and declared stage sections. The harness runs helpers. For delegation follow [task routing](../../docs/reference/task-routing.md#task-decisions) and preserve stage/user constraints.
 
@@ -36,9 +36,9 @@ flowchart LR
 - `routing.task-decisions`: `docs/reference/task-routing.md` → Task routing / Task decisions
 <!-- /devflow:routes -->
 
-For item reviews, pass `--item ID`; explicit complete [input scopes](REFERENCE.md#scoped-item-review-liveness) can isolate unrelated work; valid request-changes reopens only that item for retry and fresh verification.
+Item reviews use `--item ID`; complete [input scopes](REFERENCE.md#scoped-item-review-liveness) can isolate unrelated work; valid request-changes reopens only that item for retry and fresh verification.
 
-For bounded fixes follow the linked driver contract. Outside a workflow, select an explicit Git range/working tree and external output; default to report only. [Standalone review](../../docs/reference/adversarial-review.md#standalone-selected-scope-review).
+Outside a workflow, select an explicit Git range/working tree and external output; default to report only. [Standalone review](../../docs/reference/adversarial-review.md#standalone-selected-scope-review).
 
 ## Documentation
 

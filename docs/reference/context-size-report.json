@@ -1,5 +1,5 @@
 {
-  "aggregate_entry_bytes": 27778,
+  "aggregate_entry_bytes": 27701,
   "baseline": {
     "aggregate_entry_bytes": 65937
   },
@@ -11,7 +11,7 @@
     "skills/migrate/SKILL.md": 1707,
     "skills/plan-work/SKILL.md": 2419,
     "skills/project-context/SKILL.md": 2333,
-    "skills/review-work/SKILL.md": 3767,
+    "skills/review-work/SKILL.md": 3690,
     "skills/specify/SKILL.md": 2244,
     "skills/stats/SKILL.md": 1981,
     "skills/ux-reviewer/SKILL.md": 1872,
@@ -29,8 +29,8 @@
     "plan-work": 8870,
     "planning": 8870,
     "project-context": 6348,
-    "review": 10250,
-    "review-work": 10250,
+    "review": 10173,
+    "review-work": 10173,
     "specification": 9707,
     "specify": 9707,
     "stats": 7710,
@@ -151,7 +151,7 @@
     "skill.migrate#1e6f0adae858d8e7": 1707,
     "skill.plan-work#1e6f0adae858d8e7": 2419,
     "skill.project-context#1e6f0adae858d8e7": 2333,
-    "skill.review-work#1e6f0adae858d8e7": 3767,
+    "skill.review-work#1e6f0adae858d8e7": 3690,
     "skill.specify#1e6f0adae858d8e7": 2244,
     "skill.stats#1e6f0adae858d8e7": 1981,
     "skill.ux-reviewer#1e6f0adae858d8e7": 1872,
