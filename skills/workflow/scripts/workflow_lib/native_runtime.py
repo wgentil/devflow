@@ -181,6 +181,12 @@ def invoke(root,request,operation_id):
     if access not in {'read-only','workspace-write'} or access=='workspace-write' and (binding['role']!='implementer' or stage!='implementation'):raise WorkflowError('NATIVE_ACCESS_DENIED','Write access is explicit and restricted to implementation work.')
     request_hash=hashlib.sha256(json.dumps(request,sort_keys=True,separators=(',',':')).encode()).hexdigest()
     run=data['runs'][binding['run_id']];prior=run.get('native_invocations',{}).get(identifier)
+    if prior is None:
+        cached=run.get('model_receipts',{}).get(identifier,{})
+        if cached.get('dispatch') is False and cached.get('request_hash'):
+            if cached['request_hash']!=request_hash or cached.get('operation_id')!=operation_id:
+                raise WorkflowError('OPERATION_CONFLICT','Unlaunched review identity belongs to another request.')
+            return {**cached,'replayed':True}
     if prior:
         if prior.get('request_hash')!=request_hash or prior.get('operation_id')!=operation_id:raise WorkflowError('OPERATION_CONFLICT','Invocation ID belongs to another request.')
         if prior['status']=='running':raise WorkflowError('NATIVE_INVOCATION_ACTIVE','Invocation is already running; inspect native status and reconcile only after it stops.')
@@ -198,6 +204,15 @@ def invoke(root,request,operation_id):
     if policy()['stages'][stage]=='deterministic':return {'status':'allow','reason_code':'DETERMINISTIC','dispatch':False}
     timeout=request.get('timeout_seconds',300)
     if type(timeout) not in (int,float) or not 1<=timeout<=3600:raise WorkflowError('NATIVE_TIMEOUT_INVALID','Native timeout must be between 1 and 3600 seconds.')
+    from .review_policy import review_version
+    specialist=review_version(run)==1 and stage=='review'
+    if specialist:
+        from .review_dispatch import specialist_scope,static_route_available
+        selected_scope=specialist_scope(run,binding)
+        if request.get('perspective')!=selected_scope['perspective'] or task_facts is not None:
+            raise WorkflowError('REVIEW_MODEL_BLOCKED','Exact specialist perspective cannot be replaced by task classification.')
+        if not static_route_available(policy(),{**preferences(data,binding,stage),'perspective':selected_scope['perspective'],'assessment':selected_scope['assessment']}):
+            return {'status':'block','reason_code':'NO_VALIDATED_PERMITTED_MODEL'}
     backend=None;context=None;started=False;result=None
     lease=root/'native-invocations'/hashlib.sha256((binding['run_id']+':'+identifier).encode()).hexdigest();lease.parent.mkdir(parents=True,exist_ok=True)
     with _native_lease(lease) as lock,ExitStack() as preparation_pins:
@@ -225,6 +240,11 @@ def invoke(root,request,operation_id):
             finally: HOST_CONTEXT.reset(host_token)
             authoritative = read_context_state(root, binding_id=binding['binding_id'])
             data = authoritative['data']; run = data['runs'][binding['run_id']]
+        def abort_specialist(failure):
+            return _commit(root,operation_id+':native-abort','native-abort',{
+                'binding_id':binding['binding_id'],'revision':binding['revision'],'invocation_id':identifier,
+                'stage':stage,'now_ms':int(time.time()*1000),'request_hash':request_hash,
+                'review_request_hash':request.get('review_request_hash'),'operation_id':operation_id,'failure':failure},binding)
         def finish_request(worker_result):
             payload = {'binding_id': binding['binding_id'], 'revision': binding['revision'],
                 'invocation_id': identifier, 'result': worker_result}
@@ -245,15 +265,20 @@ def invoke(root,request,operation_id):
             native_input = invocation_context(binding, stage, full_view, prompt, context_limit)
             backend=(CodexBackend if binding['host']=='codex' else ClaudeBackend)(binding['project_dir'])
             context=discover(root,binding,request.get('refresh',False) or task_facts is not None,backend)
-            decision=resolve(data,binding,stage,context,task_facts)
+            if specialist:
+                from .review_dispatch import resolve_workflow_review
+                decision=resolve_workflow_review(data,binding,context,policy(),diagnostic=request.get('diagnostic') is True)
+            else:decision=resolve(data,binding,stage,context,task_facts)
             retry = None
             if task_facts is not None and request.get('replacement_of') and not request.get('predecessor_invocation_id'):
                 from .routing_escalation import resolve_routing_retry
                 retry = resolve_routing_retry(policy(),run,task_facts,request['replacement_of'],
                     preferences(data,binding,stage),context,prices(data,preferences(data,binding,stage)))
                 if retry is not None: decision = retry['decision']
-            if not decision.get('resolved'):decision=candidate_intent(data,binding,stage,context,task_facts)
-            if decision['status'] not in {'allow','pending-access'} or not decision.get('resolved'):return {**decision,'message':'Choose a permitted model or resolve the reported policy blocker before native work.'}
+            if not specialist and not decision.get('resolved'):decision=candidate_intent(data,binding,stage,context,task_facts)
+            if decision['status'] not in {'allow','pending-access'} or not decision.get('resolved'):
+                failure={**decision,'message':'Choose a permitted model or resolve the reported policy blocker before native work.'}
+                return abort_specialist(failure) if specialist else failure
             if task_facts is not None:
                 from .host_route_controls import assess_route_controls, native_control_evidence
                 from .routing_receipts import routing_lineage_id
@@ -312,6 +337,7 @@ def invoke(root,request,operation_id):
                 decision['routing']['known_payload']=measured
             prompt = native_input['prompt']
             start={'binding_id':binding['binding_id'],'revision':binding['revision'],'invocation_id':identifier,'stage':stage,'decision':decision,'request_hash':request_hash,'operation_id':operation_id,'policy_revision':len(run.get('model_overrides',[])),'expected_scope':invocation_scope(binding,run,stage,{}),'launcher_pid':os.getpid(),'account_key':context['account_key'],'replacement_of':request.get('replacement_of'),'replacement_authorization':request.get('replacement_authorization')}
+            if request.get('review_request_hash'):start['review_request_hash']=request['review_request_hash']
             if task_facts is not None and request.get('predecessor_invocation_id'):
                 predecessor = request['predecessor_invocation_id']
                 if request.get('replacement_of', predecessor) != predecessor:
@@ -357,6 +383,14 @@ def invoke(root,request,operation_id):
                 if remaining_ms <= 0:
                     raise WorkflowError('EFFECT_BLOCKED', 'Elapsed dispatch budget exhausted before invocation.')
                 timeout_seconds = min(timeout_seconds, remaining_ms / 1000)
+            if specialist:
+                current_scope=invocation_scope(binding,latest,stage,{})
+                if current_scope!=start['expected_scope']:
+                    raise WorkflowError('REVIEW_MODEL_BLOCKED','Specialist source, risk, questions or contracts changed before invocation.')
+                live_data={**data,'runs':{**data['runs'],binding['run_id']:latest}}
+                current_decision=resolve_workflow_review(live_data,binding,context,policy(),diagnostic=request.get('diagnostic') is True)
+                if current_decision.get('status') not in {'allow','pending-access'} or current_decision.get('resolved')!=decision.get('resolved'):
+                    raise WorkflowError('REVIEW_MODEL_BLOCKED','Specialist eligibility or prerequisites changed before invocation.')
             if result is None:result=backend.invoke(decision['resolved'],prompt,binding['actor_id'],access,timeout_seconds)
             # Backend completion is independent of the worker's semantic report.
             result['transport_completed'] = result.get('status') == 'completed' and bool(result.get('invocation_ref'))
@@ -371,7 +405,9 @@ def invoke(root,request,operation_id):
             result['output_ref']=_blob(root,result.pop('output',''))
         except NativeError as exc:
             if context:invalidate(root,binding,context)
-            if not started:return {'status':'block','reason_code':exc.code,'error_kind':exc.error_kind,'message':str(exc)}
+            if not started:
+                failure={'status':'block','reason_code':exc.code,'error_kind':exc.error_kind,'message':str(exc)}
+                return abort_specialist(failure) if specialist else failure
             result={'status':'interrupted','error_kind':exc.error_kind,'reason_code':exc.code}
         except BaseException:
             if started:
@@ -380,6 +416,13 @@ def invoke(root,request,operation_id):
             raise
         finally:
             if backend:backend.close()
+            if specialist and not started and enforcement_effect is not None:
+                current=read_host(root,binding_id=binding['binding_id'])['data']['runs'][binding['run_id']]
+                if current.get('effects',{}).get(identifier,{}).get('status')=='claimed' and identifier not in current.get('native_invocations',{}):
+                    _commit(root,operation_id+':native-abort','native-abort',{
+                        'binding_id':binding['binding_id'],'revision':binding['revision'],'invocation_id':identifier,
+                        'stage':stage,'now_ms':int(time.time()*1000),'request_hash':request_hash,
+                        'review_request_hash':request.get('review_request_hash'),'operation_id':operation_id},binding)
         receipt=_commit(root,operation_id+':native-finish','native-finish',finish_request(result),binding)
         if receipt['status']=='allow' and context:remember_selected(root,binding,context,receipt['resolved'])
         elif context:invalidate(root,binding,context)

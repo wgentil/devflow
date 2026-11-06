@@ -3,7 +3,7 @@
 The approved [implementation plan](../superpowers/plans/2026-11-05-adversarial-review-repair.md)
 extends the merged [Python enforcement foundation](python-enforcement.md).
 This branch is in implementation: policy/risk and implementation-contract prerequisites are available;
-complete specialist dispatch, coverage gates and bounded repair are not yet claimed.
+workflow specialist dispatch is implemented; complete coverage gates and bounded repair are still being integrated.
 
 New workflow runs declare `devflow.adversarial-review/v1` with shared enforcement.
 Existing stored runs retain their original contract. Explicit adoption requires
@@ -103,3 +103,40 @@ Structural validation cannot prove that an English rule or test is correct.
 Independent reviewers must judge oracle authority, actual failure relevance,
 mocked boundaries and disclosed limitations; missing business intent requires the
 actual user answer rather than a guessed assertion.
+
+## Actual specialist dispatch
+
+The harness attaches an independent reviewer to the exact package, stage role
+and explicit `perspective` (`code`, `test`, `architecture`, `security`). The
+optional developer command is `review dispatch --root … --run-id … --input …
+--operation-id …`; input names the exact `binding_id`, `revision`, `perspective`,
+`invocation_id`, bounded `prompt`, known finite `estimated_cost`, and optional
+finite `timeout_seconds`. An explicit `diagnostic: true` permits inspection of
+missing prerequisites; it never grants a passing assessment. Ordinary requirement
+acceptance retains its independent acceptance role and ordinary execution path.
+
+Substantive specialist work requires the eligible `deep-reasoning` profile with
+supported high effort. Configured eligible entry order expresses preference,
+including architecture/security; names do not imply model strength. An actually
+current positive lightweight assessment can use `fast-analysis` for code/test.
+Explicit model allowlists, pins and cost limits remain effective. Profile/effort
+restrictions cannot silently downgrade substantive review. Advisory candidates
+retain their unvalidated status and cannot provide compliant coverage. Missing
+mappings, capabilities, observation or required prices remain explicit blockers.
+No shipped mapping or parent-session model is changed by this feature.
+
+Native execution uses existing model budgets, owner leases and backends. In-process
+host bridges use the same specialist selection and actual scope/observation
+receipts; prepared JSON or CLI assertions cannot mint trusted observations.
+Receipts keep requested/resolved/observed settings, capability validation, actual
+invocation reference, package/perspective/risk/source bindings and observed usage
+separate. Each perspective needs a distinct actor and actual invocation. Selected
+specialist facts are mandatory bounded worker context.
+
+Claims precede execution and are checked again immediately before invoke/spawn.
+Exact completed retries return historical facts without another backend call.
+An uncertain call blocks replacement until actual stopped-worker reconciliation.
+Known prelaunch failures release only their own unlaunched claim, retain the spent
+attempt and store a non-dispatched receipt; they do not fabricate a model call or
+refund budgets. Failures identify a resumable next action. The coverage gate
+integration is a separate subsequent implementation checkpoint.

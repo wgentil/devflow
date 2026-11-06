@@ -912,6 +912,11 @@ def _guard_enforcement_transaction(state: dict, event: dict) -> None:
     if not isinstance(request,dict):request={}
     from .action_policy import enforcement_version
     run=state['data'].get('runs',{}).get(request.get('run_id'),{})
+    if event['kind']=='domain.host.native-abort':
+        binding=state['data'].get('host_bindings',{}).get(request.get('binding_id'),{})
+        owner=state['data'].get('runs',{}).get(binding.get('run_id'),{}).get('effects',{}).get(request.get('invocation_id'),{})
+        if owner.get('owner_pid')!=os.getpid():
+            raise WorkflowError('EXECUTION_OWNER_MISMATCH','Only the actual prelaunch coordinator may abort its reservation.')
     if event['kind']=='domain.host.native-reconcile':
         from .enforcement_recovery import NATIVE_RECOVERY_LEASE
         from .process_liveness import process_alive
@@ -968,7 +973,7 @@ def _guard_transaction(state: dict, event: dict) -> None:
             require(check_release(binding['release'],release_descriptor(),1)['status']=='allow', 'Installed helper differs from attached release; reload and refresh.', 'RELEASE_MISMATCH')
         request = event['payload'].get('request',event['payload'])
         if binding['role'] != 'implementer':
-            require(event['kind'] in {'review.package.prepared','review.recorded','domain.host.detach','domain.host.task-bind','domain.host.model-receipt','domain.host.model-interrupt','domain.host.native-start','domain.host.native-finish','domain.host.native-reconcile','domain.enforcement.claim','domain.enforcement.probe-transition'}, 'Reviewer binding cannot mutate implementation.')
+            require(event['kind'] in {'review.package.prepared','review.recorded','domain.host.detach','domain.host.task-bind','domain.host.model-receipt','domain.host.model-interrupt','domain.host.native-start','domain.host.native-finish','domain.host.native-reconcile','domain.host.native-abort','domain.enforcement.claim','domain.enforcement.probe-transition'}, 'Reviewer binding cannot mutate implementation.')
             if event['kind'] == 'domain.enforcement.claim':
                 from .effect_dispatch import binding_owner
                 record = request.get('record', {})

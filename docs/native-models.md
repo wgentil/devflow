@@ -228,3 +228,12 @@ coordinator absence check under the selected-state transaction lock. The older
 [legacy example](examples/native-reconcile.json) retains its original contract.
 Probe receipts retain normalized provider token usage separately when reported;
 no currency cost is inferred from those counts.
+
+## Current-policy specialist reviews
+
+Workflow reviewer attachments include an explicit perspective. Substantive
+reviews use supported high effort with eligible configured deep-reasoning entries;
+actual receipts bind perspective, exact package and current policy/risk/source.
+Known prelaunch failures retain their reservation cost and record non-dispatch;
+uncertain invocations require stopped-worker reconciliation. See [specialist
+dispatch](reference/adversarial-review.md#actual-specialist-dispatch).

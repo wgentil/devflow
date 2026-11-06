@@ -28,7 +28,7 @@ from .evidence import _blob
 
 @reservation('interactive-dispatch')
 def prepare_delegation(root: Path, request: dict, host_context: dict | None = None,*,preparation_consumer=None) -> dict:
-    root = Path(root)
+    root = Path(root).resolve()
     data = read_host(root,request=request)['data']
     binding = validate_binding(data, request.get('binding_id'), request.get('revision'))
     parity = check_release(binding['release'], release_descriptor(), 1)
@@ -51,10 +51,18 @@ def prepare_delegation(root: Path, request: dict, host_context: dict | None = No
     worker_input = invocation_context(binding, stage, full_view, worker_task_prompt(prompt, facts, scope), request.get('context_max_bytes', 20000))
     context = deepcopy(host_context or {})
     pref = preferences(data, binding, stage)
-    decision = resolve_profile(policy(), {**pref, 'task': facts}, context.get('capabilities', {}),
-                               context.get('discovery', {}), prices(data, pref))
+    from .review_policy import review_version
+    specialist=review_version(run)==1 and stage=='review'
+    if specialist:
+        from .review_dispatch import specialist_scope,resolve_workflow_review
+        if request.get('perspective')!=specialist_scope(run,binding)['perspective']:
+            raise WorkflowError('REVIEW_MODEL_BLOCKED','Exact attached specialist perspective required.')
+        decision=resolve_workflow_review(data,binding,context,policy(),diagnostic=request.get('diagnostic') is True)
+    else:
+        decision = resolve_profile(policy(), {**pref, 'task': facts}, context.get('capabilities', {}),
+                                   context.get('discovery', {}), prices(data, pref))
     retry = None
-    if request.get('replacement_of') and not request.get('predecessor_invocation_id'):
+    if not specialist and request.get('replacement_of') and not request.get('predecessor_invocation_id'):
         from .routing_escalation import resolve_routing_retry
         retry = resolve_routing_retry(policy(),run,facts,request['replacement_of'],pref,context,prices(data,pref))
         if retry is not None: decision = retry['decision']
@@ -67,7 +75,7 @@ def prepare_delegation(root: Path, request: dict, host_context: dict | None = No
         and context['discovery']['host_version'] == evidence.get('host_version')
         and context.get('capabilities', {}).get('model_efforts') == evidence.get('model_efforts'))
     escalation = None
-    if request.get('predecessor_invocation_id') and evidence.get('configuration_hash'):
+    if not specialist and request.get('predecessor_invocation_id') and evidence.get('configuration_hash'):
         from .routing_escalation import plan_escalation
         lineage_id = routing_lineage_id(facts)
         predecessor = run.get('native_invocations', {}).get(request['predecessor_invocation_id'], {})
@@ -118,7 +126,7 @@ def prepare_delegation(root: Path, request: dict, host_context: dict | None = No
 
 @reservation('interactive-dispatch')
 def dispatch_delegation(root: Path, request: dict, operation_id: str, bridge=None) -> dict:
-    root = Path(root)
+    root = Path(root).resolve()
     if bridge is None: return prepare_delegation(root, request)
     data = read_host(root,request=request)['data']
     binding = validate_binding(data, request.get('binding_id'), request.get('revision'))

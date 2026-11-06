@@ -1,0 +1,9 @@
+{
+  "binding_id": "independent-security-reviewer",
+  "revision": 1,
+  "perspective": "security",
+  "invocation_id": "exact-package-security-1",
+  "prompt": "Review the exact attached package for security failures; cite evidence and unresolved questions.",
+  "estimated_cost": 0.25,
+  "timeout_seconds": 300
+}

@@ -18,7 +18,7 @@ from workflow_lib.store import WorkflowError, transact
 def register_commands(parser: argparse.ArgumentParser) -> None:
     review = parser.add_parser("review")
     actions = review.add_subparsers(dest="review_command", required=True)
-    for name in ('adopt','assess-risk','contract','rationale','prerequisites'):
+    for name in ('adopt','assess-risk','contract','rationale','prerequisites','dispatch'):
         action=actions.add_parser(name)
         action.add_argument('--root',required=True)
         action.add_argument('--run-id',required=True)
@@ -65,6 +65,11 @@ def register_commands(parser: argparse.ArgumentParser) -> None:
 
 def dispatch(parsed: argparse.Namespace) -> dict:
     root = Path(parsed.root).expanduser().resolve()
+    if parsed.review_command=='dispatch':
+        from workflow_lib.review_dispatch import dispatch_workflow_review
+        request=json.loads(Path(parsed.input).read_text(encoding='utf-8'))
+        if request.get('run_id',parsed.run_id)!=parsed.run_id:raise WorkflowError('REVIEW_MODEL_BLOCKED','Review request run differs from CLI scope.')
+        return dispatch_workflow_review(root,{**request,'run_id':parsed.run_id},parsed.operation_id)
     if parsed.review_command in {'adopt','assess-risk','contract','rationale','prerequisites'}:
         from .journal import commit
         record=json.loads(Path(parsed.input).read_text(encoding='utf-8'))

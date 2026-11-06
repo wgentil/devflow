@@ -213,6 +213,12 @@ def _prepare_context(root:Path,run:dict,envelope:dict,item_ids:list[str],*,stage
     from .review_policy import review_version
     if review_version(actual) == 1:
         from .implementation_contracts import selected_contracts, contract_binding
+        if binding_id and binding.get('role') not in {'implementer','acceptance-reviewer'}:
+            from .review_dispatch import specialist_scope
+            specialist=specialist_scope(actual,binding)
+            scoped_envelope['specialist']={'role':specialist['role'],'perspective':specialist['perspective'],
+                'scope_hash':digest(specialist),'assessment_hash':specialist['assessment_hash'],
+                'required_perspectives':specialist['assessment']['required_perspectives']}
         selected = {}
         for selected_id in item_ids or [None]:
             selected_scope={'role':'item','item_id':selected_id} if selected_id else {'role':'branch'}

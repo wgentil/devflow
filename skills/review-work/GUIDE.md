@@ -277,3 +277,20 @@ flowchart LR
     RED --> GREEN[Corrected GREEN]
     GREEN --> Review[Independent test-quality judgment]
 ```
+
+## Specialist model execution
+
+The harness binds each perspective to a distinct independent reviewer, exact
+package and actual invocation. Read [specialist dispatch](../../docs/reference/adversarial-review.md#actual-specialist-dispatch)
+for eligible model selection and recovery. A prepared request is not execution;
+a diagnostic report is not a passing assessment. Keep ordinary acceptance separate.
+
+```mermaid
+flowchart LR
+    Package[Exact package and perspective] --> Route[Eligible configured route]
+    Route --> Claim[Bounded durable reservation]
+    Claim --> Live[Recheck live source and questions]
+    Live --> Invoke[Actual native invocation or host spawn]
+    Invoke --> Receipt[Resolved and observed model receipt]
+    Invoke --> Recovery[Inspect uncertainty before replacement]
+```

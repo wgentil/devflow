@@ -813,3 +813,7 @@ current contract. Pure replay does not authorize another effect.
 
 Current-policy contract commands: `review contract`, `review rationale` and the
 read-only `review prerequisites`; see [record fields and live check behavior](reference/adversarial-review.md#derived-implementation-contracts-and-configured-checks).
+
+`review dispatch --root … --run-id … --input … --operation-id …` invokes an
+actually attached specialist through existing native adapters. Input and recovery
+contracts are in [actual specialist dispatch](reference/adversarial-review.md#actual-specialist-dispatch).

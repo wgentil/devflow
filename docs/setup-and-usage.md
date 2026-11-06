@@ -639,5 +639,6 @@ does not invent approvals. Current-policy worker dispatch also requires a derive
 implementation contract; configured prerequisite checks retain actual command
 evidence and stop on unresolved questions. Passing test-perspective records require
 independent oracle and actual assertion discrimination evidence. Optional owned
-challenges are diagnostic helpers; automatic admission is still pending. Specialist coverage/dispatch and bounded repair are
-still being implemented. See [current review scope](reference/adversarial-review.md).
+challenges are diagnostic helpers; automatic admission is still pending. Workflow specialist dispatch now uses actual native or in-process host receipts.
+Complete coverage gates, standalone orchestration and bounded repair remain in
+implementation; missing eligible mappings still block automatic specialist work. See [current review scope](reference/adversarial-review.md).

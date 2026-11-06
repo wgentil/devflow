@@ -61,6 +61,21 @@ def apply_host_event(state: dict, kind: str, request: dict) -> dict:
                   'authorization': deepcopy(authorization)}
         goals[binding['binding_id']] = record
         return deepcopy(record)
+    if kind=='native-abort':
+        binding=validate_binding(state,req.get('binding_id'),req.get('revision'))
+        run=state['runs'][binding['run_id']];identifier=req.get('invocation_id')
+        from .effect_dispatch import binding_owner
+        effect=run.get('effects',{}).get(identifier,{})
+        require(effect.get('status')=='claimed' and effect.get('owner_binding')==binding_owner(binding)
+                and identifier not in run.get('native_invocations',{}), 'Only this unlaunched reservation may be aborted.')
+        from .effect_claims import transition_effect
+        run['effects']=transition_effect(run,{'effect_id':identifier,'status':'failed','now_ms':req['now_ms']})['effects']
+        receipt={**deepcopy(req.get('failure',{})),'status':'block','dispatch':False,'reason_code':req.get('failure',{}).get('reason_code','SPECIALIST_NOT_DISPATCHED'),
+            'scope':invocation_scope(binding,run,req['stage'],{}),'invocation_id':identifier,
+            'request_hash':req['request_hash'],'review_request_hash':req.get('review_request_hash'),
+            'operation_id':req['operation_id'],'invocation_ref':None,'observed':None}
+        run.setdefault('model_receipts',{})[identifier]=receipt
+        return deepcopy(receipt)
     if kind=='native-reconcile':
         from .enforcement_recovery import apply_native
         return apply_native(state,req)
@@ -271,6 +286,11 @@ def invocation_scope(binding, run, stage, receipt):
     elif stage in {'review','acceptance'}:
         require(binding['role'] != 'implementer' and (stage=='acceptance') == (binding['role']=='acceptance-reviewer'), 'Review invocation stage must match reviewer role.')
         scope.update(package_hash=binding.get('package_hash'),item_id=binding.get('item_id'))
+        from .review_policy import review_version
+        if review_version(run)==1 and stage=='review':
+            from .review_dispatch import specialist_scope
+            specialist=specialist_scope(run,binding)
+            scope.update(perspective=specialist['perspective'],review_scope=specialist)
     else:require(binding['role']=='implementer', 'This invocation stage belongs to implementing actor.')
     return scope
 

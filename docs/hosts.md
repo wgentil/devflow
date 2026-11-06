@@ -292,3 +292,8 @@ governing input, source-file or storage-identity change refuses dispatch and
 requires fresh preparation. Pins protect the prepared payload through this
 boundary; rereading a newer journal version does not authorize stale text. Exact
 completed invocation retries return their original receipt without another launch.
+
+Current-policy specialist bindings add `perspective` to exact review scope.
+In-process host bridges retain actual model/effort observations; prepared requests
+remain unexecuted. Requirements acceptance keeps its independent role. See
+[specialist dispatch and recovery](reference/adversarial-review.md#actual-specialist-dispatch).
