@@ -13,8 +13,9 @@ the two authority regressions passed, and 50 related standalone/session/public
 integration/summary/documentation checks passed in 52.203 seconds. The single independent whole-branch review completed at `b2dfc2b`. Its six
 Important findings and regraded M1/M2 were addressed in one native fix pass; M3
 was corrected under the repository documentation requirement. The 350-test focused
-suite and 37 final regression/test-quality/documentation tests passed. Final
-current-head full verification is pending. Implementation rulings are retained in the
+suite and 37 final regression/test-quality/documentation tests passed. Final frozen-commit verification passed 1,258 tests, zero failures/errors and
+six native-Windows skips in 647.679 seconds (647.902 seconds including reporting)
+at `c557524bcea60fe9d11fe7a0b5bb469b67c4624d`. All eleven tasks are complete. Implementation rulings are retained in the
 [decision record](2026-11-05-adversarial-review-repair-decisions.md). Controlled model transports and user-message
 approvals in tests are explicitly fixtures, not paid-provider or human observations.
 
@@ -81,3 +82,21 @@ Still-failing cheap checks require actual diagnosis/explicit retry. Non-code
 repair retains its existing kind-specific handoff; typed evidence alone is not
 assertion-discrimination proof for the new policy. These limits do not bypass
 review or acceptance. No deferred Minor findings remain.
+
+
+## Final frozen verification
+
+[Final platform report](evidence/2026-11-05-adversarial-review-repair/final-platform.json):
+1,258 tests, no failures/errors/expected failures/unexpected successes, six
+explicit native-Windows-only skips. The tested implementation commit is
+`c557524bcea60fe9d11fe7a0b5bb469b67c4624d`; subsequent changes only retain these
+results and completion records. Documentation/link/metadata/size checks and
+changed-file citation validation were run after the completion records changed.
+No second reviewer was dispatched. The independent report's Important findings
+were verified by the native RED→GREEN pass and this green whole suite.
+
+[Execution ledger](evidence/2026-11-05-adversarial-review-repair/execution-ledger.md)
+retains all task completions, decisions and fix verification. No deferred minors.
+Main remains at the original baseline. Nothing was pushed, merged or released;
+delivery remains the user's explicit choice. The user's local AGENTS.md change
+is preserved and excluded from all commits.
