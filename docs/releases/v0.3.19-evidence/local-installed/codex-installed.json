@@ -1,0 +1,23 @@
+{
+  "installed": [
+    {
+      "pluginId": "devflow@devflow-marketplace",
+      "name": "devflow",
+      "marketplaceName": "devflow-marketplace",
+      "version": "0.3.19",
+      "installed": true,
+      "enabled": true,
+      "source": {
+        "source": "local",
+        "path": "/private/var/folders/8p/jfk_drpj5q909tgqwwgbbks80000gn/T/devflow-0319-local-installed-e2hz8o8n/source"
+      },
+      "marketplaceSource": {
+        "sourceType": "local",
+        "source": "/private/var/folders/8p/jfk_drpj5q909tgqwwgbbks80000gn/T/devflow-0319-local-installed-e2hz8o8n/source"
+      },
+      "installPolicy": "AVAILABLE",
+      "authPolicy": "ON_INSTALL"
+    }
+  ],
+  "available": []
+}

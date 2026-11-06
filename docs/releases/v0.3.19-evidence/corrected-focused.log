@@ -1,0 +1,43 @@
+test_actual_surviving_challenge_prevents_quality_acceptance (test_test_challenges.ChallengeTests.test_actual_surviving_challenge_prevents_quality_acceptance) ... ok
+test_challenge_never_changes_user_source (test_test_challenges.ChallengeTests.test_challenge_never_changes_user_source) ... ok
+test_current_test_perspective_cannot_omit_quality_checks (test_test_challenges.ChallengeTests.test_current_test_perspective_cannot_omit_quality_checks) ... ok
+test_import_failure_in_wrong_variant_cannot_count_as_detected (test_test_challenges.ChallengeTests.test_import_failure_in_wrong_variant_cannot_count_as_detected) ... ok
+test_independently_justified_actual_regression_supplies_discrimination (test_test_challenges.ChallengeTests.test_independently_justified_actual_regression_supplies_discrimination) ... ok
+test_missing_discrimination_cannot_be_test_quality (test_test_challenges.ChallengeTests.test_missing_discrimination_cannot_be_test_quality) ... ok
+test_output_derived_oracle_missing_behavior_unrelated_red_and_skips_block (test_test_challenges.ChallengeTests.test_output_derived_oracle_missing_behavior_unrelated_red_and_skips_block) ... ok
+test_quality_cannot_borrow_another_items_or_attempts_proof (test_test_challenges.ChallengeTests.test_quality_cannot_borrow_another_items_or_attempts_proof) ... ok
+test_raw_challenge_stderr_preserves_invalid_utf8_and_crlf (test_test_challenges.ChallengeTests.test_raw_challenge_stderr_preserves_invalid_utf8_and_crlf) ... ok
+test_rejects_oracle_mutation_escape_noop_ambiguous_and_missing_inputs (test_test_challenges.ChallengeTests.test_rejects_oracle_mutation_escape_noop_ambiguous_and_missing_inputs) ... ok
+test_relevant_wrong_behavior_is_detected (test_test_challenges.ChallengeTests.test_relevant_wrong_behavior_is_detected) ... ok
+test_same_behavior_id_in_different_items_cannot_drop_obligations (test_test_challenges.ChallengeTests.test_same_behavior_id_in_different_items_cannot_drop_obligations) ... ok
+test_setup_failure_is_not_detection (test_test_challenges.ChallengeTests.test_setup_failure_is_not_detection) ... ok
+test_surviving_incorrect_behavior_blocks_pass (test_test_challenges.ChallengeTests.test_surviving_incorrect_behavior_blocks_pass) ... ok
+test_symlink_cannot_import_external_oracle (test_test_challenges.ChallengeTests.test_symlink_cannot_import_external_oracle) ... ok
+test_unchanged_source_cannot_be_claimed_as_a_corrected_defect (test_test_challenges.ChallengeTests.test_unchanged_source_cannot_be_claimed_as_a_corrected_defect) ... ok
+test_release_identity_survives_git_checkout_with_autocrlf (test_package.CrossPlatformPackageIdentityTests.test_release_identity_survives_git_checkout_with_autocrlf) ... ok
+test_routed_reference_bytes_survive_git_checkout_with_autocrlf (test_package.CrossPlatformPackageIdentityTests.test_routed_reference_bytes_survive_git_checkout_with_autocrlf) ... ok
+test_host_examples_cover_attachment_mapping_and_handoff (test_package.HostResourceTests.test_host_examples_cover_attachment_mapping_and_handoff) ... ok
+test_shared_guides_and_host_resources_resolve (test_package.HostResourceTests.test_shared_guides_and_host_resources_resolve) ... ok
+test_claude_marketplace_packages_shared_root (test_package.PackageTests.test_claude_marketplace_packages_shared_root) ... ok
+test_manifest_skills_resolve (test_package.PackageTests.test_manifest_skills_resolve) ... ok
+test_package_relocation_and_existing_journal (test_package.PackageTests.test_package_relocation_and_existing_journal) ... ok
+test_version_from_unrelated_cwd (test_package.PackageTests.test_version_from_unrelated_cwd) ... ok
+test_claude_hooks_use_shell_free_python_launcher (test_package.PortableHookTests.test_claude_hooks_use_shell_free_python_launcher) ... ok
+test_distributions_resolve_shared_resources (test_releases.ReleaseTests.test_distributions_resolve_shared_resources) ... ok
+test_relocation_preserves_fingerprint (test_releases.ReleaseTests.test_relocation_preserves_fingerprint) ... ok
+test_same_version_content_change_blocks (test_releases.ReleaseTests.test_same_version_content_change_blocks) ... ok
+test_unknown_loaded_release_blocks (test_releases.ReleaseTests.test_unknown_loaded_release_blocks) ... ok
+test_unsupported_schema_blocks (test_releases.ReleaseTests.test_unsupported_schema_blocks) ... ok
+test_checker_rejects_broken_links_routes_and_unicode_overflow (test_documentation.DocumentationTests.test_checker_rejects_broken_links_routes_and_unicode_overflow) ... ok
+test_discovery_history_and_required_dependency_exceptions (test_documentation.DocumentationTests.test_discovery_history_and_required_dependency_exceptions) ... ok
+test_duplicate_json_ids_rejected (test_documentation.DocumentationTests.test_duplicate_json_ids_rejected) ... ok
+test_invalid_version_dependencies_routes_and_budgets (test_documentation.DocumentationTests.test_invalid_version_dependencies_routes_and_budgets) ... ok
+test_policy_validation_and_stable_navigation (test_documentation.DocumentationTests.test_policy_validation_and_stable_navigation) ... ok
+test_routing_sections_are_mandatory_and_independently_loadable (test_documentation.DocumentationTests.test_routing_sections_are_mandatory_and_independently_loadable) ... ok
+test_shipped_entry_budgets_and_complete_initial_read_routes (test_documentation.DocumentationTests.test_shipped_entry_budgets_and_complete_initial_read_routes) ... ok
+
+----------------------------------------------------------------------
+Ran 37 tests in 10.342s
+
+OK
+{"success": true, "tests_run": 37, "failures": [], "errors": []}

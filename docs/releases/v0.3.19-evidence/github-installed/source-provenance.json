@@ -1,0 +1,21 @@
+{
+  "commit": "34fa235f82edadff437a0810043c2ce3a78a5ec1",
+  "source": "github-installed",
+  "temporary_configurations_removed": true,
+  "descriptor": {
+    "plugin": "devflow",
+    "plugin_version": "0.3.19",
+    "state_schema_version": 1,
+    "supported_schemas": [
+      1
+    ],
+    "storage_format_version": 2,
+    "supported_storage_formats": [
+      1,
+      2
+    ],
+    "host_protocol_version": 1,
+    "release_id": "f73e081e0c3f0c450b57844dc835ed4afa638d747465902de6749d9b8032df18",
+    "fingerprint": "f73e081e0c3f0c450b57844dc835ed4afa638d747465902de6749d9b8032df18"
+  }
+}

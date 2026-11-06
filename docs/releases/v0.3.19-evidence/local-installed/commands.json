@@ -1,0 +1,113 @@
+[
+  {
+    "argv": [
+      "claude",
+      "plugin",
+      "validate",
+      "/var/folders/8p/jfk_drpj5q909tgqwwgbbks80000gn/T/devflow-0319-local-installed-e2hz8o8n/source"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.536,
+    "stdout": "Validating marketplace manifest: /var/folders/8p/jfk_drpj5q909tgqwwgbbks80000gn/T/devflow-0319-local-installed-e2hz8o8n/source/.claude-plugin/marketplace.json\n\nValidating plugin: /var/folders/8p/jfk_drpj5q909tgqwwgbbks80000gn/T/devflow-0319-local-installed-e2hz8o8n/source/CLAUDE.md\n\n\u26a0 Found 1 warning:\n\n  \u276f root: CLAUDE.md at the plugin root is not loaded as project context. To ship context with your plugin, use a skill (skills/<name>/SKILL.md) instead.\n\n\u2139 Advice (does not change the verdict):\n\n  \u276f /var/folders/8p/jfk_drpj5q909tgqwwgbbks80000gn/T/devflow-0319-local-installed-e2hz8o8n/source/README.md: This README has no line that installs \"devflow\" from a marketplace. Add the install line, which works in one step on Claude Code 2.1.275 or later. In it, replace <owner>/<repo> with the repository that holds the marketplace.\n      /plugin install devflow --marketplace <owner>/<repo>\n\n\u2714 Validation passed with warnings\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "codex",
+      "plugin",
+      "marketplace",
+      "add",
+      "/var/folders/8p/jfk_drpj5q909tgqwwgbbks80000gn/T/devflow-0319-local-installed-e2hz8o8n/source"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.099,
+    "stdout": "Added marketplace `devflow-marketplace` from /private/var/folders/8p/jfk_drpj5q909tgqwwgbbks80000gn/T/devflow-0319-local-installed-e2hz8o8n/source.\nInstalled marketplace root: /private/var/folders/8p/jfk_drpj5q909tgqwwgbbks80000gn/T/devflow-0319-local-installed-e2hz8o8n/source\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "codex",
+      "plugin",
+      "add",
+      "devflow@devflow-marketplace"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 2.793,
+    "stdout": "Added plugin `devflow` from marketplace `devflow-marketplace`.\nInstalled plugin root: /private/var/folders/8p/jfk_drpj5q909tgqwwgbbks80000gn/T/devflow-0319-local-installed-e2hz8o8n/codex/plugins/cache/devflow-marketplace/devflow/0.3.19\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "claude",
+      "plugin",
+      "marketplace",
+      "add",
+      "/var/folders/8p/jfk_drpj5q909tgqwwgbbks80000gn/T/devflow-0319-local-installed-e2hz8o8n/source",
+      "--scope",
+      "user"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.252,
+    "stdout": "Adding marketplace\u2026\u2714 Successfully added marketplace: devflow-marketplace (declared in user settings)\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "claude",
+      "plugin",
+      "install",
+      "devflow@devflow-marketplace",
+      "--scope",
+      "user",
+      "-y"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 1.892,
+    "stdout": "Installing plugin \"devflow@devflow-marketplace\"...\u2714 Successfully installed plugin: devflow@devflow-marketplace (scope: user)\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "codex",
+      "plugin",
+      "list",
+      "--json"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.072,
+    "stdout": "{\n  \"installed\": [\n    {\n      \"pluginId\": \"devflow@devflow-marketplace\",\n      \"name\": \"devflow\",\n      \"marketplaceName\": \"devflow-marketplace\",\n      \"version\": \"0.3.19\",\n      \"installed\": true,\n      \"enabled\": true,\n      \"source\": {\n        \"source\": \"local\",\n        \"path\": \"/private/var/folders/8p/jfk_drpj5q909tgqwwgbbks80000gn/T/devflow-0319-local-installed-e2hz8o8n/source\"\n      },\n      \"marketplaceSource\": {\n        \"sourceType\": \"local\",\n        \"source\": \"/private/var/folders/8p/jfk_drpj5q909tgqwwgbbks80000gn/T/devflow-0319-local-installed-e2hz8o8n/source\"\n      },\n      \"installPolicy\": \"AVAILABLE\",\n      \"authPolicy\": \"ON_INSTALL\"\n    }\n  ],\n  \"available\": []\n}\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "claude",
+      "plugin",
+      "list",
+      "--json"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.273,
+    "stdout": "[\n  {\n    \"id\": \"devflow@devflow-marketplace\",\n    \"version\": \"0.3.19\",\n    \"scope\": \"user\",\n    \"enabled\": true,\n    \"installPath\": \"/var/folders/8p/jfk_drpj5q909tgqwwgbbks80000gn/T/devflow-0319-local-installed-e2hz8o8n/claude/plugins/cache/devflow-marketplace/devflow/0.3.19\",\n    \"readFromFolder\": \"/var/folders/8p/jfk_drpj5q909tgqwwgbbks80000gn/T/devflow-0319-local-installed-e2hz8o8n/source\",\n    \"folderVersion\": \"0.3.19\",\n    \"installedAt\": \"2026-11-06T21:05:41.557Z\",\n    \"lastUpdated\": \"2026-11-06T21:05:41.557Z\",\n    \"projectEnabled\": false\n  }\n]\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "/var/folders/8p/jfk_drpj5q909tgqwwgbbks80000gn/T/devflow-0319-local-installed-e2hz8o8n/source/scripts/verify_windows_install.py",
+      "--source-root",
+      "/var/folders/8p/jfk_drpj5q909tgqwwgbbks80000gn/T/devflow-0319-local-installed-e2hz8o8n/source",
+      "--codex-list",
+      "/tmp/devflow-0319-local-installed/codex-installed.json",
+      "--codex-cache",
+      "/var/folders/8p/jfk_drpj5q909tgqwwgbbks80000gn/T/devflow-0319-local-installed-e2hz8o8n/codex/plugins/cache",
+      "--claude-list",
+      "/tmp/devflow-0319-local-installed/claude-installed.json",
+      "--output",
+      "/tmp/devflow-0319-local-installed/installed-report.json"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 22.953,
+    "stdout": "{\"schema_version\": 1, \"git_sha\": null, \"descriptor\": {\"plugin\": \"devflow\", \"plugin_version\": \"0.3.19\", \"state_schema_version\": 1, \"supported_schemas\": [1], \"storage_format_version\": 2, \"supported_storage_formats\": [1, 2], \"host_protocol_version\": 1, \"release_id\": \"f73e081e0c3f0c450b57844dc835ed4afa638d747465902de6749d9b8032df18\", \"fingerprint\": \"f73e081e0c3f0c450b57844dc835ed4afa638d747465902de6749d9b8032df18\"}, \"gates\": {\"codex_install\": {\"status\": \"PASS\", \"skill_count\": 11, \"descriptor\": {\"plugin\": \"devflow\", \"plugin_version\": \"0.3.19\", \"state_schema_version\": 1, \"supported_schemas\": [1], \"storage_format_version\": 2, \"supported_storage_formats\": [1, 2], \"host_protocol_version\": 1, \"release_id\": \"f73e081e0c3f0c450b57844dc835ed4afa638d747465902de6749d9b8032df18\", \"fingerprint\": \"f73e081e0c3f0c450b57844dc835ed4afa638d747465902de6749d9b8032df18\"}}, \"claude_install\": {\"status\": \"PASS\", \"skill_count\": 11, \"descriptor\": {\"plugin\": \"devflow\", \"plugin_version\": \"0.3.19\", \"state_schema_version\": 1, \"supported_schemas\": [1], \"storage_format_version\": 2, \"supported_storage_formats\": [1, 2], \"host_protocol_version\": 1, \"release_id\": \"f73e081e0c3f0c450b57844dc835ed4afa638d747465902de6749d9b8032df18\", \"fingerprint\": \"f73e081e0c3f0c450b57844dc835ed4afa638d747465902de6749d9b8032df18\"}}, \"codex_control_formats\": {\"status\": \"PASS\", \"storage_formats\": [1, 2], \"logical_schema\": 1}, \"claude_control_formats\": {\"status\": \"PASS\", \"storage_formats\": [1, 2], \"logical_schema\": 1}, \"codex_startup\": {\"status\": \"PASS\", \"version\": \"0.167.0\"}, \"claude_startup\": {\"status\": \"PASS\", \"version\": \"2.1.299\"}, \"codex_protocol\": {\"status\": \"PASS\", \"detail\": \"initialize/account-status completed; no model turn submitted\"}, \"claude_hook_scripts\": {\"status\": \"PASS\", \"python_command\": \"python3\", \"storage_formats\": [1, 2], \"live_event_dispatch\": \"NOT_RUN\"}}, \"authenticated_workflow\": {\"status\": \"NOT_RUN\", \"reason\": \"Startup checks do not execute signed-in model tasks or live session events.\"}, \"success\": true}\n",
+    "stderr": ""
+  }
+]

@@ -1,0 +1,28 @@
+test_release_identity_survives_git_checkout_with_autocrlf (test_package.CrossPlatformPackageIdentityTests.test_release_identity_survives_git_checkout_with_autocrlf) ... ok
+test_routed_reference_bytes_survive_git_checkout_with_autocrlf (test_package.CrossPlatformPackageIdentityTests.test_routed_reference_bytes_survive_git_checkout_with_autocrlf) ... ok
+test_host_examples_cover_attachment_mapping_and_handoff (test_package.HostResourceTests.test_host_examples_cover_attachment_mapping_and_handoff) ... ok
+test_shared_guides_and_host_resources_resolve (test_package.HostResourceTests.test_shared_guides_and_host_resources_resolve) ... ok
+test_claude_marketplace_packages_shared_root (test_package.PackageTests.test_claude_marketplace_packages_shared_root) ... ok
+test_manifest_skills_resolve (test_package.PackageTests.test_manifest_skills_resolve) ... ok
+test_package_relocation_and_existing_journal (test_package.PackageTests.test_package_relocation_and_existing_journal) ... ok
+test_version_from_unrelated_cwd (test_package.PackageTests.test_version_from_unrelated_cwd) ... FAIL
+test_claude_hooks_use_shell_free_python_launcher (test_package.PortableHookTests.test_claude_hooks_use_shell_free_python_launcher) ... ok
+
+======================================================================
+FAIL: test_version_from_unrelated_cwd (test_package.PackageTests.test_version_from_unrelated_cwd)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/wayne/.codex/worktrees/e1d4/devflow/tests/test_package.py", line 35, in test_version_from_unrelated_cwd
+    self.assertEqual(descriptor['plugin_version'], '0.3.18')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: '0.3.19' != '0.3.18'
+- 0.3.19
+?      ^
++ 0.3.18
+?      ^
+
+
+----------------------------------------------------------------------
+Ran 9 tests in 3.340s
+
+FAILED (failures=1)
