@@ -56,7 +56,12 @@
     "native-windows-installed/installed-report.hooks.log": "d24d75122e551ff2e19e7479ad4776f76c14fa99410c43bcb097f4f82a30a654",
     "native-windows-installed/installed-report.hooks.log.gz": "97c8bbbee1a3120fd732636710366838206a24809e6ba9b09f360fb78aaa2e69",
     "native-windows-installed/installed-report.json": "59dff0735099d9bc6e814ee4f9296092389223250f6cce4e3700eee964037b75",
+    "post-publication-initial-ci-status.json": "bf187fb39c5179cdbfa664b58bc7894fc0672fbb7eec88c64a5bc2d89d12aa24",
+    "publication.json": "f1a52126032422597343b6df77b3fe08cf68dcfc4c7050e8185a25134c5d6ee4",
+    "published-notes.md": "237cfa286e9f2cc7e2e4ed549dc071ca6235b9277f4132e064afe34d247198da",
     "version-red.log": "f094a2ca15d18ab7aebe63f10ecf1c90eeb18663618ebd47c4d3242e08e09444"
   },
-  "log_normalization": "Trailing whitespace removed in display logs when necessary; matching .gz retains exact raw bytes."
+  "log_normalization": "Trailing whitespace removed in display logs when necessary; matching .gz retains exact raw bytes.",
+  "published_url": "https://github.com/wgentil/devflow/releases/tag/v0.3.19",
+  "tag_commit": "79d214534241669ec29ca830888acde5b323c424"
 }

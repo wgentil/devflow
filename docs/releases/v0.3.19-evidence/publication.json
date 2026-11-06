@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "id": 437066834,
+  "url": "https://github.com/wgentil/devflow/releases/tag/v0.3.19",
+  "published_at": "2026-11-06T21:26:55Z",
+  "draft": false,
+  "prerelease": false,
+  "latest_verified": true,
+  "tag_source": {
+    "tag": "v0.3.19",
+    "commit": "79d214534241669ec29ca830888acde5b323c424",
+    "clean": true,
+    "descriptor": {
+      "plugin": "devflow",
+      "plugin_version": "0.3.19",
+      "state_schema_version": 1,
+      "supported_schemas": [
+        1
+      ],
+      "storage_format_version": 2,
+      "supported_storage_formats": [
+        1,
+        2
+      ],
+      "host_protocol_version": 1,
+      "release_id": "f73e081e0c3f0c450b57844dc835ed4afa638d747465902de6749d9b8032df18",
+      "fingerprint": "f73e081e0c3f0c450b57844dc835ed4afa638d747465902de6749d9b8032df18"
+    }
+  },
+  "notes_match_prepared": true,
+  "notes_sha256": "237cfa286e9f2cc7e2e4ed549dc071ca6235b9277f4132e064afe34d247198da"
+}
