@@ -82,14 +82,24 @@ def static_route_available(policy,request):
         request.get('mode','advisory')=='advisory' and bool(request.get('pin')) and request.get('allow_unvalidated') is True)
 
 
-def resolve_workflow_review(data,binding,context,policy,*,diagnostic=False):
+def resolve_workflow_review(data,binding,context,policy,*,diagnostic=False,authorization_hash=None):
     from .native_runtime import preferences,prices
     from .implementation_contracts import review_prerequisites
-    subject=data['runs'][binding['run_id']];scope=specialist_scope(subject,binding)
+    subject=data['runs'][binding['run_id']]
+    if binding.get('role') == 'acceptance-reviewer' and authorization_hash:
+        scope = {'role': 'acceptance'}
+    else:
+        scope=specialist_scope(subject,binding)
     logical={'role':scope['role'],**({'item_id':scope['item_id']} if scope.get('item_id') else {}),
              **({'diagnostic':True} if diagnostic else {})}
     prerequisites=review_prerequisites(subject,logical)
     if prerequisites['status']!='allow':return {'status':'block','reason_code':'REVIEW_PREREQUISITES_REQUIRED','prerequisites':prerequisites}
+    if authorization_hash:
+        from .review_authorizations import resolve_authorized_review
+        stage = 'acceptance' if scope['role'] == 'acceptance' else 'review'
+        request = preferences(data, binding, stage)
+        return resolve_authorized_review(subject, request, scope, context.get('capabilities', {}),
+            context.get('discovery', {}), prices(data, request), authorization_hash, policy)
     request={**preferences(data,binding,'acceptance' if scope['role']=='acceptance' else 'review'),
         'perspective':scope['perspective'],'assessment':scope['assessment']}
     return select_review_route(policy,request,context.get('capabilities',{}),context.get('discovery',{}),prices(data,request))
@@ -117,9 +127,14 @@ def dispatch_workflow_review(root,request,operation_id):
         return {**cached,**({'next_action':'inspect-review-receipt-and-reconcile-if-uncertain'} if cached.get('status')!='allow' else {}),'replayed':True}
     binding=validate_binding(data,binding['binding_id'],request.get('revision'))
     need(binding.get('role')!='implementer' and request.get('perspective')==binding.get('perspective'),'Bind the explicit perspective to its independent reviewer.')
-    scope=specialist_scope(subject,binding)
-    route_request={**preferences(data,binding,'review'),'perspective':scope['perspective'],'assessment':scope['assessment']}
-    if not static_route_available(policy(),route_request):
+    authorization_hash = request.get('review_authorization_hash')
+    scope = ({'role': 'acceptance'} if authorization_hash and binding.get('role') == 'acceptance-reviewer'
+             else specialist_scope(subject,binding))
+    if authorization_hash:
+        from .review_authorizations import current_authorization
+        current_authorization(subject, authorization_hash, {**scope, 'host': binding['host']})
+    route_request={**preferences(data,binding,'review'),'perspective':scope.get('perspective'),'assessment':scope.get('assessment',{})}
+    if not authorization_hash and not static_route_available(policy(),route_request):
         return {'status':'block','reason_code':'NO_VALIDATED_PERMITTED_MODEL','next_action':'configure-eligible-review-route'}
     from .implementation_contracts import review_prerequisites
     prerequisites=review_prerequisites(subject,{'role':scope['role'],**({'item_id':scope['item_id']} if scope.get('item_id') else {}),

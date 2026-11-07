@@ -120,3 +120,33 @@ def current_authorization(subject: dict, authorization_hash: str, scope: dict) -
     for key in ('host', 'provider', 'model', 'profile', 'effort'):
         need(key not in scope or scope[key] == selected[key], 'Authorization does not cover selected ' + key + '.')
     return deepcopy(record)
+
+
+def resolve_authorized_review(subject, request, scope, capabilities, discovery, prices,
+                              authorization_hash, policy):
+    """Reuse restriction checks, then require actual observable native capability."""
+    try:
+        need(isinstance(request, dict) and isinstance(scope, dict)
+             and request.get('stage') in {'review', 'acceptance'}
+             and (request['stage'] == 'acceptance') == (scope.get('role') == 'acceptance'),
+             'Authorization selects workflow reviewer execution only.')
+        consent = current_authorization(subject, authorization_hash, scope)
+        selected = consent['proposal']['selection']
+        need(request.get('host') == selected['host']
+             and request.get('pin', selected['model']) == selected['model']
+             and request.get('profile', 'deep-reasoning') == 'deep-reasoning'
+             and request.get('effort', 'high') == 'high', 'Requested settings conflict with exact consent.')
+        from .model_policy import resolve_profile
+        decision = resolve_profile(policy, {**request, 'mode': 'advisory', 'pin': selected['model'],
+            'allow_unvalidated': True, 'profile': 'deep-reasoning', 'effort': 'high'}, capabilities, discovery, prices)
+        need(decision.get('status') == 'allow' and decision.get('dispatch') is True
+             and capabilities.get('configure') is True and capabilities.get('observe') is True
+             and decision.get('resolved') == {k: selected[k] for k in ('provider', 'model', 'effort')},
+             'Selected reviewer must be available, permitted, configurable and observable within existing limits.')
+        return {**decision, 'mode': 'strict', 'capability_validated': False, 'validation_ref': None,
+                'reason_code': 'HUMAN_AUTHORIZED_OBSERVABLE_REVIEW', 'suitability': 'unvalidated',
+                'review_authorization_hash': authorization_hash,
+                'eligibility': {'schema_version': 1, 'basis': BASIS, 'authorization_hash': authorization_hash},
+                'model_revision': discovery.get('model_revisions', {}).get(selected['model'])}
+    except (WorkflowError, TypeError, ValueError, KeyError, AttributeError) as exc:
+        return {'status': 'block', 'dispatch': False, 'reason_code': 'REVIEW_AUTHORIZATION_BLOCKED', 'message': str(exc)}

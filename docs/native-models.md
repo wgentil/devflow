@@ -251,3 +251,12 @@ Specialist dispatch compares effective settings before a turn and verifies full
 input bytes before/after execution. Known unlaunched rejection is retained as
 nondispatch; uncertain launches require reconciliation. See
 [dispatch safeguards](reference/adversarial-review.md#final-dispatch-and-repair-safeguards).
+
+### Explicit run-scoped reviewer eligibility
+
+The workflow can prepare an exact human authorization for a named reviewer model
+at deep-reasoning/high. This distinct route reuses availability, allowlist,
+configuration, observation and spending checks. It keeps suitability unvalidated
+and `capability_validated: false`; missing revision metadata remains unknown.
+Default released-mapping resolution is unchanged. Native receipt admission must
+also validate the current authorization; consent alone is not execution evidence.
