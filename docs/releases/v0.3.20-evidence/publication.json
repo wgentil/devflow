@@ -1,0 +1,34 @@
+{
+  "version": "0.3.20",
+  "tag": "v0.3.20",
+  "tag_object": "26e797e651caf3ffa9c6f8d777584a9c434a0468",
+  "tag_target": "e43681ac75cbee5cfa2e52ab96c8f42e0a96a6ea",
+  "runtime_source_commit": "4ec460be77e64f9bd5d4eb8f5e50b06959c1f871",
+  "descriptor": {
+    "plugin": "devflow",
+    "plugin_version": "0.3.20",
+    "state_schema_version": 1,
+    "supported_schemas": [
+      1
+    ],
+    "storage_format_version": 2,
+    "supported_storage_formats": [
+      1,
+      2
+    ],
+    "host_protocol_version": 1,
+    "release_id": "9e16f71098a67bb954ed5cb121bb524fc3b09e066a7bc3260e7757f4bc6d1b72",
+    "fingerprint": "9e16f71098a67bb954ed5cb121bb524fc3b09e066a7bc3260e7757f4bc6d1b72"
+  },
+  "url": "https://github.com/wgentil/devflow/releases/tag/v0.3.20",
+  "published_at": "2026-11-07T02:37:11Z",
+  "latest_stable_verified": true,
+  "draft": false,
+  "prerelease": false,
+  "published_body_sha256": "d794f161402c7c5f3d42715801c1758abbee707045aa2a668bab1b050262fb37",
+  "ci_checkpoint": "ci-status-at-publication.json",
+  "ci_status_at_publication": "in_progress",
+  "live_provider_acceptance": "NOT_RUN",
+  "ordinary_user_plugin_configuration": "not upgraded by this release task",
+  "metrics_worktree": "preserved; not merged or resumed"
+}
