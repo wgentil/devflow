@@ -6,6 +6,9 @@ from .store import WorkflowError
 
 
 def apply_enforcement(subject: dict, action: str, record: dict) -> dict:
+    if action in {'review-model-authorize', 'review-model-revoke'}:
+        from .review_authorizations import record_authorization, revoke_authorization
+        return (record_authorization if action == 'review-model-authorize' else revoke_authorization)(subject, record)
     if action in {'report-escaped-defect','record-review-reuse'}:
         from .review_summary import record_escaped_defect,record_reuse
         return (record_escaped_defect if action=='report-escaped-defect' else record_reuse)(subject,record)

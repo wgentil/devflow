@@ -18,6 +18,15 @@ from workflow_lib.store import WorkflowError, transact
 def register_commands(parser: argparse.ArgumentParser) -> None:
     review = parser.add_parser("review")
     actions = review.add_subparsers(dest="review_command", required=True)
+    for name in ('model-proposal', 'authorize-model', 'revoke-model', 'model-authorizations'):
+        action = actions.add_parser(name)
+        action.add_argument('--root', required=True)
+        action.add_argument('--run-id', required=True)
+        if name != 'model-authorizations':
+            action.add_argument('--input', required=True)
+        if name in {'authorize-model', 'revoke-model'}:
+            action.add_argument('--operation-id', required=True)
+            action.add_argument('--expected-version', type=int)
     for name in ('summary','escaped-defect','reuse'):
         action=actions.add_parser(name)
         scope=action.add_mutually_exclusive_group(required=True)
@@ -87,6 +96,21 @@ def register_commands(parser: argparse.ArgumentParser) -> None:
 
 
 def dispatch(parsed: argparse.Namespace) -> dict:
+    if parsed.review_command in {'model-proposal', 'authorize-model', 'revoke-model', 'model-authorizations'}:
+        from workflow_lib.review_authorizations import propose_authorization
+        from .journal import commit
+        if parsed.review_command in {'authorize-model', 'revoke-model'}:
+            record = json.loads(Path(parsed.input).read_text(encoding='utf-8'))
+            action = 'review-model-authorize' if parsed.review_command == 'authorize-model' else 'review-model-revoke'
+            return commit(parsed, 'domain.enforcement.' + action, {'run_id': parsed.run_id, 'record': record})
+        state = read_current(Path(parsed.root), run_id=parsed.run_id)
+        run = state['data'].get('runs', {}).get(parsed.run_id)
+        if run is None:
+            raise WorkflowError('RUN_NOT_FOUND', 'Select an actual workflow run.')
+        if parsed.review_command == 'model-proposal':
+            return propose_authorization(run, json.loads(Path(parsed.input).read_text(encoding='utf-8')))
+        return {'run_id': parsed.run_id, 'authorizations': run.get('review_model_authorizations', {}),
+                'revocations': run.get('review_model_revocations', {})}
     if parsed.review_command in {'summary','escaped-defect','reuse'}:
         from workflow_lib.review_driver import Subject
         from workflow_lib.review_summary import summarize_review

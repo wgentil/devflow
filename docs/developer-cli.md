@@ -963,3 +963,15 @@ do not scan history to find decisions. A previously materialized v2 projection
 that differs from the selected replay is rejected rather than rewritten.
 
 See the [runnable fixture example](examples/issue-replay-recovery.md).
+
+### Run-scoped reviewer consent records
+
+`review model-proposal --root ROOT --run-id RUN --input SELECTION.json` prepares
+an exact hash without mutation. Selection names host, provider, model,
+`profile: deep-reasoning`, `effort: high`, explicit roles and perspectives.
+`review authorize-model` records `proposal`, `confirmed_hash`, human `actor_id`
+and `provenance: {kind: user-message, ref: ...}`; `review revoke-model` names
+`authorization_hash`, human actor/provenance and reason. Both mutations need an
+explicit `--operation-id`. `review model-authorizations` inspects retained consent
+and revocations. These records never establish model suitability or a passing
+review; execution still requires the supported authorized native route.
