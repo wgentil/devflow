@@ -2,8 +2,8 @@
 
 The routing fix is review-ready on `feat/run-scoped-reviewer-authorization`.
 Product code and skill inputs were verified at commit
-`f088dc151b195b5575586b81de1fc6169fad9786`; the subsequent evidence commit changes
-only review documentation and retained test artifacts.
+`f088dc151b195b5575586b81de1fc6169fad9786`; subsequent commits contain
+only documentation and retained test artifacts.
 
 This adds explicit workflow-run consent for a named observed high-effort reviewer,
 while keeping suitability unvalidated. It preserves the released validated route,
