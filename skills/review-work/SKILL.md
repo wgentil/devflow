@@ -5,15 +5,15 @@ description: Prepare content-bound review packages and record independent Devflo
 
 # review-work
 
-Review exact current packages independently by item, branch and acceptance stage. Validate full artifact bytes before/after dispatch; echo `review_input_ref` and exact `reviewed_inputs`. Cover changes and approved requirements; preserve cited original obligations. Implementers cannot self-approve.
+Review current item/branch/acceptance packages independently. Verify full input bytes before/after dispatch; return exact `review_input_ref` and `reviewed_inputs`. Cover changes, requirements and cited obligations. No self-approval.
 
 Current-policy test review requires independent oracle authority, behavior-to-assertion mapping and relevant discrimination; see [test quality](../../docs/reference/adversarial-review.md#test-quality-assessment).
 
-Bind each specialist's actual independent invocation to its perspective/package and eligible configured route; retain requested/resolved/observed settings. Prepared requests and advisory candidates do not prove coverage.
+Bind real independent invocations to perspective/package and eligible route; retain requested/resolved/observed settings. Preparation or advisory candidates cannot prove coverage.
 
-Read the package/rework procedure before recording. Rework invalidates affected evidence. UX reports/failure digests are inputs. Hosted PR review requires full diff, exact head and confirmed status; never merge implicitly.
+Read package/rework procedures; renew affected evidence after rework. UX reports/digests are inputs. PRs require full diff, exact head and confirmed status; never merge implicitly.
 
-Read [shared invariants](../../docs/reference/workflow-invariants.md) and declared stage sections. The harness runs helpers. For delegation follow [task routing](../../docs/reference/task-routing.md#task-decisions) and preserve stage/user constraints.
+Read [invariants](../../docs/reference/workflow-invariants.md), stage sections and [delegation routing](../../docs/reference/task-routing.md#task-decisions). The harness runs helpers; preserve user constraints.
 
 ```mermaid
 flowchart LR
@@ -37,13 +37,13 @@ flowchart LR
 - `routing.task-decisions`: `docs/reference/task-routing.md` → Task routing / Task decisions
 <!-- /devflow:routes -->
 
-Item reviews use `--item ID`; complete [input scopes](REFERENCE.md#scoped-item-review-liveness) can isolate unrelated work; valid request-changes reopens only that item for retry and fresh verification.
+Use `--item ID` and complete [input scopes](REFERENCE.md#scoped-item-review-liveness). Request-changes reopens that item for retry/fresh verification.
 
-Outside a workflow, select an canonical Git root and range/working tree and external output; default to report only. [Standalone review](../../docs/reference/adversarial-review.md#standalone-selected-scope-review).
+For [standalone review](../../docs/reference/adversarial-review.md#standalone-selected-scope-review), select canonical Git root, range/worktree and external output; default report-only.
 
 ## Documentation
 
-Read [procedures](REFERENCE.md) for the matching stage/mode before verification, review or advanced operations. [Guide](GUIDE.md) contains command/input/output and recovery sections; load the section for the operation, not the entire manual. [Quick start](../../docs/quick-start.md) is the user entry point.
+Read matching [procedures](REFERENCE.md) and [guide sections](GUIDE.md) before verification/review/recovery. User entry: [quick start](../../docs/quick-start.md).
 
 ## Independent review gates
 
@@ -63,4 +63,4 @@ See [canonical guidance](../../docs/reference/governing-inputs.md#governing-inpu
 
 [Review/outcomes](../../docs/reference/adversarial-review.md#bounded-live-execution).
 
-Workflow-only [scoped consent](GUIDE.md#run-scoped-observed-reviewer-choice) requires exact human approval and observed high effort. Keep suitability unvalidated; recheck consent at launch, admission and coverage. No repair/standalone inheritance.
+[Workflow-only consent](GUIDE.md#run-scoped-observed-reviewer-choice): exact human approval, observed high effort, unvalidated suitability; recheck at launch/admission/coverage. No repair/standalone inheritance.
