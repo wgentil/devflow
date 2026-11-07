@@ -121,3 +121,5 @@ receipt cannot fall through the historical optional-receipt path. New consent
 receives a new proposal identity and cannot revive an older revoked invocation.
 Review summaries retain eligibility, suitability and unknown revision metadata
 in portable JSON, Markdown and CSV exports.
+
+Authorized reviewer calls require explicit positive `context_max_bytes`. Acceptance records retain requirements under a separate versioned output seal; historical semantic hashes do not change. Scope opt-in makes provenance mandatory, while still allowing a genuinely released-validated native acceptance receipt. Known attached/detached agent identities cannot authorize or revoke consent; consent actors cannot later become reviewer agents. Prepared delivery manifests and readiness disclose the unvalidated eligibility basis and unknown revisions.

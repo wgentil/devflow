@@ -103,6 +103,9 @@ def prepare_delivery(run: dict, repositories: dict, outcome: str) -> dict:
                                             for f in run.get("unresolved_findings", [])
                                             if any(key in f for key in ("ruling", "waiver", "resolution"))]},
             "outcome": outcome, "owned_cleanup_resources": resources}
+    from .review_authorizations import authorized_review_provenance
+    provenance = authorized_review_provenance(run)
+    if provenance: body['reviewer_models'] = provenance
     body["manifest_hash"] = hashlib.sha256(_canonical(body).encode()).hexdigest()
     return body
 

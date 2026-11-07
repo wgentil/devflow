@@ -261,3 +261,5 @@ configuration, observation and spending checks. It keeps suitability unvalidated
 and `capability_validated: false`; missing revision metadata remains unknown.
 Default released-mapping resolution is unchanged. Native receipt admission must
 also validate the current authorization; consent alone is not execution evidence.
+
+Authorized review requests must supply an explicit positive context budget before reservation or launch. Acceptance after scope opt-in can use either the selected authorization or a genuinely released-validated native route; both must bind the independent requirement verdicts and citations to actual output. Default historical acceptance hashes are unchanged.

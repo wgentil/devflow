@@ -176,6 +176,8 @@ def apply_host_event(state: dict, kind: str, request: dict) -> dict:
             package = require_package(package)
             require(package and package.get('role') == role, 'Matching review package required.')
             require(req['actor_id'] not in history, 'Every implementing actor is excluded from independent review.')
+            consent_actors = {row.get('actor_id') for row in run.get('review_model_authorizations', {}).values()}
+            require(req['actor_id'] not in consent_actors, 'Human consent actors cannot become reviewer agents.')
             from .review_policy import review_version,PERSPECTIVES
             if review_version(run) is not None:
                 if role!='acceptance':require(req.get('perspective') in PERSPECTIVES,'Attach an explicit supported specialist perspective.')
@@ -187,6 +189,8 @@ def apply_host_event(state: dict, kind: str, request: dict) -> dict:
                 require(req['actor_id'] not in {entry.get('actor_id') for entries in run.get('reviews', {}).values()
                                                 for entry in entries}, 'PR reviewer must differ from prior reviewers.')
             if role == 'item': require(req.get('item_id') in run.get('items', {}), 'Planned item required.')
+            if req['actor_id'] not in run.setdefault('reviewer_actors', []):
+                run['reviewer_actors'].append(req['actor_id'])
         if terminal_prior:
             terminal_prior['status']='detached';terminal_prior['revision']+=1
             tasks=state.get('host_tasks',{})
@@ -368,7 +372,7 @@ def apply_native_event(state,kind,req):
                 'now_ms': req.get('enforcement_transition_ms')})
             run['effects'] = transitioned['effects']
         record={**req,'scope':scope,'status':'running','retry_count':retry_count}
-        if scope.get('perspective') or decision.get('review_authorization_hash'):
+        if scope.get('perspective') or decision.get('review_authorization_hash') or decision.get('review_report_kind'):
             run['review_dispatch_sequence']=run.get('review_dispatch_sequence',0)+1
             record['review_sequence']=run['review_dispatch_sequence']
         if 'routing' in decision:
@@ -387,7 +391,7 @@ def apply_native_event(state,kind,req):
              'observed':result.get('observed'),'observation_source':result.get('observation_source'),
              'invocation_ref':result.get('invocation_ref'),'output_ref':result.get('output_ref'),'usage':result.get('usage'),
              'started_ms':record.get('enforcement_transition_ms'),'finished_ms':req.get('enforcement_transition_ms')}
-    if record['scope'].get('perspective') or record['decision'].get('review_authorization_hash'):
+    if record['scope'].get('perspective') or record['decision'].get('review_authorization_hash') or record['decision'].get('review_report_kind'):
         receipt['review_report_hash']=result.get('review_report_hash')
         receipt['diagnostic']=record.get('diagnostic') is True
         receipt['review_sequence']=record['review_sequence']
@@ -409,6 +413,8 @@ def apply_native_event(state,kind,req):
         if receipt.get('review_authorization_hash'):
             from .review_authorizations import authorization_scope, validate_authorized_decision
             try:
+                require(receipt.get('policy_revision') == len(run.get('model_overrides', [])),
+                        'Model restrictions changed during reviewer execution.')
                 validate_authorized_decision(run, receipt, authorization_scope(binding, record['stage']))
                 require(observed.get('provider') == resolved.get('provider'), 'Trusted provider observation required.')
             except WorkflowError:

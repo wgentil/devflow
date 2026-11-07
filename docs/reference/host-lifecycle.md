@@ -67,3 +67,5 @@ prevents current admission even when an already-started provider call finishes;
 actual output/usage and interruption evidence remain retained. Portable receipt
 commands cannot assert this native provenance. Acceptance retains its ordinary
 `acceptance` stage and independent requirements-review role.
+
+Known attached and prior reviewer-agent actors cannot act as the human consent authority; recorded consent actors cannot attach as reviewer agents later. Explicit positive `context_max_bytes` is required for authorized calls. In opted-in acceptance, `review_report_kind: observed-acceptance-output/v1` identifies the versioned seal retaining requirement verdicts/citations, for both authorized and subsequent genuinely validated native routes. Historical semantic hashes remain unchanged.

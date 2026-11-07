@@ -252,24 +252,26 @@ def validate_acceptance_review(subject,package,review):
          and package.get('source_identity')==subject.get('source_identity'),'Acceptance inputs changed.')
     if review.get('verdict')=='pass':need(review_prerequisites(subject,{'role':'acceptance'})['status']=='allow','Acceptance prerequisites are missing or failed.')
     receipt = subject.get('model_receipts', {}).get(review.get('model_invocation_id'), {})
-    opted = any('acceptance' in row.get('proposal', {}).get('selection', {}).get('roles', [])
-                for row in subject.get('review_model_authorizations', {}).values())
+    from .review_authorizations import controlled_acceptance
+    opted = controlled_acceptance(subject)
     if opted or receipt.get('review_authorization_hash') or 'eligibility' in receipt:
-        from .review_authorizations import validate_authorized_receipt
-        validate_authorized_receipt(subject, receipt, {'role': 'acceptance'})
+        from .review_authorizations import validate_acceptance_receipt, acceptance_report_hash, validate_acceptance_requirements
+        validate_acceptance_receipt(subject, receipt)
+        validate_acceptance_requirements(subject, review)
         scope = receipt.get('scope', {})
         need(scope.get('actor_id') == review.get('actor_id')
              and scope.get('package_hash') == package.get('package_hash')
              and receipt.get('invocation_ref') == review.get('invocation_ref')
              and receipt.get('review_input_validation') == {
                  'before': expected_review_input_validation(package), 'after': expected_review_input_validation(package)}
-             and receipt.get('review_report_hash') == semantic_report_hash(review),
+             and receipt.get('review_report_kind') == 'observed-acceptance-output/v1'
+             and receipt.get('review_report_hash') == acceptance_report_hash(review),
              'Acceptance must bind its actual authorized independent output and complete current package.')
         implementers = set(subject.get('implementer_actors', [])) | {subject.get('actors', {}).get('implementer')}
         need(review.get('actor_id') not in implementers, 'Acceptance cannot be approved by an implementer.')
         if review.get('verdict') == 'pass':
             need(receipt.get('diagnostic') is False and review.get('review_input_ref') == review_input_id(package)
-                 and review.get('reviewed_inputs') == package.get('review_inputs'),
+                 and sorted(digest(row) for row in review.get('reviewed_inputs', [])) == sorted(digest(row) for row in package.get('review_inputs', [])),
                  'Accepted requirements need complete non-diagnostic independent input coverage.')
     return {'status':'allow'}
 

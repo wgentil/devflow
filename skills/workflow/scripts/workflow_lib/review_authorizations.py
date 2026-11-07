@@ -24,6 +24,7 @@ def _subject(subject):
 def _human(subject, record):
     actor = record.get('actor_id')
     forbidden = set(subject.get('implementer_actors', [])) | {subject.get('actors', {}).get('implementer')}
+    forbidden.update(subject.get('reviewer_actors', []))
     forbidden.update(r.get('actor_id') for rows in subject.get('reviews', {}).values() for r in rows)
     provenance = record.get('provenance')
     need(isinstance(actor, str) and actor.strip() and actor not in forbidden
@@ -179,6 +180,13 @@ def validate_authorized_decision(subject, decision, scope):
 
 def validate_authorized_receipt(subject, receipt, scope):
     validate_authorized_decision(subject, receipt, scope)
+    validate_native_review_receipt(subject, receipt, scope)
+    return {'status': 'allow', 'eligibility': deepcopy(receipt['eligibility']),
+            'suitability': 'unvalidated', 'model_revision': receipt.get('model_revision')}
+
+
+def validate_native_review_receipt(subject, receipt, scope):
+    """Actual lineage/settings common to authorized and released acceptance routes."""
     from .model_policy import check_model_receipt
     need(receipt.get('status') == 'allow' and receipt.get('dispatch') is True
          and receipt.get('transport_completed') is True
@@ -192,13 +200,93 @@ def validate_authorized_receipt(subject, receipt, scope):
          and receipt_scope.get('role') == scope['role'] + '-reviewer'
          and (scope['role'] == 'acceptance' or receipt_scope.get('perspective') == scope.get('perspective'))
          and receipt.get('policy_revision') == len(subject.get('model_overrides', []))
-         and invocation.get('decision', {}).get('eligibility') == receipt['eligibility']
-         and invocation.get('decision', {}).get('review_authorization_hash') == receipt['review_authorization_hash']
+         and invocation.get('decision', {}).get('eligibility') == receipt.get('eligibility')
+         and invocation.get('decision', {}).get('review_authorization_hash') == receipt.get('review_authorization_hash')
          and invocation.get('decision', {}).get('resolved') == receipt['resolved']
+         and invocation.get('decision', {}).get('review_report_kind') == receipt.get('review_report_kind')
          and invocation.get('scope') == receipt.get('scope')
          and all(native_result.get(k) == receipt.get(k) for k in
                  ('observed', 'observation_source', 'invocation_ref', 'output_ref', 'review_input_validation', 'review_report_hash'))
          and bool(receipt.get('invocation_ref')) and bool(receipt.get('output_ref')),
          'Portable or mismatched receipts cannot assert native execution provenance.')
-    return {'status': 'allow', 'eligibility': deepcopy(receipt['eligibility']),
-            'suitability': 'unvalidated', 'model_revision': receipt.get('model_revision')}
+    return {'status': 'allow'}
+
+
+def controlled_acceptance(subject):
+    return any('acceptance' in row.get('proposal', {}).get('selection', {}).get('roles', [])
+               for row in subject.get('review_model_authorizations', {}).values())
+
+
+def acceptance_report_hash(report):
+    """Versioned seal for this new path; historical semantic hashes stay unchanged."""
+    from .adversarial_reviews import semantic_report_hash
+    return digest({'schema_version': 1, 'kind': 'observed-acceptance-output',
+                   'report_hash': semantic_report_hash(report), 'requirements': report.get('requirements')})
+
+
+def seal_acceptance_output(output):
+    import json
+    try:
+        report = json.loads(output)
+        if isinstance(report, dict) and isinstance(report.get('review'), dict): report = report['review']
+        return acceptance_report_hash(report)
+    except (WorkflowError, ValueError, TypeError, AttributeError):
+        return None
+
+
+def validate_acceptance_receipt(subject, receipt):
+    if receipt.get('review_authorization_hash') or 'eligibility' in receipt:
+        return validate_authorized_receipt(subject, receipt, {'role': 'acceptance'})
+    need(receipt.get('capability_validated') is True and bool(receipt.get('validation_ref'))
+         and receipt.get('profile') == 'deep-reasoning' and receipt.get('resolved', {}).get('effort') == 'high'
+         and receipt.get('mode') == 'strict', 'Released acceptance requires actual validated high-effort provenance.')
+    native = subject.get('native_invocations', {}).get(receipt.get('invocation_id'), {})
+    need(native.get('decision', {}).get('capability_validated') is True
+         and native.get('decision', {}).get('validation_ref') == receipt.get('validation_ref'),
+         'Released suitability must originate in the actual native decision.')
+    return validate_native_review_receipt(subject, receipt, {'role': 'acceptance'})
+
+
+def validate_acceptance_requirements(subject, review):
+    entries = review.get('requirements')
+    required = {rid for item in subject['plan'].get('work_items', []) for rid in item.get('requirement_ids', [])}
+    need(isinstance(entries, list) and all(isinstance(row, dict) and isinstance(row.get('id'), str) for row in entries)
+         and {row['id'] for row in entries} == required and len(entries) == len(required),
+         'Observed acceptance must address every requirement exactly once.')
+    need(all(isinstance(row.get('verdict'), str) and row['verdict'] in {'MET', 'NOT MET', 'CANNOT VERIFY'}
+             and isinstance(row.get('citations'), list) and all(isinstance(c, dict) for c in row['citations'])
+             for row in entries), 'Each observed requirement needs its verdict and citations.')
+    if review.get('verdict') == 'pass':
+        need(all(row['verdict'] == 'MET' and row['citations'] for row in entries),
+             'Passing acceptance cannot contain unmet or unverified requirements.')
+
+
+def validate_acceptance_payload(subject, report):
+    from .adversarial_reviews import validate_acceptance_review
+    from .stored_records import require_package
+    need(isinstance(report, dict), 'Actual independent acceptance payload required.')
+    review = next((row for row in reversed(subject.get('reviews', {}).get('acceptance', []))
+                   if row.get('package_hash') == report.get('package_hash') and row.get('fresh', True)), None)
+    need(review is not None and review.get('verdict') == 'pass', 'Current actual independent acceptance required.')
+    package = require_package(subject.get('review_packages', {}).get(report.get('package_hash')))
+    need(package is not None, 'Actual independent acceptance package required.')
+    validate_acceptance_review(subject, package, review)
+    need(report.get('requirements') == review.get('requirements'),
+         'Acceptance requirements must equal the actual independent reviewer output.')
+    return review
+
+
+def authorized_review_provenance(subject):
+    """Small human-visible approval facts only, never source/report bodies."""
+    identifiers = {row.get('model_invocation_id') for rows in subject.get('reviews', {}).values()
+                   for row in rows if row.get('verdict') == 'pass' and row.get('fresh', True)}
+    result = []
+    for identifier in sorted(identifiers - {None}):
+        receipt = subject.get('model_receipts', {}).get(identifier, {})
+        key = receipt.get('review_authorization_hash')
+        if not key: continue
+        result.append({'invocation_id': identifier, 'eligibility_basis': receipt.get('eligibility', {}).get('basis'),
+            'review_authorization_hash': key, 'suitability': 'unvalidated', 'model_revision': receipt.get('model_revision'),
+            'resolved': deepcopy(receipt.get('resolved')), 'observed': deepcopy(receipt.get('observed')),
+            'authorization_revoked': key in subject.get('review_model_revocations', {})})
+    return result

@@ -440,3 +440,5 @@ flowchart LR
     Check --> Coverage[Ordinary independent review coverage]
     Revoke[Human revocation] --> Reject[Reject affected coverage; retain evidence]
 ```
+
+Authorized calls require an explicit context-byte limit; the agent prepares it within the existing limits. Consent must come from a human distinct from known attached or historical agent actors. Observed acceptance must include all requirement verdicts and citations; they are retained and sealed, and the acceptance payload must match that output. A later released-validated reviewer may replace the authorized route with genuine native provenance. Readiness and delivery approval artifacts disclose unvalidated reviewer suitability.

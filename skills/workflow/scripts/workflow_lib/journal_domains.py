@@ -58,6 +58,11 @@ def _reduce(data, kind, req, version, *, metrics_source_hash=None):
         run = data.get('runs', {}).get(req.get('run_id'))
         require(run is not None, 'known run required')
         action = kind.removeprefix('domain.enforcement.')
+        if action in {'review-model-authorize', 'review-model-revoke'}:
+            actor = req['record'].get('actor_id') if isinstance(req.get('record'), dict) else None
+            if any(row.get('run_id') == req['run_id'] and row.get('actor_id') == actor
+                   for row in data.get('host_bindings', {}).values()):
+                raise WorkflowError('REVIEW_AUTHORIZATION_BLOCKED', 'Known attached agents cannot provide human reviewer consent.')
         updated = apply_enforcement(run, action, req['record'])
         data['runs'][req['run_id']] = updated
         receipt = {'schema_version': 1, 'run_id': req['run_id'], 'action': action, 'journal_version': version + 1,

@@ -208,9 +208,13 @@ def invoke(root,request,operation_id):
     specialist=review_version(run)==1 and stage=='review'
     authorization_hash = request.get('review_authorization_hash')
     if authorization_hash:
+        if type(request.get('context_max_bytes')) is not int or request['context_max_bytes'] <= 0:
+            raise WorkflowError('REVIEW_AUTHORIZATION_BLOCKED', 'Authorized reviewer execution requires an explicit positive context_max_bytes.')
         from .review_authorizations import authorization_scope, current_authorization
         current_authorization(run, authorization_hash, authorization_scope(binding, stage))
-    controlled_review = specialist or bool(authorization_hash)
+    from .review_authorizations import controlled_acceptance
+    acceptance_controlled = stage == 'acceptance' and controlled_acceptance(run)
+    controlled_review = specialist or bool(authorization_hash) or acceptance_controlled
     if specialist:
         from .review_dispatch import specialist_scope,static_route_available
         selected_scope=specialist_scope(run,binding)
@@ -281,6 +285,12 @@ def invoke(root,request,operation_id):
             if specialist:
                 from .adversarial_reviews import specialist_prompt
                 prompt=specialist_prompt(prompt)
+            if acceptance_controlled:
+                prompt += ('\nFor independent requirements acceptance, include a requirements array covering every '
+                           'planned requirement exactly once with id, verdict MET/NOT MET/CANNOT VERIFY, '
+                           'citations (repo_id/path/line), and rationale. Overall pass requires every requirement '
+                           'MET with evidence. These exact verdicts and citations are sealed into this output; '
+                           'the implementer cannot substitute a separate acceptance decision.')
             from .review_policy import review_version
             if review_version(run)==1 and binding.get('package_hash'):
                 from .stored_records import require_package
@@ -302,6 +312,8 @@ def invoke(root,request,operation_id):
             if decision['status'] not in {'allow','pending-access'} or not decision.get('resolved'):
                 failure={**decision,'message':'Choose a permitted model or resolve the reported policy blocker before native work.'}
                 return abort_specialist(failure) if controlled_review else failure
+            if acceptance_controlled:
+                decision['review_report_kind'] = 'observed-acceptance-output/v1'
             if task_facts is not None:
                 from .host_route_controls import assess_route_controls, native_control_evidence
                 from .routing_receipts import routing_lineage_id
@@ -442,7 +454,11 @@ def invoke(root,request,operation_id):
                 runtime_usage=explicit_runtime_usage(result.get('usage')))
             if controlled_review:
                 from .adversarial_reviews import seal_actual_report
-                result['review_report_hash']=seal_actual_report(result.get('output',''))
+                if acceptance_controlled:
+                    from .review_authorizations import seal_acceptance_output
+                    result['review_report_hash'] = seal_acceptance_output(result.get('output', ''))
+                else:
+                    result['review_report_hash']=seal_actual_report(result.get('output',''))
             result['output_ref']=_blob(root,result.pop('output',''))
         except NativeError as exc:
             if context:invalidate(root,binding,context)

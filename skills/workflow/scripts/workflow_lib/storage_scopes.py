@@ -76,6 +76,8 @@ def scope_for_event(event, operation_id, *, binding_id=None):
             from .store import WorkflowError
             raise WorkflowError('INVALID_EVENT', 'unsupported domain event: ' + kind)
         namespaces.extend(DOMAIN_NAMESPACES[family])
+        if kind in {'domain.enforcement.review-model-authorize', 'domain.enforcement.review-model-revoke'}:
+            queries.extend(EntityQuery('host_bindings', (('run_id', run_id),)) for run_id in run_ids)
         if family == 'improve':
             if kind == 'domain.improve.feedback':
                 from .journal_domains import digest

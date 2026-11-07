@@ -581,3 +581,5 @@ flowchart LR
     Observe --> Gates[Existing current review and acceptance gates]
     Gates --> Delivery[Separate authorized delivery decision]
 ```
+
+The agent supplies an explicit bounded context for authorized reviewers and verifies human/agent actor separation. Independent acceptance output seals its requirement-level decisions; a caller cannot substitute them at acceptance. Readiness and the prepared delivery manifest disclose any unvalidated reviewer suitability used by the run. A genuine released-validated route remains available without selecting the run-scoped authorization.

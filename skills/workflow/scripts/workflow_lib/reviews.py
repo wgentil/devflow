@@ -258,6 +258,9 @@ def record_review(run: dict, package_hash: str, reviewer: dict, report: dict) ->
         if role!='acceptance':validate_adversarial_review(run,package,review)
         else:
             from .adversarial_reviews import validate_acceptance_review
+            from .review_authorizations import controlled_acceptance
+            if controlled_acceptance(run):
+                review['requirements'] = deepcopy(report.get('requirements'))
             validate_acceptance_review(run,package,review)
     if enforcement_version(run) == 1:
         from .oracle_acceptance import validate_oracle_acceptance

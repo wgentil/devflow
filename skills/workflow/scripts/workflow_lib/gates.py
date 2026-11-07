@@ -150,6 +150,14 @@ def _coverage_current(run,role,item_id,live):
 
 
 def gate_status(run: dict, live: bool = True) -> dict:
+    result = _gate_status(run, live)
+    from .review_authorizations import authorized_review_provenance
+    provenance = authorized_review_provenance(run)
+    if provenance: result['reviewer_models'] = provenance
+    return result
+
+
+def _gate_status(run: dict, live: bool = True) -> dict:
     if run.get("status") in {"delivered", "discarded"}:
         return {"stage": run["status"], "can_advance": False, "blocking_findings": [],
                 "unverified_items": [], "terminal": True}
@@ -320,6 +328,8 @@ def acceptance_identity(acceptance: dict) -> str:
 
 
 def accept_requirements(run: dict, report: dict, repository_snapshots: dict) -> dict:
+    from .review_authorizations import controlled_acceptance, validate_acceptance_payload
+    if controlled_acceptance(run): validate_acceptance_payload(run, report)
     protection_receipts = None
     if enforcement_version(run) is not None:
         from .action_policy import require_action, subject_decision

@@ -1,6 +1,7 @@
 """Actual native coordinator execution against an explicitly synthetic backend."""
 import copy
 import json
+import itertools
 import unittest
 from unittest.mock import patch
 import test_review_dispatch as fixtures
@@ -35,6 +36,7 @@ class AuthorizedReviewExecutionTests(unittest.TestCase):
             run['review_packages'] = {package['package_hash']: package}
         store.transact(root, state['version'], 'consent-fixture', {'kind': 'fixture', 'payload': state['data']})
         request['review_authorization_hash'] = proposal['proposal_hash']
+        request['context_max_bytes'] = 32768
         policy = fixture.policy(); policy['hosts'] = {'codex': {}}
         policy['stages']['acceptance'] = 'deep-reasoning'
         return root, repo, request, backend, policy
@@ -116,3 +118,52 @@ class AuthorizedReviewExecutionTests(unittest.TestCase):
         self.assertEqual(result['stage'], 'acceptance')
         self.assertNotIn('perspective', result['scope'])
         self.assertFalse(result['capability_validated'])
+
+    def test_released_route_can_replace_revoked_acceptance_authorization(self):
+        root, repo, request, backend, policy = self.fixture(acceptance=True)
+        self.revoke(root, request)
+        request.pop('review_authorization_hash')
+        policy = fixtures.ReviewDispatchTests().policy()
+        policy['stages']['acceptance'] = 'deep-reasoning'
+        result = self.call(root, request, backend, policy)
+        self.assertEqual(result['status'], 'allow', result)
+        self.assertTrue(result['capability_validated'])
+        self.assertNotIn('review_authorization_hash', result)
+        self.assertEqual(result['review_report_kind'], 'observed-acceptance-output/v1')
+        auth.validate_acceptance_receipt(store.read_state(root)['data']['runs']['run'], result)
+
+    def test_context_budget_is_explicit_before_backend_or_reservation(self):
+        for invalid in ('omitted', None, 0, -1, True, '20000'):
+            root, repo, request, backend, policy = self.fixture()
+            if invalid == 'omitted': request.pop('context_max_bytes')
+            else: request['context_max_bytes'] = invalid
+            result = self.blocked_call(root, request, backend, policy)
+            self.assertEqual(result['status'], 'block', result)
+            backend.invoke.assert_not_called(); backend.discover.assert_not_called()
+            self.assertFalse(store.read_state(root)['data']['runs']['run'].get('effects'))
+
+    def test_later_reviewer_attachment_cannot_use_consent_actor(self):
+        from workflow_lib.hosts import apply_host_event
+        from test_hosts import attachment
+        root, repo, request, backend, policy = self.fixture()
+        data = store.read_state(root)['data']
+        with self.assertRaises(store.WorkflowError):
+            apply_host_event(data, 'attach', attachment(project=str(repo), binding_id='other-review',
+                session_id='other-review-session', actor_id='fixture-human', role='branch-reviewer',
+                perspective='security', package_hash=data['host_bindings']['review']['package_hash']))
+
+    def test_policy_and_model_preference_changes_before_invoke_block(self):
+        for change, boundary in itertools.product(('policy', 'preferences'), ('discover', 'configure', 'invoke')):
+            root, repo, request, backend, policy = self.fixture()
+            original = copy.deepcopy(getattr(backend, boundary).return_value)
+            def alter(*args):
+                state = store.read_state(root); run = state['data']['runs']['run']
+                if change == 'policy': run['review_policy']['revision'] += 1
+                else: run['model_overrides'] = [{'allowed_models': []}]
+                store.transact(root, state['version'], 'synthetic-concurrent-policy-change', {'kind': 'fixture', 'payload': state['data']})
+                return original
+            getattr(backend, boundary).side_effect = alter
+            result = self.blocked_call(root, request, backend, policy)
+            self.assertEqual(result['status'], 'block', result)
+            if boundary != 'invoke': backend.invoke.assert_not_called()
+            else: self.assertTrue(result['transport_completed'])

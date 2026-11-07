@@ -93,7 +93,7 @@ def resolve_workflow_review(data,binding,context,policy,*,diagnostic=False,autho
     from .native_runtime import preferences,prices
     from .implementation_contracts import review_prerequisites
     subject=data['runs'][binding['run_id']]
-    if binding.get('role') == 'acceptance-reviewer' and authorization_hash:
+    if binding.get('role') == 'acceptance-reviewer':
         scope = {'role': 'acceptance'}
     else:
         scope=specialist_scope(subject,binding)
@@ -107,6 +107,12 @@ def resolve_workflow_review(data,binding,context,policy,*,diagnostic=False,autho
         request = preferences(data, binding, stage)
         return resolve_authorized_review(subject, request, scope, context.get('capabilities', {}),
             context.get('discovery', {}), prices(data, request), authorization_hash, policy)
+    if scope['role'] == 'acceptance':
+        request = preferences(data, binding, 'acceptance')
+        if request.get('profile', 'deep-reasoning') != 'deep-reasoning' or request.get('effort', 'high') != 'high':
+            return {'status': 'block', 'reason_code': 'SPECIALIST_CONTROLS_REQUIRED'}
+        return resolve_profile(policy, {**request, 'mode': 'strict', 'profile': 'deep-reasoning', 'effort': 'high'},
+            context.get('capabilities', {}), context.get('discovery', {}), prices(data, request))
     request={**preferences(data,binding,'acceptance' if scope['role']=='acceptance' else 'review'),
         'perspective':scope['perspective'],'assessment':scope['assessment']}
     return select_review_route(policy,request,context.get('capabilities',{}),context.get('discovery',{}),prices(data,request))
@@ -135,7 +141,7 @@ def dispatch_workflow_review(root,request,operation_id):
     binding=validate_binding(data,binding['binding_id'],request.get('revision'))
     need(binding.get('role')!='implementer' and request.get('perspective')==binding.get('perspective'),'Bind the explicit perspective to its independent reviewer.')
     authorization_hash = request.get('review_authorization_hash')
-    scope = ({'role': 'acceptance'} if authorization_hash and binding.get('role') == 'acceptance-reviewer'
+    scope = ({'role': 'acceptance'} if binding.get('role') == 'acceptance-reviewer'
              else specialist_scope(subject,binding))
     if authorization_hash:
         from .review_authorizations import current_authorization

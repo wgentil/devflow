@@ -126,5 +126,10 @@ class AuthorizedReviewCoverageTests(unittest.TestCase):
             if bad == 'oracle': reports[1]['test_quality'] = {}
             if bad == 'self-review': reports[0]['actor_id'] = 'author'
             if bad == 'shared-invocation': reports[2]['model_invocation_id'] = reports[0]['model_invocation_id']
+            if bad == 'oracle':
+                from workflow_lib.adversarial_reviews import semantic_report_hash
+                report_hash = semantic_report_hash(reports[1])
+                run['model_receipts'][reports[1]['model_invocation_id']]['review_report_hash'] = report_hash
+                run['native_invocations'][reports[1]['model_invocation_id']]['result']['review_report_hash'] = report_hash
             with self.subTest(bad=bad):
                 self.assertFalse(review_coverage(run, 'item', 'W1')['complete'])

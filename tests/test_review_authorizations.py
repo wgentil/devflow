@@ -116,7 +116,9 @@ class ReviewAuthorizationTests(unittest.TestCase):
             with self.subTest(legacy=legacy), tempfile.TemporaryDirectory() as directory:
                 base = Path(directory)
                 root = legacy_root(base / 'control') if legacy else base / 'control'
-                store.transact(root, 0, 'fixture-seed', {'kind': 'fixture', 'payload': {'runs': {'run-fixture': subject()}}})
+                store.transact(root, 0, 'fixture-seed', {'kind': 'fixture', 'payload': {
+                    'runs': {'run-fixture': subject()}, 'host_bindings': {'attached-agent': {
+                        'run_id': 'run-fixture', 'actor_id': 'attached-reviewer', 'role': 'branch-reviewer', 'status': 'detached'}}}})
                 def cli(command, record=None, operation=None, expected=0):
                     args = [sys.executable, '-B', str(entry), 'review', command, '--root', str(root), '--run-id', 'run-fixture']
                     if record is not None:
@@ -132,6 +134,7 @@ class ReviewAuthorizationTests(unittest.TestCase):
                 self.assertEqual(store.read_state(root), before)
                 consent = {'proposal': proposal, 'confirmed_hash': proposal['proposal_hash'], 'actor_id': 'fixture-human',
                            'provenance': {'kind': 'user-message', 'ref': 'synthetic:cli-consent'}}
+                self.assertEqual(cli('authorize-model', {**consent, 'actor_id': 'attached-reviewer'}, 'self-consent', 2)['error'], 'REVIEW_AUTHORIZATION_BLOCKED')
                 cli('authorize-model', consent, 'authorize')
                 self.assertTrue(cli('authorize-model', consent, 'authorize')['replayed'])
                 self.assertEqual(cli('authorize-model', {**consent, 'actor_id': 'another-human'}, 'authorize', 2)['error'], 'OPERATION_CONFLICT')
