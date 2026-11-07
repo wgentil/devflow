@@ -55,3 +55,15 @@ See the [guide](../../skills/workflow/GUIDE.md#repository-specification-prefligh
 
 For specialist input integrity, known nondispatch and uncertain-launch handling,
 follow the [dispatch safeguards](adversarial-review.md#final-dispatch-and-repair-safeguards).
+
+### Authorized observed workflow reviewers
+
+A native review request may explicitly name `review_authorization_hash` for its
+workflow run. Consent is checked before native launch and after configuration;
+the completed receipt retains the exact hash and the
+`human-authorized-observed/v1` eligibility basis. These receipts keep
+`capability_validated: false` and disclose unvalidated suitability. Revocation
+prevents current admission even when an already-started provider call finishes;
+actual output/usage and interruption evidence remain retained. Portable receipt
+commands cannot assert this native provenance. Acceptance retains its ordinary
+`acceptance` stage and independent requirements-review role.

@@ -150,3 +150,51 @@ def resolve_authorized_review(subject, request, scope, capabilities, discovery, 
                 'model_revision': discovery.get('model_revisions', {}).get(selected['model'])}
     except (WorkflowError, TypeError, ValueError, KeyError, AttributeError) as exc:
         return {'status': 'block', 'dispatch': False, 'reason_code': 'REVIEW_AUTHORIZATION_BLOCKED', 'message': str(exc)}
+
+
+def authorization_scope(binding, stage):
+    role = binding.get('role', '').removesuffix('-reviewer')
+    need(role in ROLES and stage in {'review', 'acceptance'}
+         and (stage == 'acceptance') == (role == 'acceptance'), 'Authorization is restricted to workflow review roles.')
+    return {'role': role, 'host': binding.get('host'),
+            **({'perspective': binding['perspective']} if role != 'acceptance' and binding.get('perspective') else {})}
+
+
+def validate_authorized_decision(subject, decision, scope):
+    key = decision.get('review_authorization_hash')
+    record = current_authorization(subject, key, scope)
+    selected = record['proposal']['selection']
+    need(decision.get('eligibility') == {'schema_version': 1, 'basis': BASIS, 'authorization_hash': key}
+         and decision.get('capability_validated') is False and decision.get('suitability') == 'unvalidated'
+         and decision.get('validation_ref') is None and decision.get('profile') == 'deep-reasoning'
+         and decision.get('mode') == 'strict'
+         and decision.get('resolved') == {k: selected[k] for k in ('provider', 'model', 'effort')},
+         'Only the exact disclosed human-authorized eligibility basis is permitted.')
+    return record
+
+
+def validate_authorized_receipt(subject, receipt, scope):
+    validate_authorized_decision(subject, receipt, scope)
+    from .model_policy import check_model_receipt
+    need(receipt.get('status') == 'allow' and receipt.get('dispatch') is True
+         and receipt.get('transport_completed') is True
+         and check_model_receipt(receipt, 'strict')['status'] == 'allow'
+         and receipt.get('observed', {}).get('provider') == receipt['resolved']['provider'],
+         'A completed native invocation with trusted exact settings is required.')
+    invocation = subject.get('native_invocations', {}).get(receipt.get('invocation_id'), {})
+    native_result = invocation.get('result', {})
+    receipt_scope = receipt.get('scope', {})
+    need(invocation.get('status') == 'completed'
+         and receipt_scope.get('role') == scope['role'] + '-reviewer'
+         and (scope['role'] == 'acceptance' or receipt_scope.get('perspective') == scope.get('perspective'))
+         and receipt.get('policy_revision') == len(subject.get('model_overrides', []))
+         and invocation.get('decision', {}).get('eligibility') == receipt['eligibility']
+         and invocation.get('decision', {}).get('review_authorization_hash') == receipt['review_authorization_hash']
+         and invocation.get('decision', {}).get('resolved') == receipt['resolved']
+         and invocation.get('scope') == receipt.get('scope')
+         and all(native_result.get(k) == receipt.get(k) for k in
+                 ('observed', 'observation_source', 'invocation_ref', 'output_ref', 'review_input_validation', 'review_report_hash'))
+         and bool(receipt.get('invocation_ref')) and bool(receipt.get('output_ref')),
+         'Portable or mismatched receipts cannot assert native execution provenance.')
+    return {'status': 'allow', 'eligibility': deepcopy(receipt['eligibility']),
+            'suitability': 'unvalidated', 'model_revision': receipt.get('model_revision')}

@@ -206,12 +206,17 @@ def invoke(root,request,operation_id):
     if type(timeout) not in (int,float) or not 1<=timeout<=3600:raise WorkflowError('NATIVE_TIMEOUT_INVALID','Native timeout must be between 1 and 3600 seconds.')
     from .review_policy import review_version
     specialist=review_version(run)==1 and stage=='review'
+    authorization_hash = request.get('review_authorization_hash')
+    if authorization_hash:
+        from .review_authorizations import authorization_scope, current_authorization
+        current_authorization(run, authorization_hash, authorization_scope(binding, stage))
+    controlled_review = specialist or bool(authorization_hash)
     if specialist:
         from .review_dispatch import specialist_scope,static_route_available
         selected_scope=specialist_scope(run,binding)
         if request.get('perspective')!=selected_scope['perspective'] or task_facts is not None:
             raise WorkflowError('REVIEW_MODEL_BLOCKED','Exact specialist perspective cannot be replaced by task classification.')
-        if not static_route_available(policy(),{**preferences(data,binding,stage),'perspective':selected_scope['perspective'],'assessment':selected_scope['assessment']}):
+        if not authorization_hash and not static_route_available(policy(),{**preferences(data,binding,stage),'perspective':selected_scope['perspective'],'assessment':selected_scope['assessment']}):
             return {'status':'block','reason_code':'NO_VALIDATED_PERMITTED_MODEL'}
     backend=None;context=None;started=False;result=None;invoked=False;review_package=None;input_before=None
     lease=root/'native-invocations'/hashlib.sha256((binding['run_id']+':'+identifier).encode()).hexdigest();lease.parent.mkdir(parents=True,exist_ok=True)
@@ -283,9 +288,9 @@ def invoke(root,request,operation_id):
             native_input = invocation_context(binding, stage, full_view, prompt, context_limit)
             backend=(CodexBackend if binding['host']=='codex' else ClaudeBackend)(binding['project_dir'])
             context=discover(root,binding,request.get('refresh',False) or task_facts is not None,backend)
-            if specialist:
+            if controlled_review:
                 from .review_dispatch import resolve_workflow_review
-                decision=resolve_workflow_review(data,binding,context,policy(),diagnostic=request.get('diagnostic') is True)
+                decision=resolve_workflow_review(data,binding,context,policy(),diagnostic=request.get('diagnostic') is True, authorization_hash=authorization_hash)
             else:decision=resolve(data,binding,stage,context,task_facts)
             retry = None
             if task_facts is not None and request.get('replacement_of') and not request.get('predecessor_invocation_id'):
@@ -293,10 +298,10 @@ def invoke(root,request,operation_id):
                 retry = resolve_routing_retry(policy(),run,task_facts,request['replacement_of'],
                     preferences(data,binding,stage),context,prices(data,preferences(data,binding,stage)))
                 if retry is not None: decision = retry['decision']
-            if not specialist and not decision.get('resolved'):decision=candidate_intent(data,binding,stage,context,task_facts)
+            if not controlled_review and not decision.get('resolved'):decision=candidate_intent(data,binding,stage,context,task_facts)
             if decision['status'] not in {'allow','pending-access'} or not decision.get('resolved'):
                 failure={**decision,'message':'Choose a permitted model or resolve the reported policy blocker before native work.'}
-                return abort_specialist(failure) if specialist else failure
+                return abort_specialist(failure) if controlled_review else failure
             if task_facts is not None:
                 from .host_route_controls import assess_route_controls, native_control_evidence
                 from .routing_receipts import routing_lineage_id
@@ -355,7 +360,7 @@ def invoke(root,request,operation_id):
                 decision['routing']['known_payload']=measured
             prompt = native_input['prompt']
             start={'binding_id':binding['binding_id'],'revision':binding['revision'],'invocation_id':identifier,'stage':stage,'decision':decision,'request_hash':request_hash,'operation_id':operation_id,'policy_revision':len(run.get('model_overrides',[])),'expected_scope':invocation_scope(binding,run,stage,{}),'launcher_pid':os.getpid(),'account_key':context['account_key'],'replacement_of':request.get('replacement_of'),'replacement_authorization':request.get('replacement_authorization')}
-            if specialist:start['diagnostic']=request.get('diagnostic') is True
+            if controlled_review:start['diagnostic']=request.get('diagnostic') is True
             if request.get('review_request_hash'):start['review_request_hash']=request['review_request_hash']
             if task_facts is not None and request.get('predecessor_invocation_id'):
                 predecessor = request['predecessor_invocation_id']
@@ -387,6 +392,8 @@ def invoke(root,request,operation_id):
             if binding['host']=='codex':
                 configuration=backend.configure(decision['resolved'],native_input['configuration_text'],access)
                 observed=configuration['observed'];resolved=decision['resolved']
+                if authorization_hash and configuration.get('observation_source') not in {'host-effective-configuration','host-invocation-metadata'}:
+                    raise WorkflowError('REVIEW_AUTHORIZATION_BLOCKED', 'Trusted effective configuration is required before review execution.')
                 if any(observed.get(k)!=resolved.get(k) for k in ('model','effort','provider')):
                     result={**configuration,'status':'interrupted','error_kind':'unavailable','reason_code':'MODEL_SUBSTITUTED'}
             from .action_policy import subject_decision, require_action
@@ -405,12 +412,12 @@ def invoke(root,request,operation_id):
             from .review_orchestration import remaining_seconds
             loop_remaining=remaining_seconds(latest,int(time.time()*1000))
             if loop_remaining is not None:timeout_seconds=min(timeout_seconds,loop_remaining)
-            if specialist:
+            if controlled_review:
                 current_scope=invocation_scope(binding,latest,stage,{})
                 if current_scope!=start['expected_scope']:
                     raise WorkflowError('REVIEW_MODEL_BLOCKED','Specialist source, risk, questions or contracts changed before invocation.')
                 live_data={**data,'runs':{**data['runs'],binding['run_id']:latest}}
-                current_decision=resolve_workflow_review(live_data,binding,context,policy(),diagnostic=request.get('diagnostic') is True)
+                current_decision=resolve_workflow_review(live_data,binding,context,policy(),diagnostic=request.get('diagnostic') is True, authorization_hash=authorization_hash)
                 if current_decision.get('status') not in {'allow','pending-access'} or current_decision.get('resolved')!=decision.get('resolved'):
                     raise WorkflowError('REVIEW_MODEL_BLOCKED','Specialist eligibility or prerequisites changed before invocation.')
             if result is None:
@@ -433,7 +440,7 @@ def invoke(root,request,operation_id):
                 invocation_id=identifier, consumer_id=binding['session_id'],
                 configuration_bytes=len(native_input['configuration_text'].encode('utf-8')), turn_bytes=len(prompt.encode('utf-8')),
                 runtime_usage=explicit_runtime_usage(result.get('usage')))
-            if specialist:
+            if controlled_review:
                 from .adversarial_reviews import seal_actual_report
                 result['review_report_hash']=seal_actual_report(result.get('output',''))
             result['output_ref']=_blob(root,result.pop('output',''))
@@ -441,7 +448,7 @@ def invoke(root,request,operation_id):
             if context:invalidate(root,binding,context)
             if not started:
                 failure={'status':'block','reason_code':exc.code,'error_kind':exc.error_kind,'message':str(exc)}
-                return abort_specialist(failure) if specialist else failure
+                return abort_specialist(failure) if controlled_review else failure
             result={'status':'interrupted','error_kind':exc.error_kind,'reason_code':exc.code}
         except WorkflowError as exc:
             if started:
@@ -460,7 +467,7 @@ def invoke(root,request,operation_id):
             raise
         finally:
             if backend:backend.close()
-            if specialist and not started and enforcement_effect is not None:
+            if controlled_review and not started and enforcement_effect is not None:
                 current=read_host(root,binding_id=binding['binding_id'])['data']['runs'][binding['run_id']]
                 if current.get('effects',{}).get(identifier,{}).get('status')=='claimed' and identifier not in current.get('native_invocations',{}):
                     _commit(root,operation_id+':native-abort','native-abort',{

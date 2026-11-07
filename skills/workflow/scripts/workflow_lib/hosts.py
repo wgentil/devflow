@@ -110,6 +110,8 @@ def apply_host_event(state: dict, kind: str, request: dict) -> dict:
             record = deepcopy(req['receipt'])
             require(isinstance(record,dict) and isinstance(record.get('invocation_id'),str) and record['invocation_id'], 'Invocation ID required.')
             require('routing' not in record, 'Portable CLI cannot mint routed invocation receipts.')
+            require(not {'review_authorization_hash', 'eligibility'} & set(record),
+                    'Portable CLI cannot mint authorized native reviewer receipts.')
             require(record.get('observed') is None and record.get('observation_source') is None, 'Portable CLI cannot assert trusted host observations.')
             require(req.get('resolution_policy_revision',len(run.get('model_overrides',[])))==len(run.get('model_overrides',[])), 'Model policy changed before receipt commit; resolve again.', 'STALE_STATE')
             record['scope'] = invocation_scope(binding,run,record.get('stage','implementation'),record)
@@ -335,6 +337,9 @@ def apply_native_event(state,kind,req):
         require(decision.get('status') in {'allow','pending-access'} and decision.get('resolved'), 'Eligible selected native model required.')
         require(decision.get('status')!='pending-access' or decision.get('mode')=='advisory', 'Pending access cannot satisfy strict dispatch.')
         scope=invocation_scope(binding,run,req['stage'],{})
+        if decision.get('review_authorization_hash') or 'eligibility' in decision:
+            from .review_authorizations import authorization_scope, validate_authorized_decision
+            validate_authorized_decision(run, decision, authorization_scope(binding, req['stage']))
         require(req.get('expected_scope',scope)==scope, 'Attempt or review scope changed during discovery.', 'STALE_STATE')
         if 'routing' in decision:
             from .routing_receipts import validate_routing_evidence
@@ -363,7 +368,7 @@ def apply_native_event(state,kind,req):
                 'now_ms': req.get('enforcement_transition_ms')})
             run['effects'] = transitioned['effects']
         record={**req,'scope':scope,'status':'running','retry_count':retry_count}
-        if scope.get('perspective'):
+        if scope.get('perspective') or decision.get('review_authorization_hash'):
             run['review_dispatch_sequence']=run.get('review_dispatch_sequence',0)+1
             record['review_sequence']=run['review_dispatch_sequence']
         if 'routing' in decision:
@@ -382,7 +387,7 @@ def apply_native_event(state,kind,req):
              'observed':result.get('observed'),'observation_source':result.get('observation_source'),
              'invocation_ref':result.get('invocation_ref'),'output_ref':result.get('output_ref'),'usage':result.get('usage'),
              'started_ms':record.get('enforcement_transition_ms'),'finished_ms':req.get('enforcement_transition_ms')}
-    if record['scope'].get('perspective'):
+    if record['scope'].get('perspective') or record['decision'].get('review_authorization_hash'):
         receipt['review_report_hash']=result.get('review_report_hash')
         receipt['diagnostic']=record.get('diagnostic') is True
         receipt['review_sequence']=record['review_sequence']
@@ -401,6 +406,13 @@ def apply_native_event(state,kind,req):
         if not observed.get('model') or observed['model']!=resolved.get('model') or observed.get('provider') and observed['provider']!=resolved.get('provider'):
             result.update(status='interrupted',error_kind='unavailable',reason_code='MODEL_SUBSTITUTED')
         elif strict['status']=='block':result.update(status='interrupted',error_kind='unavailable',reason_code=strict['reason_code'])
+        if receipt.get('review_authorization_hash'):
+            from .review_authorizations import authorization_scope, validate_authorized_decision
+            try:
+                validate_authorized_decision(run, receipt, authorization_scope(binding, record['stage']))
+                require(observed.get('provider') == resolved.get('provider'), 'Trusted provider observation required.')
+            except WorkflowError:
+                result.update(status='interrupted', error_kind='unavailable', reason_code='REVIEW_AUTHORIZATION_BLOCKED')
     if result['status']=='interrupted':
         from .model_policy import interruption
         receipt.update(status='block',reason_code=result.get('reason_code','INVOCATION_INTERRUPTED'))
