@@ -1,0 +1,12 @@
+{
+  "mode": "local",
+  "source_commit": "4ec460be77e64f9bd5d4eb8f5e50b06959c1f871",
+  "git_sources": [
+    {
+      "path": "/var/folders/8p/jfk_drpj5q909tgqwwgbbks80000gn/T/devflow-0320-local-30tdc0tp/codex/plugins/cache/devflow-marketplace/devflow/0.3.20",
+      "head": "4ec460be77e64f9bd5d4eb8f5e50b06959c1f871"
+    }
+  ],
+  "regular_user_configuration": "unchanged",
+  "model_turns_submitted": 0
+}

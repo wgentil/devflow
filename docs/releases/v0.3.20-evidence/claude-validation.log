@@ -1,0 +1,14 @@
+Validating marketplace manifest: /Users/wayne/.codex/worktrees/19ac/devflow/.claude-plugin/marketplace.json
+
+Validating plugin: /Users/wayne/.codex/worktrees/19ac/devflow/CLAUDE.md
+
+⚠ Found 1 warning:
+
+  ❯ root: CLAUDE.md at the plugin root is not loaded as project context. To ship context with your plugin, use a skill (skills/<name>/SKILL.md) instead.
+
+ℹ Advice (does not change the verdict):
+
+  ❯ /Users/wayne/.codex/worktrees/19ac/devflow/README.md: This README has no line that installs "devflow" from a marketplace. Add the install line, which works in one step on Claude Code 2.1.275 or later. In it, replace <owner>/<repo> with the repository that holds the marketplace.
+      /plugin install devflow --marketplace <owner>/<repo>
+
+✔ Validation passed with warnings

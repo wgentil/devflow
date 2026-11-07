@@ -1,0 +1,29 @@
+{
+  "source_commit": "4ec460be77e64f9bd5d4eb8f5e50b06959c1f871",
+  "descriptor": {
+    "plugin": "devflow",
+    "plugin_version": "0.3.20",
+    "state_schema_version": 1,
+    "supported_schemas": [
+      1
+    ],
+    "storage_format_version": 2,
+    "supported_storage_formats": [
+      1,
+      2
+    ],
+    "host_protocol_version": 1,
+    "release_id": "9e16f71098a67bb954ed5cb121bb524fc3b09e066a7bc3260e7757f4bc6d1b72",
+    "fingerprint": "9e16f71098a67bb954ed5cb121bb524fc3b09e066a7bc3260e7757f4bc6d1b72"
+  },
+  "local_suite": {
+    "tests": 1333,
+    "passed": 1327,
+    "skipped": 6,
+    "failures": 0,
+    "errors": 0
+  },
+  "ci_run_url": "https://github.com/wgentil/devflow/actions/runs/42329397942",
+  "live_provider_acceptance": "NOT_RUN: exact runtime consent is separate from release authorization",
+  "model_turns_submitted_for_release_checks": 0
+}

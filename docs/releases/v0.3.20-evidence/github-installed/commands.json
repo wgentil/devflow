@@ -1,0 +1,95 @@
+[
+  {
+    "argv": [
+      "codex",
+      "plugin",
+      "marketplace",
+      "add",
+      "wgentil/devflow"
+    ],
+    "exit_code": 0,
+    "stdout_file": "codex-marketplace.stdout",
+    "stderr_file": "codex-marketplace.stderr"
+  },
+  {
+    "argv": [
+      "codex",
+      "plugin",
+      "add",
+      "devflow@devflow-marketplace"
+    ],
+    "exit_code": 0,
+    "stdout_file": "codex-install.stdout",
+    "stderr_file": "codex-install.stderr"
+  },
+  {
+    "argv": [
+      "claude",
+      "plugin",
+      "marketplace",
+      "add",
+      "wgentil/devflow",
+      "--scope",
+      "user"
+    ],
+    "exit_code": 0,
+    "stdout_file": "claude-marketplace.stdout",
+    "stderr_file": "claude-marketplace.stderr"
+  },
+  {
+    "argv": [
+      "claude",
+      "plugin",
+      "install",
+      "devflow@devflow-marketplace",
+      "--scope",
+      "user",
+      "-y"
+    ],
+    "exit_code": 0,
+    "stdout_file": "claude-install.stdout",
+    "stderr_file": "claude-install.stderr"
+  },
+  {
+    "argv": [
+      "codex",
+      "plugin",
+      "list",
+      "--json"
+    ],
+    "exit_code": 0,
+    "stdout_file": "codex-list.stdout",
+    "stderr_file": "codex-list.stderr"
+  },
+  {
+    "argv": [
+      "claude",
+      "plugin",
+      "list",
+      "--json"
+    ],
+    "exit_code": 0,
+    "stdout_file": "claude-list.stdout",
+    "stderr_file": "claude-list.stderr"
+  },
+  {
+    "argv": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "-B",
+      "scripts/verify_windows_install.py",
+      "--source-root",
+      "/Users/wayne/.codex/worktrees/19ac/devflow",
+      "--codex-list",
+      "/var/folders/8p/jfk_drpj5q909tgqwwgbbks80000gn/T/devflow-0320-github-pvit6ns_/codex-installed.json",
+      "--codex-cache",
+      "/var/folders/8p/jfk_drpj5q909tgqwwgbbks80000gn/T/devflow-0320-github-pvit6ns_/codex/plugins/cache",
+      "--claude-list",
+      "/var/folders/8p/jfk_drpj5q909tgqwwgbbks80000gn/T/devflow-0320-github-pvit6ns_/claude-installed.json",
+      "--output",
+      "/var/folders/8p/jfk_drpj5q909tgqwwgbbks80000gn/T/devflow-0320-github-pvit6ns_/installed-report.json"
+    ],
+    "exit_code": 0,
+    "stdout_file": "installed-check.stdout",
+    "stderr_file": "installed-check.stderr"
+  }
+]

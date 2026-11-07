@@ -1,0 +1,14 @@
+[
+  {
+    "id": "devflow@devflow-marketplace",
+    "version": "0.3.20",
+    "scope": "user",
+    "enabled": true,
+    "installPath": "/var/folders/8p/jfk_drpj5q909tgqwwgbbks80000gn/T/devflow-0320-local-30tdc0tp/claude/plugins/cache/devflow-marketplace/devflow/0.3.20",
+    "readFromFolder": "/Users/wayne/.codex/worktrees/19ac/devflow",
+    "folderVersion": "0.3.20",
+    "installedAt": "2026-11-07T02:27:20.153Z",
+    "lastUpdated": "2026-11-07T02:27:20.153Z",
+    "projectEnabled": false
+  }
+]
