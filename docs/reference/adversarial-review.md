@@ -474,3 +474,11 @@ Standalone Git root identity uses canonical physical paths rather than raw Git
 path spelling. Equivalent Windows separators or root aliases are accepted;
 subdirectories remain invalid. Working-tree modes honor Git `core.filemode` and
 staged executable modes. Ignored filesystem access bits do not invent changes.
+
+## Human-authorized observed reviewer route
+
+A workflow may explicitly select a content-hashed human authorization for one named provider/model at `deep-reasoning`/`high`, with listed review roles/perspectives, run/spec/review-policy binding and `suitability: unvalidated`. This is a distinct eligibility basis, `human-authorized-observed/v1`; it keeps `capability_validated: false`. It is never a released suitability mapping, model-evaluation result or passing review. Missing backing revision metadata stays unknown. The old default route remains fail-closed.
+
+Native dispatch, configuration, completion, report admission and current coverage/reuse check the exact selected authorization. Receipts bind actual trusted settings, package inputs and native lineage. Revocation does not erase or refund a completed call, but prevents its report from counting. Renewed consent has a new identity and cannot relabel an old invocation. Existing allowlists, model pins, spending/effect/context limits, actors, perspective coverage, test oracles and PR exact-head gates remain. Generic portable receipt commands cannot mint this basis.
+
+Acceptance keeps its ordinary role and stage. If acceptance is included in a run's authorization history, an absent/revoked receipt cannot fall through its historical optional-receipt path. Standalone sessions, repair and implementation workers remain outside this permission. Claude is blocked without effective-effort observation. Both storage formats retain immutable approval/revocation events; old events never gain consent on replay. See [developer commands](../developer-cli.md#run-scoped-reviewer-consent-records).

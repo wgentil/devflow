@@ -31,9 +31,10 @@ establishes access, never suitability for specification, coding or review.
 
 No capability-validated automatic mappings ship. Default advisory routing therefore
 returns a stage/effort recommendation without launching. Explicit unvalidated
-choices require an advisory pin and `allow_unvalidated: true`. Strict routing
+choices require an advisory pin and `allow_unvalidated: true`. The default validated route
 requires a released validated mapping, supported configuration and trusted observed
-model/effort. Claude returns model identity but no effective effort, and strict
+model/effort. Workflow-only explicit human authorization provides a separate
+observed-but-unvalidated reviewer route described below. Claude returns model identity but no effective effort, and strict
 Claude work blocks. Codex reads the native thread's effective configuration.
 Policy schema 2 now defines versioned representative-eval thresholds for
 specification, coding, debugging and review. An approved case set and observed

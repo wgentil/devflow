@@ -19,7 +19,8 @@ Read [shared invariants](../../docs/reference/workflow-invariants.md) and declar
 flowchart LR
     Scope[Workflow package or canonical standalone Git root] --> Checks[Live checks and shared invariants]
     Checks --> Inputs[Complete scoped item inputs or whole-tree checks]
-    Inputs --> Model[Configured route and intact input]
+    Inputs --> Eligibility[Released mapping or exact run-scoped consent]
+    Eligibility --> Model[Trusted observed settings and intact input]
     Model --> Quality[Independent oracle and discrimination]
     Quality --> Coverage[Latest current independent perspectives]
     Coverage --> Work[Stage responsibility]
@@ -61,3 +62,5 @@ See [canonical guidance](../../docs/reference/governing-inputs.md#governing-docu
 See [canonical guidance](../../docs/reference/governing-inputs.md#governing-input-reassessment).
 
 [Review/outcomes](../../docs/reference/adversarial-review.md#bounded-live-execution).
+
+Workflow-only [scoped consent](GUIDE.md#run-scoped-observed-reviewer-choice) requires exact human approval and observed high effort. Keep suitability unvalidated; recheck consent at launch, admission and coverage. No repair/standalone inheritance.

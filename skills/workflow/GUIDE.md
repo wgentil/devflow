@@ -9,7 +9,7 @@ full context once, after required preparation succeeds.
 Start with the [complete setup and initialization guide](../../docs/setup-and-usage.md). For native Windows, distinguish core/runtime, installed-package and signed-in gates in the [platform matrix](../../docs/windows-validation.md). Live Windows event/worker/handoff acceptance remains unverified; WSL2 is a separate target.
 
 Read the [shared setup and conventions](../../docs/skills.md#shared-setup) first.
-Commands below use its `df` function and path variables.
+Commands below are optional developer reference and use its `df` function and path variables. Plugin users describe their goal; the agent runs the helpers.
 
 ## Purpose and prerequisites
 
@@ -568,4 +568,16 @@ flowchart LR
     Gate[Actual failed pre-review check] --> Mapping{Explicit same-repository items?}
     Mapping -->|Yes| Repair[Authorized code repair and independent review]
     Mapping -->|No| Handoff[Require scope clarification]
+```
+
+## Recovery when reviewer mappings are absent
+
+The agent can prepare an exact run-scoped reviewer-model proposal and record the human's confirmation. Authorized native calls require observed provider/model/high effort; receipts disclose unvalidated suitability and unknown model revisions. Existing independent perspectives, acceptance, test-quality and spending controls remain. The permission covers only the listed review roles in that run; it cannot authorize implementation, repairs or standalone sessions. A revocation invalidates affected coverage without deleting the original execution evidence. See [review-work](../review-work/GUIDE.md#run-scoped-observed-reviewer-choice). Unmodified v0.3.19 has no such route; source edits alone do not upgrade an attached run.
+
+```mermaid
+flowchart LR
+    Route[Reviewer route blocked] --> Consent[Exact human-approved run and model scope]
+    Consent --> Observe[Actual native settings and independent output]
+    Observe --> Gates[Existing current review and acceptance gates]
+    Gates --> Delivery[Separate authorized delivery decision]
 ```

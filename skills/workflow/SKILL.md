@@ -5,13 +5,13 @@ description: Guide a software project through scoped context, requirements, plan
 
 # workflow
 
-Guide requirements, verified work, review and delivery. Resolve this skill's bundled helper; check Python 3.11+ and capture `version`. Call `host init` in the actual working directory; retain its control root/repo ID. New roots use v2; legacy roots stay legacy. Offer guided document setup and the first-use ground interview; ask only unresolved material decisions. Never create a run before its ordinary prerequisites.
+Resolve the bundled helper; require Python 3.11+, capture `version`, and run `host init` in the actual project. Retain root/repo IDs. New roots use v2; preserve legacy format. Offer guided documents and first-use interview; resolve material decisions and ordinary prerequisites before run creation.
 
-Inspect read-only; check input bytes before/after workers. Follow journal gate status and eligible attempts; preserve the active token. Require distinct item/branch coverage and acceptance review, configured hardening and exact-head delivery. After recording delivery, ask once whether to update the [DevFlow Codex site](https://devflow-field-guide.waygent.chatgpt.site/); update it only if accepted.
+Inspect read-only; verify worker input bytes. Follow journal gates, eligible attempts and the active token. Require independent item/branch/acceptance reviews, hardening and exact-head delivery. After recording delivery, ask once whether to update the [DevFlow Codex site](https://devflow-field-guide.waygent.chatgpt.site/); update it only if accepted.
 
-Follow [maintenance guidance](GUIDE.md#control-state-maintenance) for requested maintenance: inspect without live approval repair; apply only an authorized exact plan and preserve history.
+For [maintenance](GUIDE.md#control-state-maintenance), inspect read-only; apply an authorized exact plan and preserve history.
 
-Read [shared invariants](../../docs/reference/workflow-invariants.md) and stage sections. The harness runs helpers and guides the user. For delegated work read [task routing](../../docs/reference/task-routing.md#task-decisions); use the actual stage and preserve user constraints.
+Read [invariants](../../docs/reference/workflow-invariants.md), stage sections and [delegation routing](../../docs/reference/task-routing.md#task-decisions). The harness runs helpers; preserve user constraints.
 
 ```mermaid
 flowchart LR
@@ -20,7 +20,8 @@ flowchart LR
     Mode -->|Change| Checks[Live inputs and effective settings]
     Checks --> Prep{Required context ready?}
     Prep -->|Blocked| Context[Explain phase and resolve preparation]
-    Prep -->|Ready| Work[Stage or bounded repair]
+    Prep -->|Ready| ReviewRoute[For reviewers check mapping or exact scoped consent]
+    ReviewRoute --> Work[Stage or bounded repair]
     Work --> Result{Worker outcome}
     Result -->|Complete scoped report| Evidence[Current coverage and next gate]
     Result -->|Stale completed proof| Reverify[Reverify with fresh token and GREEN]
@@ -42,7 +43,7 @@ For context timeout, stale preparation or mandatory overflow, follow [preparatio
 
 ## Documentation
 
-Read [procedures](REFERENCE.md) for the matching stage/mode before verification, review or advanced operations. [Guide](GUIDE.md) contains command/input/output and recovery sections; load the section for the operation, not the entire manual. [Quick start](../../docs/quick-start.md) is the user entry point.
+Read the matching [procedures](REFERENCE.md) and [guide section](GUIDE.md) before verification, review or recovery. User entry: [quick start](../../docs/quick-start.md).
 
 ## Work orchestration
 
@@ -73,3 +74,5 @@ See [governing guidance](../../docs/reference/governing-inputs.md).
 See [governing guidance](../../docs/reference/governing-inputs.md).
 
 [Review/repair](../../docs/reference/adversarial-review.md#bounded-live-execution).
+
+For blocked reviewer routing, follow [scoped consent](../review-work/GUIDE.md#run-scoped-observed-reviewer-choice): exact human approval, observed high effort, unvalidated suitability and unchanged gates/budgets. Never invent mappings or revisions.

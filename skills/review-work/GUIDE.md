@@ -5,7 +5,7 @@ evidence and named omissions; focused validation never discharges the complete
 required-check set. See [context feedback](../../docs/context-efficiency.md#validation-feedback-and-failure-digests).
 
 Read the [shared setup and conventions](../../docs/skills.md#shared-setup) first.
-Commands below use its `df` function and path variables.
+Commands below are optional developer reference and use its `df` function and path variables. Plugin users describe their goal; the agent runs the helpers.
 
 ## Purpose and prerequisites
 
@@ -422,3 +422,21 @@ Standalone selection compares canonical physical Git roots, accepts equivalent
 platform path spellings, and still rejects subdirectories. Working-tree executable
 modes follow Git core.filemode and staged modes, so Windows access bits cannot
 invent changes. See the [selection safeguards](../../docs/reference/adversarial-review.md#final-dispatch-and-repair-safeguards).
+
+## Run-scoped observed reviewer choice
+
+If no released reviewer mapping is eligible, explain the blocker. Offer a named permitted Codex model at deep-reasoning/high with suitability explicitly unvalidated, for this workflow run only. Prepare the exact content-bound proposal and obtain actual human approval before recording it. Existing spending and effect limits remain. The agent handles the helpers; plugin users do not edit policy files or run setup commands.
+
+Each actual invocation names its authorization hash. The native adapter must observe the approved provider/model/effort, bind the complete package and record the real independent output. Admission and coverage recheck current consent. Revocation prevents dependent coverage and reuse while preserving output and usage. A new authorization cannot revive an earlier revoked invocation.
+
+Acceptance retains its ordinary requirements-review role. Architecture/security coverage, test-quality checks and independent actors remain required where already selected. Claude remains blocked without effective effort observation. This route does not apply to standalone review or repair. The unchanged v0.3.19 installation lacks it; a compatible released upgrade and explicit host refresh are required.
+
+```mermaid
+flowchart LR
+    Blocked[No released reviewer mapping] --> Proposal[Exact run and model proposal]
+    Proposal --> Human[Actual human confirmation]
+    Human --> Native[Independent native reviewer at observed high effort]
+    Native --> Check[Current consent and complete package checks]
+    Check --> Coverage[Ordinary independent review coverage]
+    Revoke[Human revocation] --> Reject[Reject affected coverage; retain evidence]
+```

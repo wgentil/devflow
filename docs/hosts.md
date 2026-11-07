@@ -139,7 +139,7 @@ sourced numerical cost caps. Production discovery uses Codex app-server model/li
 or a Claude selected-model native probe. Native workers apply model/effort controls
 and journal actual host model observations; Claude effective effort is unknown.
 See [native usage and recovery](native-models.md).
-Strict mode blocks when mapping, configuration or effective identity is unavailable.
+The default validated route blocks when mapping, configuration or effective identity is unavailable. A separately selected [workflow reviewer authorization](reference/adversarial-review.md#human-authorized-observed-reviewer-route) may permit an observed named model with explicitly unvalidated suitability; it does not promote a mapping.
 CLI input cannot manufacture trusted observation receipts.
 
 New models remain candidates until representative specification/coding/debug/review

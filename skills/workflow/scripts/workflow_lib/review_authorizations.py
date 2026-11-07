@@ -16,7 +16,7 @@ def need(condition, message):
 
 def _subject(subject):
     need(isinstance(subject, dict) and subject.get('id') and not subject.get('review_contract_hash')
-         and subject.get('plan', {}).get('spec_hash') and subject.get('status') == 'active',
+         and isinstance(subject.get('plan'), dict) and subject['plan'].get('spec_hash') and subject.get('status') == 'active',
          'An active workflow run with approved specification is required.')
     require_review_policy(subject)
 
@@ -39,7 +39,7 @@ def propose_authorization(subject: dict, selection: dict) -> dict:
          {'host', 'provider', 'model', 'profile', 'effort', 'roles', 'perspectives'},
          'Declare the exact host/provider/model, deep profile/high effort and review scopes only.')
     roles, perspectives = selection['roles'], selection['perspectives']
-    need(selection['host'] in {'codex', 'claude'}
+    need(isinstance(selection['host'], str) and selection['host'] in {'codex', 'claude'}
          and selection['provider'] == {'codex': 'openai', 'claude': 'anthropic'}.get(selection['host'])
          and isinstance(selection['model'], str) and selection['model'].strip()
          and selection['profile'] == 'deep-reasoning' and selection['effort'] == 'high',

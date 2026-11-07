@@ -975,3 +975,5 @@ and `provenance: {kind: user-message, ref: ...}`; `review revoke-model` names
 explicit `--operation-id`. `review model-authorizations` inspects retained consent
 and revocations. These records never establish model suitability or a passing
 review; execution still requires the supported authorized native route.
+
+The [selection example](examples/review-model-authorization.json) uses an illustrative model placeholder: replace it with an actually discovered permitted ID. Proposal `sequence` makes fresh consent distinct after revocation. Authorize only the exact returned `proposal_hash`; invocation requests explicitly carry `review_authorization_hash`. A proposal or ordinary model pin never launches a worker or creates a passing receipt.

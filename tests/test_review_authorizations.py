@@ -89,6 +89,7 @@ class ReviewAuthorizationTests(unittest.TestCase):
         with self.assertRaises(WorkflowError):
             api.current_authorization(subject(), 'missing', {'role': 'item', 'perspective': 'code'})
         for value in [None, [], 'invalid', {**selection(), 'effort': 'low'},
+                      {**selection(), 'host': []}, {**selection(), 'model': {}},
                       {**selection(), 'roles': ['repair']}, {**selection(), 'perspectives': ['invented']},
                       {**selection(), 'roles': []}, {**selection(), 'schema_version': 99}]:
             with self.subTest(value=value), self.assertRaises(WorkflowError):

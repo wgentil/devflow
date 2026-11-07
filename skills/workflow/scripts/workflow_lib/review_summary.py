@@ -84,7 +84,8 @@ def summarize_review(subject:dict)->dict:
     review_receipts={key:row for key,row in receipts.items() if key in referenced or str(row.get('scope',{}).get('role','')).endswith('-reviewer')}
     reviewer_models = []
     for key, row in sorted(review_receipts.items()):
-        basis = row.get('eligibility', {}).get('basis')
+        eligibility = row.get('eligibility')
+        basis = eligibility.get('basis') if isinstance(eligibility, dict) else None
         reviewer_models.append({'invocation_id': key, 'resolved': deepcopy(row.get('resolved')),
             'observed': deepcopy(row.get('observed')), 'eligibility_basis': basis or (
                 'released-validated' if row.get('capability_validated') is True else 'unknown'),

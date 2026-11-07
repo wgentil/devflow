@@ -1,0 +1,19 @@
+{
+  "host": "codex",
+  "provider": "openai",
+  "model": "replace-with-discovered-permitted-model",
+  "profile": "deep-reasoning",
+  "effort": "high",
+  "roles": [
+    "item",
+    "branch",
+    "acceptance",
+    "pr"
+  ],
+  "perspectives": [
+    "code",
+    "test",
+    "architecture",
+    "security"
+  ]
+}

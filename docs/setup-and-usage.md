@@ -694,3 +694,11 @@ does not establish damaged journal bytes. Preserve the root and use a helper
 containing this repair to inspect it. Do not delete proofs, edit event files or
 skip enforcement to work around the error. This repair is included in v0.3.19. Upgrade and reload the selected host
 before inspection; upgrading does not choose or apply recovery automatically.
+
+## When no validated reviewer model is available
+
+DevFlow can offer a separate, explicit choice: authorize one named permitted reviewer model at high reasoning effort for this workflow run, while acknowledging that its suitability has not been validated. The agent presents the exact model, roles, limitation and content-bound proposal for your approval. It handles recording and dispatch; no manual policy editing or extra setup commands are needed. Availability or an ordinary model preference does not grant this permission.
+
+The native host must report the actual provider, model and high-effort setting. Independent reviewers, complete package inputs, test-quality checks and existing spending limits still apply. Review summaries identify this authorization separately from released model validation and leave missing revision IDs unknown. You may revoke the authorization; dependent reviews then stop counting toward readiness, while their original output and usage remain recorded. The permission never extends to another run, standalone review or repair work.
+
+The unmodified v0.3.19 plugin does not provide this route. Use a released build that includes it, reload the plugin and explicitly refresh the host attachment under the ordinary upgrade checks. Updating repository source does not update an installed plugin or automatically unblock an existing run. Claude remains ineligible while its adapter cannot report effective reasoning effort.
