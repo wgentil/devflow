@@ -24,7 +24,7 @@ use their executable directly. Detailed maintainer checks stay in the
 
 Codex and Claude have separate installations of the same shared package. Users
 choose when to upgrade. Both manifests and one skills/helper tree are included;
-the package version is `0.3.19`;
+the package version is `0.3.20`;
 the Claude marketplace descriptor is packaged at `.claude-plugin/marketplace.json`.
 The private GitHub repository `wgentil/devflow` serves the marketplace from
 `main`. Codex users with access to that repository can install it:
@@ -701,6 +701,6 @@ DevFlow can offer a separate, explicit choice: authorize one named permitted rev
 
 The native host must report the actual provider, model and high-effort setting. Independent reviewers, complete package inputs, test-quality checks and existing spending limits still apply. Review summaries identify this authorization separately from released model validation and leave missing revision IDs unknown. You may revoke the authorization; dependent reviews then stop counting toward readiness, while their original output and usage remain recorded. The permission never extends to another run, standalone review or repair work.
 
-The unmodified v0.3.19 plugin does not provide this route. Use a released build that includes it, reload the plugin and explicitly refresh the host attachment under the ordinary upgrade checks. Updating repository source does not update an installed plugin or automatically unblock an existing run. Claude remains ineligible while its adapter cannot report effective reasoning effort.
+The unmodified v0.3.19 plugin does not provide this route. This route is available in v0.3.20. Reload the upgraded plugin and explicitly refresh the host attachment under the ordinary upgrade checks. Updating repository source does not update an installed plugin or automatically unblock an existing run. Claude remains ineligible while its adapter cannot report effective reasoning effort.
 
 For this permission, the approving human must be distinct from known reviewer and implementer agents. Independent acceptance retains the reviewer's requirement-level verdicts and evidence; the agent cannot replace them with its own conclusions. The delivery approval artifact also discloses unvalidated reviewer suitability. A genuinely validated reviewer remains an available alternative when its released mapping is eligible.
