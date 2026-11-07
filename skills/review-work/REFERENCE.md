@@ -106,3 +106,18 @@ old whole-tree packages can disclose unavailable per-path detail for legacy meta
 Finding metadata commands and atomic closure: [finding lineage](../../docs/reference/adversarial-review.md#finding-lineage-and-dispositions).
 
 For review without a workflow, use [standalone review](../../docs/reference/adversarial-review.md#standalone-selected-scope-review); developer command shapes are in the linked CLI reference.
+
+## Authorized observed reviewer models
+
+Workflow-only consent may select one named deep-reasoning/high reviewer with
+unvalidated suitability. The actual native receipt must retain the selected
+`review_authorization_hash`, `human-authorized-observed/v1` eligibility and
+trusted effective provider/model/effort. It never sets `capability_validated`
+to true. Review admission, current coverage and reuse reject revoked consent,
+missing native lineage and changed settings. Independent actor, complete input,
+test-oracle and exact-head gates still apply. Acceptance keeps its ordinary
+requirements-review role; once that role is opted in, omitting its actual
+receipt cannot fall through the historical optional-receipt path. New consent
+receives a new proposal identity and cannot revive an older revoked invocation.
+Review summaries retain eligibility, suitability and unknown revision metadata
+in portable JSON, Markdown and CSV exports.

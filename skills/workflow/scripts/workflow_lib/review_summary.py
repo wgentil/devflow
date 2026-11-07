@@ -82,6 +82,17 @@ def summarize_review(subject:dict)->dict:
     referenced={r.get('model_invocation_id') for r in reviews if r.get('model_invocation_id')}
     receipts=subject.get('model_receipts',{})
     review_receipts={key:row for key,row in receipts.items() if key in referenced or str(row.get('scope',{}).get('role','')).endswith('-reviewer')}
+    reviewer_models = []
+    for key, row in sorted(review_receipts.items()):
+        basis = row.get('eligibility', {}).get('basis')
+        reviewer_models.append({'invocation_id': key, 'resolved': deepcopy(row.get('resolved')),
+            'observed': deepcopy(row.get('observed')), 'eligibility_basis': basis or (
+                'released-validated' if row.get('capability_validated') is True else 'unknown'),
+            'suitability': 'unvalidated' if row.get('review_authorization_hash') else (
+                'validated' if row.get('capability_validated') is True else 'unknown'),
+            'review_authorization_hash': row.get('review_authorization_hash'),
+            'model_revision': row.get('model_revision'),
+            'authorization_revoked': row.get('review_authorization_hash') in subject.get('review_model_revocations', {})})
     intervals=[];unknown_times=0
     for row in review_receipts.values():
         start,end=row.get('started_ms'),row.get('finished_ms')
@@ -113,7 +124,7 @@ def summarize_review(subject:dict)->dict:
     confirmed_reviews={r['review_id'] for r in reviews if completed(receipts.get(r.get('model_invocation_id'),{})) and receipts[r['model_invocation_id']].get('diagnostic') is False}
     confirmed=sum(any(f.get('status')=='resolved' or f.get('provenance',{}).get('review_id') in confirmed_reviews for f in rows) for rows in actionable)
     unknown_invocations=sum(row.get('dispatch') is not False and not completed(row) for row in receipts.values()) if receipts else 1
-    return {'scope_id':subject.get('id'),'unique_actionable_findings':len(actionable),'recorded_findings':len(findings),
+    return {'scope_id':subject.get('id'),'reviewer_models':reviewer_models,'unique_actionable_findings':len(actionable),'recorded_findings':len(findings),
         'duplicate_aliases':len(findings)-len(groups),'finding_dispositions':dispositions,
         'findings_by_perspective':dict(sorted(by_perspective.items())),'findings_by_severity':dict(sorted(by_severity.items())),
         'confirmed_escaped_defects':len({row['report_ref'] for row in escapes.values() if row.get('confirmed') is True}) if escapes else None,

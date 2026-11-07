@@ -50,6 +50,7 @@ def propose_authorization(subject: dict, selection: dict) -> dict:
          and len(set(perspectives)) == len(perspectives)
          and (set(roles) == {'acceptance'} or perspectives), 'Explicit supported review roles and perspectives required.')
     body = {'schema_version': 1, 'run_id': subject['id'], 'spec_hash': subject['plan']['spec_hash'],
+            'sequence': len(subject.get('review_model_authorizations', {})) + 1,
             'review_policy_hash': digest(subject['review_policy']), 'selection': deepcopy(selection),
             'suitability': 'unvalidated', 'restrictions_hash': digest({
                 'model_overrides': subject.get('model_overrides', []), 'effect_policy': subject.get('effect_policy')})}
@@ -59,9 +60,10 @@ def propose_authorization(subject: dict, selection: dict) -> dict:
 def _proposal_current(subject, proposal):
     _subject(subject)
     need(isinstance(proposal, dict) and set(proposal) == {'schema_version', 'run_id', 'spec_hash',
-         'review_policy_hash', 'selection', 'suitability', 'restrictions_hash', 'proposal_hash'},
+         'review_policy_hash', 'selection', 'suitability', 'restrictions_hash', 'proposal_hash', 'sequence'},
          'Known exact authorization proposal schema required.')
     need(proposal['schema_version'] == 1 and type(proposal['schema_version']) is int
+         and type(proposal['sequence']) is int and proposal['sequence'] > 0
          and proposal['suitability'] == 'unvalidated' and proposal['run_id'] == subject['id']
          and proposal['spec_hash'] == subject['plan']['spec_hash']
          and proposal['review_policy_hash'] == digest(subject['review_policy'])
@@ -82,6 +84,8 @@ def record_authorization(subject: dict, record: dict) -> dict:
     need(key not in subject.get('review_model_revocations', {}), 'Revoked consent cannot be restored by retry.')
     prior = subject.get('review_model_authorizations', {}).get(key)
     need(prior is None or prior == record, 'Authorization identity is immutable.')
+    need(prior is not None or record['proposal']['sequence'] == len(subject.get('review_model_authorizations', {})) + 1,
+         'Authorization proposal is stale; prepare a new exact proposal.')
     updated = deepcopy(subject)
     updated.setdefault('review_model_authorizations', {})[key] = deepcopy(record)
     return updated

@@ -83,6 +83,10 @@ def check_completion(state: dict, binding: dict, task_id: str, live: bool = True
     receipt=run.get('model_receipts',{}).get(task.get('invocation_id'),{})
     if receipt:
         if not receipt_matches_task(receipt,binding,task):return _decision('block','INVOCATION_SCOPE_MISMATCH')
+        if receipt.get('review_authorization_hash') or 'eligibility' in receipt:
+            from .review_authorizations import validate_authorized_receipt, authorization_scope
+            try:validate_authorized_receipt(run, receipt, authorization_scope(binding, stage))
+            except WorkflowError as exc:return _decision('block', exc.code, message=str(exc))
         mode=receipt.get('mode',mode)
     else:
         from .model_policy import resolve_host_profile
@@ -116,6 +120,10 @@ def check_completion(state: dict, binding: dict, task_id: str, live: bool = True
             from .adversarial_reviews import validate_adversarial_review
             try:validate_adversarial_review(run,package,review)
             except WorkflowError as exc:return _decision('block','ASSESSMENT_INPUTS_INVALID',message=str(exc))
+        if review and review_version(run) is not None and role == 'acceptance':
+            from .adversarial_reviews import validate_acceptance_review
+            try:validate_acceptance_review(run, package, review)
+            except WorkflowError as exc:return _decision('block', 'ASSESSMENT_INPUTS_INVALID', message=str(exc))
         return _decision('allow','ASSESSMENT_RECORDED',evidence_refs=[{'review_id':review.get('review_id'),'package_hash':task['package_hash']}]) if review else _decision('block','ASSESSMENT_REQUIRED')
     delivery=run.get('delivery',{})
     if run.get('status') != 'delivered' or not delivery.get('actual_result') or not delivery.get('manifest_hash'):

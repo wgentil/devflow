@@ -52,15 +52,21 @@ def validate_review_model(subject:dict,package:dict,review:dict)->dict:
     from .adversarial_reviews import expected_review_input_validation
     expected_input=expected_review_input_validation(package)
     need(receipt.get('review_input_validation')=={'before':expected_input,'after':expected_input},'Actual review input must be verified before execution and before report admission.')
-    need(receipt.get('status')=='allow' and receipt.get('dispatch') is True and receipt.get('capability_validated') is True
-         and receipt.get('validation_ref') and receipt.get('invocation_ref')==review.get('invocation_ref')
+    authorized = bool(receipt.get('review_authorization_hash')) or 'eligibility' in receipt
+    authorization_compliance = {}
+    if authorized:
+        from .review_authorizations import validate_authorized_receipt
+        authorization_compliance = validate_authorized_receipt(subject, receipt, {**logical, 'perspective': perspective})
+    need(receipt.get('status')=='allow' and receipt.get('dispatch') is True
+         and (authorized or receipt.get('capability_validated') is True and receipt.get('validation_ref'))
+         and receipt.get('invocation_ref')==review.get('invocation_ref')
          and bool(receipt.get('invocation_ref')),'Actual eligible completed specialist invocation required; advisory is not validated coverage.')
     need(scope.get('actor_id')==review.get('actor_id') and scope.get('package_hash')==package.get('package_hash')
          and scope.get('role')==str(package.get('role'))+'-reviewer' and scope.get('item_id')==package.get('item_id')
          and scope.get('perspective')==perspective and scope.get('review_scope')==expected,'Receipt must bind this actor, package, perspective and current policy/risk/source.')
     need(check_model_receipt(receipt,'strict')['status']=='allow','Observed model and effort must match the actual resolved settings.')
     observed=receipt['observed'];resolved=receipt['resolved']
-    need(observed.get('provider')==resolved.get('provider') and receipt.get('profile')==('fast-analysis' if expected['lightweight'] and perspective in {'code','test'} else 'deep-reasoning')
+    need(observed.get('provider')==resolved.get('provider') and receipt.get('profile')==('fast-analysis' if not authorized and expected['lightweight'] and perspective in {'code','test'} else 'deep-reasoning')
          and (expected['lightweight'] and perspective in {'code','test'} or resolved.get('effort')=='high'),'Substantive reviews need observed deep reasoning/high effort.')
     implementers=set(subject.get('implementer_actors',[]))|{subject.get('actors',{}).get('implementer')}
     need(review.get('actor_id') not in implementers,'An implementer cannot be an independent reviewer.')
@@ -71,7 +77,8 @@ def validate_review_model(subject:dict,package:dict,review:dict)->dict:
                      and prior.get('actor_id')==review.get('actor_id') and prior.get('perspective')==perspective
                      and prior.get('package_hash')==review.get('package_hash'), 'One actual invocation cannot supply several independent perspectives.')
     return {'status':'allow','invocation_id':receipt['invocation_id'],'perspective':perspective,
-        'resolved':deepcopy(resolved),'observed':deepcopy(observed),'validation_ref':receipt['validation_ref']}
+        'resolved':deepcopy(resolved),'observed':deepcopy(observed),'validation_ref':receipt.get('validation_ref'),
+        **authorization_compliance}
 
 
 def static_route_available(policy,request):
